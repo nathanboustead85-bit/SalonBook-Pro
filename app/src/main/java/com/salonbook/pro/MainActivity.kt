@@ -19,10 +19,15 @@ import java.util.Locale
 import java.util.UUID
 
 class MainActivity : Activity() {
+
     private val purple = Color.rgb(111, 66, 193)
     private val dark = Color.rgb(40, 35, 55)
     private val background = Color.rgb(248, 246, 252)
-    private val prefs by lazy { getSharedPreferences("salonbook_data", MODE_PRIVATE) }
+
+    private val prefs by lazy {
+        getSharedPreferences("salonbook_data", MODE_PRIVATE)
+    }
+
     private val bookings = mutableListOf<Booking>()
     private var selectedDate = today()
     private lateinit var container: LinearLayout
@@ -48,7 +53,10 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (::container.isInitialized) showDashboard()
+        if (::container.isInitialized) {
+            loadBookings()
+            showDashboard()
+        }
     }
 
     private fun today(): String =
@@ -57,8 +65,13 @@ class MainActivity : Activity() {
 
     private fun readRecords(key: String): List<JSONObject> {
         return try {
-            val array = JSONArray(prefs.getString(key, "[]") ?: "[]")
-            (0 until array.length()).map { array.getJSONObject(it) }
+            val array = JSONArray(
+                prefs.getString(key, "[]") ?: "[]"
+            )
+
+            (0 until array.length()).map {
+                array.getJSONObject(it)
+            }
         } catch (_: Exception) {
             emptyList()
         }
@@ -87,7 +100,10 @@ class MainActivity : Activity() {
         })
     }
 
-    private fun text(value: String, size: Float = 16f) {
+    private fun text(
+        value: String,
+        size: Float = 16f
+    ) {
         container.addView(TextView(this).apply {
             text = value
             textSize = size
@@ -96,15 +112,23 @@ class MainActivity : Activity() {
         })
     }
 
-    private fun button(label: String, action: () -> Unit) {
+    private fun button(
+        label: String,
+        action: () -> Unit
+    ) {
         val b = Button(this).apply {
             text = label
             isAllCaps = false
             textSize = 16f
             setTextColor(Color.WHITE)
+
             backgroundTintList =
-                android.content.res.ColorStateList.valueOf(purple)
-            setOnClickListener { action() }
+                android.content.res.ColorStateList
+                    .valueOf(purple)
+
+            setOnClickListener {
+                action()
+            }
         }
 
         container.addView(
@@ -112,56 +136,107 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = 12 }
+            ).apply {
+                bottomMargin = 12
+            }
         )
     }
 
     private fun showDashboard() {
         screen("SalonBook Pro")
-        text("Your Beauty Business. Simplified.", 17f)
-        text(
-            "Today's appointments: ${bookings.count { it.date == today() }}",
-            20f
-        )
-        text(
-            "Upcoming appointments: ${bookings.count { it.date >= today() }}",
-            20f
-        )
-        text("Total saved bookings: ${bookings.size}", 18f)
 
-        button("View Appointment Calendar") { showCalendar() }
-        button("Create New Booking") { bookingDialog() }
-        button("All Appointments") { showAppointments() }
-        button("Clients") { showClients() }
+        text(
+            "Your Beauty Business. Simplified.",
+            17f
+        )
+
+        text(
+            "Today's appointments: " +
+                "${bookings.count { it.date == today() }}",
+            20f
+        )
+
+        text(
+            "Upcoming appointments: " +
+                "${bookings.count { it.date >= today() }}",
+            20f
+        )
+
+        text(
+            "Total saved bookings: ${bookings.size}",
+            18f
+        )
+
+        button("View Appointment Calendar") {
+            showCalendar()
+        }
+
+        button("Create New Booking") {
+            bookingDialog()
+        }
+
+        button("All Appointments") {
+            showAppointments()
+        }
+
+        button("Clients") {
+            showClients()
+        }
 
         button("Services & Prices") {
             startActivity(
-                Intent(this, ManagementActivity::class.java)
-                    .putExtra("staff", false)
+                Intent(
+                    this,
+                    ManagementActivity::class.java
+                ).putExtra("staff", false)
             )
         }
 
         button("Staff Management") {
             startActivity(
-                Intent(this, ManagementActivity::class.java)
-                    .putExtra("staff", true)
+                Intent(
+                    this,
+                    ManagementActivity::class.java
+                ).putExtra("staff", true)
+            )
+        }
+
+        // NEW: Firebase account and cloud backup screen
+        button("Cloud Account & Backup") {
+            startActivity(
+                Intent(
+                    this,
+                    CloudActivity::class.java
+                )
             )
         }
 
         button("My Booking Link") {
-            message("Online booking links require the backend")
+            message(
+                "Customer online booking links " +
+                    "are coming in a future milestone"
+            )
         }
 
         button("Business Settings") {
-            message("Business settings are coming next")
+            message(
+                "Business settings are coming next"
+            )
         }
 
-        text("SalonBook Pro | Milestone 4", 12f)
+        text(
+            "SalonBook Pro | Milestone 5",
+            12f
+        )
     }
 
     private fun showCalendar() {
         screen("Appointment Calendar")
-        text("Selected date: $selectedDate", 19f)
+
+        text(
+            "Selected date: $selectedDate",
+            19f
+        )
 
         button("Choose Date") {
             pickDate(selectedDate) {
@@ -171,39 +246,61 @@ class MainActivity : Activity() {
         }
 
         button("Add Booking for This Date") {
-            bookingDialog(defaultDate = selectedDate)
+            bookingDialog(
+                defaultDate = selectedDate
+            )
         }
 
         val daily = bookings.filter {
             it.date == selectedDate
-        }.sortedBy { it.time }
+        }.sortedBy {
+            it.time
+        }
 
-        text("${daily.size} appointments", 18f)
+        text(
+            "${daily.size} appointments",
+            18f
+        )
 
         if (daily.isEmpty()) {
             text("No appointments for this date.")
         }
 
-        daily.forEach { bookingCard(it) }
+        daily.forEach {
+            bookingCard(it)
+        }
 
-        button("Back to Dashboard") { showDashboard() }
+        button("Back to Dashboard") {
+            showDashboard()
+        }
     }
 
     private fun showAppointments() {
         screen("All Appointments")
 
         val sorted = bookings.sortedWith(
-            compareBy<Booking> { it.date }.thenBy { it.time }
+            compareBy<Booking> {
+                it.date
+            }.thenBy {
+                it.time
+            }
         )
 
         if (sorted.isEmpty()) {
             text("No appointments saved yet.")
         }
 
-        sorted.forEach { bookingCard(it) }
+        sorted.forEach {
+            bookingCard(it)
+        }
 
-        button("Create New Booking") { bookingDialog() }
-        button("Back to Dashboard") { showDashboard() }
+        button("Create New Booking") {
+            bookingDialog()
+        }
+
+        button("Back to Dashboard") {
+            showDashboard()
+        }
     }
 
     private fun bookingCard(booking: Booking) {
@@ -218,27 +315,37 @@ class MainActivity : Activity() {
         }
 
         val end = if (booking.duration > 0) {
-            "–${formatTime(toMinutes(booking.time) + booking.duration)}"
+            "–${formatTime(
+                toMinutes(booking.time) + booking.duration
+            )}"
         } else {
             ""
         }
 
         val details = buildString {
             append(
-                "${booking.time}$end  •  ${booking.client}\n" +
-                    "${booking.service}\n${booking.date}"
+                "${booking.time}$end  •  " +
+                    "${booking.client}\n" +
+                    "${booking.service}\n" +
+                    booking.date
             )
 
             if (staff != null) {
-                append("\nStaff: ${staff.optString("name")}")
+                append(
+                    "\nStaff: ${staff.optString("name")}"
+                )
             }
 
             if (booking.price.isNotBlank()) {
-                append("\nPrice: £${booking.price}")
+                append(
+                    "\nPrice: £${booking.price}"
+                )
             }
 
             if (booking.notes.isNotBlank()) {
-                append("\nNotes: ${booking.notes}")
+                append(
+                    "\nNotes: ${booking.notes}"
+                )
             }
         }
 
@@ -252,7 +359,10 @@ class MainActivity : Activity() {
         card.addView(Button(this).apply {
             text = "Edit / Cancel"
             isAllCaps = false
-            setOnClickListener { bookingOptions(booking) }
+
+            setOnClickListener {
+                bookingOptions(booking)
+            }
         })
 
         container.addView(
@@ -260,7 +370,9 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = 16 }
+            ).apply {
+                bottomMargin = 16
+            }
         )
     }
 
@@ -268,8 +380,12 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle(booking.client)
             .setItems(
-                arrayOf("Edit Booking", "Cancel Booking")
+                arrayOf(
+                    "Edit Booking",
+                    "Cancel Booking"
+                )
             ) { _, which ->
+
                 if (which == 0) {
                     bookingDialog(booking)
                 } else {
@@ -284,16 +400,29 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle("Cancel appointment?")
             .setMessage(
-                "Remove ${booking.client}'s appointment on " +
-                    "${booking.date} at ${booking.time}?"
+                "Remove ${booking.client}'s " +
+                    "appointment on ${booking.date} " +
+                    "at ${booking.time}?"
             )
-            .setPositiveButton("Cancel Appointment") { _, _ ->
-                bookings.removeAll { it.id == booking.id }
+            .setPositiveButton(
+                "Cancel Appointment"
+            ) { _, _ ->
+
+                bookings.removeAll {
+                    it.id == booking.id
+                }
+
                 saveBookings()
                 showDashboard()
-                message("Appointment cancelled")
+
+                message(
+                    "Appointment cancelled"
+                )
             }
-            .setNegativeButton("Keep Booking", null)
+            .setNegativeButton(
+                "Keep Booking",
+                null
+            )
             .show()
     }
 
@@ -304,15 +433,23 @@ class MainActivity : Activity() {
         val services = readRecords("services")
         val staff = readRecords("staff")
 
-        if (services.isEmpty() || staff.isEmpty()) {
+        if (
+            services.isEmpty() ||
+            staff.isEmpty()
+        ) {
             AlertDialog.Builder(this)
                 .setTitle("Setup required")
                 .setMessage(
-                    "Add at least one service and one staff member " +
-                        "before creating smart bookings."
+                    "Add at least one service and " +
+                        "one staff member before " +
+                        "creating smart bookings."
                 )
-                .setPositiveButton("OK", null)
+                .setPositiveButton(
+                    "OK",
+                    null
+                )
                 .show()
+
             return
         }
 
@@ -350,22 +487,27 @@ class MainActivity : Activity() {
         val serviceSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(
                 this@MainActivity,
-                android.R.layout.simple_spinner_dropdown_item,
+                android.R.layout
+                    .simple_spinner_dropdown_item,
                 serviceNames
             )
 
             val index = services.indexOfFirst {
-                it.optString("id") == existing?.serviceId
+                it.optString("id") ==
+                    existing?.serviceId
             }
 
             if (index >= 0) {
                 setSelection(index)
             } else if (existing != null) {
                 val old = services.indexOfFirst {
-                    it.optString("name") == existing.service
+                    it.optString("name") ==
+                        existing.service
                 }
 
-                if (old >= 0) setSelection(old)
+                if (old >= 0) {
+                    setSelection(old)
+                }
             }
         }
 
@@ -373,32 +515,42 @@ class MainActivity : Activity() {
             text = "Service"
             textSize = 16f
         })
+
         form.addView(serviceSpinner)
 
         val staffSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(
                 this@MainActivity,
-                android.R.layout.simple_spinner_dropdown_item,
+                android.R.layout
+                    .simple_spinner_dropdown_item,
                 staff.map {
-                    "${it.optString("name")} · ${it.optString("role")}"
+                    "${it.optString("name")} · " +
+                        it.optString("role")
                 }
             )
 
             val index = staff.indexOfFirst {
-                it.optString("id") == existing?.staffId
+                it.optString("id") ==
+                    existing?.staffId
             }
 
-            if (index >= 0) setSelection(index)
+            if (index >= 0) {
+                setSelection(index)
+            }
         }
 
         form.addView(TextView(this).apply {
             text = "Staff member"
             textSize = 16f
         })
+
         form.addView(staffSpinner)
 
-        var date = existing?.date ?: defaultDate
-        var time = existing?.time ?: "09:00"
+        var date =
+            existing?.date ?: defaultDate
+
+        var time =
+            existing?.time ?: "09:00"
 
         val dateButton = Button(this).apply {
             text = "Date: $date"
@@ -425,13 +577,16 @@ class MainActivity : Activity() {
             TimePickerDialog(
                 this,
                 { _, hour, minute ->
+
                     time = String.format(
                         Locale.UK,
                         "%02d:%02d",
                         hour,
                         minute
                     )
-                    timeButton.text = "Time: $time"
+
+                    timeButton.text =
+                        "Time: $time"
                 },
                 parts[0].toInt(),
                 parts[1].toInt(),
@@ -447,66 +602,98 @@ class MainActivity : Activity() {
 
         val dialog = AlertDialog.Builder(this)
             .setTitle(
-                if (existing == null) "New Booking"
-                else "Edit Booking"
+                if (existing == null) {
+                    "New Booking"
+                } else {
+                    "Edit Booking"
+                }
             )
             .setView(scroll)
-            .setPositiveButton("Save", null)
-            .setNegativeButton("Cancel", null)
+            .setPositiveButton(
+                "Save",
+                null
+            )
+            .setNegativeButton(
+                "Cancel",
+                null
+            )
             .create()
 
         dialog.setOnShowListener {
             dialog.getButton(
                 AlertDialog.BUTTON_POSITIVE
             ).setOnClickListener {
-                val name = client.text.toString().trim()
+
+                val name =
+                    client.text.toString().trim()
 
                 if (name.isBlank()) {
-                    message("Enter a client name")
+                    message(
+                        "Enter a client name"
+                    )
                     return@setOnClickListener
                 }
 
-                val service =
-                    services[serviceSpinner.selectedItemPosition]
+                val service = services[
+                    serviceSpinner.selectedItemPosition
+                ]
 
-                val member =
-                    staff[staffSpinner.selectedItemPosition]
+                val member = staff[
+                    staffSpinner.selectedItemPosition
+                ]
 
-                val duration = service.optInt("duration", 0)
+                val duration =
+                    service.optInt("duration", 0)
 
                 if (duration <= 0) {
-                    message("Service duration must be positive")
+                    message(
+                        "Service duration must be positive"
+                    )
                     return@setOnClickListener
                 }
 
                 val start = toMinutes(time)
 
-                if (start + duration > 1440) {
-                    message("Appointment cannot finish after midnight")
-                    return@setOnClickListener
-                }
-
-                val staffId = member.optString("id")
-
-                val conflict = bookings.any { other ->
-                    other.id != existing?.id &&
-                        other.date == date &&
-                        other.staffId == staffId &&
-                        other.duration > 0 &&
-                        start < toMinutes(other.time) + other.duration &&
-                        toMinutes(other.time) < start + duration
-                }
-
-                if (conflict) {
+                if (
+                    start + duration > 1440
+                ) {
                     message(
-                        "This staff member already has an overlapping booking"
+                        "Appointment cannot finish " +
+                            "after midnight"
                     )
                     return@setOnClickListener
                 }
 
-                val hours = member.optString("hours")
+                val staffId =
+                    member.optString("id")
 
-                if (!withinWorkingHours(
+                val conflict = bookings.any {
+                    other ->
+
+                    other.id != existing?.id &&
+                        other.date == date &&
+                        other.staffId == staffId &&
+                        other.duration > 0 &&
+                        start <
+                            toMinutes(other.time) +
+                            other.duration &&
+                        toMinutes(other.time) <
+                            start + duration
+                }
+
+                if (conflict) {
+                    message(
+                        "This staff member already " +
+                            "has an overlapping booking"
+                    )
+                    return@setOnClickListener
+                }
+
+                val hours =
+                    member.optString("hours")
+
+                if (
+                    !withinWorkingHours(
                         hours,
                         date,
                         start,
@@ -520,33 +707,48 @@ class MainActivity : Activity() {
                     return@setOnClickListener
                 }
 
-                val booking = existing ?: Booking(
-                    UUID.randomUUID().toString(),
-                    "",
-                    "",
-                    "",
-                    "",
-                    ""
-                )
+                val booking =
+                    existing ?: Booking(
+                        UUID.randomUUID()
+                            .toString(),
+                        "",
+                        "",
+                        "",
+                        "",
+                        ""
+                    )
 
                 booking.client = name
-                booking.service = service.optString("name")
-                booking.serviceId = service.optString("id")
+
+                booking.service =
+                    service.optString("name")
+
+                booking.serviceId =
+                    service.optString("id")
+
                 booking.staffId = staffId
                 booking.duration = duration
-                booking.price = service.optString("price")
+
+                booking.price =
+                    service.optString("price")
+
                 booking.date = date
                 booking.time = time
-                booking.notes = notes.text.toString().trim()
+
+                booking.notes =
+                    notes.text.toString().trim()
 
                 if (existing == null) {
                     bookings.add(booking)
                 }
 
                 saveBookings()
+
                 selectedDate = date
+
                 dialog.dismiss()
                 showCalendar()
+
                 message("Booking saved")
             }
         }
@@ -556,7 +758,9 @@ class MainActivity : Activity() {
 
     private fun toMinutes(time: String): Int {
         val parts = time.split(":")
-        return parts[0].toInt() * 60 + parts[1].toInt()
+
+        return parts[0].toInt() * 60 +
+            parts[1].toInt()
     }
 
     private fun formatTime(minutes: Int): String =
@@ -567,7 +771,7 @@ class MainActivity : Activity() {
             minutes % 60
         )
 
-    // Supported formats:
+    // Supported working hours:
     // Mon-Fri 09:00-17:00
     // Mon,Wed,Fri 09:00-17:00
     // Mon 09:00-17:00
@@ -579,29 +783,39 @@ class MainActivity : Activity() {
         start: Int,
         end: Int
     ): Boolean {
+
         val pattern = Regex(
             "^(?:(.+?)\\s+)?(\\d{2}:\\d{2})\\s*-\\s*(\\d{2}:\\d{2})$",
             RegexOption.IGNORE_CASE
         )
 
         val match =
-            pattern.matchEntire(hours.trim()) ?: return false
+            pattern.matchEntire(
+                hours.trim()
+            ) ?: return false
 
         val from = runCatching {
-            toMinutes(match.groupValues[2])
+            toMinutes(
+                match.groupValues[2]
+            )
         }.getOrNull() ?: return false
 
         val until = runCatching {
-            toMinutes(match.groupValues[3])
+            toMinutes(
+                match.groupValues[3]
+            )
         }.getOrNull() ?: return false
 
         if (
             from !in 0..1439 ||
             until !in 1..1440 ||
             from >= until
-        ) return false
+        ) {
+            return false
+        }
 
-        val days = match.groupValues[1].trim()
+        val days =
+            match.groupValues[1].trim()
 
         if (days.isNotEmpty()) {
             val parsed = runCatching {
@@ -613,54 +827,90 @@ class MainActivity : Activity() {
                 }.parse(date)
             }.getOrNull() ?: return false
 
-            val calendar = Calendar.getInstance().apply {
-                time = parsed
-            }
+            val calendar =
+                Calendar.getInstance().apply {
+                    time = parsed
+                }
 
             val current =
-                (calendar.get(Calendar.DAY_OF_WEEK) + 5) % 7
+                (
+                    calendar.get(
+                        Calendar.DAY_OF_WEEK
+                    ) + 5
+                ) % 7
 
             val names = listOf(
-                "mon", "tue", "wed", "thu",
-                "fri", "sat", "sun"
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
             )
 
-            val allowed = mutableSetOf<Int>()
+            val allowed =
+                mutableSetOf<Int>()
 
-            for (part in days.lowercase(Locale.UK).split(",")) {
-                val bounds = part.trim().split("-")
+            for (
+                part in days
+                    .lowercase(Locale.UK)
+                    .split(",")
+            ) {
+                val bounds =
+                    part.trim().split("-")
 
-                if (bounds.size !in 1..2) return false
+                if (
+                    bounds.size !in 1..2
+                ) {
+                    return false
+                }
 
-                val first =
-                    names.indexOf(bounds[0].trim().take(3))
+                val first = names.indexOf(
+                    bounds[0]
+                        .trim()
+                        .take(3)
+                )
 
-                if (first < 0) return false
+                if (first < 0) {
+                    return false
+                }
 
                 if (bounds.size == 1) {
                     allowed.add(first)
                 } else {
                     val last =
-                        names.indexOf(bounds[1].trim().take(3))
+                        names.indexOf(
+                            bounds[1]
+                                .trim()
+                                .take(3)
+                        )
 
-                    if (last < 0) return false
+                    if (last < 0) {
+                        return false
+                    }
 
                     var day = first
 
                     for (step in 0..6) {
                         allowed.add(day)
 
-                        if (day == last) break
+                        if (day == last) {
+                            break
+                        }
 
                         day = (day + 1) % 7
                     }
                 }
             }
 
-            if (current !in allowed) return false
+            if (current !in allowed) {
+                return false
+            }
         }
 
-        return start >= from && end <= until
+        return start >= from &&
+            end <= until
     }
 
     private fun pickDate(
@@ -672,6 +922,7 @@ class MainActivity : Activity() {
         DatePickerDialog(
             this,
             { _, year, month, day ->
+
                 onPicked(
                     String.format(
                         Locale.UK,
@@ -695,41 +946,69 @@ class MainActivity : Activity() {
             it.client
         }.distinct().sorted()
 
-        text("${clients.size} clients", 18f)
+        text(
+            "${clients.size} clients",
+            18f
+        )
 
         if (clients.isEmpty()) {
-            text("Clients appear here after bookings are added.")
+            text(
+                "Clients appear here after " +
+                    "bookings are added."
+            )
         }
 
         clients.forEach { name ->
             text(
-                "$name — ${bookings.count { it.client == name }} booking(s)"
+                "$name — " +
+                    "${bookings.count {
+                        it.client == name
+                    }} booking(s)"
             )
         }
 
-        button("Back to Dashboard") { showDashboard() }
+        button("Back to Dashboard") {
+            showDashboard()
+        }
     }
 
     private fun saveBookings() {
         val array = JSONArray()
 
         bookings.forEach { booking ->
-            array.put(JSONObject().apply {
-                put("id", booking.id)
-                put("client", booking.client)
-                put("service", booking.service)
-                put("date", booking.date)
-                put("time", booking.time)
-                put("notes", booking.notes)
-                put("serviceId", booking.serviceId)
-                put("staffId", booking.staffId)
-                put("duration", booking.duration)
-                put("price", booking.price)
-            })
+            array.put(
+                JSONObject().apply {
+                    put("id", booking.id)
+                    put("client", booking.client)
+                    put("service", booking.service)
+                    put("date", booking.date)
+                    put("time", booking.time)
+                    put("notes", booking.notes)
+                    put(
+                        "serviceId",
+                        booking.serviceId
+                    )
+                    put(
+                        "staffId",
+                        booking.staffId
+                    )
+                    put(
+                        "duration",
+                        booking.duration
+                    )
+                    put(
+                        "price",
+                        booking.price
+                    )
+                }
+            )
         }
 
         prefs.edit()
-            .putString("bookings", array.toString())
+            .putString(
+                "bookings",
+                array.toString()
+            )
             .apply()
     }
 
@@ -738,11 +1017,17 @@ class MainActivity : Activity() {
 
         try {
             val array = JSONArray(
-                prefs.getString("bookings", "[]") ?: "[]"
+                prefs.getString(
+                    "bookings",
+                    "[]"
+                ) ?: "[]"
             )
 
-            for (i in 0 until array.length()) {
-                val item = array.getJSONObject(i)
+            for (
+                i in 0 until array.length()
+            ) {
+                val item =
+                    array.getJSONObject(i)
 
                 bookings.add(
                     Booking(
@@ -754,13 +1039,18 @@ class MainActivity : Activity() {
                         item.optString("notes"),
                         item.optString("serviceId"),
                         item.optString("staffId"),
-                        item.optInt("duration", 0),
+                        item.optInt(
+                            "duration",
+                            0
+                        ),
                         item.optString("price")
                     )
                 )
             }
         } catch (_: Exception) {
-            message("Could not load saved bookings")
+            message(
+                "Could not load saved bookings"
+            )
         }
     }
 
