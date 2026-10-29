@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "107806967630",
+    "project_id": "salonbook-pro-ad5ff",
+    "storage_bucket": "salonbook-pro-ad5ff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:107806967630:android:8759cc0a06866651ad401f",
+        "android_client_info": {
+          "package_name": "com.salonbook.pro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9Zwj3nJq_OP77oEhQIaDGUuvVFFom3eU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
