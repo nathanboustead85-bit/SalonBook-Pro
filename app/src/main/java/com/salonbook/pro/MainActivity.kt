@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Intent
 import android.os.Bundle
 import android.graphics.Color
 import android.graphics.Typeface
@@ -13,7 +14,6 @@ import android.widget.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Locale
 import java.util.UUID
 
@@ -148,12 +148,24 @@ class MainActivity : Activity() {
             showClients()
         }
 
+        // MILESTONE 3: SERVICES & PRICES
         button("Services & Prices") {
-            message("Service management is coming next")
+            startActivity(
+                Intent(
+                    this,
+                    ManagementActivity::class.java
+                ).putExtra("staff", false)
+            )
         }
 
+        // MILESTONE 3: STAFF MANAGEMENT
         button("Staff Management") {
-            message("Staff management is coming next")
+            startActivity(
+                Intent(
+                    this,
+                    ManagementActivity::class.java
+                ).putExtra("staff", true)
+            )
         }
 
         button("My Booking Link") {
@@ -164,7 +176,7 @@ class MainActivity : Activity() {
             message("Business settings are coming next")
         }
 
-        text("SalonBook Pro | Milestone 2", 12f)
+        text("SalonBook Pro | Milestone 3", 12f)
     }
 
     private fun showCalendar() {
