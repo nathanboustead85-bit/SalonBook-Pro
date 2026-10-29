@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission
+        android:name="android.permission.INTERNET" />
+
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:allowBackup="true"
         android:label="SalonBook Pro"
@@ -20,9 +26,15 @@
 
         </activity>
 
-        <!-- Services, prices and staff management -->
+        <!-- Services and staff management -->
         <activity
             android:name=".ManagementActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Firebase cloud account and backup -->
+        <activity
+            android:name=".CloudActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
