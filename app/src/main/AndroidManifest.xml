@@ -7,6 +7,7 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
+        <!-- Main dashboard and booking calendar -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -18,6 +19,12 @@
             </intent-filter>
 
         </activity>
+
+        <!-- Services, prices and staff management -->
+        <activity
+            android:name=".ManagementActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
     </application>
 
