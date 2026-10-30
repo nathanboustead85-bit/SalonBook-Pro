@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.*
+import com.google.firebase.auth.FirebaseAuth
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -223,7 +224,7 @@ class MainActivity : Activity() {
         }
 
         text(
-            "SalonBook Pro | Phase 6 - Cloud Sync",
+            "SalonBook Pro | Phase 6B - Auto Cloud Upload",
             12f
         )
     }
@@ -907,12 +908,32 @@ class MainActivity : Activity() {
             )
         }
 
+        val json = array.toString()
+
+        // Save locally first.
         prefs.edit()
-            .putString(
-                "bookings",
-                array.toString()
-            )
+            .putString("bookings", json)
             .apply()
+
+        // Phase 6B: attempt automatic cloud upload.
+        if (FirebaseAuth.getInstance()
+                .currentUser?.isEmailVerified == true
+        ) {
+            CloudSyncManager().upload(
+                "bookings",
+                json
+            ) { result ->
+                result.exceptionOrNull()?.let { error ->
+                    runOnUiThread {
+                        message(
+                            "Cloud sync failed: " +
+                                (error.localizedMessage
+                                    ?: "Unknown error")
+                        )
+                    }
+                }
+            }
+        }
     }
 
     private fun loadBookings() {
