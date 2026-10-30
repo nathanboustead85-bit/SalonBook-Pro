@@ -55,7 +55,7 @@ class CloudActivity : Activity() {
         setContentView(scroll)
 
         addText("SalonBook Pro Cloud", 26f)
-        addText("Milestone 5 — Account & Cloud Backup")
+        addText("Phase 6 - Cloud Synchronisation")
 
         val user = auth.currentUser
 
@@ -67,7 +67,7 @@ class CloudActivity : Activity() {
 
             if (!user.isEmailVerified) {
                 addText(
-                    "Verify your email before backing up salon data."
+                    "Verify your email before accessing cloud data."
                 )
 
                 addButton("Send Verification Email") {
@@ -180,6 +180,50 @@ class CloudActivity : Activity() {
     private fun showBackupOptions() {
         addText("Cloud Backup", 21f)
 
+        // PHASE 6: CLOUD CONNECTION TEST
+
+        addText("Phase 6 - Cloud Sync Testing", 19f)
+
+        addText(
+            "Check the Firebase connection without " +
+                "changing your saved bookings."
+        )
+
+        addButton("Test Cloud Sync Connection") {
+            message("Checking Firebase connection...")
+
+            CloudSyncManager().download("bookings") { result ->
+                runOnUiThread {
+                    result.fold(
+                        onSuccess = { json ->
+                            if (json == null) {
+                                message(
+                                    "Connection successful. " +
+                                        "No live cloud bookings yet."
+                                )
+                            } else {
+                                message(
+                                    "Connection successful. " +
+                                        "Cloud booking data found."
+                                )
+                            }
+                        },
+                        onFailure = { error ->
+                            message(
+                                "Cloud connection failed: " +
+                                    (error.localizedMessage
+                                        ?: "Unknown error")
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        // EXISTING MANUAL BACKUP
+
+        addText("Manual Cloud Backup", 19f)
+
         addText(
             "Save your bookings, services and staff to Firebase."
         )
@@ -213,8 +257,9 @@ class CloudActivity : Activity() {
         }
 
         addText(
-            "Cloud backup is manual. Automatic synchronisation " +
-                "will be added in a later milestone."
+            "Cloud backup is currently manual. " +
+                "Automatic synchronisation will be enabled " +
+                "after connection and security testing."
         )
     }
 
