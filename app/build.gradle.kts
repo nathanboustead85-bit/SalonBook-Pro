@@ -12,18 +12,23 @@ android {
         applicationId = "com.salonbook.pro"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.4.0"
     }
 
     signingConfigs {
         create("salonbookRelease") {
-            val keystorePath = System.getenv("SIGNING_KEYSTORE_PATH")
+            val keystorePath =
+                System.getenv("SIGNING_KEYSTORE_PATH")
+
             if (!keystorePath.isNullOrBlank()) {
                 storeFile = file(keystorePath)
-                storePassword = System.getenv("SIGNING_STORE_PASSWORD")
-                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
-                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+                storePassword =
+                    System.getenv("SIGNING_STORE_PASSWORD")
+                keyAlias =
+                    System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword =
+                    System.getenv("SIGNING_KEY_PASSWORD")
             }
         }
     }
@@ -31,13 +36,16 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("salonbookRelease")
+            signingConfig =
+                signingConfigs.getByName("salonbookRelease")
         }
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility =
+            JavaVersion.VERSION_17
+        targetCompatibility =
+            JavaVersion.VERSION_17
     }
 
     kotlinOptions {
@@ -49,6 +57,7 @@ dependencies {
     implementation(
         platform("com.google.firebase:firebase-bom:34.4.0")
     )
+
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
 }
