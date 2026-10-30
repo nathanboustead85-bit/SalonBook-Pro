@@ -68,7 +68,6 @@ class MainActivity : Activity() {
             val array = JSONArray(
                 prefs.getString(key, "[]") ?: "[]"
             )
-
             (0 until array.length()).map {
                 array.getJSONObject(it)
             }
@@ -201,7 +200,6 @@ class MainActivity : Activity() {
             )
         }
 
-        // NEW: Firebase account and cloud backup screen
         button("Cloud Account & Backup") {
             startActivity(
                 Intent(
@@ -225,7 +223,7 @@ class MainActivity : Activity() {
         }
 
         text(
-            "SalonBook Pro | Milestone 5",
+            "SalonBook Pro | Phase 6 - Cloud Sync",
             12f
         )
     }
@@ -385,7 +383,6 @@ class MainActivity : Activity() {
                     "Cancel Booking"
                 )
             ) { _, which ->
-
                 if (which == 0) {
                     bookingDialog(booking)
                 } else {
@@ -407,17 +404,13 @@ class MainActivity : Activity() {
             .setPositiveButton(
                 "Cancel Appointment"
             ) { _, _ ->
-
                 bookings.removeAll {
                     it.id == booking.id
                 }
 
                 saveBookings()
                 showDashboard()
-
-                message(
-                    "Appointment cancelled"
-                )
+                message("Appointment cancelled")
             }
             .setNegativeButton(
                 "Keep Booking",
@@ -433,10 +426,7 @@ class MainActivity : Activity() {
         val services = readRecords("services")
         val staff = readRecords("staff")
 
-        if (
-            services.isEmpty() ||
-            staff.isEmpty()
-        ) {
+        if (services.isEmpty() || staff.isEmpty()) {
             AlertDialog.Builder(this)
                 .setTitle("Setup required")
                 .setMessage(
@@ -444,12 +434,8 @@ class MainActivity : Activity() {
                         "one staff member before " +
                         "creating smart bookings."
                 )
-                .setPositiveButton(
-                    "OK",
-                    null
-                )
+                .setPositiveButton("OK", null)
                 .show()
-
             return
         }
 
@@ -487,22 +473,19 @@ class MainActivity : Activity() {
         val serviceSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(
                 this@MainActivity,
-                android.R.layout
-                    .simple_spinner_dropdown_item,
+                android.R.layout.simple_spinner_dropdown_item,
                 serviceNames
             )
 
             val index = services.indexOfFirst {
-                it.optString("id") ==
-                    existing?.serviceId
+                it.optString("id") == existing?.serviceId
             }
 
             if (index >= 0) {
                 setSelection(index)
             } else if (existing != null) {
                 val old = services.indexOfFirst {
-                    it.optString("name") ==
-                        existing.service
+                    it.optString("name") == existing.service
                 }
 
                 if (old >= 0) {
@@ -521,8 +504,7 @@ class MainActivity : Activity() {
         val staffSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(
                 this@MainActivity,
-                android.R.layout
-                    .simple_spinner_dropdown_item,
+                android.R.layout.simple_spinner_dropdown_item,
                 staff.map {
                     "${it.optString("name")} · " +
                         it.optString("role")
@@ -530,8 +512,7 @@ class MainActivity : Activity() {
             )
 
             val index = staff.indexOfFirst {
-                it.optString("id") ==
-                    existing?.staffId
+                it.optString("id") == existing?.staffId
             }
 
             if (index >= 0) {
@@ -546,11 +527,8 @@ class MainActivity : Activity() {
 
         form.addView(staffSpinner)
 
-        var date =
-            existing?.date ?: defaultDate
-
-        var time =
-            existing?.time ?: "09:00"
+        var date = existing?.date ?: defaultDate
+        var time = existing?.time ?: "09:00"
 
         val dateButton = Button(this).apply {
             text = "Date: $date"
@@ -577,16 +555,13 @@ class MainActivity : Activity() {
             TimePickerDialog(
                 this,
                 { _, hour, minute ->
-
                     time = String.format(
                         Locale.UK,
                         "%02d:%02d",
                         hour,
                         minute
                     )
-
-                    timeButton.text =
-                        "Time: $time"
+                    timeButton.text = "Time: $time"
                 },
                 parts[0].toInt(),
                 parts[1].toInt(),
@@ -609,14 +584,8 @@ class MainActivity : Activity() {
                 }
             )
             .setView(scroll)
-            .setPositiveButton(
-                "Save",
-                null
-            )
-            .setNegativeButton(
-                "Cancel",
-                null
-            )
+            .setPositiveButton("Save", null)
+            .setNegativeButton("Cancel", null)
             .create()
 
         dialog.setOnShowListener {
@@ -624,13 +593,10 @@ class MainActivity : Activity() {
                 AlertDialog.BUTTON_POSITIVE
             ).setOnClickListener {
 
-                val name =
-                    client.text.toString().trim()
+                val name = client.text.toString().trim()
 
                 if (name.isBlank()) {
-                    message(
-                        "Enter a client name"
-                    )
+                    message("Enter a client name")
                     return@setOnClickListener
                 }
 
@@ -654,22 +620,16 @@ class MainActivity : Activity() {
 
                 val start = toMinutes(time)
 
-                if (
-                    start + duration > 1440
-                ) {
+                if (start + duration > 1440) {
                     message(
-                        "Appointment cannot finish " +
-                            "after midnight"
+                        "Appointment cannot finish after midnight"
                     )
                     return@setOnClickListener
                 }
 
-                val staffId =
-                    member.optString("id")
+                val staffId = member.optString("id")
 
-                val conflict = bookings.any {
-                    other ->
-
+                val conflict = bookings.any { other ->
                     other.id != existing?.id &&
                         other.date == date &&
                         other.staffId == staffId &&
@@ -689,11 +649,9 @@ class MainActivity : Activity() {
                     return@setOnClickListener
                 }
 
-                val hours =
-                    member.optString("hours")
+                val hours = member.optString("hours")
 
-                if (
-                    !withinWorkingHours(
+                if (!withinWorkingHours(
                         hours,
                         date,
                         start,
@@ -707,48 +665,33 @@ class MainActivity : Activity() {
                     return@setOnClickListener
                 }
 
-                val booking =
-                    existing ?: Booking(
-                        UUID.randomUUID()
-                            .toString(),
-                        "",
-                        "",
-                        "",
-                        "",
-                        ""
-                    )
+                val booking = existing ?: Booking(
+                    UUID.randomUUID().toString(),
+                    "",
+                    "",
+                    "",
+                    "",
+                    ""
+                )
 
                 booking.client = name
-
-                booking.service =
-                    service.optString("name")
-
-                booking.serviceId =
-                    service.optString("id")
-
+                booking.service = service.optString("name")
+                booking.serviceId = service.optString("id")
                 booking.staffId = staffId
                 booking.duration = duration
-
-                booking.price =
-                    service.optString("price")
-
+                booking.price = service.optString("price")
                 booking.date = date
                 booking.time = time
-
-                booking.notes =
-                    notes.text.toString().trim()
+                booking.notes = notes.text.toString().trim()
 
                 if (existing == null) {
                     bookings.add(booking)
                 }
 
                 saveBookings()
-
                 selectedDate = date
-
                 dialog.dismiss()
                 showCalendar()
-
                 message("Booking saved")
             }
         }
@@ -758,7 +701,6 @@ class MainActivity : Activity() {
 
     private fun toMinutes(time: String): Int {
         val parts = time.split(":")
-
         return parts[0].toInt() * 60 +
             parts[1].toInt()
     }
@@ -770,12 +712,6 @@ class MainActivity : Activity() {
             minutes / 60,
             minutes % 60
         )
-
-    // Supported working hours:
-    // Mon-Fri 09:00-17:00
-    // Mon,Wed,Fri 09:00-17:00
-    // Mon 09:00-17:00
-    // 09:00-17:00
 
     private fun withinWorkingHours(
         hours: String,
@@ -789,21 +725,16 @@ class MainActivity : Activity() {
             RegexOption.IGNORE_CASE
         )
 
-        val match =
-            pattern.matchEntire(
-                hours.trim()
-            ) ?: return false
+        val match = pattern.matchEntire(
+            hours.trim()
+        ) ?: return false
 
         val from = runCatching {
-            toMinutes(
-                match.groupValues[2]
-            )
+            toMinutes(match.groupValues[2])
         }.getOrNull() ?: return false
 
         val until = runCatching {
-            toMinutes(
-                match.groupValues[3]
-            )
+            toMinutes(match.groupValues[3])
         }.getOrNull() ?: return false
 
         if (
@@ -814,8 +745,7 @@ class MainActivity : Activity() {
             return false
         }
 
-        val days =
-            match.groupValues[1].trim()
+        val days = match.groupValues[1].trim()
 
         if (days.isNotEmpty()) {
             val parsed = runCatching {
@@ -827,17 +757,13 @@ class MainActivity : Activity() {
                 }.parse(date)
             }.getOrNull() ?: return false
 
-            val calendar =
-                Calendar.getInstance().apply {
-                    time = parsed
-                }
+            val calendar = Calendar.getInstance().apply {
+                time = parsed
+            }
 
-            val current =
-                (
-                    calendar.get(
-                        Calendar.DAY_OF_WEEK
-                    ) + 5
-                ) % 7
+            val current = (
+                calendar.get(Calendar.DAY_OF_WEEK) + 5
+            ) % 7
 
             val names = listOf(
                 "mon",
@@ -849,27 +775,21 @@ class MainActivity : Activity() {
                 "sun"
             )
 
-            val allowed =
-                mutableSetOf<Int>()
+            val allowed = mutableSetOf<Int>()
 
             for (
                 part in days
                     .lowercase(Locale.UK)
                     .split(",")
             ) {
-                val bounds =
-                    part.trim().split("-")
+                val bounds = part.trim().split("-")
 
-                if (
-                    bounds.size !in 1..2
-                ) {
+                if (bounds.size !in 1..2) {
                     return false
                 }
 
                 val first = names.indexOf(
-                    bounds[0]
-                        .trim()
-                        .take(3)
+                    bounds[0].trim().take(3)
                 )
 
                 if (first < 0) {
@@ -879,12 +799,9 @@ class MainActivity : Activity() {
                 if (bounds.size == 1) {
                     allowed.add(first)
                 } else {
-                    val last =
-                        names.indexOf(
-                            bounds[1]
-                                .trim()
-                                .take(3)
-                        )
+                    val last = names.indexOf(
+                        bounds[1].trim().take(3)
+                    )
 
                     if (last < 0) {
                         return false
@@ -909,8 +826,7 @@ class MainActivity : Activity() {
             }
         }
 
-        return start >= from &&
-            end <= until
+        return start >= from && end <= until
     }
 
     private fun pickDate(
@@ -922,7 +838,6 @@ class MainActivity : Activity() {
         DatePickerDialog(
             this,
             { _, year, month, day ->
-
                 onPicked(
                     String.format(
                         Locale.UK,
@@ -984,22 +899,10 @@ class MainActivity : Activity() {
                     put("date", booking.date)
                     put("time", booking.time)
                     put("notes", booking.notes)
-                    put(
-                        "serviceId",
-                        booking.serviceId
-                    )
-                    put(
-                        "staffId",
-                        booking.staffId
-                    )
-                    put(
-                        "duration",
-                        booking.duration
-                    )
-                    put(
-                        "price",
-                        booking.price
-                    )
+                    put("serviceId", booking.serviceId)
+                    put("staffId", booking.staffId)
+                    put("duration", booking.duration)
+                    put("price", booking.price)
                 }
             )
         }
@@ -1023,11 +926,8 @@ class MainActivity : Activity() {
                 ) ?: "[]"
             )
 
-            for (
-                i in 0 until array.length()
-            ) {
-                val item =
-                    array.getJSONObject(i)
+            for (i in 0 until array.length()) {
+                val item = array.getJSONObject(i)
 
                 bookings.add(
                     Booking(
@@ -1039,18 +939,13 @@ class MainActivity : Activity() {
                         item.optString("notes"),
                         item.optString("serviceId"),
                         item.optString("staffId"),
-                        item.optInt(
-                            "duration",
-                            0
-                        ),
+                        item.optInt("duration", 0),
                         item.optString("price")
                     )
                 )
             }
         } catch (_: Exception) {
-            message(
-                "Could not load saved bookings"
-            )
+            message("Could not load saved bookings")
         }
     }
 
