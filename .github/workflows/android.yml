@@ -30,12 +30,35 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
-      - name: Build debug APK
-        run: gradle --no-daemon :app:assembleDebug
+      - name: Restore signing keystore
+        shell: bash
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for value in SIGNING_KEYSTORE_BASE64 SIGNING_STORE_PASSWORD SIGNING_KEY_ALIAS SIGNING_KEY_PASSWORD; do
+            if [[ -z "${!value}" ]]; then
+              echo "::error::Missing required signing secret: $value"
+              exit 1
+            fi
+          done
+          echo "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/salonbook-release.jks"
+          chmod 600 "$RUNNER_TEMP/salonbook-release.jks"
 
-      - name: Upload APK
+      - name: Build permanently signed release APK
+        env:
+          SIGNING_KEYSTORE_PATH: ${{ runner.temp }}/salonbook-release.jks
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: gradle --no-daemon :app:assembleRelease
+
+      - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: SalonBook-Pro-debug-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: SalonBook-Pro-signed-APK
+          path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
