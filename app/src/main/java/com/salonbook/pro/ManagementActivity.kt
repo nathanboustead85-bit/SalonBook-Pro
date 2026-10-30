@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.graphics.Color
 import android.view.ViewGroup
 import android.widget.*
+import com.google.firebase.auth.FirebaseAuth
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -34,16 +35,19 @@ class ManagementActivity : Activity() {
 
     private fun load() {
         records.clear()
+
         try {
             val array = JSONArray(
                 prefs.getString(storageKey, "[]") ?: "[]"
             )
+
             for (i in 0 until array.length()) {
                 records.add(array.getJSONObject(i))
             }
         } catch (e: Exception) {
             Toast.makeText(
-                this, "Unable to load saved data",
+                this,
+                "Unable to load saved data",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -52,14 +56,42 @@ class ManagementActivity : Activity() {
     private fun save() {
         val array = JSONArray()
         records.forEach { array.put(it) }
+
+        val json = array.toString()
+
+        // Save locally before uploading.
         prefs.edit()
-            .putString(storageKey, array.toString())
+            .putString(storageKey, json)
             .apply()
+
+        // Phase 6B: automatically upload changes.
+        if (FirebaseAuth.getInstance()
+                .currentUser?.isEmailVerified == true
+        ) {
+            CloudSyncManager().upload(
+                storageKey,
+                json
+            ) { result ->
+                result.exceptionOrNull()?.let { error ->
+                    runOnUiThread {
+                        Toast.makeText(
+                            this,
+                            "Cloud sync failed: " +
+                                (error.localizedMessage
+                                    ?: "Unknown error"),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+        }
     }
 
     private fun render() {
         val scroll = ScrollView(this)
-        scroll.setBackgroundColor(Color.rgb(248, 246, 252))
+        scroll.setBackgroundColor(
+            Color.rgb(248, 246, 252)
+        )
 
         layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -89,12 +121,12 @@ class ManagementActivity : Activity() {
         records.forEach { item ->
             val description = if (staffMode) {
                 "${item.optString("name")}\n" +
-                "${item.optString("role")}\n" +
-                "Hours: ${item.optString("hours")}"
+                    "${item.optString("role")}\n" +
+                    "Hours: ${item.optString("hours")}"
             } else {
                 "${item.optString("name")}\n" +
-                "£${item.optString("price")} · " +
-                "${item.optInt("duration")} minutes"
+                    "£${item.optString("price")} · " +
+                    "${item.optInt("duration")} minutes"
             }
 
             addText(description)
@@ -180,6 +212,7 @@ class ManagementActivity : Activity() {
                 setText(initial)
                 setSingleLine(true)
             }
+
             form.addView(input)
             return input
         }
@@ -207,7 +240,7 @@ class ManagementActivity : Activity() {
         if (!staffMode) {
             second.inputType =
                 android.text.InputType.TYPE_CLASS_NUMBER or
-                android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+                    android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
 
             third.inputType =
                 android.text.InputType.TYPE_CLASS_NUMBER
@@ -233,7 +266,8 @@ class ManagementActivity : Activity() {
 
                 if (n.isBlank() || s.isBlank() || t.isBlank()) {
                     Toast.makeText(
-                        this, "Complete all fields",
+                        this,
+                        "Complete all fields",
                         Toast.LENGTH_SHORT
                     ).show()
                     return@setOnClickListener
@@ -241,12 +275,13 @@ class ManagementActivity : Activity() {
 
                 if (!staffMode &&
                     (s.toDoubleOrNull() == null ||
-                     s.toDouble() < 0 ||
-                     t.toIntOrNull() == null ||
-                     t.toInt() <= 0)
+                        s.toDouble() < 0 ||
+                        t.toIntOrNull() == null ||
+                        t.toInt() <= 0)
                 ) {
                     Toast.makeText(
-                        this, "Invalid price or duration",
+                        this,
+                        "Invalid price or duration",
                         Toast.LENGTH_SHORT
                     ).show()
                     return@setOnClickListener
