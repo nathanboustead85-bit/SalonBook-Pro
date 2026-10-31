@@ -8,12 +8,12 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Spinner
-import android.widget.ArrayAdapter
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
@@ -23,7 +23,7 @@ class BusinessProfileActivity : Activity() {
 
     private val purple = Color.rgb(111, 66, 193)
     private val dark = Color.rgb(40, 35, 55)
-    private val background = Color.rgb(248, 246, 252)
+    private val backgroundColor = Color.rgb(248, 246, 252)
 
     private val manager = BusinessProfileManager()
 
@@ -37,8 +37,8 @@ class BusinessProfileActivity : Activity() {
     private lateinit var slugText: TextView
     private lateinit var saveButton: Button
 
-    private var profileExists = false
     private var loadingProfile = false
+    private var profileLoaded = false
 
     private val categories = listOf(
         "Hair Salon",
@@ -54,14 +54,19 @@ class BusinessProfileActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (FirebaseAuth.getInstance().currentUser == null) {
+        val user = FirebaseAuth.getInstance().currentUser
+
+        if (user == null || !user.isEmailVerified) {
             AlertDialog.Builder(this)
-                .setTitle("Sign in required")
+                .setTitle("Verified account required")
                 .setMessage(
-                    "Please sign in through Cloud Account " +
+                    "Please sign in with your verified " +
+                    "Firebase account through Cloud Account " +
                     "& Backup before creating your business profile."
                 )
-                .setPositiveButton("OK") { _, _ -> finish() }
+                .setPositiveButton("OK") { _, _ ->
+                    finish()
+                }
                 .setCancelable(false)
                 .show()
             return
@@ -72,9 +77,10 @@ class BusinessProfileActivity : Activity() {
     }
 
     private fun buildScreen() {
+
         val scroll = ScrollView(this).apply {
-            setBackgroundColor(background)
-            fillViewport = true
+            setBackgroundColor(backgroundColor)
+            isFillViewport = true
         }
 
         container = LinearLayout(this).apply {
@@ -93,23 +99,42 @@ class BusinessProfileActivity : Activity() {
             "your customer booking page."
         )
 
-        nameInput = addInput("Business name", false)
-        phoneInput = addInput("Business telephone", false)
-        addressInput = addInput("Business address", true)
-        descriptionInput = addInput("Business description", true)
+        nameInput = addInput(
+            "Business name",
+            false
+        )
+
+        phoneInput = addInput(
+            "Business telephone",
+            false
+        )
+
+        addressInput = addInput(
+            "Business address",
+            true
+        )
+
+        descriptionInput = addInput(
+            "Business description",
+            true
+        )
 
         addText("Business category")
 
         categorySpinner = Spinner(this)
+
         val adapter = ArrayAdapter(
             this,
             android.R.layout.simple_spinner_item,
             categories
         )
+
         adapter.setDropDownViewResource(
             android.R.layout.simple_spinner_dropdown_item
         )
+
         categorySpinner.adapter = adapter
+
         container.addView(categorySpinner)
 
         addText("Booking identifier")
@@ -120,12 +145,13 @@ class BusinessProfileActivity : Activity() {
             setTextColor(purple)
             setPadding(8, 12, 8, 20)
         }
+
         container.addView(slugText)
 
         addText(
             "Your booking identifier will become part " +
             "of your public booking address. " +
-            "The website is not live yet."
+            "The customer booking website is not live yet."
         )
 
         bookingSwitch = Switch(this).apply {
@@ -135,6 +161,7 @@ class BusinessProfileActivity : Activity() {
             isChecked = false
             isEnabled = false
         }
+
         container.addView(bookingSwitch)
 
         addText(
@@ -143,7 +170,9 @@ class BusinessProfileActivity : Activity() {
             "and security checks are completed."
         )
 
-        saveButton = addButton("Save Business Profile") {
+        saveButton = addButton(
+            "Save Business Profile"
+        ) {
             saveProfile()
         }
 
@@ -151,36 +180,44 @@ class BusinessProfileActivity : Activity() {
             finish()
         }
 
-        addText("SalonBook Pro | Phase 7A", 12f)
+        addText(
+            "SalonBook Pro | Phase 7A",
+            12f
+        )
     }
 
     private fun addTitle(value: String) {
-        container.addView(TextView(this).apply {
-            text = value
-            textSize = 27f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(purple)
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 24)
-        })
+        container.addView(
+            TextView(this).apply {
+                text = value
+                textSize = 27f
+                typeface = Typeface.DEFAULT_BOLD
+                setTextColor(purple)
+                gravity = Gravity.CENTER
+                setPadding(0, 0, 0, 24)
+            }
+        )
     }
 
     private fun addText(
         value: String,
         size: Float = 16f
     ) {
-        container.addView(TextView(this).apply {
-            text = value
-            textSize = size
-            setTextColor(dark)
-            setPadding(8, 12, 8, 12)
-        })
+        container.addView(
+            TextView(this).apply {
+                text = value
+                textSize = size
+                setTextColor(dark)
+                setPadding(8, 12, 8, 12)
+            }
+        )
     }
 
     private fun addInput(
         hintText: String,
         multiline: Boolean
     ): EditText {
+
         val input = EditText(this).apply {
             hint = hintText
             textSize = 16f
@@ -194,7 +231,7 @@ class BusinessProfileActivity : Activity() {
                     android.text.InputType.TYPE_CLASS_TEXT or
                     android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
             } else {
-                singleLine = true
+                setSingleLine(true)
             }
         }
 
@@ -215,6 +252,7 @@ class BusinessProfileActivity : Activity() {
         label: String,
         action: () -> Unit
     ): Button {
+
         val button = Button(this).apply {
             text = label
             isAllCaps = false
@@ -222,7 +260,10 @@ class BusinessProfileActivity : Activity() {
             setTextColor(Color.WHITE)
             backgroundTintList =
                 ColorStateList.valueOf(purple)
-            setOnClickListener { action() }
+
+            setOnClickListener {
+                action()
+            }
         }
 
         container.addView(
@@ -244,28 +285,40 @@ class BusinessProfileActivity : Activity() {
         saveButton.isEnabled = false
 
         manager.loadProfile { result ->
+
             runOnUiThread {
+                if (isFinishing || isDestroyed) {
+                    return@runOnUiThread
+                }
+
                 loadingProfile = false
                 saveButton.isEnabled = true
 
                 result.onSuccess { profile ->
+
                     if (profile == null) {
-                        profileExists = false
+                        profileLoaded = false
+                        slugText.text =
+                            "Save your profile to generate a booking ID"
                         return@onSuccess
                     }
 
-                    profileExists = true
+                    profileLoaded = true
 
                     nameInput.setText(profile.name)
                     phoneInput.setText(profile.phone)
                     addressInput.setText(profile.address)
-                    descriptionInput.setText(profile.description)
+                    descriptionInput.setText(
+                        profile.description
+                    )
 
                     val categoryIndex =
                         categories.indexOf(profile.category)
 
                     if (categoryIndex >= 0) {
-                        categorySpinner.setSelection(categoryIndex)
+                        categorySpinner.setSelection(
+                            categoryIndex
+                        )
                     }
 
                     slugText.text =
@@ -278,7 +331,8 @@ class BusinessProfileActivity : Activity() {
                 result.onFailure { error ->
                     showMessage(
                         "Unable to load profile: " +
-                        (error.localizedMessage ?: "Unknown error")
+                        (error.localizedMessage
+                            ?: "Unknown error")
                     )
                 }
             }
@@ -286,21 +340,33 @@ class BusinessProfileActivity : Activity() {
     }
 
     private fun saveProfile() {
-        if (loadingProfile) return
 
-        val name = nameInput.text.toString().trim()
-        val phone = phoneInput.text.toString().trim()
-        val address = addressInput.text.toString().trim()
+        if (loadingProfile) {
+            return
+        }
+
+        val name =
+            nameInput.text.toString().trim()
+
+        val phone =
+            phoneInput.text.toString().trim()
+
+        val address =
+            addressInput.text.toString().trim()
+
         val description =
             descriptionInput.text.toString().trim()
 
         if (name.length < 3) {
-            nameInput.error = "Enter a business name"
+            nameInput.error =
+                "Enter a business name of at least 3 characters"
             return
         }
 
         val category =
-            categories[categorySpinner.selectedItemPosition]
+            categories[
+                categorySpinner.selectedItemPosition
+            ]
 
         saveButton.isEnabled = false
         saveButton.text = "Saving..."
@@ -312,12 +378,20 @@ class BusinessProfileActivity : Activity() {
             address = address,
             description = description
         ) { result ->
+
             runOnUiThread {
+                if (isFinishing || isDestroyed) {
+                    return@runOnUiThread
+                }
+
                 saveButton.isEnabled = true
-                saveButton.text = "Save Business Profile"
+                saveButton.text =
+                    "Save Business Profile"
 
                 result.onSuccess { profile ->
-                    profileExists = true
+
+                    profileLoaded = true
+
                     slugText.text =
                         "Booking ID: ${profile.slug}"
 
@@ -327,13 +401,17 @@ class BusinessProfileActivity : Activity() {
                 }
 
                 result.onFailure { error ->
+
                     AlertDialog.Builder(this)
                         .setTitle("Save failed")
                         .setMessage(
                             error.localizedMessage
                                 ?: "Unable to save business profile"
                         )
-                        .setPositiveButton("OK", null)
+                        .setPositiveButton(
+                            "OK",
+                            null
+                        )
                         .show()
                 }
             }
