@@ -210,10 +210,13 @@ class MainActivity : Activity() {
             )
         }
 
+        // Phase 7A: Open business profile and booking setup.
         button("My Booking Link") {
-            message(
-                "Customer online booking links " +
-                    "are coming in a future milestone"
+            startActivity(
+                Intent(
+                    this,
+                    BusinessProfileActivity::class.java
+                )
             )
         }
 
@@ -224,7 +227,7 @@ class MainActivity : Activity() {
         }
 
         text(
-            "SalonBook Pro | Phase 6B - Auto Cloud Upload",
+            "SalonBook Pro | Phase 7A - Business Profiles",
             12f
         )
     }
