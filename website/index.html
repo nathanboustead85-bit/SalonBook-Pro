@@ -4,19 +4,113 @@
   <meta charset="UTF-8">
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0">
-  <title>SalonBook Pro | Online Booking</title>
+  <meta name="theme-color" content="#6f42c1">
+  <title>SalonBook Pro | Book Online</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-  <main>
-    <h1>SalonBook Pro</h1>
-    <h2>Book your appointment online</h2>
-    <p>
-      Find your salon, choose a service
-      and book your appointment.
-    </p>
-    <p>
-      Customer bookings are coming soon.
-    </p>
+  <header>
+    <div class="header-inner">
+      <a class="logo" href="index.html">
+        SalonBook <span>Pro</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="hero">
+      <h1>Book your next appointment</h1>
+      <p>
+        Your favourite salon, barber or beauty
+        professional is just a few taps away.
+      </p>
+    </section>
+
+    <section class="booking-card">
+      <h2>Make a booking</h2>
+      <p class="subtitle">
+        Choose your preferred service and
+        appointment details.
+      </p>
+
+      <form id="booking-form">
+
+        <div class="form-group">
+          <label for="service">Select service</label>
+          <select id="service" disabled>
+            <option>Services coming soon</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="staff">Choose professional</label>
+          <select id="staff" disabled>
+            <option>Staff coming soon</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="date">Appointment date</label>
+          <input type="date" id="date" disabled>
+        </div>
+
+        <div class="form-group">
+          <label for="time">Available time</label>
+          <select id="time" disabled>
+            <option>Times coming soon</option>
+          </select>
+        </div>
+
+        <button type="button" disabled>
+          Continue to booking
+        </button>
+
+      </form>
+
+      <p class="notice">
+        Online appointments are being prepared.
+        Booking will be available soon.
+      </p>
+    </section>
+
+    <section class="steps">
+
+      <div class="step">
+        <div class="step-number">1</div>
+        <h3>Choose a service</h3>
+        <p>
+          Find the treatment or appointment
+          that's right for you.
+        </p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">2</div>
+        <h3>Pick a time</h3>
+        <p>
+          Select an available appointment
+          that fits your schedule.
+        </p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">3</div>
+        <h3>Confirm</h3>
+        <p>
+          Submit your booking details
+          and receive confirmation.
+        </p>
+      </div>
+
+    </section>
+
   </main>
+
+  <footer>
+    Powered by SalonBook Pro
+  </footer>
+
 </body>
 </html>
