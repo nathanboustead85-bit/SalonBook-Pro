@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>Book an Appointment | Boustio</title>
+  <style>
+    :root {
+      font-family: Arial, sans-serif;
+      color: #172033;
+      background: #f5f6fa;
+    }
+
+    * { box-sizing: border-box; }
+
+    body { margin: 0; }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .brand {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+
+    .subtitle {
+      color: #cbd5e1;
+      font-size: 13px;
+      margin-top: 5px;
+    }
+
+    main {
+      max-width: 600px;
+      margin: 24px auto;
+      padding: 0 16px 40px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 16px;
+      box-shadow: 0 5px 22px #0000000a;
+    }
+
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    h2 { font-size: 18px; margin: 0 0 16px; }
+
+    p { color: #64748b; line-height: 1.5; }
+
+    label {
+      display: block;
+      margin: 16px 0 7px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #dbe1ea;
+      border-radius: 10px;
+      font-size: 16px;
+      background: white;
+    }
+
+    button {
+      background: #111827;
+      color: white;
+      font-weight: 700;
+      border: none;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #aab2bf;
+      cursor: not-allowed;
+    }
+
+    .notice {
+      background: #fff7e6;
+      color: #854d0e;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .summary {
+      background: #f1f5f9;
+      padding: 14px;
+      border-radius: 10px;
+      margin-top: 18px;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #64748b;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">boustio</div>
+    <div class="subtitle">Beauty, barbering and wellness bookings</div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h1 id="businessName">Book an appointment</h1>
+      <p id="businessDescription">
+        Choose your service, professional and preferred time.
+      </p>
+
+      <div class="notice">
+        Preview mode: this page does not create real bookings.
+        Online booking will be enabled after secure availability
+        checks and Firebase integration have been tested.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>1. Choose your appointment</h2>
+
+      <label for="service">Service</label>
+      <select id="service">
+        <option value="">Select a service</option>
+        <option value="Haircut" data-price="20" data-duration="30">
+          Haircut — £20 · 30 minutes
+        </option>
+        <option value="Skin Fade" data-price="25" data-duration="45">
+          Skin Fade — £25 · 45 minutes
+        </option>
+        <option value="Beard Trim" data-price="12" data-duration="20">
+          Beard Trim — £12 · 20 minutes
+        </option>
+      </select>
+
+      <label for="staff">Professional</label>
+      <select id="staff">
+        <option value="">Select a professional</option>
+        <option value="Any available">Any available</option>
+        <option value="Staff member 1">Staff member 1</option>
+        <option value="Staff member 2">Staff member 2</option>
+      </select>
+
+      <label for="date">Preferred date</label>
+      <input id="date" type="date">
+
+      <label for="time">Preferred time</label>
+      <select id="time">
+        <option value="">Select a time</option>
+        <option>09:00</option>
+        <option>09:30</option>
+        <option>10:00</option>
+        <option>10:30</option>
+        <option>11:00</option>
+        <option>12:00</option>
+        <option>13:00</option>
+        <option>14:00</option>
+        <option>15:00</option>
+        <option>16:00</option>
+      </select>
+
+      <div class="summary" id="summary">
+        Select your appointment details to see a summary.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. Your details</h2>
+
+      <label for="customerName">Full name</label>
+      <input id="customerName" type="text" autocomplete="name">
+
+      <label for="customerEmail">Email</label>
+      <input id="customerEmail" type="email" autocomplete="email">
+
+      <label for="customerPhone">Mobile number</label>
+      <input id="customerPhone" type="tel" autocomplete="tel">
+
+      <button type="button" disabled>
+        Booking unavailable — preview only
+      </button>
+    </section>
+  </main>
+
+  <footer>
+    Powered by Boustio · SalonBook Pro
+  </footer>
+
+  <script>
+    const service = document.getElementById("service");
+    const staff = document.getElementById("staff");
+    const date = document.getElementById("date");
+    const time = document.getElementById("time");
+    const summary = document.getElementById("summary");
+
+    // Set minimum date using the visitor's local date.
+    const now = new Date();
+    const localToday = new Date(
+      now.getTime() - now.getTimezoneOffset() * 60000
+    ).toISOString().slice(0, 10);
+
+    date.min = localToday;
+
+    function updateSummary() {
+      const option = service.selectedOptions[0];
+      const name = service.value;
+      const price = option?.dataset.price;
+      const duration = option?.dataset.duration;
+
+      if (!name || !staff.value || !date.value || !time.value) {
+        summary.textContent =
+          "Select your appointment details to see a summary.";
+        return;
+      }
+
+      summary.textContent =
+        name + " · £" + price +
+        " · " + duration + " minutes" +
+        " | " + staff.value +
+        " | " + date.value +
+        " at " + time.value;
+    }
+
+    [service, staff, date, time].forEach(element => {
+      element.addEventListener("change", updateSummary);
+    });
+  </script>
+</body>
+</html>
