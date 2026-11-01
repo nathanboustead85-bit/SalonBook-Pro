@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#111827">
   <title>Book an Appointment | Boustio</title>
+
   <style>
     :root {
-      font-family: Arial, sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
       color: #172033;
       background: #f5f6fa;
     }
@@ -24,7 +25,9 @@
     }
 
     .brand {
-      font-size: 28px;
+      color: white;
+      text-decoration: none;
+      font-size: 29px;
       font-weight: 800;
       letter-spacing: -1px;
     }
@@ -32,11 +35,11 @@
     .subtitle {
       color: #cbd5e1;
       font-size: 13px;
-      margin-top: 5px;
+      margin-top: 6px;
     }
 
     main {
-      max-width: 600px;
+      max-width: 620px;
       margin: 24px auto;
       padding: 0 16px 40px;
     }
@@ -49,7 +52,7 @@
       box-shadow: 0 5px 22px #0000000a;
     }
 
-    h1 { font-size: 24px; margin: 0 0 8px; }
+    h1 { font-size: 25px; margin: 0 0 8px; }
     h2 { font-size: 18px; margin: 0 0 16px; }
 
     p { color: #64748b; line-height: 1.5; }
@@ -76,12 +79,10 @@
       font-weight: 700;
       border: none;
       margin-top: 20px;
-      cursor: pointer;
     }
 
     button:disabled {
       background: #aab2bf;
-      cursor: not-allowed;
     }
 
     .notice {
@@ -102,6 +103,16 @@
       font-size: 14px;
     }
 
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 14px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+
+    .hidden { display: none; }
+
     footer {
       text-align: center;
       padding: 20px;
@@ -112,22 +123,27 @@
 </head>
 
 <body>
+
   <header>
-    <div class="brand">boustio</div>
-    <div class="subtitle">Beauty, barbering and wellness bookings</div>
+    <a class="brand" href="/">boustio</a>
+    <div class="subtitle">
+      Beauty, barbering and wellness bookings
+    </div>
   </header>
 
   <main>
+
+    <div id="error" class="error hidden" role="alert"></div>
+
     <section class="card">
-      <h1 id="businessName">Book an appointment</h1>
+      <h1 id="businessName">Loading salon...</h1>
       <p id="businessDescription">
-        Choose your service, professional and preferred time.
+        Please wait while we load the salon information.
       </p>
 
       <div class="notice">
-        Preview mode: this page does not create real bookings.
-        Online booking will be enabled after secure availability
-        checks and Firebase integration have been tested.
+        Preview mode only. Appointment selections are
+        demonstrations and are not confirmed bookings.
       </div>
     </section>
 
@@ -135,46 +151,24 @@
       <h2>1. Choose your appointment</h2>
 
       <label for="service">Service</label>
-      <select id="service">
-        <option value="">Select a service</option>
-        <option value="Haircut" data-price="20" data-duration="30">
-          Haircut — £20 · 30 minutes
-        </option>
-        <option value="Skin Fade" data-price="25" data-duration="45">
-          Skin Fade — £25 · 45 minutes
-        </option>
-        <option value="Beard Trim" data-price="12" data-duration="20">
-          Beard Trim — £12 · 20 minutes
-        </option>
+      <select id="service" disabled>
+        <option value="">Loading services...</option>
       </select>
 
       <label for="staff">Professional</label>
-      <select id="staff">
-        <option value="">Select a professional</option>
-        <option value="Any available">Any available</option>
-        <option value="Staff member 1">Staff member 1</option>
-        <option value="Staff member 2">Staff member 2</option>
+      <select id="staff" disabled>
+        <option value="">Select a service first</option>
       </select>
 
       <label for="date">Preferred date</label>
-      <input id="date" type="date">
+      <input id="date" type="date" disabled>
 
       <label for="time">Preferred time</label>
-      <select id="time">
-        <option value="">Select a time</option>
-        <option>09:00</option>
-        <option>09:30</option>
-        <option>10:00</option>
-        <option>10:30</option>
-        <option>11:00</option>
-        <option>12:00</option>
-        <option>13:00</option>
-        <option>14:00</option>
-        <option>15:00</option>
-        <option>16:00</option>
+      <select id="time" disabled>
+        <option value="">Select a date first</option>
       </select>
 
-      <div class="summary" id="summary">
+      <div class="summary" id="summary" aria-live="polite">
         Select your appointment details to see a summary.
       </div>
     </section>
@@ -195,6 +189,7 @@
         Booking unavailable — preview only
       </button>
     </section>
+
   </main>
 
   <footer>
@@ -202,43 +197,297 @@
   </footer>
 
   <script>
-    const service = document.getElementById("service");
-    const staff = document.getElementById("staff");
-    const date = document.getElementById("date");
-    const time = document.getElementById("time");
-    const summary = document.getElementById("summary");
+    "use strict";
 
-    // Set minimum date using the visitor's local date.
-    const now = new Date();
-    const localToday = new Date(
-      now.getTime() - now.getTimezoneOffset() * 60000
-    ).toISOString().slice(0, 10);
+    let catalogue = null;
 
-    date.min = localToday;
+    const elements = {
+      businessName: document.getElementById("businessName"),
+      businessDescription: document.getElementById("businessDescription"),
+      service: document.getElementById("service"),
+      staff: document.getElementById("staff"),
+      date: document.getElementById("date"),
+      time: document.getElementById("time"),
+      summary: document.getElementById("summary"),
+      error: document.getElementById("error")
+    };
+
+    function localDateString(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return year + "-" + month + "-" + day;
+    }
+
+    function addOption(select, value, label) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      select.appendChild(option);
+    }
+
+    function resetSelect(select, placeholder) {
+      select.replaceChildren();
+      addOption(select, "", placeholder);
+      select.value = "";
+    }
+
+    function formatPrice(price) {
+      return "£" + Number(price).toFixed(2);
+    }
+
+    function selectedService() {
+      return catalogue?.services.find(
+        item => item.id === elements.service.value
+      );
+    }
+
+    function updateStaff() {
+      resetSelect(elements.staff, "Select a professional");
+      elements.staff.disabled = true;
+
+      const service = selectedService();
+
+      if (service) {
+        const eligibleStaff = catalogue.staff.filter(
+          member => member.active &&
+            member.serviceIds.includes(service.id)
+        );
+
+        eligibleStaff.forEach(member => {
+          addOption(elements.staff, member.id, member.name);
+        });
+
+        elements.staff.disabled = eligibleStaff.length === 0;
+
+        if (eligibleStaff.length === 0) {
+          resetSelect(elements.staff, "No staff for this service");
+        }
+      }
+
+      updateSummary();
+    }
+
+    function updateTimes() {
+      resetSelect(elements.time, "Select a time");
+      elements.time.disabled = true;
+
+      const service = selectedService();
+      const dateValue = elements.date.value;
+
+      if (!service || !dateValue) {
+        updateSummary();
+        return;
+      }
+
+      const parts = dateValue.split("-").map(Number);
+
+      if (parts.length !== 3 || parts.some(Number.isNaN)) {
+        updateSummary();
+        return;
+      }
+
+      const chosen = new Date(
+        parts[0], parts[1] - 1, parts[2]
+      );
+
+      if (
+        chosen.getFullYear() !== parts[0] ||
+        chosen.getMonth() !== parts[1] - 1 ||
+        chosen.getDate() !== parts[2] ||
+        dateValue < elements.date.min
+      ) {
+        updateSummary();
+        return;
+      }
+
+      const dayNames = [
+        "sunday", "monday", "tuesday",
+        "wednesday", "thursday", "friday", "saturday"
+      ];
+
+      const day = dayNames[chosen.getDay()];
+      const hours = catalogue.workingHours[day];
+
+      if (!hours) {
+        resetSelect(elements.time, "Salon closed on this day");
+        updateSummary();
+        return;
+      }
+
+      function minutes(value) {
+        const [hour, minute] = value.split(":").map(Number);
+        return hour * 60 + minute;
+      }
+
+      const opening = minutes(hours.open);
+      const closing = minutes(hours.close);
+      const duration = Number(service.durationMinutes);
+
+      if (
+        !Number.isFinite(opening) ||
+        !Number.isFinite(closing) ||
+        !Number.isFinite(duration) ||
+        duration <= 0 ||
+        closing <= opening
+      ) {
+        updateSummary();
+        return;
+      }
+
+      const now = new Date();
+      const today = localDateString(now);
+      const currentMinutes =
+        now.getHours() * 60 + now.getMinutes();
+
+      let count = 0;
+
+      for (
+        let start = opening;
+        start + duration <= closing;
+        start += 30
+      ) {
+        if (
+          dateValue === today &&
+          start <= currentMinutes
+        ) {
+          continue;
+        }
+
+        const hour = String(
+          Math.floor(start / 60)
+        ).padStart(2, "0");
+
+        const minute = String(
+          start % 60
+        ).padStart(2, "0");
+
+        const label = hour + ":" + minute;
+
+        addOption(elements.time, label, label);
+        count++;
+      }
+
+      if (count === 0) {
+        resetSelect(elements.time, "No preview times for this date");
+      } else {
+        elements.time.disabled = false;
+      }
+
+      updateSummary();
+    }
 
     function updateSummary() {
-      const option = service.selectedOptions[0];
-      const name = service.value;
-      const price = option?.dataset.price;
-      const duration = option?.dataset.duration;
+      const service = selectedService();
 
-      if (!name || !staff.value || !date.value || !time.value) {
-        summary.textContent =
+      const member = catalogue?.staff.find(
+        item => item.id === elements.staff.value
+      );
+
+      if (
+        !service ||
+        !member ||
+        !elements.date.value ||
+        !elements.time.value
+      ) {
+        elements.summary.textContent =
           "Select your appointment details to see a summary.";
         return;
       }
 
-      summary.textContent =
-        name + " · £" + price +
-        " · " + duration + " minutes" +
-        " | " + staff.value +
-        " | " + date.value +
-        " at " + time.value;
+      elements.summary.textContent =
+        service.name + " · " +
+        formatPrice(service.price) + " · " +
+        service.durationMinutes + " minutes" +
+        " | " + member.name +
+        " | " + elements.date.value +
+        " at " + elements.time.value +
+        " (preview only)";
     }
 
-    [service, staff, date, time].forEach(element => {
-      element.addEventListener("change", updateSummary);
+    async function loadCatalogue() {
+      try {
+        const response = await fetch(
+          "/data/demo-business.json",
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            "Catalogue request failed: " + response.status
+          );
+        }
+
+        const data = await response.json();
+
+        if (
+          data.schemaVersion !== 1 ||
+          !data.business ||
+          !Array.isArray(data.services) ||
+          !Array.isArray(data.staff) ||
+          !data.workingHours
+        ) {
+          throw new Error("Invalid business catalogue");
+        }
+
+        catalogue = data;
+
+        elements.businessName.textContent =
+          data.business.name;
+
+        elements.businessDescription.textContent =
+          data.business.description;
+
+        resetSelect(elements.service, "Select a service");
+
+        data.services
+          .filter(service => service.active)
+          .forEach(service => {
+            addOption(
+              elements.service,
+              service.id,
+              service.name + " — " +
+              formatPrice(service.price) + " · " +
+              service.durationMinutes + " minutes"
+            );
+          });
+
+        elements.service.disabled = false;
+        elements.date.disabled = false;
+        elements.date.min = localDateString(new Date());
+
+        updateStaff();
+        updateTimes();
+
+      } catch (error) {
+        elements.businessName.textContent =
+          "Booking preview unavailable";
+
+        elements.businessDescription.textContent =
+          "We couldn't load the demonstration salon.";
+
+        elements.error.textContent =
+          "Unable to load the salon catalogue. Please try again later.";
+
+        elements.error.classList.remove("hidden");
+
+        console.error("Catalogue loading error:", error);
+      }
+    }
+
+    elements.service.addEventListener("change", () => {
+      updateStaff();
+      updateTimes();
     });
+
+    elements.staff.addEventListener("change", updateSummary);
+
+    elements.date.addEventListener("change", updateTimes);
+
+    elements.time.addEventListener("change", updateSummary);
+
+    loadCatalogue();
   </script>
+
 </body>
 </html>
