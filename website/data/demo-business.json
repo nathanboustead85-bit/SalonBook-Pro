@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "business": {
+    "businessId": "demo-boustio",
+    "name": "Boustio Demo Salon",
+    "slug": "demo-boustio",
+    "category": "Hair & Beauty",
+    "description": "Welcome to our demonstration salon. Explore the Boustio booking experience.",
+    "address": "Devon, United Kingdom",
+    "phone": "",
+    "published": true,
+    "acceptingBookings": false
+  },
+  "services": [
+    {
+      "id": "service-001",
+      "name": "Haircut",
+      "description": "Professional haircut and styling",
+      "durationMinutes": 30,
+      "price": 20.00,
+      "active": true
+    },
+    {
+      "id": "service-002",
+      "name": "Skin Fade",
+      "description": "Precision skin fade",
+      "durationMinutes": 45,
+      "price": 25.00,
+      "active": true
+    },
+    {
+      "id": "service-003",
+      "name": "Beard Trim",
+      "description": "Beard shaping and grooming",
+      "durationMinutes": 20,
+      "price": 12.00,
+      "active": true
+    }
+  ],
+  "staff": [
+    {
+      "id": "staff-001",
+      "name": "Alex",
+      "active": true,
+      "serviceIds": [
+        "service-001",
+        "service-002",
+        "service-003"
+      ]
+    },
+    {
+      "id": "staff-002",
+      "name": "Jordan",
+      "active": true,
+      "serviceIds": [
+        "service-001",
+        "service-003"
+      ]
+    }
+  ],
+  "workingHours": {
+    "monday": {
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "tuesday": {
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "wednesday": {
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "thursday": {
+      "open": "09:00",
+      "close": "18:00"
+    },
+    "friday": {
+      "open": "09:00",
+      "close": "18:00"
+    },
+    "saturday": {
+      "open": "09:00",
+      "close": "15:00"
+    },
+    "sunday": null
+  }
+}
