@@ -8,5 +8,13 @@
     ],
     "cleanUrls": true,
     "trailingSlash": false
+  },
+  "functions": {
+    "source": "functions",
+    "codebase": "default",
+    "runtime": "nodejs22"
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }
