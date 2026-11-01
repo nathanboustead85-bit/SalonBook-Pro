@@ -2,115 +2,253 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#6f42c1">
-  <title>SalonBook Pro | Book Online</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="Boustio makes it easy to book hair, barbering, beauty and wellness appointments.">
+  <title>Boustio | Book Beauty & Barber Appointments</title>
+
+  <style>
+    :root {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #172033;
+      background: #f5f6fa;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 22px 20px;
+    }
+
+    .header-inner {
+      max-width: 1000px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo {
+      font-size: 29px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: white;
+      text-decoration: none;
+    }
+
+    .nav-link {
+      color: white;
+      font-size: 14px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: auto;
+      padding: 30px 18px 60px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #111827, #4338ca);
+      color: white;
+      border-radius: 22px;
+      padding: 48px 25px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: clamp(30px, 6vw, 48px);
+      line-height: 1.12;
+      margin: 0 0 18px;
+    }
+
+    .hero p {
+      color: #e2e8f0;
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 600px;
+      margin: 0 auto 25px;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 15px 25px;
+      border-radius: 12px;
+      background: white;
+      color: #111827;
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 26px;
+      margin: 42px 0 22px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 26px 20px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.04);
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 19px;
+    }
+
+    .card p {
+      color: #64748b;
+      line-height: 1.6;
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .notice {
+      margin-top: 32px;
+      padding: 18px;
+      border-radius: 12px;
+      background: #fff7e6;
+      color: #854d0e;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .business {
+      background: #e9eafd;
+      border-radius: 18px;
+      padding: 30px 22px;
+      text-align: center;
+      margin-top: 35px;
+    }
+
+    .business h2 {
+      margin-top: 0;
+    }
+
+    .business p {
+      color: #475569;
+      line-height: 1.6;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px 15px;
+      color: #64748b;
+      font-size: 13px;
+    }
+  </style>
 </head>
 
 <body>
+
   <header>
     <div class="header-inner">
-      <a class="logo" href="index.html">
-        SalonBook <span>Pro</span>
-      </a>
+      <a class="logo" href="/">boustio</a>
+      <a class="nav-link" href="/book/">Booking preview</a>
     </div>
   </header>
 
-  <main class="container">
+  <main>
 
     <section class="hero">
-      <h1>Book your next appointment</h1>
+      <h1>Your next great appointment starts here.</h1>
+
       <p>
-        Your favourite salon, barber or beauty
-        professional is just a few taps away.
+        Discover a simpler way to book haircuts,
+        barbering, nails, beauty treatments and
+        wellness appointments.
+      </p>
+
+      <a class="button" href="/book/">
+        Explore booking preview
+      </a>
+    </section>
+
+    <h2 class="section-title">Made for every appointment</h2>
+
+    <section class="grid">
+
+      <article class="card">
+        <h3>Hair Salons</h3>
+        <p>
+          Haircuts, styling, colouring and
+          professional salon services.
+        </p>
+      </article>
+
+      <article class="card">
+        <h3>Barbers</h3>
+        <p>
+          Fades, trims, beard grooming
+          and traditional barbering.
+        </p>
+      </article>
+
+      <article class="card">
+        <h3>Nails & Beauty</h3>
+        <p>
+          Manicures, lashes, brows and
+          your favourite beauty treatments.
+        </p>
+      </article>
+
+      <article class="card">
+        <h3>Wellness</h3>
+        <p>
+          Relaxation, treatments and
+          personal care appointments.
+        </p>
+      </article>
+
+    </section>
+
+    <section class="business">
+      <h2>Run your business with Boustio</h2>
+      <p>
+        Manage your services, team, clients
+        and appointments in one place.
+        Public online bookings are coming soon.
       </p>
     </section>
 
-    <section class="booking-card">
-      <h2>Make a booking</h2>
-      <p class="subtitle">
-        Choose your preferred service and
-        appointment details.
-      </p>
-
-      <form id="booking-form">
-
-        <div class="form-group">
-          <label for="service">Select service</label>
-          <select id="service" disabled>
-            <option>Services coming soon</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="staff">Choose professional</label>
-          <select id="staff" disabled>
-            <option>Staff coming soon</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="date">Appointment date</label>
-          <input type="date" id="date" disabled>
-        </div>
-
-        <div class="form-group">
-          <label for="time">Available time</label>
-          <select id="time" disabled>
-            <option>Times coming soon</option>
-          </select>
-        </div>
-
-        <button type="button" disabled>
-          Continue to booking
-        </button>
-
-      </form>
-
-      <p class="notice">
-        Online appointments are being prepared.
-        Booking will be available soon.
-      </p>
-    </section>
-
-    <section class="steps">
-
-      <div class="step">
-        <div class="step-number">1</div>
-        <h3>Choose a service</h3>
-        <p>
-          Find the treatment or appointment
-          that's right for you.
-        </p>
-      </div>
-
-      <div class="step">
-        <div class="step-number">2</div>
-        <h3>Pick a time</h3>
-        <p>
-          Select an available appointment
-          that fits your schedule.
-        </p>
-      </div>
-
-      <div class="step">
-        <div class="step-number">3</div>
-        <h3>Confirm</h3>
-        <p>
-          Submit your booking details
-          and receive confirmation.
-        </p>
-      </div>
-
-    </section>
+    <div class="notice">
+      <strong>Development preview:</strong>
+      The booking page currently demonstrates the
+      customer experience using example services,
+      staff and appointment times. It does not
+      accept or confirm real appointments.
+    </div>
 
   </main>
 
   <footer>
-    Powered by SalonBook Pro
+    &copy; <span id="year"></span> Boustio.
+    Powered by SalonBook Pro.
   </footer>
+
+  <script>
+    document.getElementById("year").textContent =
+      new Date().getFullYear();
+  </script>
 
 </body>
 </html>
