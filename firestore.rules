@@ -1,1 +1,142 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Shared security functions
+
+    function isOwner(userId) {
+      return request.auth != null
+        && request.auth.uid == userId;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isOwner(userId)
+        && request.auth.token.email_verified == true;
+    }
+
+    // PHASE 5: CLOUD BACKUP AND RESTORE
+
+    match /users/{userId}/backups/{backupId} {
+
+      allow read, write: if isOwner(userId)
+        && backupId == "latest";
+    }
+
+    // PHASE 6: CLOUD SYNCHRONISATION
+
+    match /users/{userId}/liveData/{dataType} {
+
+      allow read: if isVerifiedOwner(userId)
+        && dataType in [
+          "bookings",
+          "services",
+          "staff"
+        ];
+
+      allow create, update: if isVerifiedOwner(userId)
+        && dataType in [
+          "bookings",
+          "services",
+          "staff"
+        ]
+        && request.resource.data.keys().hasOnly([
+          "json",
+          "schemaVersion",
+          "updatedAt"
+        ])
+        && request.resource.data.json is string
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.json.size() <= 500000;
+
+      allow delete: if false;
+    }
+
+    // PHASE 7A: PRIVATE BUSINESS PROFILE
+
+    match /users/{userId}/business/{documentId} {
+
+      allow read: if isVerifiedOwner(userId)
+        && documentId == "profile";
+
+      allow create, update: if isVerifiedOwner(userId)
+        && documentId == "profile"
+        && request.resource.data.keys().hasOnly([
+          "businessId",
+          "name",
+          "slug",
+          "category",
+          "email",
+          "phone",
+          "address",
+          "description",
+          "acceptingBookings",
+          "schemaVersion",
+          "updatedAt"
+        ])
+        && request.resource.data.keys().hasAll([
+          "businessId",
+          "name",
+          "slug",
+          "category",
+          "email",
+          "phone",
+          "address",
+          "description",
+          "acceptingBookings",
+          "schemaVersion",
+          "updatedAt"
+        ])
+        && request.resource.data.businessId is string
+        && request.resource.data.businessId == userId
+        && request.resource.data.name is string
+        && request.resource.data.slug is string
+        && request.resource.data.category is string
+        && request.resource.data.email is string
+        && request.resource.data.phone is string
+        && request.resource.data.address is string
+        && request.resource.data.description is string
+        && request.resource.data.acceptingBookings is bool
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.name.size() >= 3
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.slug.size() >= 3
+        && request.resource.data.slug.size() <= 50
+        && request.resource.data.category.size() <= 100
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.phone.size() <= 50
+        && request.resource.data.address.size() <= 500
+        && request.resource.data.description.size() <= 2000
+        && request.resource.data.acceptingBookings == false;
+
+      allow delete: if false;
+    }
+
+    // PHASE 7C: PUBLIC BUSINESS DIRECTORY
+    //
+    // Public profiles contain only approved
+    // information intended for customers.
+    //
+    // No direct client-side writes are allowed.
+    // Publication will use trusted server code
+    // after ownership and slug validation.
+
+    match /publicBusinesses/{businessId} {
+
+      allow get: if resource.data.published == true;
+
+      allow list: if false;
+
+      allow create, update, delete: if false;
+    }
+
+    // DEFAULT SECURITY: DENY ALL OTHER ACCESS
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
 
