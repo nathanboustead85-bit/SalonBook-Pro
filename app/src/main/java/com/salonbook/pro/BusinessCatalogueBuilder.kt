@@ -5,16 +5,19 @@ import org.json.JSONObject
 import java.util.Locale
 
 /**
- * Phase 7D: Public business catalogue converter.
+ * Boustio Phase 7E:
+ * Safe public business catalogue converter.
  *
- * Converts existing Android data into the
+ * Converts Android business data into the
  * public booking website's JSON format.
  *
- * This class does not:
- * - access Firebase
- * - publish business information
- * - include private bookings or customer records
- * - enable online bookings
+ * Security:
+ * - Does not expose Firebase account UID
+ * - Does not expose private login email
+ * - Does not include customer records
+ * - Does not include private bookings
+ * - Does not publish automatically
+ * - Does not enable online bookings
  */
 object BusinessCatalogueBuilder {
 
@@ -39,12 +42,10 @@ object BusinessCatalogueBuilder {
     )
 
     /**
-     * Create a public-preview catalogue.
+     * Generate a safe public-preview catalogue.
      *
-     * The caller must supply only the business
-     * profile, services and staff.
-     *
-     * No bookings or customer data are accepted.
+     * Only the business profile, services
+     * and staff are accepted as inputs.
      */
     fun build(
         profile: BusinessProfile,
@@ -74,34 +75,51 @@ object BusinessCatalogueBuilder {
         val staff = convertStaff(rawStaff, services)
 
         val business = JSONObject().apply {
-            put("businessId", profile.businessId)
+
+            // IMPORTANT:
+            // Use the public booking slug.
+            // Never export profile.businessId,
+            // which contains the Firebase UID.
+            put("businessId", profile.slug)
+
             put("name", profile.name.trim())
             put("slug", profile.slug)
             put("category", profile.category.trim())
-            put("description", profile.description.trim())
+            put(
+                "description",
+                profile.description.trim()
+            )
             put("address", profile.address.trim())
 
-            // Explicitly exclude the owner's
-            // private login email.
+            // Do not export the owner's
+            // private login email or phone.
             put("phone", "")
 
-            // A generated preview must never
-            // automatically become public.
+            // Exported catalogues are previews.
+            // Publishing requires a separate
+            // deliberate approval step.
             put("published", false)
             put("acceptingBookings", false)
         }
 
-        val catalogue = JSONObject().apply {
+        return JSONObject().apply {
             put("schemaVersion", 1)
             put("business", business)
             put("services", services)
             put("staff", staff)
-            put("workingHours", createWorkingHours(rawStaff))
+            put(
+                "workingHours",
+                createWorkingHours(rawStaff)
+            )
         }
-
-        return catalogue
     }
 
+    /**
+     * Convert locally saved services.
+     *
+     * Invalid services are skipped.
+     * No service is automatically published.
+     */
     private fun convertServices(
         rawServices: JSONArray
     ): JSONArray {
@@ -120,7 +138,9 @@ object BusinessCatalogueBuilder {
             val price = source.optString("price")
                 .toDoubleOrNull()
 
-            val duration = source.optInt("duration", 0)
+            val duration = source.optInt(
+                "duration", 0
+            )
 
             if (
                 id.isBlank() ||
@@ -141,7 +161,10 @@ object BusinessCatalogueBuilder {
                     put("id", id)
                     put("name", name)
                     put("description", "")
-                    put("durationMinutes", duration)
+                    put(
+                        "durationMinutes",
+                        duration
+                    )
                     put("price", price)
                     put("active", true)
                 }
@@ -151,6 +174,19 @@ object BusinessCatalogueBuilder {
         return result
     }
 
+    /**
+     * Convert locally saved staff.
+     *
+     * IMPORTANT:
+     * Existing Android staff records do not
+     * yet contain individual service assignments.
+     *
+     * Assigning all services here is for
+     * catalogue preview testing only.
+     *
+     * Real bookings must remain disabled
+     * until proper assignments are added.
+     */
     private fun convertStaff(
         rawStaff: JSONArray,
         services: JSONArray
@@ -158,19 +194,16 @@ object BusinessCatalogueBuilder {
 
         val result = JSONArray()
         val usedIds = mutableSetOf<String>()
-
-        // Existing Android staff records do not
-        // specify which services each person offers.
-        //
-        // Until service assignments are implemented,
-        // use all services for demonstration only.
         val serviceIds = JSONArray()
 
         for (i in 0 until services.length()) {
+
             val service = services.optJSONObject(i)
                 ?: continue
 
-            serviceIds.put(service.getString("id"))
+            serviceIds.put(
+                service.getString("id")
+            )
         }
 
         for (i in 0 until rawStaff.length()) {
@@ -203,7 +236,10 @@ object BusinessCatalogueBuilder {
                     put("id", id)
                     put("name", name)
                     put("active", true)
-                    put("serviceIds", assignments)
+                    put(
+                        "serviceIds",
+                        assignments
+                    )
                 }
             )
         }
@@ -212,15 +248,14 @@ object BusinessCatalogueBuilder {
     }
 
     /**
-     * Derive conservative shared business hours
-     * from existing staff hour strings.
+     * Generate conservative shared
+     * business opening hours.
      *
-     * Only hours covered by every staff member
-     * are included. This avoids advertising
-     * times outside a member's stated hours.
+     * Only hours covered by every valid
+     * staff member are included.
      *
-     * Individual staff availability will require
-     * a separate model before real bookings.
+     * Individual staff availability will
+     * be implemented before live bookings.
      */
     private fun createWorkingHours(
         rawStaff: JSONArray
@@ -229,7 +264,9 @@ object BusinessCatalogueBuilder {
         val weekly = JSONObject()
 
         val staffSchedules =
-            mutableListOf<Map<String, Pair<Int, Int>>>()
+            mutableListOf<
+                Map<String, Pair<Int, Int>>
+            >()
 
         for (i in 0 until rawStaff.length()) {
 
@@ -256,13 +293,16 @@ object BusinessCatalogueBuilder {
                 it[day]
             }
 
-            // Do not invent business hours if
-            // any staff schedule is unknown.
+            // Unknown schedules must not
+            // generate invented opening hours.
             if (
                 staffSchedules.isEmpty() ||
                 intervals.size != staffSchedules.size
             ) {
-                weekly.put(day, JSONObject.NULL)
+                weekly.put(
+                    day,
+                    JSONObject.NULL
+                )
                 continue
             }
 
@@ -275,13 +315,25 @@ object BusinessCatalogueBuilder {
             }
 
             if (opening >= closing) {
-                weekly.put(day, JSONObject.NULL)
+
+                weekly.put(
+                    day,
+                    JSONObject.NULL
+                )
+
             } else {
+
                 weekly.put(
                     day,
                     JSONObject().apply {
-                        put("open", formatTime(opening))
-                        put("close", formatTime(closing))
+                        put(
+                            "open",
+                            formatTime(opening)
+                        )
+                        put(
+                            "close",
+                            formatTime(closing)
+                        )
                     }
                 )
             }
@@ -291,21 +343,23 @@ object BusinessCatalogueBuilder {
     }
 
     /**
-     * Supported examples:
+     * Supported schedule formats:
      *
      * Mon-Fri 09:00-17:00
      * Mon-Sat 09:00-18:00
      * Mon 09:00-17:00
      *
-     * Unrecognised formats produce no hours
-     * rather than inventing availability.
+     * Unrecognised schedules are treated
+     * as unavailable.
      */
     private fun parseStaffHours(
         input: String
     ): Map<String, Pair<Int, Int>> {
 
         val result =
-            mutableMapOf<String, Pair<Int, Int>>()
+            mutableMapOf<
+                String, Pair<Int, Int>
+            >()
 
         val cleaned = input.trim()
             .lowercase(Locale.ROOT)
@@ -314,8 +368,9 @@ object BusinessCatalogueBuilder {
             """\b(mon|tue|wed|thu|fri|sat|sun)(?:\s*-\s*(mon|tue|wed|thu|fri|sat|sun))?\s+([0-2]\d:[0-5]\d)\s*-\s*([0-2]\d:[0-5]\d)\b"""
         )
 
-        val match = pattern.matchEntire(cleaned)
-            ?: return emptyMap()
+        val match = pattern.matchEntire(
+            cleaned
+        ) ?: return emptyMap()
 
         val startDay = shortDays.indexOf(
             match.groupValues[1]
