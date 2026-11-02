@@ -8,16 +8,15 @@ import java.util.Locale
  * Boustio Phase 7E:
  * Safe public business catalogue converter.
  *
- * Converts Android business data into the
- * public booking website's JSON format.
- *
  * Security:
- * - Does not expose Firebase account UID
- * - Does not expose private login email
- * - Does not include customer records
- * - Does not include private bookings
- * - Does not publish automatically
- * - Does not enable online bookings
+ * - Excludes Firebase account UID
+ * - Excludes private customer records
+ * - Excludes private bookings
+ * - Excludes private login email
+ * - Exports only public-visible services
+ * - Exports only public-visible staff
+ * - Keeps publishing disabled
+ * - Keeps online bookings disabled
  */
 object BusinessCatalogueBuilder {
 
@@ -41,12 +40,6 @@ object BusinessCatalogueBuilder {
         "sun"
     )
 
-    /**
-     * Generate a safe public-preview catalogue.
-     *
-     * Only the business profile, services
-     * and staff are accepted as inputs.
-     */
     fun build(
         profile: BusinessProfile,
         servicesJson: String,
@@ -76,10 +69,8 @@ object BusinessCatalogueBuilder {
 
         val business = JSONObject().apply {
 
-            // IMPORTANT:
-            // Use the public booking slug.
-            // Never export profile.businessId,
-            // which contains the Firebase UID.
+            // Use the public slug, not the
+            // owner's internal Firebase UID.
             put("businessId", profile.slug)
 
             put("name", profile.name.trim())
@@ -91,13 +82,11 @@ object BusinessCatalogueBuilder {
             )
             put("address", profile.address.trim())
 
-            // Do not export the owner's
-            // private login email or phone.
+            // Do not export private account contact data.
             put("phone", "")
 
-            // Exported catalogues are previews.
-            // Publishing requires a separate
-            // deliberate approval step.
+            // Exporting must not publish or
+            // activate online bookings.
             put("published", false)
             put("acceptingBookings", false)
         }
@@ -115,10 +104,11 @@ object BusinessCatalogueBuilder {
     }
 
     /**
-     * Convert locally saved services.
+     * Only export services explicitly
+     * marked as publicly visible.
      *
-     * Invalid services are skipped.
-     * No service is automatically published.
+     * Existing services without the flag
+     * remain hidden by default.
      */
     private fun convertServices(
         rawServices: JSONArray
@@ -131,6 +121,10 @@ object BusinessCatalogueBuilder {
 
             val source = rawServices.optJSONObject(i)
                 ?: continue
+
+            if (!source.optBoolean("publicVisible", false)) {
+                continue
+            }
 
             val id = source.optString("id").trim()
             val name = source.optString("name").trim()
@@ -175,17 +169,18 @@ object BusinessCatalogueBuilder {
     }
 
     /**
-     * Convert locally saved staff.
+     * Only export staff explicitly
+     * marked as publicly visible.
      *
      * IMPORTANT:
-     * Existing Android staff records do not
-     * yet contain individual service assignments.
+     * Existing Android records do not yet
+     * contain individual service assignments.
      *
-     * Assigning all services here is for
-     * catalogue preview testing only.
+     * All visible services are temporarily
+     * assigned to visible staff for preview
+     * purposes only.
      *
-     * Real bookings must remain disabled
-     * until proper assignments are added.
+     * Real online bookings remain disabled.
      */
     private fun convertStaff(
         rawStaff: JSONArray,
@@ -210,6 +205,10 @@ object BusinessCatalogueBuilder {
 
             val source = rawStaff.optJSONObject(i)
                 ?: continue
+
+            if (!source.optBoolean("publicVisible", false)) {
+                continue
+            }
 
             val id = source.optString("id").trim()
             val name = source.optString("name").trim()
@@ -248,14 +247,15 @@ object BusinessCatalogueBuilder {
     }
 
     /**
-     * Generate conservative shared
-     * business opening hours.
+     * Generate conservative shared hours
+     * using only staff selected for public
+     * visibility.
      *
-     * Only hours covered by every valid
-     * staff member are included.
+     * Hidden staff must not reduce the
+     * public business opening hours.
      *
-     * Individual staff availability will
-     * be implemented before live bookings.
+     * These are preview hours, not
+     * appointment availability.
      */
     private fun createWorkingHours(
         rawStaff: JSONArray
@@ -272,6 +272,10 @@ object BusinessCatalogueBuilder {
 
             val member = rawStaff.optJSONObject(i)
                 ?: continue
+
+            if (!member.optBoolean("publicVisible", false)) {
+                continue
+            }
 
             if (
                 member.optString("id").isBlank() ||
@@ -293,8 +297,6 @@ object BusinessCatalogueBuilder {
                 it[day]
             }
 
-            // Unknown schedules must not
-            // generate invented opening hours.
             if (
                 staffSchedules.isEmpty() ||
                 intervals.size != staffSchedules.size
@@ -343,14 +345,14 @@ object BusinessCatalogueBuilder {
     }
 
     /**
-     * Supported schedule formats:
+     * Supported formats:
      *
      * Mon-Fri 09:00-17:00
      * Mon-Sat 09:00-18:00
      * Mon 09:00-17:00
      *
-     * Unrecognised schedules are treated
-     * as unavailable.
+     * Unrecognised schedules produce
+     * no public hours.
      */
     private fun parseStaffHours(
         input: String
