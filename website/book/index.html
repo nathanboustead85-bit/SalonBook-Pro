@@ -4,646 +4,268 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#111827">
+  <meta name="description" content="Preview appointment booking with Boustio.">
   <title>Book an Appointment | Boustio</title>
-
   <style>
-    :root {
-      font-family: Arial, Helvetica, sans-serif;
-      color: #172033;
-      background: #f5f6fa;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-    }
-
-    header {
-      background: #111827;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-
-    .brand {
-      color: white;
-      text-decoration: none;
-      font-size: 29px;
-      font-weight: 800;
-      letter-spacing: -1px;
-    }
-
-    .subtitle {
-      color: #cbd5e1;
-      font-size: 13px;
-      margin-top: 6px;
-    }
-
-    main {
-      max-width: 620px;
-      margin: 24px auto;
-      padding: 0 16px 40px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 16px;
-      padding: 22px;
-      margin-bottom: 16px;
-      box-shadow: 0 5px 22px #0000000a;
-    }
-
-    h1 {
-      font-size: 25px;
-      margin: 0 0 8px;
-    }
-
-    h2 {
-      font-size: 18px;
-      margin: 0 0 16px;
-    }
-
-    p {
-      color: #64748b;
-      line-height: 1.5;
-    }
-
-    label {
-      display: block;
-      margin: 16px 0 7px;
-      font-weight: 600;
-      font-size: 14px;
-    }
-
-    input,
-    select,
-    button {
-      width: 100%;
-      padding: 14px;
-      border: 1px solid #dbe1ea;
-      border-radius: 10px;
-      font-size: 16px;
-      background: white;
-    }
-
-    button {
-      background: #111827;
-      color: white;
-      font-weight: 700;
-      border: none;
-      margin-top: 20px;
-    }
-
-    button:disabled {
-      background: #aab2bf;
-    }
-
-    .notice {
-      background: #fff7e6;
-      color: #854d0e;
-      padding: 14px;
-      border-radius: 10px;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .summary {
-      background: #f1f5f9;
-      padding: 14px;
-      border-radius: 10px;
-      margin-top: 18px;
-      line-height: 1.8;
-      font-size: 14px;
-    }
-
-    .error {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 14px;
-      border-radius: 10px;
-      margin-bottom: 16px;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    footer {
-      text-align: center;
-      padding: 20px;
-      color: #64748b;
-      font-size: 12px;
-    }
+    :root { font-family: system-ui,-apple-system,Arial,sans-serif; color:#182033; background:#f5f6fa; }
+    * { box-sizing:border-box; }
+    body { margin:0; }
+    header { background:#111827; color:white; padding:20px 16px; text-align:center; }
+    .brand { color:white; text-decoration:none; font-size:30px; font-weight:800; letter-spacing:-1px; }
+    .subtitle { color:#cbd5e1; font-size:13px; margin-top:4px; }
+    main { max-width:680px; margin:24px auto; padding:0 16px 48px; }
+    .card { background:white; border-radius:18px; padding:22px; margin-bottom:16px; box-shadow:0 5px 22px #0000000a; }
+    h1 { font-size:26px; margin:0 0 8px; }
+    h2 { font-size:19px; margin:0 0 16px; }
+    p { color:#64748b; line-height:1.5; }
+    label { display:block; margin:16px 0 7px; font-weight:650; font-size:14px; }
+    select,input,button { width:100%; padding:14px; border:1px solid #dbe1ea; border-radius:11px; font:inherit; background:white; }
+    select:disabled,input:disabled { color:#8b95a4; background:#f6f7fa; }
+    .notice { background:#fff7e6; color:#854d0e; padding:14px; border-radius:11px; font-size:14px; line-height:1.5; }
+    .summary { background:#f1f5f9; padding:16px; border-radius:12px; margin-top:20px; line-height:1.65; font-size:14px; white-space:pre-line; }
+    .status { color:#475569; font-size:14px; margin-top:10px; }
+    .error { background:#fee2e2; color:#991b1b; padding:14px; border-radius:10px; margin-bottom:16px; }
+    .hidden { display:none; }
+    .disabled-action { margin-top:18px; background:#9ca3af; color:white; font-weight:700; border:0; cursor:not-allowed; }
+    footer { text-align:center; padding:20px; color:#64748b; font-size:12px; }
   </style>
 </head>
-
 <body>
-
 <header>
   <a class="brand" href="/">boustio</a>
-  <div class="subtitle">
-    Beauty, barbering and wellness bookings
-  </div>
+  <div class="subtitle">Beauty, barbering and wellness bookings</div>
 </header>
-
 <main>
-
   <div id="error" class="error hidden" role="alert"></div>
-
   <section class="card">
     <h1 id="businessName">Loading salon...</h1>
-
-    <p id="businessDescription">
-      Please wait while we load the salon information.
-    </p>
-
-    <div class="notice">
-      Preview mode only. Appointment selections are
-      demonstrations and are not confirmed bookings.
-    </div>
+    <p id="businessDescription">Please wait while we load the salon information.</p>
+    <div class="notice"><strong>Preview only.</strong> Appointment times are demonstrations. They are not live reservations and cannot be booked yet.</div>
   </section>
-
   <div id="bookingContent">
-
     <section class="card">
       <h2>1. Choose your appointment</h2>
-
       <label for="service">Service</label>
-      <select id="service" disabled>
-        <option value="">Loading services...</option>
-      </select>
-
+      <select id="service" disabled><option value="">Loading services...</option></select>
       <label for="staff">Professional</label>
-      <select id="staff" disabled>
-        <option value="">Select a service first</option>
-      </select>
-
+      <select id="staff" disabled><option value="">Select a service first</option></select>
       <label for="date">Preferred date</label>
       <input id="date" type="date" disabled>
-
       <label for="time">Preferred time</label>
-      <select id="time" disabled>
-        <option value="">Select a date first</option>
-      </select>
-
-      <div class="summary" id="summary" aria-live="polite">
-        Select your appointment details to see a summary.
-      </div>
+      <select id="time" disabled><option value="">Select a date first</option></select>
+      <div id="timeStatus" class="status" aria-live="polite"></div>
+      <div id="summary" class="summary" aria-live="polite">Choose a service, professional, date and time to see your appointment summary.</div>
     </section>
-
     <section class="card">
-      <h2>2. Your details</h2>
-
-      <label for="customerName">Full name</label>
-      <input
-        id="customerName"
-        type="text"
-        autocomplete="name"
-      >
-
-      <label for="customerEmail">Email</label>
-      <input
-        id="customerEmail"
-        type="email"
-        autocomplete="email"
-      >
-
-      <label for="customerPhone">Mobile number</label>
-      <input
-        id="customerPhone"
-        type="tel"
-        autocomplete="tel"
-      >
-
-      <button type="button" disabled>
-        Booking unavailable — preview only
-      </button>
+      <h2>2. Confirm your appointment</h2>
+      <p>Customer details and confirmation will become available after secure live booking is implemented.</p>
+      <button class="disabled-action" type="button" disabled>Booking unavailable — preview only</button>
     </section>
-
   </div>
 </main>
-
-<footer>
-  Powered by Boustio · SalonBook Pro
-</footer>
-
+<footer>Powered by Boustio · SalonBook Pro</footer>
 <script>
 "use strict";
 
-let catalogue = null;
-
-// Registered demonstration businesses.
-// Unknown slugs are never allowed to load arbitrary files.
-const catalogueFiles = {
+// Only registered demo slugs may load catalogue files.
+const catalogueFiles = Object.freeze({
   "demo-boustio": "/data/demo-business.json",
   "kody-blends": "/data/kody-blends.json"
+});
+const dayNames = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+const $ = id => document.getElementById(id);
+const ui = {
+  businessName: $("businessName"), businessDescription: $("businessDescription"),
+  bookingContent: $("bookingContent"), service: $("service"), staff: $("staff"),
+  date: $("date"), time: $("time"), timeStatus: $("timeStatus"),
+  summary: $("summary"), error: $("error")
 };
+let catalogue = null;
 
-const elements = {
-  businessName: document.getElementById("businessName"),
-  businessDescription: document.getElementById("businessDescription"),
-  bookingContent: document.getElementById("bookingContent"),
-  service: document.getElementById("service"),
-  staff: document.getElementById("staff"),
-  date: document.getElementById("date"),
-  time: document.getElementById("time"),
-  summary: document.getElementById("summary"),
-  error: document.getElementById("error")
-};
-
-function getBusinessSlug() {
-  const parts = window.location.pathname
-    .split("/")
-    .filter(Boolean);
-
-  // Preserve the original /book/ demonstration page.
-  if (parts.length === 1 && parts[0] === "book") {
-    return "demo-boustio";
-  }
-
-  if (
-    parts.length === 2 &&
-    parts[0] === "book" &&
-    /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(parts[1])
-  ) {
-    return parts[1];
-  }
-
+function slugFromPath() {
+  const parts = location.pathname.split("/").filter(Boolean);
+  if (parts.length === 1 && parts[0] === "book") return "demo-boustio";
+  if (parts.length === 2 && parts[0] === "book" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(parts[1])) return parts[1];
   return null;
 }
-
 function showError(title, description) {
-  elements.businessName.textContent = title;
-  elements.businessDescription.textContent = description;
-  elements.bookingContent.classList.add("hidden");
-  elements.error.classList.add("hidden");
-
+  ui.businessName.textContent = title;
+  ui.businessDescription.textContent = description;
+  ui.bookingContent.classList.add("hidden");
+  ui.error.classList.add("hidden");
   document.title = title + " | Boustio";
 }
-
 function localDateString(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return year + "-" + month + "-" + day;
+  return [date.getFullYear(), String(date.getMonth()+1).padStart(2,"0"), String(date.getDate()).padStart(2,"0")].join("-");
 }
-
+function parseDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const [year,month,day] = value.split("-").map(Number);
+  const date = new Date(year, month-1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month-1 || date.getDate() !== day) return null;
+  return date;
+}
+function minutes(value) {
+  if (typeof value !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return null;
+  const [h,m] = value.split(":").map(Number);
+  return h*60+m;
+}
+function interval(value) {
+  if (!value || typeof value !== "object") return null;
+  const start = minutes(value.open ?? value.start);
+  const end = minutes(value.close ?? value.end);
+  return start !== null && end !== null && end > start ? {start,end} : null;
+}
+function overlaps(a,b,c,d) { return a < d && b > c; }
+function timeLabel(total) {
+  return String(Math.floor(total/60)).padStart(2,"0") + ":" + String(total%60).padStart(2,"0");
+}
 function addOption(select, value, label) {
   const option = document.createElement("option");
-
   option.value = value;
   option.textContent = label;
-
   select.appendChild(option);
 }
-
 function resetSelect(select, placeholder) {
   select.replaceChildren();
-  addOption(select, "", placeholder);
+  addOption(select,"",placeholder);
   select.value = "";
+  select.disabled = true;
 }
-
-function formatPrice(price) {
-  return "£" + Number(price).toFixed(2);
+function formatPrice(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? "£" + number.toFixed(2) : "Price unavailable";
 }
-
 function selectedService() {
-  return catalogue?.services.find(
-    item => item.id === elements.service.value
-  );
+  return catalogue?.services.find(s => s.id === ui.service.value && s.active === true) || null;
 }
-
+function selectedStaff() {
+  return catalogue?.staff.find(s => s.id === ui.staff.value && s.active === true) || null;
+}
 function updateStaff() {
-  resetSelect(elements.staff, "Select a professional");
-  elements.staff.disabled = true;
-
+  resetSelect(ui.staff,"Select a professional");
   const service = selectedService();
-
   if (service) {
-    const eligibleStaff = catalogue.staff.filter(
-      member =>
-        member.active &&
-        Array.isArray(member.serviceIds) &&
-        member.serviceIds.includes(service.id)
-    );
-
-    eligibleStaff.forEach(member => {
-      addOption(
-        elements.staff,
-        member.id,
-        member.name
-      );
-    });
-
-    elements.staff.disabled = eligibleStaff.length === 0;
-
-    if (eligibleStaff.length === 0) {
-      resetSelect(
-        elements.staff,
-        "No staff for this service"
-      );
-    }
+    const eligible = catalogue.staff.filter(s => s.active === true && Array.isArray(s.serviceIds) && s.serviceIds.includes(service.id));
+    for (const member of eligible) addOption(ui.staff,member.id,member.name);
+    if (!eligible.length) resetSelect(ui.staff,"No staff for this service");
+    else ui.staff.disabled = false;
   }
-
-  updateSummary();
+  updateTimes();
 }
-
+function workingInterval(member, day) {
+  // Staff-specific schedule takes priority. A missing day is closed.
+  if (member.weeklySchedule && typeof member.weeklySchedule === "object") {
+    return interval(member.weeklySchedule[day]);
+  }
+  // Older demo catalogues have business-wide hours only.
+  return interval(catalogue.workingHours?.[day]);
+}
+function blockedPeriods(member, day, dateValue) {
+  const result = [];
+  for (const item of (Array.isArray(member.weeklyBreaks) ? member.weeklyBreaks : [])) {
+    if (item?.day !== day) continue;
+    const p = interval(item);
+    if (!p) return null; // invalid matching break: fail closed
+    result.push(p);
+  }
+  for (const item of (Array.isArray(member.timeOff) ? member.timeOff : [])) {
+    if (item?.date !== dateValue) continue;
+    const p = interval(item);
+    if (!p) return null; // invalid matching time off: fail closed
+    result.push(p);
+  }
+  return result;
+}
 function updateTimes() {
-  resetSelect(elements.time, "Select a time");
-  elements.time.disabled = true;
-
+  resetSelect(ui.time,"Select a time");
+  ui.timeStatus.textContent = "";
   const service = selectedService();
-  const dateValue = elements.date.value;
-
-  if (!service || !dateValue) {
-    updateSummary();
-    return;
+  const member = selectedStaff();
+  const dateValue = ui.date.value;
+  if (!service || !member || !dateValue) { updateSummary(); return; }
+  const date = parseDate(dateValue);
+  if (!date || dateValue < ui.date.min) {
+    ui.timeStatus.textContent = "Choose a valid future date.";
+    updateSummary(); return;
   }
-
-  const parts = dateValue.split("-").map(Number);
-
-  if (
-    parts.length !== 3 ||
-    parts.some(Number.isNaN)
-  ) {
-    updateSummary();
-    return;
-  }
-
-  const chosen = new Date(
-    parts[0],
-    parts[1] - 1,
-    parts[2]
-  );
-
-  if (
-    chosen.getFullYear() !== parts[0] ||
-    chosen.getMonth() !== parts[1] - 1 ||
-    chosen.getDate() !== parts[2] ||
-    dateValue < elements.date.min
-  ) {
-    updateSummary();
-    return;
-  }
-
-  const dayNames = [
-    "sunday",
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday"
-  ];
-
-  const day = dayNames[chosen.getDay()];
-  const hours = catalogue.workingHours[day];
-
+  const day = dayNames[date.getDay()];
+  const hours = workingInterval(member,day);
   if (!hours) {
-    resetSelect(
-      elements.time,
-      "Salon closed on this day"
-    );
-
-    updateSummary();
-    return;
+    resetSelect(ui.time,"Professional unavailable on this day");
+    ui.timeStatus.textContent = "This professional has no working hours on the selected day.";
+    updateSummary(); return;
   }
-
-  function minutes(value) {
-    const [hour, minute] = value
-      .split(":")
-      .map(Number);
-
-    return hour * 60 + minute;
-  }
-
-  const opening = minutes(hours.open);
-  const closing = minutes(hours.close);
   const duration = Number(service.durationMinutes);
-
-  if (
-    !Number.isFinite(opening) ||
-    !Number.isFinite(closing) ||
-    !Number.isFinite(duration) ||
-    duration <= 0 ||
-    closing <= opening
-  ) {
-    updateSummary();
-    return;
+  const blocked = blockedPeriods(member,day,dateValue);
+  if (!Number.isInteger(duration) || duration <= 0 || duration > 1440 || blocked === null) {
+    ui.timeStatus.textContent = "Availability cannot be calculated for this selection.";
+    updateSummary(); return;
   }
-
   const now = new Date();
   const today = localDateString(now);
-
-  const currentMinutes =
-    now.getHours() * 60 + now.getMinutes();
-
+  const currentMinutes = now.getHours()*60+now.getMinutes();
   let count = 0;
-
-  for (
-    let start = opening;
-    start + duration <= closing;
-    start += 30
-  ) {
-    if (
-      dateValue === today &&
-      start <= currentMinutes
-    ) {
-      continue;
-    }
-
-    const hour = String(
-      Math.floor(start / 60)
-    ).padStart(2, "0");
-
-    const minute = String(
-      start % 60
-    ).padStart(2, "0");
-
-    const label = hour + ":" + minute;
-
-    addOption(
-      elements.time,
-      label,
-      label
-    );
-
+  // Offer starts at 15-minute boundaries, as in the Android tester.
+  const first = Math.ceil(hours.start/15)*15;
+  for (let start = first; start+duration <= hours.end; start += 15) {
+    if (dateValue === today && start <= currentMinutes) continue;
+    if (blocked.some(p => overlaps(start,start+duration,p.start,p.end))) continue;
+    const label = timeLabel(start);
+    addOption(ui.time,label,label);
     count++;
   }
-
-  if (count === 0) {
-    resetSelect(
-      elements.time,
-      "No preview times for this date"
-    );
-  } else {
-    elements.time.disabled = false;
-  }
-
+  if (!count) resetSelect(ui.time,"No preview times for this date");
+  else ui.time.disabled = false;
+  ui.timeStatus.textContent = count + " illustrative start time" + (count === 1 ? "" : "s") + ". Existing bookings are not connected to this preview.";
   updateSummary();
 }
-
 function updateSummary() {
   const service = selectedService();
-
-  const member = catalogue?.staff.find(
-    item => item.id === elements.staff.value
-  );
-
-  if (
-    !service ||
-    !member ||
-    !elements.date.value ||
-    !elements.time.value
-  ) {
-    elements.summary.textContent =
-      "Select your appointment details to see a summary.";
-
+  const member = selectedStaff();
+  if (!service || !member || !ui.date.value || !ui.time.value) {
+    ui.summary.textContent = "Choose a service, professional, date and time to see your appointment summary.";
     return;
   }
-
-  elements.summary.textContent =
-    service.name + " · " +
-    formatPrice(service.price) + " · " +
-    service.durationMinutes + " minutes" +
-    " | " + member.name +
-    " | " + elements.date.value +
-    " at " + elements.time.value +
-    " (preview only)";
+  ui.summary.textContent =
+    service.name + " · " + formatPrice(service.price) + " · " + service.durationMinutes + " minutes\n" +
+    member.name + " · " + ui.date.value + " at " + ui.time.value + "\n" +
+    "Preview only — not a confirmed or reserved appointment.";
 }
-
 async function loadCatalogue() {
-  const slug = getBusinessSlug();
-
-  if (!slug) {
-    showError(
-      "Business not found",
-      "This booking link is not valid."
-    );
-    return;
+  const slug = slugFromPath();
+  if (!slug || !Object.prototype.hasOwnProperty.call(catalogueFiles,slug)) {
+    showError("Business not found","This booking link is not available."); return;
   }
-
-  // Use only known demonstration catalogue files.
-  const catalogueUrl = Object.prototype.hasOwnProperty.call(
-    catalogueFiles,
-    slug
-  ) ? catalogueFiles[slug] : null;
-
-  if (!catalogueUrl) {
-    showError(
-      "Business not found",
-      "We couldn't find a published business at this address."
-    );
-    return;
-  }
-
   try {
-    const response = await fetch(
-      catalogueUrl,
-      { cache: "no-store" }
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        "Catalogue request failed: " + response.status
-      );
-    }
-
+    const response = await fetch(catalogueFiles[slug],{cache:"no-store"});
+    if (!response.ok) throw new Error("Catalogue request failed: " + response.status);
     const data = await response.json();
-
-    // Validate the catalogue before displaying it.
-    if (
-      data.schemaVersion !== 1 ||
-      !data.business ||
-      data.business.slug !== slug ||
-      data.business.published !== true ||
-      !Array.isArray(data.services) ||
-      !Array.isArray(data.staff) ||
-      !data.workingHours
-    ) {
-      throw new Error("Invalid business catalogue");
-    }
-
+    if (data.schemaVersion !== 1 || !data.business || data.business.slug !== slug ||
+        data.business.published !== true || !Array.isArray(data.services) ||
+        !Array.isArray(data.staff) || !data.workingHours) throw new Error("Invalid catalogue");
     catalogue = data;
-
-    elements.businessName.textContent =
-      data.business.name;
-
-    elements.businessDescription.textContent =
-      data.business.description || "";
-
-    document.title =
-      data.business.name + " | Book with Boustio";
-
-    resetSelect(
-      elements.service,
-      "Select a service"
-    );
-
-    data.services
-      .filter(service => service.active)
-      .forEach(service => {
-        addOption(
-          elements.service,
-          service.id,
-          service.name + " — " +
-          formatPrice(service.price) + " · " +
-          service.durationMinutes + " minutes"
-        );
-      });
-
-    elements.service.disabled = false;
-    elements.date.disabled = false;
-
-    elements.date.min = localDateString(
-      new Date()
-    );
-
+    ui.businessName.textContent = data.business.name;
+    ui.businessDescription.textContent = data.business.description || "";
+    document.title = data.business.name + " | Book with Boustio";
+    resetSelect(ui.service,"Select a service");
+    for (const service of data.services.filter(s => s.active === true)) {
+      addOption(ui.service,service.id,service.name + " — " + formatPrice(service.price) + " · " + service.durationMinutes + " minutes");
+    }
+    ui.service.disabled = ui.service.options.length <= 1;
+    ui.date.disabled = false;
+    ui.date.min = localDateString(new Date());
     updateStaff();
-    updateTimes();
-
   } catch (error) {
-    showError(
-      "Booking preview unavailable",
-      "We couldn't load this business. Please try again later."
-    );
-
-    console.error(
-      "Catalogue loading error:",
-      error
-    );
+    showError("Booking preview unavailable","We couldn't load this business. Please try again later.");
+    console.error("Catalogue loading error:",error);
   }
 }
-
-elements.service.addEventListener(
-  "change",
-  () => {
-    updateStaff();
-    updateTimes();
-  }
-);
-
-elements.staff.addEventListener(
-  "change",
-  updateSummary
-);
-
-elements.date.addEventListener(
-  "change",
-  updateTimes
-);
-
-elements.time.addEventListener(
-  "change",
-  updateSummary
-);
-
+ui.service.addEventListener("change",updateStaff);
+ui.staff.addEventListener("change",updateTimes);
+ui.date.addEventListener("change",updateTimes);
+ui.time.addEventListener("change",updateSummary);
 loadCatalogue();
 </script>
-
 </body>
 </html>
