@@ -27,6 +27,13 @@ class BusinessProfileActivity : Activity() {
 
     private val manager = BusinessProfileManager()
 
+    private val prefs by lazy {
+        getSharedPreferences(
+            "salonbook_data",
+            MODE_PRIVATE
+        )
+    }
+
     private lateinit var container: LinearLayout
     private lateinit var nameInput: EditText
     private lateinit var phoneInput: EditText
@@ -36,9 +43,11 @@ class BusinessProfileActivity : Activity() {
     private lateinit var bookingSwitch: Switch
     private lateinit var slugText: TextView
     private lateinit var saveButton: Button
+    private lateinit var previewButton: Button
 
     private var loadingProfile = false
     private var profileLoaded = false
+    private var previewLoading = false
 
     private val categories = listOf(
         "Hair Salon",
@@ -91,12 +100,11 @@ class BusinessProfileActivity : Activity() {
         scroll.addView(container)
         setContentView(scroll)
 
-        addTitle("Business Profile")
+        addTitle("Boustio Business Profile")
 
         addText(
-            "Set up your salon or beauty business. " +
-            "These details will be used when we launch " +
-            "your customer booking page."
+            "Manage your business information and " +
+            "prepare your public booking catalogue."
         )
 
         nameInput = addInput(
@@ -134,7 +142,6 @@ class BusinessProfileActivity : Activity() {
         )
 
         categorySpinner.adapter = adapter
-
         container.addView(categorySpinner)
 
         addText("Booking identifier")
@@ -149,9 +156,8 @@ class BusinessProfileActivity : Activity() {
         container.addView(slugText)
 
         addText(
-            "Your booking identifier will become part " +
-            "of your public booking address. " +
-            "The customer booking website is not live yet."
+            "Your booking identifier will form part " +
+            "of your future Boustio booking link."
         )
 
         bookingSwitch = Switch(this).apply {
@@ -165,9 +171,8 @@ class BusinessProfileActivity : Activity() {
         container.addView(bookingSwitch)
 
         addText(
-            "Online booking activation will become " +
-            "available once the public booking website " +
-            "and security checks are completed."
+            "Online bookings remain disabled until " +
+            "secure live booking integration is complete."
         )
 
         saveButton = addButton(
@@ -176,12 +181,26 @@ class BusinessProfileActivity : Activity() {
             saveProfile()
         }
 
+        previewButton = addButton(
+            "Preview Public Catalogue"
+        ) {
+            previewCatalogue()
+        }
+
+        addText(
+            "Preview uses your locally saved services " +
+            "and staff, together with your business " +
+            "profile from Firebase. It does not publish " +
+            "anything online.",
+            14f
+        )
+
         addButton("Back to Dashboard") {
             finish()
         }
 
         addText(
-            "SalonBook Pro | Phase 7A",
+            "Boustio | Phase 7D",
             12f
         )
     }
@@ -283,6 +302,7 @@ class BusinessProfileActivity : Activity() {
     private fun loadProfile() {
         loadingProfile = true
         saveButton.isEnabled = false
+        previewButton.isEnabled = false
 
         manager.loadProfile { result ->
 
@@ -298,12 +318,14 @@ class BusinessProfileActivity : Activity() {
 
                     if (profile == null) {
                         profileLoaded = false
+                        previewButton.isEnabled = false
                         slugText.text =
                             "Save your profile to generate a booking ID"
                         return@onSuccess
                     }
 
                     profileLoaded = true
+                    previewButton.isEnabled = true
 
                     nameInput.setText(profile.name)
                     phoneInput.setText(profile.phone)
@@ -329,6 +351,8 @@ class BusinessProfileActivity : Activity() {
                 }
 
                 result.onFailure { error ->
+                    profileLoaded = false
+                    previewButton.isEnabled = false
                     showMessage(
                         "Unable to load profile: " +
                         (error.localizedMessage
@@ -369,6 +393,7 @@ class BusinessProfileActivity : Activity() {
             ]
 
         saveButton.isEnabled = false
+        previewButton.isEnabled = false
         saveButton.text = "Saving..."
 
         manager.saveProfile(
@@ -391,6 +416,7 @@ class BusinessProfileActivity : Activity() {
                 result.onSuccess { profile ->
 
                     profileLoaded = true
+                    previewButton.isEnabled = true
 
                     slugText.text =
                         "Booking ID: ${profile.slug}"
@@ -401,6 +427,7 @@ class BusinessProfileActivity : Activity() {
                 }
 
                 result.onFailure { error ->
+                    previewButton.isEnabled = profileLoaded
 
                     AlertDialog.Builder(this)
                         .setTitle("Save failed")
@@ -416,6 +443,137 @@ class BusinessProfileActivity : Activity() {
                 }
             }
         }
+    }
+
+    private fun previewCatalogue() {
+
+        if (
+            loadingProfile ||
+            !profileLoaded ||
+            previewLoading
+        ) {
+            showMessage(
+                "Save your business profile first"
+            )
+            return
+        }
+
+        previewLoading = true
+        previewButton.isEnabled = false
+        previewButton.text = "Preparing preview..."
+
+        // Load the profile from Firebase so
+        // the preview uses saved information,
+        // not unsaved changes on the screen.
+        manager.loadProfile { result ->
+
+            runOnUiThread {
+                if (isFinishing || isDestroyed) {
+                    return@runOnUiThread
+                }
+
+                previewLoading = false
+                previewButton.isEnabled = true
+                previewButton.text =
+                    "Preview Public Catalogue"
+
+                result.onSuccess { profile ->
+
+                    if (profile == null) {
+                        showMessage(
+                            "Save your business profile first"
+                        )
+                        return@onSuccess
+                    }
+
+                    try {
+                        val servicesJson =
+                            prefs.getString(
+                                "services",
+                                "[]"
+                            ) ?: "[]"
+
+                        val staffJson =
+                            prefs.getString(
+                                "staff",
+                                "[]"
+                            ) ?: "[]"
+
+                        val catalogue =
+                            BusinessCatalogueBuilder.build(
+                                profile = profile,
+                                servicesJson = servicesJson,
+                                staffJson = staffJson
+                            )
+
+                        showCataloguePreview(
+                            catalogue.toString(2)
+                        )
+
+                    } catch (error: Exception) {
+
+                        AlertDialog.Builder(this)
+                            .setTitle("Preview failed")
+                            .setMessage(
+                                error.localizedMessage
+                                    ?: "Unable to create catalogue"
+                            )
+                            .setPositiveButton(
+                                "OK",
+                                null
+                            )
+                            .show()
+                    }
+                }
+
+                result.onFailure { error ->
+
+                    AlertDialog.Builder(this)
+                        .setTitle("Unable to load profile")
+                        .setMessage(
+                            error.localizedMessage
+                                ?: "Check your internet connection"
+                        )
+                        .setPositiveButton(
+                            "OK",
+                            null
+                        )
+                        .show()
+                }
+            }
+        }
+    }
+
+    private fun showCataloguePreview(
+        json: String
+    ) {
+
+        val scroll = ScrollView(this)
+
+        val textView = TextView(this).apply {
+            text = json
+            textSize = 12f
+            setTextColor(dark)
+            setPadding(28, 24, 28, 24)
+            setTextIsSelectable(true)
+            typeface = Typeface.MONOSPACE
+        }
+
+        scroll.addView(textView)
+
+        AlertDialog.Builder(this)
+            .setTitle("Boustio Catalogue Preview")
+            .setMessage(
+                "PRIVATE PREVIEW ONLY\n" +
+                "Not published. Online bookings disabled."
+            )
+            .setView(scroll)
+            .setPositiveButton("Close", null)
+            .show()
+            .window?.setLayout(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
     }
 
     private fun showMessage(message: String) {
