@@ -2,6 +2,7 @@ package com.salonbook.pro
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
@@ -21,6 +22,10 @@ import com.google.firebase.auth.FirebaseAuth
 
 class BusinessProfileActivity : Activity() {
 
+    companion object {
+        private const val EXPORT_REQUEST = 701
+    }
+
     private val purple = Color.rgb(111, 66, 193)
     private val dark = Color.rgb(40, 35, 55)
     private val backgroundColor = Color.rgb(248, 246, 252)
@@ -28,10 +33,7 @@ class BusinessProfileActivity : Activity() {
     private val manager = BusinessProfileManager()
 
     private val prefs by lazy {
-        getSharedPreferences(
-            "salonbook_data",
-            MODE_PRIVATE
-        )
+        getSharedPreferences("salonbook_data", MODE_PRIVATE)
     }
 
     private lateinit var container: LinearLayout
@@ -44,10 +46,12 @@ class BusinessProfileActivity : Activity() {
     private lateinit var slugText: TextView
     private lateinit var saveButton: Button
     private lateinit var previewButton: Button
+    private lateinit var exportButton: Button
 
     private var loadingProfile = false
     private var profileLoaded = false
-    private var previewLoading = false
+    private var catalogueLoading = false
+    private var pendingExportJson: String? = null
 
     private val categories = listOf(
         "Hair Salon",
@@ -107,24 +111,11 @@ class BusinessProfileActivity : Activity() {
             "prepare your public booking catalogue."
         )
 
-        nameInput = addInput(
-            "Business name",
-            false
-        )
-
-        phoneInput = addInput(
-            "Business telephone",
-            false
-        )
-
-        addressInput = addInput(
-            "Business address",
-            true
-        )
-
+        nameInput = addInput("Business name", false)
+        phoneInput = addInput("Business telephone", false)
+        addressInput = addInput("Business address", true)
         descriptionInput = addInput(
-            "Business description",
-            true
+            "Business description", true
         )
 
         addText("Business category")
@@ -184,14 +175,20 @@ class BusinessProfileActivity : Activity() {
         previewButton = addButton(
             "Preview Public Catalogue"
         ) {
-            previewCatalogue()
+            prepareCatalogue(export = false)
+        }
+
+        exportButton = addButton(
+            "Export Catalogue JSON"
+        ) {
+            prepareCatalogue(export = true)
         }
 
         addText(
-            "Preview uses your locally saved services " +
-            "and staff, together with your business " +
-            "profile from Firebase. It does not publish " +
-            "anything online.",
+            "Preview or export your locally saved " +
+            "services and staff together with your " +
+            "saved Firebase business profile. " +
+            "Exporting does not publish anything online.",
             14f
         )
 
@@ -199,10 +196,7 @@ class BusinessProfileActivity : Activity() {
             finish()
         }
 
-        addText(
-            "Boustio | Phase 7D",
-            12f
-        )
+        addText("Boustio | Phase 7E", 12f)
     }
 
     private fun addTitle(value: String) {
@@ -280,9 +274,7 @@ class BusinessProfileActivity : Activity() {
             backgroundTintList =
                 ColorStateList.valueOf(purple)
 
-            setOnClickListener {
-                action()
-            }
+            setOnClickListener { action() }
         }
 
         container.addView(
@@ -299,10 +291,19 @@ class BusinessProfileActivity : Activity() {
         return button
     }
 
+    private fun updateButtons() {
+        val ready = profileLoaded &&
+            !loadingProfile &&
+            !catalogueLoading
+
+        previewButton.isEnabled = ready
+        exportButton.isEnabled = ready
+    }
+
     private fun loadProfile() {
         loadingProfile = true
         saveButton.isEnabled = false
-        previewButton.isEnabled = false
+        updateButtons()
 
         manager.loadProfile { result ->
 
@@ -318,14 +319,13 @@ class BusinessProfileActivity : Activity() {
 
                     if (profile == null) {
                         profileLoaded = false
-                        previewButton.isEnabled = false
                         slugText.text =
                             "Save your profile to generate a booking ID"
+                        updateButtons()
                         return@onSuccess
                     }
 
                     profileLoaded = true
-                    previewButton.isEnabled = true
 
                     nameInput.setText(profile.name)
                     phoneInput.setText(profile.phone)
@@ -348,11 +348,14 @@ class BusinessProfileActivity : Activity() {
 
                     bookingSwitch.isChecked =
                         profile.acceptingBookings
+
+                    updateButtons()
                 }
 
                 result.onFailure { error ->
                     profileLoaded = false
-                    previewButton.isEnabled = false
+                    updateButtons()
+
                     showMessage(
                         "Unable to load profile: " +
                         (error.localizedMessage
@@ -365,19 +368,13 @@ class BusinessProfileActivity : Activity() {
 
     private fun saveProfile() {
 
-        if (loadingProfile) {
+        if (loadingProfile || catalogueLoading) {
             return
         }
 
-        val name =
-            nameInput.text.toString().trim()
-
-        val phone =
-            phoneInput.text.toString().trim()
-
-        val address =
-            addressInput.text.toString().trim()
-
+        val name = nameInput.text.toString().trim()
+        val phone = phoneInput.text.toString().trim()
+        val address = addressInput.text.toString().trim()
         val description =
             descriptionInput.text.toString().trim()
 
@@ -388,12 +385,11 @@ class BusinessProfileActivity : Activity() {
         }
 
         val category =
-            categories[
-                categorySpinner.selectedItemPosition
-            ]
+            categories[categorySpinner.selectedItemPosition]
 
         saveButton.isEnabled = false
         previewButton.isEnabled = false
+        exportButton.isEnabled = false
         saveButton.text = "Saving..."
 
         manager.saveProfile(
@@ -410,16 +406,14 @@ class BusinessProfileActivity : Activity() {
                 }
 
                 saveButton.isEnabled = true
-                saveButton.text =
-                    "Save Business Profile"
+                saveButton.text = "Save Business Profile"
 
                 result.onSuccess { profile ->
-
                     profileLoaded = true
-                    previewButton.isEnabled = true
-
                     slugText.text =
                         "Booking ID: ${profile.slug}"
+
+                    updateButtons()
 
                     showMessage(
                         "Business profile saved successfully"
@@ -427,7 +421,7 @@ class BusinessProfileActivity : Activity() {
                 }
 
                 result.onFailure { error ->
-                    previewButton.isEnabled = profileLoaded
+                    updateButtons()
 
                     AlertDialog.Builder(this)
                         .setTitle("Save failed")
@@ -435,22 +429,19 @@ class BusinessProfileActivity : Activity() {
                             error.localizedMessage
                                 ?: "Unable to save business profile"
                         )
-                        .setPositiveButton(
-                            "OK",
-                            null
-                        )
+                        .setPositiveButton("OK", null)
                         .show()
                 }
             }
         }
     }
 
-    private fun previewCatalogue() {
+    private fun prepareCatalogue(export: Boolean) {
 
         if (
             loadingProfile ||
             !profileLoaded ||
-            previewLoading
+            catalogueLoading
         ) {
             showMessage(
                 "Save your business profile first"
@@ -458,13 +449,9 @@ class BusinessProfileActivity : Activity() {
             return
         }
 
-        previewLoading = true
-        previewButton.isEnabled = false
-        previewButton.text = "Preparing preview..."
+        catalogueLoading = true
+        updateButtons()
 
-        // Load the profile from Firebase so
-        // the preview uses saved information,
-        // not unsaved changes on the screen.
         manager.loadProfile { result ->
 
             runOnUiThread {
@@ -472,10 +459,8 @@ class BusinessProfileActivity : Activity() {
                     return@runOnUiThread
                 }
 
-                previewLoading = false
-                previewButton.isEnabled = true
-                previewButton.text =
-                    "Preview Public Catalogue"
+                catalogueLoading = false
+                updateButtons()
 
                 result.onSuccess { profile ->
 
@@ -489,14 +474,12 @@ class BusinessProfileActivity : Activity() {
                     try {
                         val servicesJson =
                             prefs.getString(
-                                "services",
-                                "[]"
+                                "services", "[]"
                             ) ?: "[]"
 
                         val staffJson =
                             prefs.getString(
-                                "staff",
-                                "[]"
+                                "staff", "[]"
                             ) ?: "[]"
 
                         val catalogue =
@@ -506,47 +489,156 @@ class BusinessProfileActivity : Activity() {
                                 staffJson = staffJson
                             )
 
-                        showCataloguePreview(
-                            catalogue.toString(2)
-                        )
+                        val json = catalogue.toString(2)
+
+                        if (export) {
+                            confirmExport(
+                                json,
+                                profile.slug
+                            )
+                        } else {
+                            showCataloguePreview(json)
+                        }
 
                     } catch (error: Exception) {
-
-                        AlertDialog.Builder(this)
-                            .setTitle("Preview failed")
-                            .setMessage(
-                                error.localizedMessage
-                                    ?: "Unable to create catalogue"
-                            )
-                            .setPositiveButton(
-                                "OK",
-                                null
-                            )
-                            .show()
+                        showError(
+                            "Catalogue failed",
+                            error.localizedMessage
+                                ?: "Unable to create catalogue"
+                        )
                     }
                 }
 
                 result.onFailure { error ->
-
-                    AlertDialog.Builder(this)
-                        .setTitle("Unable to load profile")
-                        .setMessage(
-                            error.localizedMessage
-                                ?: "Check your internet connection"
-                        )
-                        .setPositiveButton(
-                            "OK",
-                            null
-                        )
-                        .show()
+                    showError(
+                        "Unable to load profile",
+                        error.localizedMessage
+                            ?: "Check your internet connection"
+                    )
                 }
             }
         }
     }
 
-    private fun showCataloguePreview(
-        json: String
+    private fun confirmExport(
+        json: String,
+        slug: String
     ) {
+
+        AlertDialog.Builder(this)
+            .setTitle("Export Boustio Catalogue")
+            .setMessage(
+                "Save a private preview JSON file " +
+                "containing your business name, " +
+                "description, address, services, " +
+                "staff and working hours.\n\n" +
+                "Review these details before sharing " +
+                "or publishing the file.\n\n" +
+                "This does not publish your business " +
+                "or activate online bookings."
+            )
+            .setPositiveButton("Choose Save Location") { _, _ ->
+                pendingExportJson = json
+
+                val safeSlug = slug.replace(
+                    Regex("[^a-z0-9-]"), ""
+                ).ifBlank {
+                    "business"
+                }
+
+                val intent = Intent(
+                    Intent.ACTION_CREATE_DOCUMENT
+                ).apply {
+                    addCategory(
+                        Intent.CATEGORY_OPENABLE
+                    )
+                    type = "application/json"
+                    putExtra(
+                        Intent.EXTRA_TITLE,
+                        "$safeSlug.json"
+                    )
+                }
+
+                try {
+                    startActivityForResult(
+                        intent,
+                        EXPORT_REQUEST
+                    )
+                } catch (error: Exception) {
+                    pendingExportJson = null
+                    showError(
+                        "Export unavailable",
+                        error.localizedMessage
+                            ?: "Unable to open file picker"
+                    )
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    @Deprecated("Uses Android document picker result")
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?
+    ) {
+        super.onActivityResult(
+            requestCode,
+            resultCode,
+            data
+        )
+
+        if (requestCode != EXPORT_REQUEST) {
+            return
+        }
+
+        val json = pendingExportJson
+        pendingExportJson = null
+
+        if (
+            resultCode != RESULT_OK ||
+            data?.data == null ||
+            json == null
+        ) {
+            return
+        }
+
+        try {
+            val uri = data.data
+                ?: error("No destination selected")
+
+            contentResolver.openOutputStream(
+                uri, "w"
+            )?.use { output ->
+                output.write(
+                    json.toByteArray(Charsets.UTF_8)
+                )
+                output.flush()
+            } ?: error("Unable to write file")
+
+            AlertDialog.Builder(this)
+                .setTitle("Catalogue exported")
+                .setMessage(
+                    "Your Boustio JSON file was saved " +
+                    "successfully.\n\n" +
+                    "It remains a private preview. " +
+                    "No website publishing or online " +
+                    "booking activation has occurred."
+                )
+                .setPositiveButton("OK", null)
+                .show()
+
+        } catch (error: Exception) {
+            showError(
+                "Export failed",
+                error.localizedMessage
+                    ?: "Unable to save JSON file"
+            )
+        }
+    }
+
+    private fun showCataloguePreview(json: String) {
 
         val scroll = ScrollView(this)
 
@@ -574,6 +666,17 @@ class BusinessProfileActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
+    }
+
+    private fun showError(
+        title: String,
+        message: String
+    ) {
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     private fun showMessage(message: String) {
