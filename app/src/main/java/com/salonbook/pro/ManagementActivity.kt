@@ -2,15 +2,17 @@ package com.salonbook.pro
 
 import android.app.Activity
 import android.app.AlertDialog
-import android.os.Bundle
 import android.graphics.Color
+import android.os.Bundle
 import android.view.ViewGroup
 import android.widget.*
 import com.google.firebase.auth.FirebaseAuth
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.UUID
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 import java.util.Locale
+import java.util.UUID
 
 class ManagementActivity : Activity() {
 
@@ -44,6 +46,15 @@ class ManagementActivity : Activity() {
         val closing: EditText
     )
 
+    private data class PeriodFields(
+        val container: LinearLayout,
+        val day: Spinner?,
+        val date: EditText?,
+        val start: EditText,
+        val end: EditText,
+        val note: EditText
+    )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         load()
@@ -52,66 +63,53 @@ class ManagementActivity : Activity() {
 
     private fun load() {
         records.clear()
-
         try {
             val array = JSONArray(
                 prefs.getString(storageKey, "[]") ?: "[]"
             )
-
             for (i in 0 until array.length()) {
                 records.add(array.getJSONObject(i))
             }
         } catch (e: Exception) {
             Toast.makeText(
-                this,
-                "Unable to load saved data",
+                this, "Unable to load saved data",
                 Toast.LENGTH_LONG
             ).show()
         }
     }
 
     private fun loadAvailableServices(): List<JSONObject> {
-        val services = mutableListOf<JSONObject>()
-
+        val result = mutableListOf<JSONObject>()
         try {
             val array = JSONArray(
                 prefs.getString("services", "[]") ?: "[]"
             )
-
             for (i in 0 until array.length()) {
-                val service = array.optJSONObject(i)
-                    ?: continue
-
+                val item = array.optJSONObject(i) ?: continue
                 if (
-                    service.optString("id").isNotBlank() &&
-                    service.optString("name").isNotBlank()
+                    item.optString("id").isNotBlank() &&
+                    item.optString("name").isNotBlank()
                 ) {
-                    services.add(service)
+                    result.add(item)
                 }
             }
         } catch (e: Exception) {
             Toast.makeText(
-                this,
-                "Unable to load services",
+                this, "Unable to load services",
                 Toast.LENGTH_LONG
             ).show()
         }
-
-        return services
+        return result
     }
 
     private fun assignedIds(item: JSONObject?): Set<String> {
         val result = mutableSetOf<String>()
         val array = item?.optJSONArray("serviceIds")
             ?: return result
-
         for (i in 0 until array.length()) {
             val id = array.optString(i)
-            if (id.isNotBlank()) {
-                result.add(id)
-            }
+            if (id.isNotBlank()) result.add(id)
         }
-
         return result
     }
 
@@ -119,32 +117,39 @@ class ManagementActivity : Activity() {
         val match = Regex(
             """^([01]\d|2[0-3]):([0-5]\d)$"""
         ).matchEntire(value.trim()) ?: return null
-
         return match.groupValues[1].toInt() * 60 +
             match.groupValues[2].toInt()
     }
 
-    private fun validTime(value: String): Boolean {
-        return parseMinutes(value) != null
+    private fun validPeriod(
+        start: String,
+        end: String
+    ): Boolean {
+        val a = parseMinutes(start) ?: return false
+        val b = parseMinutes(end) ?: return false
+        return a < b
     }
 
-    private fun legacySchedule(
-        hours: String
-    ): JSONObject? {
-        val input = hours.trim().lowercase(Locale.ROOT)
+    private fun validDate(value: String): Boolean {
+        if (!Regex("""^\d{4}-\d{2}-\d{2}$""")
+                .matches(value)) return false
+        return try {
+            LocalDate.parse(value)
+            true
+        } catch (e: DateTimeParseException) {
+            false
+        }
+    }
 
+    private fun legacySchedule(hours: String): JSONObject? {
+        val input = hours.trim().lowercase(Locale.ROOT)
         val match = Regex(
             """^(mon|tue|wed|thu|fri|sat|sun)(?:\s*-\s*(mon|tue|wed|thu|fri|sat|sun))?\s+(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$"""
         ).matchEntire(input) ?: return null
 
-        val startIndex = shortDays.indexOf(
-            match.groupValues[1]
-        )
-
-        val endIndex = if (
-            match.groupValues[2].isBlank()
-        ) {
-            startIndex
+        val first = shortDays.indexOf(match.groupValues[1])
+        val last = if (match.groupValues[2].isBlank()) {
+            first
         } else {
             shortDays.indexOf(match.groupValues[2])
         }
@@ -152,50 +157,29 @@ class ManagementActivity : Activity() {
         val open = match.groupValues[3]
         val close = match.groupValues[4]
 
-        val openMinutes = parseMinutes(open)
-            ?: return null
-
-        val closeMinutes = parseMinutes(close)
-            ?: return null
-
         if (
-            startIndex < 0 ||
-            endIndex < startIndex ||
-            openMinutes >= closeMinutes
-        ) {
-            return null
-        }
+            first < 0 || last < first ||
+            !validPeriod(open, close)
+        ) return null
 
-        val result = JSONObject()
-
-        for (index in startIndex..endIndex) {
-            result.put(
-                days[index],
+        val schedule = JSONObject()
+        for (i in first..last) {
+            schedule.put(
+                days[i],
                 JSONObject().apply {
                     put("open", open)
                     put("close", close)
                 }
             )
         }
-
-        return result
+        return schedule
     }
 
-    private fun existingSchedule(
-        item: JSONObject?
-    ): JSONObject {
-        if (item == null) {
-            return JSONObject()
-        }
-
-        val structured = item.optJSONObject("weeklySchedule")
-        if (structured != null) {
-            return structured
-        }
-
-        return legacySchedule(
-            item.optString("hours")
-        ) ?: JSONObject()
+    private fun existingSchedule(item: JSONObject?): JSONObject {
+        if (item == null) return JSONObject()
+        return item.optJSONObject("weeklySchedule")
+            ?: legacySchedule(item.optString("hours"))
+            ?: JSONObject()
     }
 
     private fun scheduleSummary(item: JSONObject): String {
@@ -203,7 +187,6 @@ class ManagementActivity : Activity() {
             ?: return item.optString("hours", "Not set")
 
         val active = mutableListOf<String>()
-
         days.forEach { day ->
             val period = schedule.optJSONObject(day)
             if (period != null) {
@@ -214,7 +197,6 @@ class ManagementActivity : Activity() {
                 )
             }
         }
-
         return if (active.isEmpty()) {
             "No working days"
         } else {
@@ -225,20 +207,17 @@ class ManagementActivity : Activity() {
     private fun save() {
         val array = JSONArray()
         records.forEach { array.put(it) }
-
         val json = array.toString()
 
         prefs.edit()
             .putString(storageKey, json)
             .apply()
 
-        // Preserve Phase 6B cloud sync.
         if (FirebaseAuth.getInstance()
                 .currentUser?.isEmailVerified == true
         ) {
             CloudSyncManager().upload(
-                storageKey,
-                json
+                storageKey, json
             ) { result ->
                 result.exceptionOrNull()?.let { error ->
                     runOnUiThread {
@@ -259,15 +238,12 @@ class ManagementActivity : Activity() {
 
     private fun render() {
         val scroll = ScrollView(this)
-        scroll.setBackgroundColor(
-            Color.rgb(248, 246, 252)
-        )
+        scroll.setBackgroundColor(Color.rgb(248, 246, 252))
 
         layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(32, 45, 32, 40)
         }
-
         scroll.addView(layout)
         setContentView(scroll)
 
@@ -286,13 +262,9 @@ class ManagementActivity : Activity() {
         addButton(
             if (staffMode) "Add Staff Member"
             else "Add Service"
-        ) {
-            edit(null)
-        }
+        ) { edit(null) }
 
-        if (records.isEmpty()) {
-            addText("Nothing added yet.")
-        }
+        if (records.isEmpty()) addText("Nothing added yet.")
 
         val serviceNames = if (staffMode) {
             loadAvailableServices().associate {
@@ -303,18 +275,13 @@ class ManagementActivity : Activity() {
         }
 
         records.forEach { item ->
-            val visibilityLabel =
-                if (item.optBoolean("publicVisible", false)) {
-                    "Public: Yes"
-                } else {
-                    "Public: No"
-                }
+            val visibility = if (
+                item.optBoolean("publicVisible", false)
+            ) "Public: Yes" else "Public: No"
 
             val description = if (staffMode) {
                 val assigned = assignedIds(item)
-                val names = assigned.mapNotNull {
-                    serviceNames[it]
-                }
+                val names = assigned.mapNotNull { serviceNames[it] }
 
                 val serviceSummary = when {
                     assigned.isEmpty() -> "None assigned"
@@ -322,28 +289,30 @@ class ManagementActivity : Activity() {
                     else -> names.joinToString(", ")
                 }
 
+                val breaks = item.optJSONArray("weeklyBreaks")
+                    ?.length() ?: 0
+                val timeOff = item.optJSONArray("timeOff")
+                    ?.length() ?: 0
+
                 "${item.optString("name")}\n" +
                     "${item.optString("role")}\n" +
                     "Hours: ${scheduleSummary(item)}\n" +
                     "Services: $serviceSummary\n" +
-                    visibilityLabel
+                    "Weekly breaks: $breaks\n" +
+                    "Time-off periods: $timeOff\n" +
+                    visibility
             } else {
                 "${item.optString("name")}\n" +
                     "£${item.optString("price")} · " +
                     "${item.optInt("duration")} minutes\n" +
-                    visibilityLabel
+                    visibility
             }
 
             addText(description)
-
-            addButton("Edit / Delete") {
-                options(item)
-            }
+            addButton("Edit / Delete") { options(item) }
         }
 
-        addButton("Back to Dashboard") {
-            finish()
-        }
+        addButton("Back to Dashboard") { finish() }
     }
 
     private fun addText(
@@ -380,9 +349,7 @@ class ManagementActivity : Activity() {
     private fun options(item: JSONObject) {
         AlertDialog.Builder(this)
             .setTitle(item.optString("name"))
-            .setItems(
-                arrayOf("Edit", "Delete")
-            ) { _, choice ->
+            .setItems(arrayOf("Edit", "Delete")) { _, choice ->
                 if (choice == 0) {
                     edit(item)
                 } else {
@@ -391,8 +358,7 @@ class ManagementActivity : Activity() {
                         .setMessage(
                             "This permanently deletes the entry " +
                                 "from your saved management list. " +
-                                "Existing bookings are not " +
-                                "automatically changed."
+                                "Existing bookings are not changed."
                         )
                         .setPositiveButton("Delete") { _, _ ->
                             records.remove(item)
@@ -412,10 +378,7 @@ class ManagementActivity : Activity() {
             setPadding(28, 12, 28, 16)
         }
 
-        fun field(
-            label: String,
-            initial: String
-        ): EditText {
+        fun field(label: String, initial: String): EditText {
             val input = EditText(this).apply {
                 hint = label
                 setText(initial)
@@ -423,6 +386,15 @@ class ManagementActivity : Activity() {
             }
             form.addView(input)
             return input
+        }
+
+        fun heading(value: String) {
+            form.addView(TextView(this).apply {
+                text = value
+                textSize = 19f
+                setTextColor(Color.rgb(40, 35, 55))
+                setPadding(0, 24, 0, 8)
+            })
         }
 
         val name = field(
@@ -445,9 +417,7 @@ class ManagementActivity : Activity() {
                 inputType =
                     android.text.InputType.TYPE_CLASS_NUMBER
             }
-        } else {
-            null
-        }
+        } else null
 
         if (!staffMode) {
             second.inputType =
@@ -458,101 +428,70 @@ class ManagementActivity : Activity() {
         val publicCheckbox = CheckBox(this).apply {
             text = "Show on Public Booking Page"
             textSize = 16f
-            setTextColor(Color.rgb(40, 35, 55))
             isChecked = existing?.optBoolean(
                 "publicVisible", false
             ) ?: false
-            setPadding(0, 20, 0, 12)
         }
         form.addView(publicCheckbox)
 
-        // Step 7A: Preserve service assignments.
+        // Step 7A: Service assignments.
         val availableServices = if (staffMode) {
             loadAvailableServices()
-        } else {
-            emptyList()
-        }
+        } else emptyList()
 
-        val selectedServiceIds =
-            assignedIds(existing).toMutableSet()
+        val selectedIds = assignedIds(existing).toMutableSet()
 
         if (staffMode) {
-            form.addView(TextView(this).apply {
-                text = "Services this staff member performs"
-                textSize = 17f
-                setTextColor(Color.rgb(40, 35, 55))
-                setPadding(0, 20, 0, 8)
-            })
+            heading("Services this staff member performs")
 
             if (availableServices.isEmpty()) {
                 form.addView(TextView(this).apply {
                     text = "Add services in Services & Prices first."
-                    textSize = 14f
                 })
-            } else {
-                availableServices.forEach { service ->
-                    val id = service.optString("id")
-                    val serviceName = service.optString("name")
-                    val price = service.optString("price")
+            }
 
-                    val checkbox = CheckBox(this).apply {
-                        text = "$serviceName — £$price"
-                        textSize = 15f
-                        isChecked = selectedServiceIds.contains(id)
-                    }
-
-                    checkbox.setOnCheckedChangeListener {
-                            _, checked ->
-                        if (checked) {
-                            selectedServiceIds.add(id)
-                        } else {
-                            selectedServiceIds.remove(id)
-                        }
-                    }
-
-                    form.addView(checkbox)
+            availableServices.forEach { service ->
+                val id = service.optString("id")
+                val check = CheckBox(this).apply {
+                    text = "${service.optString("name")} — " +
+                        "£${service.optString("price")}"
+                    isChecked = selectedIds.contains(id)
                 }
+                check.setOnCheckedChangeListener { _, checked ->
+                    if (checked) selectedIds.add(id)
+                    else selectedIds.remove(id)
+                }
+                form.addView(check)
             }
         }
 
-        // Step 7B: Individual day-by-day schedules.
+        // Step 7B: Individual working days.
         val dayFields = linkedMapOf<String, DayFields>()
 
         if (staffMode) {
+            heading("Individual Working Hours")
             form.addView(TextView(this).apply {
-                text = "Individual Working Hours"
-                textSize = 19f
-                setTextColor(Color.rgb(40, 35, 55))
-                setPadding(0, 24, 0, 8)
+                text = "Tick working days. Use 24-hour HH:mm times."
             })
 
-            form.addView(TextView(this).apply {
-                text = "Tick working days and enter times " +
-                    "in 24-hour format (HH:mm)."
-                textSize = 14f
-            })
-
-            val savedSchedule = existingSchedule(existing)
+            val schedule = existingSchedule(existing)
 
             days.forEach { day ->
-                val period = savedSchedule.optJSONObject(day)
+                val period = schedule.optJSONObject(day)
 
                 val enabled = CheckBox(this).apply {
-                    text = day.replaceFirstChar {
-                        it.uppercase()
-                    }
-                    textSize = 16f
+                    text = day.replaceFirstChar { it.uppercase() }
                     isChecked = period != null
                 }
 
                 val opening = EditText(this).apply {
-                    hint = "Opening (09:00)"
+                    hint = "Open"
                     setSingleLine(true)
                     setText(period?.optString("open") ?: "09:00")
                 }
 
                 val closing = EditText(this).apply {
-                    hint = "Closing (17:00)"
+                    hint = "Close"
                     setSingleLine(true)
                     setText(period?.optString("close") ?: "17:00")
                 }
@@ -560,37 +499,29 @@ class ManagementActivity : Activity() {
                 opening.isEnabled = enabled.isChecked
                 closing.isEnabled = enabled.isChecked
 
-                enabled.setOnCheckedChangeListener {
-                        _, checked ->
+                enabled.setOnCheckedChangeListener { _, checked ->
                     opening.isEnabled = checked
                     closing.isEnabled = checked
                 }
 
                 form.addView(enabled)
 
-                val timeRow = LinearLayout(this).apply {
+                val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                 }
-
-                timeRow.addView(
+                row.addView(
                     opening,
                     LinearLayout.LayoutParams(
-                        0,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        1f
+                        0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
                     )
                 )
-
-                timeRow.addView(
+                row.addView(
                     closing,
                     LinearLayout.LayoutParams(
-                        0,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        1f
+                        0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
                     )
                 )
-
-                form.addView(timeRow)
+                form.addView(row)
 
                 dayFields[day] = DayFields(
                     enabled, opening, closing
@@ -598,15 +529,132 @@ class ManagementActivity : Activity() {
             }
         }
 
-        val scrollForm = ScrollView(this).apply {
-            addView(form)
+        // Step 7C: Weekly breaks and date-specific time off.
+        val breakFields = mutableListOf<PeriodFields>()
+        val timeOffFields = mutableListOf<PeriodFields>()
+
+        fun addPeriod(
+            isWeekly: Boolean,
+            saved: JSONObject? = null
+        ) {
+            val parent = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(12, 12, 12, 12)
+                setBackgroundColor(Color.rgb(239, 237, 244))
+            }
+
+            val daySpinner = if (isWeekly) {
+                Spinner(this).apply {
+                    adapter = ArrayAdapter(
+                        this@ManagementActivity,
+                        android.R.layout.simple_spinner_dropdown_item,
+                        days.map {
+                            it.replaceFirstChar { c -> c.uppercase() }
+                        }
+                    )
+                    val index = days.indexOf(
+                        saved?.optString("day") ?: "monday"
+                    )
+                    setSelection(if (index < 0) 0 else index)
+                }
+            } else null
+
+            val dateInput = if (!isWeekly) {
+                EditText(this).apply {
+                    hint = "Date YYYY-MM-DD"
+                    setSingleLine(true)
+                    setText(saved?.optString("date") ?: "")
+                }
+            } else null
+
+            val start = EditText(this).apply {
+                hint = "Start HH:mm"
+                setSingleLine(true)
+                setText(saved?.optString("start") ?: "12:30")
+            }
+
+            val end = EditText(this).apply {
+                hint = "End HH:mm"
+                setSingleLine(true)
+                setText(saved?.optString("end") ?: "13:00")
+            }
+
+            val note = EditText(this).apply {
+                hint = if (isWeekly) "Reason (e.g. Lunch)"
+                else "Reason (e.g. Holiday)"
+                setSingleLine(true)
+                setText(saved?.optString("reason") ?: "")
+            }
+
+            if (daySpinner != null) parent.addView(daySpinner)
+            if (dateInput != null) parent.addView(dateInput)
+
+            parent.addView(start)
+            parent.addView(end)
+            parent.addView(note)
+
+            val entry = PeriodFields(
+                parent, daySpinner, dateInput, start, end, note
+            )
+
+            val target = if (isWeekly) breakFields
+                else timeOffFields
+
+            target.add(entry)
+
+            parent.addView(Button(this).apply {
+                text = "Remove"
+                isAllCaps = false
+                setOnClickListener {
+                    target.remove(entry)
+                    (parent.parent as? ViewGroup)?.removeView(parent)
+                }
+            })
+
+            form.addView(parent)
+        }
+
+        if (staffMode) {
+            heading("Recurring Weekly Breaks")
+
+            val savedBreaks = existing?.optJSONArray("weeklyBreaks")
+            if (savedBreaks != null) {
+                for (i in 0 until savedBreaks.length()) {
+                    savedBreaks.optJSONObject(i)?.let {
+                        addPeriod(true, it)
+                    }
+                }
+            }
+
+            form.addView(Button(this).apply {
+                text = "Add Weekly Break"
+                isAllCaps = false
+                setOnClickListener { addPeriod(true) }
+            })
+
+            heading("Date-Specific Time Off")
+
+            val savedTimeOff = existing?.optJSONArray("timeOff")
+            if (savedTimeOff != null) {
+                for (i in 0 until savedTimeOff.length()) {
+                    savedTimeOff.optJSONObject(i)?.let {
+                        addPeriod(false, it)
+                    }
+                }
+            }
+
+            form.addView(Button(this).apply {
+                text = "Add Time Off"
+                isAllCaps = false
+                setOnClickListener { addPeriod(false) }
+            })
         }
 
         val dialog = AlertDialog.Builder(this)
-            .setTitle(
-                if (existing == null) "Add New" else "Edit"
-            )
-            .setView(scrollForm)
+            .setTitle(if (existing == null) "Add New" else "Edit")
+            .setView(ScrollView(this).apply {
+                addView(form)
+            })
             .setPositiveButton("Save", null)
             .setNegativeButton("Cancel", null)
             .create()
@@ -621,69 +669,129 @@ class ManagementActivity : Activity() {
                 val t = third?.text?.toString()?.trim() ?: ""
 
                 if (
-                    n.isBlank() ||
-                    s.isBlank() ||
+                    n.isBlank() || s.isBlank() ||
                     (!staffMode && t.isBlank())
                 ) {
                     Toast.makeText(
-                        this,
-                        "Complete all required fields",
+                        this, "Complete all required fields",
                         Toast.LENGTH_SHORT
                     ).show()
                     return@setOnClickListener
                 }
 
-                if (!staffMode &&
-                    (s.toDoubleOrNull() == null ||
-                        s.toDouble() < 0 ||
-                        t.toIntOrNull() == null ||
-                        t.toInt() <= 0)
-                ) {
+                if (!staffMode && (
+                    s.toDoubleOrNull() == null ||
+                    !s.toDouble().isFinite() ||
+                    s.toDouble() < 0 ||
+                    t.toIntOrNull() == null ||
+                    t.toInt() <= 0
+                )) {
                     Toast.makeText(
-                        this,
-                        "Invalid price or duration",
+                        this, "Invalid price or duration",
                         Toast.LENGTH_SHORT
                     ).show()
                     return@setOnClickListener
                 }
 
-                // Validate all hours before changing
-                // any saved staff record.
-                val newSchedule = JSONObject()
+                val schedule = JSONObject()
+                val weeklyBreaks = JSONArray()
+                val timeOff = JSONArray()
 
                 if (staffMode) {
                     for ((day, fields) in dayFields) {
-                        if (!fields.enabled.isChecked) {
-                            continue
-                        }
+                        if (!fields.enabled.isChecked) continue
 
-                        val open = fields.opening.text
-                            .toString().trim()
+                        val open = fields.opening.text.toString().trim()
+                        val close = fields.closing.text.toString().trim()
 
-                        val close = fields.closing.text
-                            .toString().trim()
-
-                        if (
-                            !validTime(open) ||
-                            !validTime(close) ||
-                            parseMinutes(open)!! >=
-                                parseMinutes(close)!!
-                        ) {
+                        if (!validPeriod(open, close)) {
                             Toast.makeText(
-                                this,
-                                "Invalid hours for $day. " +
-                                    "Use HH:mm, with closing " +
-                                    "later than opening.",
+                                this, "Invalid hours for $day",
                                 Toast.LENGTH_LONG
                             ).show()
                             return@setOnClickListener
                         }
 
-                        newSchedule.put(
+                        schedule.put(
                             day,
                             JSONObject().apply {
                                 put("open", open)
                                 put("close", close)
+                            }
+                        )
+                    }
+
+                    for (entry in breakFields) {
+                        val day = days[
+                            entry.day!!.selectedItemPosition
+                        ]
+                        val start = entry.start.text.toString().trim()
+                        val end = entry.end.text.toString().trim()
+                        val working = schedule.optJSONObject(day)
+
+                        if (
+                            !validPeriod(start, end) ||
+                            working == null ||
+                            parseMinutes(start)!! <
+                                parseMinutes(
+                                    working.optString("open")
+                                )!! ||
+                            parseMinutes(end)!! >
+                                parseMinutes(
+                                    working.optString("close")
+                                )!!
+                        ) {
+                            Toast.makeText(
+                                this,
+                                "Break must be within working " +
+                                    "hours on $day",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            return@setOnClickListener
+                        }
+
+                        weeklyBreaks.put(
+                            JSONObject().apply {
+                                put("id", UUID.randomUUID().toString())
+                                put("day", day)
+                                put("start", start)
+                                put("end", end)
+                                put(
+                                    "reason",
+                                    entry.note.text.toString().trim()
+                                )
+                            }
+                        )
+                    }
+
+                    for (entry in timeOffFields) {
+                        val date = entry.date!!.text.toString().trim()
+                        val start = entry.start.text.toString().trim()
+                        val end = entry.end.text.toString().trim()
+
+                        if (
+                            !validDate(date) ||
+                            !validPeriod(start, end)
+                        ) {
+                            Toast.makeText(
+                                this,
+                                "Time off requires YYYY-MM-DD " +
+                                    "and valid HH:mm times",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            return@setOnClickListener
+                        }
+
+                        timeOff.put(
+                            JSONObject().apply {
+                                put("id", UUID.randomUUID().toString())
+                                put("date", date)
+                                put("start", start)
+                                put("end", end)
+                                put(
+                                    "reason",
+                                    entry.note.text.toString().trim()
+                                )
                             }
                         )
                     }
@@ -699,18 +807,13 @@ class ManagementActivity : Activity() {
                     item.put("role", s)
 
                     val ids = JSONArray()
-                    selectedServiceIds.forEach { id ->
-                        ids.put(id)
-                    }
+                    selectedIds.forEach { ids.put(it) }
                     item.put("serviceIds", ids)
 
-                    item.put("weeklySchedule", newSchedule)
+                    item.put("weeklySchedule", schedule)
+                    item.put("weeklyBreaks", weeklyBreaks)
+                    item.put("timeOff", timeOff)
 
-                    // Preserve the old hours field
-                    // for compatibility with existing
-                    // local app functionality.
-                    // The structured schedule is the
-                    // source of truth for Step 7B.
                     if (existing == null) {
                         item.put("hours", "See weekly schedule")
                     }
@@ -718,9 +821,7 @@ class ManagementActivity : Activity() {
                     item.put(
                         "price",
                         String.format(
-                            Locale.UK,
-                            "%.2f",
-                            s.toDouble()
+                            Locale.UK, "%.2f", s.toDouble()
                         )
                     )
                     item.put("duration", t.toInt())
@@ -731,9 +832,7 @@ class ManagementActivity : Activity() {
                     publicCheckbox.isChecked
                 )
 
-                if (existing == null) {
-                    records.add(item)
-                }
+                if (existing == null) records.add(item)
 
                 save()
                 dialog.dismiss()
