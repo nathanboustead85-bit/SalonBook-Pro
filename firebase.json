@@ -7,7 +7,13 @@
       "**/node_modules/**"
     ],
     "cleanUrls": true,
-    "trailingSlash": false
+    "trailingSlash": false,
+    "rewrites": [
+      {
+        "source": "/book/**",
+        "destination": "/book/index.html"
+      }
+    ]
   },
   "functions": {
     "source": "functions",
