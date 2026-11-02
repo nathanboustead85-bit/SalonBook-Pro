@@ -10,6 +10,7 @@ import com.google.firebase.auth.FirebaseAuth
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
+import java.util.Locale
 
 class ManagementActivity : Activity() {
 
@@ -64,7 +65,7 @@ class ManagementActivity : Activity() {
             .putString(storageKey, json)
             .apply()
 
-        // Phase 6B: automatically upload changes.
+        // Preserve Phase 6B cloud sync.
         if (FirebaseAuth.getInstance()
                 .currentUser?.isEmailVerified == true
         ) {
@@ -74,13 +75,15 @@ class ManagementActivity : Activity() {
             ) { result ->
                 result.exceptionOrNull()?.let { error ->
                     runOnUiThread {
-                        Toast.makeText(
-                            this,
-                            "Cloud sync failed: " +
-                                (error.localizedMessage
-                                    ?: "Unknown error"),
-                            Toast.LENGTH_LONG
-                        ).show()
+                        if (!isFinishing && !isDestroyed) {
+                            Toast.makeText(
+                                this,
+                                "Cloud sync failed: " +
+                                    (error.localizedMessage
+                                        ?: "Unknown error"),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                     }
                 }
             }
@@ -107,6 +110,12 @@ class ManagementActivity : Activity() {
             27f
         )
 
+        addText(
+            "Choose which entries should appear " +
+            "on your future public Boustio booking page.",
+            15f
+        )
+
         addButton(
             if (staffMode) "Add Staff Member"
             else "Add Service"
@@ -119,14 +128,26 @@ class ManagementActivity : Activity() {
         }
 
         records.forEach { item ->
+
+            val publicVisible =
+                item.optBoolean("publicVisible", false)
+
+            val visibilityLabel = if (publicVisible) {
+                "Public: Yes"
+            } else {
+                "Public: No"
+            }
+
             val description = if (staffMode) {
                 "${item.optString("name")}\n" +
                     "${item.optString("role")}\n" +
-                    "Hours: ${item.optString("hours")}"
+                    "Hours: ${item.optString("hours")}\n" +
+                    visibilityLabel
             } else {
                 "${item.optString("name")}\n" +
                     "£${item.optString("price")} · " +
-                    "${item.optInt("duration")} minutes"
+                    "${item.optInt("duration")} minutes\n" +
+                    visibilityLabel
             }
 
             addText(description)
@@ -185,6 +206,12 @@ class ManagementActivity : Activity() {
                 } else {
                     AlertDialog.Builder(this)
                         .setTitle("Delete this entry?")
+                        .setMessage(
+                            "This permanently deletes the " +
+                            "entry from your saved management " +
+                            "list. Existing bookings are not " +
+                            "automatically changed."
+                        )
                         .setPositiveButton("Delete") { _, _ ->
                             records.remove(item)
                             save()
@@ -246,6 +273,19 @@ class ManagementActivity : Activity() {
                 android.text.InputType.TYPE_CLASS_NUMBER
         }
 
+        // Phase 7E: Public visibility control.
+        val publicCheckbox = CheckBox(this).apply {
+            text = "Show on Public Booking Page"
+            textSize = 16f
+            setTextColor(Color.rgb(40, 35, 55))
+            isChecked = existing?.optBoolean(
+                "publicVisible", false
+            ) ?: false
+            setPadding(0, 20, 0, 12)
+        }
+
+        form.addView(publicCheckbox)
+
         val dialog = AlertDialog.Builder(this)
             .setTitle(
                 if (existing == null) "Add New" else "Edit"
@@ -300,13 +340,20 @@ class ManagementActivity : Activity() {
                     item.put(
                         "price",
                         String.format(
-                            java.util.Locale.UK,
+                            Locale.UK,
                             "%.2f",
                             s.toDouble()
                         )
                     )
                     item.put("duration", t.toInt())
                 }
+
+                // Save visibility alongside the
+                // existing service/staff fields.
+                item.put(
+                    "publicVisible",
+                    publicCheckbox.isChecked
+                )
 
                 if (existing == null) {
                     records.add(item)
