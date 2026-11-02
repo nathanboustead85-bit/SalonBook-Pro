@@ -220,6 +220,11 @@ class MainActivity : Activity() {
             )
         }
 
+        // Phase 8A: Private availability testing.
+        button("Test Appointment Availability") {
+            showAvailabilityTester()
+        }
+
         button("Business Settings") {
             message(
                 "Business settings are coming next"
@@ -227,7 +232,7 @@ class MainActivity : Activity() {
         }
 
         text(
-            "SalonBook Pro | Phase 7A - Business Profiles",
+            "SalonBook Pro | Phase 8A - Availability Testing",
             12f
         )
     }
@@ -884,6 +889,157 @@ class MainActivity : Activity() {
                         it.client == name
                     }} booking(s)"
             )
+        }
+
+        button("Back to Dashboard") {
+            showDashboard()
+        }
+    }
+
+    // Phase 8A: Read-only availability tester.
+    private fun showAvailabilityTester(
+        testDate: String = selectedDate
+    ) {
+        screen("Appointment Availability Test")
+
+        text(
+            "PRIVATE TEST ONLY\n" +
+                "No appointments will be created.",
+            15f
+        )
+
+        val services = readRecords("services")
+        val staff = readRecords("staff")
+
+        if (services.isEmpty() || staff.isEmpty()) {
+            text(
+                "Add at least one service and " +
+                    "one staff member before testing."
+            )
+
+            button("Back to Dashboard") {
+                showDashboard()
+            }
+            return
+        }
+
+        text("Select service", 18f)
+
+        val serviceSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                services.map {
+                    "${it.optString("name")} " +
+                        "(${it.optInt("duration")} min)"
+                }
+            )
+        }
+
+        container.addView(serviceSpinner)
+
+        text("Select staff member", 18f)
+
+        val staffSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                staff.map {
+                    it.optString("name")
+                }
+            )
+        }
+
+        container.addView(staffSpinner)
+
+        var date = testDate
+
+        val dateButton = Button(this).apply {
+            text = "Date: $date"
+            isAllCaps = false
+        }
+
+        dateButton.setOnClickListener {
+            pickDate(date) {
+                date = it
+                dateButton.text = "Date: $date"
+            }
+        }
+
+        container.addView(dateButton)
+
+        button("Check Available Times") {
+
+            val service = services[
+                serviceSpinner.selectedItemPosition
+            ]
+
+            val member = staff[
+                staffSpinner.selectedItemPosition
+            ]
+
+            val serviceId = service.optString("id")
+            val staffId = member.optString("id")
+
+            val servicesJson =
+                prefs.getString("services", "[]") ?: "[]"
+
+            val staffJson =
+                prefs.getString("staff", "[]") ?: "[]"
+
+            val bookingsJson =
+                prefs.getString("bookings", "[]") ?: "[]"
+
+            val slots = AvailabilityEngine.availableSlots(
+                date = date,
+                staffId = staffId,
+                serviceId = serviceId,
+                servicesJson = servicesJson,
+                staffJson = staffJson,
+                bookingsJson = bookingsJson,
+                slotIntervalMinutes = 15
+            )
+
+            screen("Availability Results")
+
+            text(
+                "Staff: ${member.optString("name")}\n" +
+                    "Service: ${service.optString("name")}\n" +
+                    "Date: $date\n" +
+                    "Duration: ${service.optInt("duration")} minutes",
+                17f
+            )
+
+            text(
+                "Available appointment starts: " +
+                    "${slots.size}",
+                20f
+            )
+
+            if (slots.isEmpty()) {
+                text(
+                    "No available times found.\n\n" +
+                        "This could be due to working " +
+                        "hours, breaks, time off, " +
+                        "existing bookings or missing " +
+                        "staff service assignments."
+                )
+            } else {
+                slots.forEach { slot ->
+                    text(
+                        "Available: ${slot.time}",
+                        16f
+                    )
+                }
+            }
+
+            button("Test Another Date") {
+                showAvailabilityTester(date)
+            }
+
+            button("Back to Dashboard") {
+                showDashboard()
+            }
         }
 
         button("Back to Dashboard") {
