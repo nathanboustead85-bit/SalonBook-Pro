@@ -5,20 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#111827">
   <title>Book an Appointment | Boustio</title>
+
   <style>
     :root {
       font-family: Arial, Helvetica, sans-serif;
       color: #172033;
       background: #f5f6fa;
     }
-    * { box-sizing: border-box; }
-    body { margin: 0; }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+    }
+
     header {
       background: #111827;
       color: white;
       padding: 20px;
       text-align: center;
     }
+
     .brand {
       color: white;
       text-decoration: none;
@@ -26,16 +35,19 @@
       font-weight: 800;
       letter-spacing: -1px;
     }
+
     .subtitle {
       color: #cbd5e1;
       font-size: 13px;
       margin-top: 6px;
     }
+
     main {
       max-width: 620px;
       margin: 24px auto;
       padding: 0 16px 40px;
     }
+
     .card {
       background: white;
       border-radius: 16px;
@@ -43,16 +55,32 @@
       margin-bottom: 16px;
       box-shadow: 0 5px 22px #0000000a;
     }
-    h1 { font-size: 25px; margin: 0 0 8px; }
-    h2 { font-size: 18px; margin: 0 0 16px; }
-    p { color: #64748b; line-height: 1.5; }
+
+    h1 {
+      font-size: 25px;
+      margin: 0 0 8px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 0 0 16px;
+    }
+
+    p {
+      color: #64748b;
+      line-height: 1.5;
+    }
+
     label {
       display: block;
       margin: 16px 0 7px;
       font-weight: 600;
       font-size: 14px;
     }
-    input, select, button {
+
+    input,
+    select,
+    button {
       width: 100%;
       padding: 14px;
       border: 1px solid #dbe1ea;
@@ -60,6 +88,7 @@
       font-size: 16px;
       background: white;
     }
+
     button {
       background: #111827;
       color: white;
@@ -67,7 +96,11 @@
       border: none;
       margin-top: 20px;
     }
-    button:disabled { background: #aab2bf; }
+
+    button:disabled {
+      background: #aab2bf;
+    }
+
     .notice {
       background: #fff7e6;
       color: #854d0e;
@@ -76,6 +109,7 @@
       font-size: 14px;
       line-height: 1.5;
     }
+
     .summary {
       background: #f1f5f9;
       padding: 14px;
@@ -84,6 +118,7 @@
       line-height: 1.8;
       font-size: 14px;
     }
+
     .error {
       background: #fee2e2;
       color: #991b1b;
@@ -91,7 +126,11 @@
       border-radius: 10px;
       margin-bottom: 16px;
     }
-    .hidden { display: none; }
+
+    .hidden {
+      display: none;
+    }
+
     footer {
       text-align: center;
       padding: 20px;
@@ -100,6 +139,7 @@
     }
   </style>
 </head>
+
 <body>
 
 <header>
@@ -110,13 +150,16 @@
 </header>
 
 <main>
+
   <div id="error" class="error hidden" role="alert"></div>
 
   <section class="card">
     <h1 id="businessName">Loading salon...</h1>
+
     <p id="businessDescription">
       Please wait while we load the salon information.
     </p>
+
     <div class="notice">
       Preview mode only. Appointment selections are
       demonstrations and are not confirmed bookings.
@@ -124,6 +167,7 @@
   </section>
 
   <div id="bookingContent">
+
     <section class="card">
       <h2>1. Choose your appointment</h2>
 
@@ -154,27 +198,49 @@
       <h2>2. Your details</h2>
 
       <label for="customerName">Full name</label>
-      <input id="customerName" type="text" autocomplete="name">
+      <input
+        id="customerName"
+        type="text"
+        autocomplete="name"
+      >
 
       <label for="customerEmail">Email</label>
-      <input id="customerEmail" type="email" autocomplete="email">
+      <input
+        id="customerEmail"
+        type="email"
+        autocomplete="email"
+      >
 
       <label for="customerPhone">Mobile number</label>
-      <input id="customerPhone" type="tel" autocomplete="tel">
+      <input
+        id="customerPhone"
+        type="tel"
+        autocomplete="tel"
+      >
 
       <button type="button" disabled>
         Booking unavailable — preview only
       </button>
     </section>
+
   </div>
 </main>
 
-<footer>Powered by Boustio · SalonBook Pro</footer>
+<footer>
+  Powered by Boustio · SalonBook Pro
+</footer>
 
 <script>
 "use strict";
 
 let catalogue = null;
+
+// Registered demonstration businesses.
+// Unknown slugs are never allowed to load arbitrary files.
+const catalogueFiles = {
+  "demo-boustio": "/data/demo-business.json",
+  "kody-blends": "/data/kody-blends.json"
+};
 
 const elements = {
   businessName: document.getElementById("businessName"),
@@ -189,9 +255,11 @@ const elements = {
 };
 
 function getBusinessSlug() {
-  const path = window.location.pathname;
-  const parts = path.split("/").filter(Boolean);
+  const parts = window.location.pathname
+    .split("/")
+    .filter(Boolean);
 
+  // Preserve the original /book/ demonstration page.
   if (parts.length === 1 && parts[0] === "book") {
     return "demo-boustio";
   }
@@ -212,6 +280,7 @@ function showError(title, description) {
   elements.businessDescription.textContent = description;
   elements.bookingContent.classList.add("hidden");
   elements.error.classList.add("hidden");
+
   document.title = title + " | Boustio";
 }
 
@@ -219,13 +288,16 @@ function localDateString(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
+
   return year + "-" + month + "-" + day;
 }
 
 function addOption(select, value, label) {
   const option = document.createElement("option");
+
   option.value = value;
   option.textContent = label;
+
   select.appendChild(option);
 }
 
@@ -260,13 +332,20 @@ function updateStaff() {
     );
 
     eligibleStaff.forEach(member => {
-      addOption(elements.staff, member.id, member.name);
+      addOption(
+        elements.staff,
+        member.id,
+        member.name
+      );
     });
 
     elements.staff.disabled = eligibleStaff.length === 0;
 
     if (eligibleStaff.length === 0) {
-      resetSelect(elements.staff, "No staff for this service");
+      resetSelect(
+        elements.staff,
+        "No staff for this service"
+      );
     }
   }
 
@@ -287,13 +366,18 @@ function updateTimes() {
 
   const parts = dateValue.split("-").map(Number);
 
-  if (parts.length !== 3 || parts.some(Number.isNaN)) {
+  if (
+    parts.length !== 3 ||
+    parts.some(Number.isNaN)
+  ) {
     updateSummary();
     return;
   }
 
   const chosen = new Date(
-    parts[0], parts[1] - 1, parts[2]
+    parts[0],
+    parts[1] - 1,
+    parts[2]
   );
 
   if (
@@ -307,21 +391,33 @@ function updateTimes() {
   }
 
   const dayNames = [
-    "sunday", "monday", "tuesday",
-    "wednesday", "thursday", "friday", "saturday"
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday"
   ];
 
   const day = dayNames[chosen.getDay()];
   const hours = catalogue.workingHours[day];
 
   if (!hours) {
-    resetSelect(elements.time, "Salon closed on this day");
+    resetSelect(
+      elements.time,
+      "Salon closed on this day"
+    );
+
     updateSummary();
     return;
   }
 
   function minutes(value) {
-    const [hour, minute] = value.split(":").map(Number);
+    const [hour, minute] = value
+      .split(":")
+      .map(Number);
+
     return hour * 60 + minute;
   }
 
@@ -342,6 +438,7 @@ function updateTimes() {
 
   const now = new Date();
   const today = localDateString(now);
+
   const currentMinutes =
     now.getHours() * 60 + now.getMinutes();
 
@@ -369,12 +466,20 @@ function updateTimes() {
 
     const label = hour + ":" + minute;
 
-    addOption(elements.time, label, label);
+    addOption(
+      elements.time,
+      label,
+      label
+    );
+
     count++;
   }
 
   if (count === 0) {
-    resetSelect(elements.time, "No preview times for this date");
+    resetSelect(
+      elements.time,
+      "No preview times for this date"
+    );
   } else {
     elements.time.disabled = false;
   }
@@ -397,6 +502,7 @@ function updateSummary() {
   ) {
     elements.summary.textContent =
       "Select your appointment details to see a summary.";
+
     return;
   }
 
@@ -421,9 +527,13 @@ async function loadCatalogue() {
     return;
   }
 
-  // Only the demo business is available in this phase.
-  // Future phases will resolve published business slugs.
-  if (slug !== "demo-boustio") {
+  // Use only known demonstration catalogue files.
+  const catalogueUrl = Object.prototype.hasOwnProperty.call(
+    catalogueFiles,
+    slug
+  ) ? catalogueFiles[slug] : null;
+
+  if (!catalogueUrl) {
     showError(
       "Business not found",
       "We couldn't find a published business at this address."
@@ -433,7 +543,7 @@ async function loadCatalogue() {
 
   try {
     const response = await fetch(
-      "/data/demo-business.json",
+      catalogueUrl,
       { cache: "no-store" }
     );
 
@@ -445,6 +555,7 @@ async function loadCatalogue() {
 
     const data = await response.json();
 
+    // Validate the catalogue before displaying it.
     if (
       data.schemaVersion !== 1 ||
       !data.business ||
@@ -468,7 +579,10 @@ async function loadCatalogue() {
     document.title =
       data.business.name + " | Book with Boustio";
 
-    resetSelect(elements.service, "Select a service");
+    resetSelect(
+      elements.service,
+      "Select a service"
+    );
 
     data.services
       .filter(service => service.active)
@@ -484,7 +598,10 @@ async function loadCatalogue() {
 
     elements.service.disabled = false;
     elements.date.disabled = false;
-    elements.date.min = localDateString(new Date());
+
+    elements.date.min = localDateString(
+      new Date()
+    );
 
     updateStaff();
     updateTimes();
@@ -495,18 +612,35 @@ async function loadCatalogue() {
       "We couldn't load this business. Please try again later."
     );
 
-    console.error("Catalogue loading error:", error);
+    console.error(
+      "Catalogue loading error:",
+      error
+    );
   }
 }
 
-elements.service.addEventListener("change", () => {
-  updateStaff();
-  updateTimes();
-});
+elements.service.addEventListener(
+  "change",
+  () => {
+    updateStaff();
+    updateTimes();
+  }
+);
 
-elements.staff.addEventListener("change", updateSummary);
-elements.date.addEventListener("change", updateTimes);
-elements.time.addEventListener("change", updateSummary);
+elements.staff.addEventListener(
+  "change",
+  updateSummary
+);
+
+elements.date.addEventListener(
+  "change",
+  updateTimes
+);
+
+elements.time.addEventListener(
+  "change",
+  updateSummary
+);
 
 loadCatalogue();
 </script>
