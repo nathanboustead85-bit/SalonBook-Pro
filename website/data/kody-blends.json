@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "business": {
+    "businessId": "demo-kody-blends",
+    "name": "Kody Blends",
+    "slug": "kody-blends",
+    "category": "Barbershop",
+    "description": "Fresh cuts, sharp fades and professional barbering. This is a demonstration booking page powered by Boustio.",
+    "address": "Devon, United Kingdom",
+    "phone": "",
+    "published": true,
+    "acceptingBookings": false
+  },
+  "services": [
+    {
+      "id": "kb-service-001",
+      "name": "Standard Haircut",
+      "description": "Classic haircut and styling",
+      "durationMinutes": 30,
+      "price": 18.00,
+      "active": true
+    },
+    {
+      "id": "kb-service-002",
+      "name": "Skin Fade",
+      "description": "Precision skin fade and styling",
+      "durationMinutes": 45,
+      "price": 23.00,
+      "active": true
+    },
+    {
+      "id": "kb-service-003",
+      "name": "Beard Trim",
+      "description": "Beard shaping and finishing",
+      "durationMinutes": 20,
+      "price": 10.00,
+      "active": true
+    },
+    {
+      "id": "kb-service-004",
+      "name": "Haircut and Beard",
+      "description": "Complete haircut and beard grooming",
+      "durationMinutes": 60,
+      "price": 28.00,
+      "active": true
+    }
+  ],
+  "staff": [
+    {
+      "id": "kb-staff-001",
+      "name": "Kody",
+      "active": true,
+      "serviceIds": [
+        "kb-service-001",
+        "kb-service-002",
+        "kb-service-003",
+        "kb-service-004"
+      ]
+    },
+    {
+      "id": "kb-staff-002",
+      "name": "Demo Barber",
+      "active": true,
+      "serviceIds": [
+        "kb-service-001",
+        "kb-service-003"
+      ]
+    }
+  ],
+  "workingHours": {
+    "monday": {
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "tuesday": {
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "wednesday": {
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "thursday": {
+      "open": "09:00",
+      "close": "19:00"
+    },
+    "friday": {
+      "open": "09:00",
+      "close": "19:00"
+    },
+    "saturday": {
+      "open": "09:00",
+      "close": "16:00"
+    },
+    "sunday": null
+  }
+}
