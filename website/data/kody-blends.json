@@ -55,6 +55,64 @@
         "kb-service-002",
         "kb-service-003",
         "kb-service-004"
+      ],
+      "weeklySchedule": {
+        "monday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "saturday": null,
+        "sunday": null
+      },
+      "weeklyBreaks": [
+        {
+          "day": "monday",
+          "start": "12:30",
+          "end": "13:00"
+        },
+        {
+          "day": "tuesday",
+          "start": "12:30",
+          "end": "13:00"
+        },
+        {
+          "day": "wednesday",
+          "start": "12:30",
+          "end": "13:00"
+        },
+        {
+          "day": "thursday",
+          "start": "12:30",
+          "end": "13:00"
+        },
+        {
+          "day": "friday",
+          "start": "12:30",
+          "end": "13:00"
+        }
+      ],
+      "timeOff": [
+        {
+          "date": "2026-11-12",
+          "start": "09:00",
+          "end": "17:00"
+        }
       ]
     },
     {
@@ -64,21 +122,68 @@
       "serviceIds": [
         "kb-service-001",
         "kb-service-003"
-      ]
+      ],
+      "weeklySchedule": {
+        "monday": {
+          "open": "10:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "10:00",
+          "close": "17:00"
+        },
+        "wednesday": null,
+        "thursday": {
+          "open": "10:00",
+          "close": "19:00"
+        },
+        "friday": {
+          "open": "10:00",
+          "close": "19:00"
+        },
+        "saturday": {
+          "open": "09:00",
+          "close": "16:00"
+        },
+        "sunday": null
+      },
+      "weeklyBreaks": [
+        {
+          "day": "monday",
+          "start": "13:00",
+          "end": "13:30"
+        },
+        {
+          "day": "tuesday",
+          "start": "13:00",
+          "end": "13:30"
+        },
+        {
+          "day": "thursday",
+          "start": "13:00",
+          "end": "13:30"
+        },
+        {
+          "day": "friday",
+          "start": "13:00",
+          "end": "13:30"
+        }
+      ],
+      "timeOff": []
     }
   ],
   "workingHours": {
     "monday": {
       "open": "09:00",
-      "close": "17:00"
+      "close": "18:00"
     },
     "tuesday": {
       "open": "09:00",
-      "close": "17:00"
+      "close": "18:00"
     },
     "wednesday": {
       "open": "09:00",
-      "close": "17:00"
+      "close": "18:00"
     },
     "thursday": {
       "open": "09:00",
