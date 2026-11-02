@@ -54,6 +54,50 @@ class ManagementActivity : Activity() {
         }
     }
 
+    private fun loadAvailableServices(): List<JSONObject> {
+        val services = mutableListOf<JSONObject>()
+
+        try {
+            val array = JSONArray(
+                prefs.getString("services", "[]") ?: "[]"
+            )
+
+            for (i in 0 until array.length()) {
+                val service = array.optJSONObject(i) ?: continue
+
+                if (
+                    service.optString("id").isNotBlank() &&
+                    service.optString("name").isNotBlank()
+                ) {
+                    services.add(service)
+                }
+            }
+        } catch (e: Exception) {
+            Toast.makeText(
+                this,
+                "Unable to load services",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+
+        return services
+    }
+
+    private fun assignedIds(item: JSONObject?): Set<String> {
+        val result = mutableSetOf<String>()
+        val array = item?.optJSONArray("serviceIds")
+            ?: return result
+
+        for (i in 0 until array.length()) {
+            val id = array.optString(i)
+            if (id.isNotBlank()) {
+                result.add(id)
+            }
+        }
+
+        return result
+    }
+
     private fun save() {
         val array = JSONArray()
         records.forEach { array.put(it) }
@@ -112,7 +156,7 @@ class ManagementActivity : Activity() {
 
         addText(
             "Choose which entries should appear " +
-            "on your future public Boustio booking page.",
+                "on your future public Boustio booking page.",
             15f
         )
 
@@ -127,21 +171,36 @@ class ManagementActivity : Activity() {
             addText("Nothing added yet.")
         }
 
-        records.forEach { item ->
-
-            val publicVisible =
-                item.optBoolean("publicVisible", false)
-
-            val visibilityLabel = if (publicVisible) {
-                "Public: Yes"
-            } else {
-                "Public: No"
+        val serviceNames = if (staffMode) {
+            loadAvailableServices().associate {
+                it.optString("id") to it.optString("name")
             }
+        } else {
+            emptyMap()
+        }
+
+        records.forEach { item ->
+            val visibilityLabel =
+                if (item.optBoolean("publicVisible", false)) {
+                    "Public: Yes"
+                } else {
+                    "Public: No"
+                }
 
             val description = if (staffMode) {
+                val assigned = assignedIds(item)
+                val names = assigned.mapNotNull { serviceNames[it] }
+
+                val serviceSummary = when {
+                    assigned.isEmpty() -> "None assigned"
+                    names.isEmpty() -> "Assigned services unavailable"
+                    else -> names.joinToString(", ")
+                }
+
                 "${item.optString("name")}\n" +
                     "${item.optString("role")}\n" +
                     "Hours: ${item.optString("hours")}\n" +
+                    "Services: $serviceSummary\n" +
                     visibilityLabel
             } else {
                 "${item.optString("name")}\n" +
@@ -208,9 +267,9 @@ class ManagementActivity : Activity() {
                         .setTitle("Delete this entry?")
                         .setMessage(
                             "This permanently deletes the " +
-                            "entry from your saved management " +
-                            "list. Existing bookings are not " +
-                            "automatically changed."
+                                "entry from your saved management " +
+                                "list. Existing bookings are not " +
+                                "automatically changed."
                         )
                         .setPositiveButton("Delete") { _, _ ->
                             records.remove(item)
@@ -273,7 +332,6 @@ class ManagementActivity : Activity() {
                 android.text.InputType.TYPE_CLASS_NUMBER
         }
 
-        // Phase 7E: Public visibility control.
         val publicCheckbox = CheckBox(this).apply {
             text = "Show on Public Booking Page"
             textSize = 16f
@@ -286,11 +344,65 @@ class ManagementActivity : Activity() {
 
         form.addView(publicCheckbox)
 
+        // Step 7A: Individual service assignments.
+        val availableServices = if (staffMode) {
+            loadAvailableServices()
+        } else {
+            emptyList()
+        }
+
+        val selectedServiceIds =
+            assignedIds(existing).toMutableSet()
+
+        if (staffMode) {
+            form.addView(TextView(this).apply {
+                text = "Services this staff member performs"
+                textSize = 17f
+                setTextColor(Color.rgb(40, 35, 55))
+                setPadding(0, 20, 0, 8)
+            })
+
+            if (availableServices.isEmpty()) {
+                form.addView(TextView(this).apply {
+                    text = "Add services in Services & Prices first."
+                    textSize = 14f
+                })
+            } else {
+                availableServices.forEach { service ->
+                    val serviceId = service.optString("id")
+                    val serviceName = service.optString("name")
+                    val price = service.optString("price")
+
+                    val checkbox = CheckBox(this).apply {
+                        text = "$serviceName — £$price"
+                        textSize = 15f
+                        isChecked =
+                            selectedServiceIds.contains(serviceId)
+                    }
+
+                    checkbox.setOnCheckedChangeListener {
+                            _, checked ->
+                        if (checked) {
+                            selectedServiceIds.add(serviceId)
+                        } else {
+                            selectedServiceIds.remove(serviceId)
+                        }
+                    }
+
+                    form.addView(checkbox)
+                }
+            }
+        }
+
+        val scrollForm = ScrollView(this).apply {
+            addView(form)
+        }
+
         val dialog = AlertDialog.Builder(this)
             .setTitle(
                 if (existing == null) "Add New" else "Edit"
             )
-            .setView(form)
+            .setView(scrollForm)
             .setPositiveButton("Save", null)
             .setNegativeButton("Cancel", null)
             .create()
@@ -336,6 +448,15 @@ class ManagementActivity : Activity() {
                 if (staffMode) {
                     item.put("role", s)
                     item.put("hours", t)
+
+                    // Retain any saved assignments whose
+                    // services are temporarily unavailable.
+                    val ids = JSONArray()
+                    selectedServiceIds.forEach { id ->
+                        ids.put(id)
+                    }
+
+                    item.put("serviceIds", ids)
                 } else {
                     item.put(
                         "price",
@@ -348,8 +469,6 @@ class ManagementActivity : Activity() {
                     item.put("duration", t.toInt())
                 }
 
-                // Save visibility alongside the
-                // existing service/staff fields.
                 item.put(
                     "publicVisible",
                     publicCheckbox.isChecked
