@@ -5,39 +5,36 @@ import org.json.JSONObject
 import java.util.Locale
 
 /**
- * Boustio Phase 7E:
+ * Boustio Phase 7D:
  * Safe public business catalogue converter.
  *
- * Security:
- * - Excludes Firebase account UID
- * - Excludes private customer records
- * - Excludes private bookings
- * - Excludes private login email
- * - Exports only public-visible services
- * - Exports only public-visible staff
- * - Keeps publishing disabled
- * - Keeps online bookings disabled
+ * Exports:
+ * - Explicitly public services
+ * - Explicitly public staff
+ * - Individual staff service assignments
+ * - Individual weekly working schedules
+ * - Recurring weekly breaks
+ * - Date-specific unavailable periods
+ *
+ * Does not export:
+ * - Firebase account UID
+ * - Customer records or bookings
+ * - Login email
+ * - Private staff or services
+ * - Internal reasons for staff absence
+ *
+ * Publishing and online bookings stay disabled.
  */
 object BusinessCatalogueBuilder {
 
     private val days = listOf(
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday"
+        "monday", "tuesday", "wednesday",
+        "thursday", "friday", "saturday", "sunday"
     )
 
     private val shortDays = listOf(
-        "mon",
-        "tue",
-        "wed",
-        "thu",
-        "fri",
-        "sat",
-        "sun"
+        "mon", "tue", "wed", "thu",
+        "fri", "sat", "sun"
     )
 
     fun build(
@@ -68,25 +65,18 @@ object BusinessCatalogueBuilder {
         val staff = convertStaff(rawStaff, services)
 
         val business = JSONObject().apply {
-
-            // Use the public slug, not the
-            // owner's internal Firebase UID.
+            // Public slug, never private Firebase UID.
             put("businessId", profile.slug)
-
             put("name", profile.name.trim())
             put("slug", profile.slug)
             put("category", profile.category.trim())
-            put(
-                "description",
-                profile.description.trim()
-            )
+            put("description", profile.description.trim())
             put("address", profile.address.trim())
 
-            // Do not export private account contact data.
+            // Do not expose account contact information.
             put("phone", "")
 
-            // Exporting must not publish or
-            // activate online bookings.
+            // Phase 7 remains preview-only.
             put("published", false)
             put("acceptingBookings", false)
         }
@@ -104,11 +94,8 @@ object BusinessCatalogueBuilder {
     }
 
     /**
-     * Only export services explicitly
-     * marked as publicly visible.
-     *
-     * Existing services without the flag
-     * remain hidden by default.
+     * Only services explicitly marked public
+     * may appear in the catalogue.
      */
     private fun convertServices(
         rawServices: JSONArray
@@ -118,7 +105,6 @@ object BusinessCatalogueBuilder {
         val usedIds = mutableSetOf<String>()
 
         for (i in 0 until rawServices.length()) {
-
             val source = rawServices.optJSONObject(i)
                 ?: continue
 
@@ -128,37 +114,31 @@ object BusinessCatalogueBuilder {
 
             val id = source.optString("id").trim()
             val name = source.optString("name").trim()
-
             val price = source.optString("price")
                 .toDoubleOrNull()
-
-            val duration = source.optInt(
-                "duration", 0
-            )
+            val duration = source.optInt("duration", 0)
 
             if (
                 id.isBlank() ||
-                !usedIds.add(id) ||
+                id in usedIds ||
                 name.isBlank() ||
                 name.length > 100 ||
                 price == null ||
                 !price.isFinite() ||
-                price < 0.0 ||
-                duration <= 0 ||
-                duration > 1440
+                price < 0 ||
+                duration !in 1..1440
             ) {
                 continue
             }
+
+            usedIds.add(id)
 
             result.put(
                 JSONObject().apply {
                     put("id", id)
                     put("name", name)
                     put("description", "")
-                    put(
-                        "durationMinutes",
-                        duration
-                    )
+                    put("durationMinutes", duration)
                     put("price", price)
                     put("active", true)
                 }
@@ -169,18 +149,14 @@ object BusinessCatalogueBuilder {
     }
 
     /**
-     * Only export staff explicitly
-     * marked as publicly visible.
+     * Export staff assignments using the
+     * serviceIds stored by ManagementActivity.
      *
-     * IMPORTANT:
-     * Existing Android records do not yet
-     * contain individual service assignments.
+     * Only IDs of exported public services
+     * are permitted.
      *
-     * All visible services are temporarily
-     * assigned to visible staff for preview
-     * purposes only.
-     *
-     * Real online bookings remain disabled.
+     * Legacy staff without assignments receive
+     * an empty array, never every service.
      */
     private fun convertStaff(
         rawStaff: JSONArray,
@@ -189,20 +165,17 @@ object BusinessCatalogueBuilder {
 
         val result = JSONArray()
         val usedIds = mutableSetOf<String>()
-        val serviceIds = JSONArray()
+        val publicServiceIds = mutableSetOf<String>()
 
         for (i in 0 until services.length()) {
-
             val service = services.optJSONObject(i)
                 ?: continue
-
-            serviceIds.put(
-                service.getString("id")
+            publicServiceIds.add(
+                service.optString("id")
             )
         }
 
         for (i in 0 until rawStaff.length()) {
-
             val source = rawStaff.optJSONObject(i)
                 ?: continue
 
@@ -215,29 +188,58 @@ object BusinessCatalogueBuilder {
 
             if (
                 id.isBlank() ||
-                !usedIds.add(id) ||
+                id in usedIds ||
                 name.isBlank() ||
                 name.length > 100
             ) {
                 continue
             }
 
-            val assignments = JSONArray()
+            usedIds.add(id)
 
-            for (j in 0 until serviceIds.length()) {
-                assignments.put(
-                    serviceIds.getString(j)
-                )
+            val assignments = JSONArray()
+            val assigned = mutableSetOf<String>()
+            val rawAssignments =
+                source.optJSONArray("serviceIds")
+
+            if (rawAssignments != null) {
+                for (j in 0 until rawAssignments.length()) {
+                    val serviceId = rawAssignments
+                        .optString(j).trim()
+
+                    if (
+                        serviceId in publicServiceIds &&
+                        assigned.add(serviceId)
+                    ) {
+                        assignments.put(serviceId)
+                    }
+                }
             }
+
+            val schedule = staffSchedule(source)
 
             result.put(
                 JSONObject().apply {
                     put("id", id)
                     put("name", name)
                     put("active", true)
+                    put("serviceIds", assignments)
                     put(
-                        "serviceIds",
-                        assignments
+                        "weeklySchedule",
+                        exportSchedule(schedule)
+                    )
+                    put(
+                        "weeklyBreaks",
+                        exportWeeklyBreaks(
+                            source.optJSONArray("weeklyBreaks"),
+                            schedule
+                        )
+                    )
+                    put(
+                        "timeOff",
+                        exportTimeOff(
+                            source.optJSONArray("timeOff")
+                        )
                     )
                 }
             )
@@ -247,15 +249,191 @@ object BusinessCatalogueBuilder {
     }
 
     /**
-     * Generate conservative shared hours
-     * using only staff selected for public
-     * visibility.
+     * Read the structured schedule first.
      *
-     * Hidden staff must not reduce the
-     * public business opening hours.
+     * If it is absent, use the legacy
+     * Mon-Fri 09:00-17:00 text format.
      *
-     * These are preview hours, not
-     * appointment availability.
+     * An empty structured schedule means
+     * no working days, not a fallback.
+     */
+    private fun staffSchedule(
+        member: JSONObject
+    ): Map<String, Pair<Int, Int>> {
+
+        val structured =
+            member.optJSONObject("weeklySchedule")
+
+        if (structured == null) {
+            return parseStaffHours(
+                member.optString("hours")
+            )
+        }
+
+        val result =
+            mutableMapOf<String, Pair<Int, Int>>()
+
+        for (day in days) {
+            val period = structured.optJSONObject(day)
+                ?: continue
+
+            val open = parseTime(
+                period.optString("open")
+            ) ?: continue
+
+            val close = parseTime(
+                period.optString("close")
+            ) ?: continue
+
+            if (open < close) {
+                result[day] = Pair(open, close)
+            }
+        }
+
+        return result
+    }
+
+    private fun exportSchedule(
+        schedule: Map<String, Pair<Int, Int>>
+    ): JSONObject {
+
+        val result = JSONObject()
+
+        for (day in days) {
+            val period = schedule[day]
+
+            if (period == null) {
+                result.put(day, JSONObject.NULL)
+            } else {
+                result.put(
+                    day,
+                    JSONObject().apply {
+                        put("open", formatTime(period.first))
+                        put("close", formatTime(period.second))
+                    }
+                )
+            }
+        }
+
+        return result
+    }
+
+    /**
+     * Export valid breaks only.
+     * Exclude private reason/notes.
+     *
+     * Breaks must fit inside the
+     * staff member's working hours.
+     */
+    private fun exportWeeklyBreaks(
+        raw: JSONArray?,
+        schedule: Map<String, Pair<Int, Int>>
+    ): JSONArray {
+
+        val result = JSONArray()
+        if (raw == null) return result
+
+        for (i in 0 until raw.length()) {
+            val source = raw.optJSONObject(i)
+                ?: continue
+
+            val day = source.optString("day")
+                .trim().lowercase(Locale.ROOT)
+
+            val working = schedule[day] ?: continue
+
+            val start = parseTime(
+                source.optString("start")
+            ) ?: continue
+
+            val end = parseTime(
+                source.optString("end")
+            ) ?: continue
+
+            if (
+                start >= end ||
+                start < working.first ||
+                end > working.second
+            ) {
+                continue
+            }
+
+            result.put(
+                JSONObject().apply {
+                    put("day", day)
+                    put("start", formatTime(start))
+                    put("end", formatTime(end))
+                }
+            )
+        }
+
+        return result
+    }
+
+    /**
+     * Export date-specific unavailable
+     * intervals without private reasons.
+     *
+     * Date format is YYYY-MM-DD.
+     */
+    private fun exportTimeOff(
+        raw: JSONArray?
+    ): JSONArray {
+
+        val result = JSONArray()
+        if (raw == null) return result
+
+        for (i in 0 until raw.length()) {
+            val source = raw.optJSONObject(i)
+                ?: continue
+
+            val date = source.optString("date").trim()
+
+            if (!validDate(date)) continue
+
+            val start = parseTime(
+                source.optString("start")
+            ) ?: continue
+
+            val end = parseTime(
+                source.optString("end")
+            ) ?: continue
+
+            if (start >= end) continue
+
+            result.put(
+                JSONObject().apply {
+                    put("date", date)
+                    put("start", formatTime(start))
+                    put("end", formatTime(end))
+                }
+            )
+        }
+
+        return result
+    }
+
+    private fun validDate(value: String): Boolean {
+        if (!Regex("""\d{4}-\d{2}-\d{2}""")
+                .matches(value)) {
+            return false
+        }
+
+        return try {
+            java.time.LocalDate.parse(value)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Preserve the existing shared-hours
+     * calculation: the overlap of every
+     * visible staff member's schedule.
+     *
+     * These are preview business hours,
+     * not available booking slots.
      */
     private fun createWorkingHours(
         rawStaff: JSONArray
@@ -263,13 +441,10 @@ object BusinessCatalogueBuilder {
 
         val weekly = JSONObject()
 
-        val staffSchedules =
-            mutableListOf<
-                Map<String, Pair<Int, Int>>
-            >()
+        val schedules =
+            mutableListOf<Map<String, Pair<Int, Int>>>()
 
         for (i in 0 until rawStaff.length()) {
-
             val member = rawStaff.optJSONObject(i)
                 ?: continue
 
@@ -284,27 +459,19 @@ object BusinessCatalogueBuilder {
                 continue
             }
 
-            staffSchedules.add(
-                parseStaffHours(
-                    member.optString("hours")
-                )
-            )
+            schedules.add(staffSchedule(member))
         }
 
         for (day in days) {
-
-            val intervals = staffSchedules.mapNotNull {
+            val intervals = schedules.mapNotNull {
                 it[day]
             }
 
             if (
-                staffSchedules.isEmpty() ||
-                intervals.size != staffSchedules.size
+                schedules.isEmpty() ||
+                intervals.size != schedules.size
             ) {
-                weekly.put(
-                    day,
-                    JSONObject.NULL
-                )
+                weekly.put(day, JSONObject.NULL)
                 continue
             }
 
@@ -317,25 +484,13 @@ object BusinessCatalogueBuilder {
             }
 
             if (opening >= closing) {
-
-                weekly.put(
-                    day,
-                    JSONObject.NULL
-                )
-
+                weekly.put(day, JSONObject.NULL)
             } else {
-
                 weekly.put(
                     day,
                     JSONObject().apply {
-                        put(
-                            "open",
-                            formatTime(opening)
-                        )
-                        put(
-                            "close",
-                            formatTime(closing)
-                        )
+                        put("open", formatTime(opening))
+                        put("close", formatTime(closing))
                     }
                 )
             }
@@ -345,34 +500,27 @@ object BusinessCatalogueBuilder {
     }
 
     /**
-     * Supported formats:
-     *
+     * Legacy hours formats:
      * Mon-Fri 09:00-17:00
      * Mon-Sat 09:00-18:00
      * Mon 09:00-17:00
-     *
-     * Unrecognised schedules produce
-     * no public hours.
      */
     private fun parseStaffHours(
         input: String
     ): Map<String, Pair<Int, Int>> {
 
         val result =
-            mutableMapOf<
-                String, Pair<Int, Int>
-            >()
+            mutableMapOf<String, Pair<Int, Int>>()
 
         val cleaned = input.trim()
             .lowercase(Locale.ROOT)
 
         val pattern = Regex(
-            """\b(mon|tue|wed|thu|fri|sat|sun)(?:\s*-\s*(mon|tue|wed|thu|fri|sat|sun))?\s+([0-2]\d:[0-5]\d)\s*-\s*([0-2]\d:[0-5]\d)\b"""
+            """^(mon|tue|wed|thu|fri|sat|sun)(?:\s*-\s*(mon|tue|wed|thu|fri|sat|sun))?\s+([0-2]\d:[0-5]\d)\s*-\s*([0-2]\d:[0-5]\d)$"""
         )
 
-        val match = pattern.matchEntire(
-            cleaned
-        ) ?: return emptyMap()
+        val match = pattern.matchEntire(cleaned)
+            ?: return emptyMap()
 
         val startDay = shortDays.indexOf(
             match.groupValues[1]
@@ -383,9 +531,7 @@ object BusinessCatalogueBuilder {
         ) {
             startDay
         } else {
-            shortDays.indexOf(
-                match.groupValues[2]
-            )
+            shortDays.indexOf(match.groupValues[2])
         }
 
         if (
@@ -415,44 +561,21 @@ object BusinessCatalogueBuilder {
         return result
     }
 
-    private fun parseTime(
-        value: String
-    ): Int? {
+    private fun parseTime(value: String): Int? {
+        val match = Regex(
+            """^([01]\d|2[0-3]):([0-5]\d)$"""
+        ).matchEntire(value.trim()) ?: return null
 
-        val parts = value.split(":")
-
-        if (parts.size != 2) {
-            return null
-        }
-
-        val hour = parts[0].toIntOrNull()
-            ?: return null
-
-        val minute = parts[1].toIntOrNull()
-            ?: return null
-
-        if (
-            hour !in 0..23 ||
-            minute !in 0..59
-        ) {
-            return null
-        }
-
-        return hour * 60 + minute
+        return match.groupValues[1].toInt() * 60 +
+            match.groupValues[2].toInt()
     }
 
-    private fun formatTime(
-        minutes: Int
-    ): String {
-
-        val hour = minutes / 60
-        val minute = minutes % 60
-
+    private fun formatTime(minutes: Int): String {
         return String.format(
             Locale.UK,
             "%02d:%02d",
-            hour,
-            minute
+            minutes / 60,
+            minutes % 60
         )
     }
 }
