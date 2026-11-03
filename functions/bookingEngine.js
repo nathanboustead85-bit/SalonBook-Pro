@@ -1,33 +1,22 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8C.4
+ * BOUSTIO — PHASE 8C.6
  * Secure appointment booking engine.
  *
  * Backend-only module.
  * Not a public HTTP endpoint.
  *
- * Features:
- * - Request validation
- * - UK local date protection
- * - Maximum 90-day booking window
- * - Staff working hours
- * - Recurring breaks
- * - Staff time off
- * - Service assignments
- * - 15-minute booking locks
- * - Atomic Firestore transactions
- * - Private appointment records
- *
  * IMPORTANT:
- * The caller must load the catalogue from
- * trusted server-controlled storage.
+ * The catalogue must come from trusted,
+ * server-controlled storage.
  *
- * Never accept an authoritative catalogue
- * directly from the customer's browser.
+ * This module does not independently
+ * authenticate the caller or verify
+ * the source of catalogue data.
  *
- * Existing Android appointments must be
- * migrated or included in conflict checks
+ * Existing Android bookings must be
+ * included in the same conflict system
  * before public bookings are enabled.
  */
 
@@ -48,14 +37,9 @@ const DAYS = [
 const TIME_ZONE = "Europe/London";
 const MAX_ADVANCE_DAYS = 90;
 
-const DATE_PATTERN =
-  /^\d{4}-\d{2}-\d{2}$/;
-
-const TIME_PATTERN =
-  /^([01]\d|2[0-3]):([0-5]\d)$/;
-
-const ID_PATTERN =
-  /^[A-Za-z0-9_-]{1,100}$/;
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const ID_PATTERN = /^[A-Za-z0-9_-]{1,100}$/;
 
 function fail(message) {
   const error = new Error(message);
@@ -121,10 +105,6 @@ function overlaps(
     firstEnd > secondStart;
 }
 
-/**
- * Returns the current date and time in
- * the UK, accounting for GMT/BST.
- */
 function ukNow() {
   const parts = new Intl.DateTimeFormat(
     "en-GB",
@@ -158,19 +138,9 @@ function ukNow() {
   };
 }
 
-/**
- * Reject past dates and dates beyond
- * the initial 90-day booking window.
- *
- * Uses calendar days rather than a
- * fixed 24-hour difference, so changes
- * between GMT and BST do not affect
- * the booking window.
- */
 function validateBookingDate(date, startTime) {
   const selected = parseDate(date);
   const now = ukNow();
-
   const today = parseDate(now.date);
 
   const difference = Math.round(
@@ -357,9 +327,7 @@ function validateAvailability(
   startTime
 ) {
   const selectedDate = parseDate(date);
-
-  const day =
-    DAYS[selectedDate.getUTCDay()];
+  const day = DAYS[selectedDate.getUTCDay()];
 
   const { open, close } =
     workingHours(catalogue, member, day);
@@ -398,9 +366,7 @@ function validateAvailability(
         breakEnd
       )
     ) {
-      fail(
-        "Appointment overlaps a staff break."
-      );
+      fail("Appointment overlaps a staff break.");
     }
   }
 
@@ -425,19 +391,13 @@ function validateAvailability(
         offEnd
       )
     ) {
-      fail(
-        "The professional is unavailable."
-      );
+      fail("The professional is unavailable.");
     }
   }
 
   return { start, end };
 }
 
-/**
- * Each lock represents a 15-minute
- * interval occupied by an appointment.
- */
 function createLockIds(
   staffId,
   date,
@@ -445,9 +405,7 @@ function createLockIds(
   end
 ) {
   const result = [];
-
-  const first =
-    Math.floor(start / 15) * 15;
+  const first = Math.floor(start / 15) * 15;
 
   for (
     let minute = first;
@@ -465,20 +423,16 @@ function createLockIds(
 }
 
 /**
- * Creates a booking using a Firestore
- * transaction.
+ * Creates an appointment using a Firestore
+ * transaction and 15-minute lock records.
  *
- * Security requirements:
+ * Preconditions:
+ * - Admin SDK Firestore supplied by backend
+ * - Trusted catalogue loaded by backend
+ * - Catalogue ownerUid matches businessId
+ * - Existing bookings represented by locks
  *
- * 1. db must be an Admin SDK Firestore.
- * 2. catalogue must be server-controlled.
- * 3. The caller must resolve and verify
- *    the correct business owner UID.
- * 4. Existing Android bookings must be
- *    represented in the same lock system.
- *
- * These requirements must be completed
- * before enabling public booking requests.
+ * Not yet a public booking endpoint.
  */
 async function createBooking({
   db,
@@ -498,18 +452,20 @@ async function createBooking({
     !Array.isArray(catalogue.services) ||
     !Array.isArray(catalogue.staff)
   ) {
-    fail(
-      "Business catalogue is unavailable."
-    );
+    fail("Business catalogue is unavailable.");
   }
 
   const input = validateRequest(request);
 
-  // If the trusted catalogue contains
-  // an owner UID, it must match the
-  // destination business document.
+  // Phase 8C.6: ownership is mandatory.
   if (
-    typeof catalogue.business.ownerUid === "string" &&
+    typeof catalogue.business.ownerUid !== "string" ||
+    catalogue.business.ownerUid.length === 0
+  ) {
+    fail("Business ownership is missing.");
+  }
+
+  if (
     catalogue.business.ownerUid !== input.businessId
   ) {
     fail("Business ownership mismatch.");
@@ -519,30 +475,24 @@ async function createBooking({
     catalogue.business.published !== true ||
     catalogue.business.acceptingBookings !== true
   ) {
-    fail(
-      "This business is not accepting bookings."
-    );
+    fail("This business is not accepting bookings.");
   }
 
-  // Validate the date before accessing
-  // the booking database.
   validateBookingDate(
     input.date,
     input.startTime
   );
 
-  const service =
-    findService(
-      catalogue,
-      input.serviceId
-    );
+  const service = findService(
+    catalogue,
+    input.serviceId
+  );
 
-  const member =
-    findStaff(
-      catalogue,
-      input.staffId,
-      input.serviceId
-    );
+  const member = findStaff(
+    catalogue,
+    input.staffId,
+    input.serviceId
+  );
 
   const { start, end } =
     validateAvailability(
@@ -578,8 +528,7 @@ async function createBooking({
     async transaction => {
       const snapshots = [];
 
-      // All reads must happen before
-      // any transaction writes.
+      // Firestore requires reads before writes.
       for (const ref of lockRefs) {
         snapshots.push(
           await transaction.get(ref)
@@ -605,22 +554,16 @@ async function createBooking({
         date: input.date,
         startTime: input.startTime,
         endTime: formatTime(end),
-        durationMinutes:
-          service.durationMinutes,
+        durationMinutes: service.durationMinutes,
         price: service.price,
-        customerName:
-          input.customerName,
-        customerEmail:
-          input.customerEmail,
-        customerPhone:
-          input.customerPhone,
+        customerName: input.customerName,
+        customerEmail: input.customerEmail,
+        customerPhone: input.customerPhone,
         status: "confirmed",
         source: "online",
         schemaVersion: 1,
-        createdAt:
-          FieldValue.serverTimestamp(),
-        updatedAt:
-          FieldValue.serverTimestamp()
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
       };
 
       transaction.create(
@@ -630,16 +573,11 @@ async function createBooking({
 
       for (const ref of lockRefs) {
         transaction.create(ref, {
-          appointmentId:
-            appointmentRef.id,
-          businessId:
-            input.businessId,
-          staffId:
-            input.staffId,
-          date:
-            input.date,
-          createdAt:
-            FieldValue.serverTimestamp()
+          appointmentId: appointmentRef.id,
+          businessId: input.businessId,
+          staffId: input.staffId,
+          date: input.date,
+          createdAt: FieldValue.serverTimestamp()
         });
       }
     }
@@ -647,18 +585,12 @@ async function createBooking({
 
   return {
     success: true,
-    appointmentId:
-      appointmentRef.id,
-    date:
-      input.date,
-    startTime:
-      input.startTime,
-    endTime:
-      formatTime(end),
-    serviceName:
-      service.name,
-    staffName:
-      member.name
+    appointmentId: appointmentRef.id,
+    date: input.date,
+    startTime: input.startTime,
+    endTime: formatTime(end),
+    serviceName: service.name,
+    staffName: member.name
   };
 }
 
