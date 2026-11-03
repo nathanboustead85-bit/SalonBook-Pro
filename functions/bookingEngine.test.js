@@ -1,18 +1,13 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8C.5
+ * BOUSTIO — PHASE 8C.6
  *
- * 27 automated booking engine tests.
+ * 28 booking engine tests.
+ * Includes mandatory owner UID test.
  *
- * Original 20 tests retained.
- * Seven additional security tests.
- *
- * No live Firebase connection.
- * No real customer data.
- *
- * Run:
- * node --test bookingEngine.test.js
+ * In-memory tests only.
+ * No Firebase deployment.
  */
 
 const test = require("node:test");
@@ -65,23 +60,25 @@ function addDays(date, count) {
 
 function nextWeekday(dayNumber) {
   const today = ukToday();
+
   const day = new Date(
     today + "T12:00:00Z"
   ).getUTCDay();
 
   let offset = (dayNumber - day + 7) % 7;
 
-  // Always choose a future date.
   if (offset === 0) offset = 7;
 
   return addDays(today, offset);
 }
 
 const NEXT_MONDAY = nextWeekday(1);
+const NEXT_THURSDAY = nextWeekday(4);
 const NEXT_SATURDAY = nextWeekday(6);
 
 const catalogue = {
   business: {
+    ownerUid: "test-owner",
     published: true,
     acceptingBookings: true
   },
@@ -127,7 +124,7 @@ const catalogue = {
       ],
       timeOff: [
         {
-          date: "2026-11-12",
+          date: NEXT_THURSDAY,
           start: "09:00",
           end: "17:00"
         }
@@ -193,10 +190,8 @@ function availability(
 }
 
 /**
- * In-memory Firestore simulator.
- *
- * Tests sequential transactions only.
- * Does not prove real concurrency safety.
+ * Simple in-memory Firestore simulator.
+ * Does not simulate concurrent transactions.
  */
 function fakeFirestore() {
   const documents = new Map();
@@ -208,8 +203,7 @@ function fakeFirestore() {
         const documentId =
           id || "booking-" + nextId++;
 
-        const fullPath =
-          path + "/" + documentId;
+        const fullPath = path + "/" + documentId;
 
         return {
           id: documentId,
@@ -226,7 +220,6 @@ function fakeFirestore() {
 
   return {
     documents,
-
     collection,
 
     async runTransaction(callback) {
@@ -271,10 +264,7 @@ function fakeFirestore() {
       const result = await callback(transaction);
 
       for (const write of writes) {
-        documents.set(
-          write.path,
-          write.data
-        );
+        documents.set(write.path, write.data);
       }
 
       return result;
@@ -282,7 +272,7 @@ function fakeFirestore() {
   };
 }
 
-// ORIGINAL TESTS 1–20
+// TESTS 1–20: ORIGINAL BOOKING BEHAVIOUR
 
 test("01 accepts a valid booking request", () => {
   const result = validateRequest(request());
@@ -320,7 +310,7 @@ test("04 rejects a non-15-minute start", () => {
 
 test("05 allows an appointment within working hours", () => {
   const result = availability(
-    "2026-11-09", "10:00"
+    NEXT_MONDAY, "10:00"
   );
 
   assert.equal(result.start, 600);
@@ -330,7 +320,7 @@ test("05 allows an appointment within working hours", () => {
 test("06 rejects an appointment before opening", () => {
   assert.throws(
     () => availability(
-      "2026-11-09", "08:45"
+      NEXT_MONDAY, "08:45"
     ),
     /outside working hours/
   );
@@ -339,7 +329,7 @@ test("06 rejects an appointment before opening", () => {
 test("07 rejects an appointment after closing", () => {
   assert.throws(
     () => availability(
-      "2026-11-09", "17:45"
+      NEXT_MONDAY, "17:45"
     ),
     /outside working hours/
   );
@@ -348,7 +338,7 @@ test("07 rejects an appointment after closing", () => {
 test("08 rejects appointments overlapping lunch", () => {
   assert.throws(
     () => availability(
-      "2026-11-09", "12:15"
+      NEXT_MONDAY, "12:15"
     ),
     /staff break/
   );
@@ -356,7 +346,7 @@ test("08 rejects appointments overlapping lunch", () => {
 
 test("09 allows appointments after lunch", () => {
   const result = availability(
-    "2026-11-09", "13:00"
+    NEXT_MONDAY, "13:00"
   );
 
   assert.equal(result.start, 780);
@@ -365,7 +355,7 @@ test("09 allows appointments after lunch", () => {
 test("10 rejects appointments during time off", () => {
   assert.throws(
     () => availability(
-      "2026-11-12", "10:00"
+      NEXT_THURSDAY, "10:00"
     ),
     /unavailable/
   );
@@ -373,7 +363,7 @@ test("10 rejects appointments during time off", () => {
 
 test("11 allows appointments after time off", () => {
   const result = availability(
-    "2026-11-12", "17:00"
+    NEXT_THURSDAY, "17:00"
   );
 
   assert.equal(result.start, 1020);
@@ -382,7 +372,7 @@ test("11 allows appointments after time off", () => {
 test("12 rejects Kody's Saturday appointments", () => {
   assert.throws(
     () => availability(
-      "2026-11-14", "10:00"
+      NEXT_SATURDAY, "10:00"
     ),
     /not working/
   );
@@ -390,7 +380,7 @@ test("12 rejects Kody's Saturday appointments", () => {
 
 test("13 allows Demo Barber on Saturday", () => {
   const result = availability(
-    "2026-11-14", "09:00", "demo"
+    NEXT_SATURDAY, "09:00", "demo"
   );
 
   assert.equal(result.start, 540);
@@ -398,12 +388,12 @@ test("13 allows Demo Barber on Saturday", () => {
 
 test("14 locks every occupied 15-minute interval", () => {
   const locks = createLockIds(
-    "kody", "2026-11-09", 600, 620
+    "kody", NEXT_MONDAY, 600, 620
   );
 
   assert.deepEqual(locks, [
-    "kody_2026-11-09_1000",
-    "kody_2026-11-09_1015"
+    "kody_" + NEXT_MONDAY + "_1000",
+    "kody_" + NEXT_MONDAY + "_1015"
   ]);
 });
 
@@ -491,6 +481,7 @@ test("18 rejects an unpublished business", async () => {
   const privateCatalogue = {
     ...catalogue,
     business: {
+      ...catalogue.business,
       published: false,
       acceptingBookings: false
     }
@@ -551,7 +542,7 @@ test("20 allows different staff at the same time", async () => {
   assert.equal(count, 2);
 });
 
-// NEW SECURITY TESTS 21–27
+// TESTS 21–27: DATE AND OWNERSHIP SECURITY
 
 test("21 rejects an appointment dated yesterday", () => {
   const yesterday = addDays(
@@ -623,8 +614,6 @@ test("25 rejects an earlier time today", () => {
     String(earlier % 60)
       .padStart(2, "0");
 
-  // At 00:00, there is no earlier time
-  // on the same calendar day.
   if (currentMinutes === 0) {
     assert.throws(
       () => validateBookingDate(
@@ -662,28 +651,42 @@ test("26 rejects mismatched business ownership", async () => {
     /ownership mismatch/
   );
 
-  assert.equal(
-    db.documents.size,
-    0
-  );
+  assert.equal(db.documents.size, 0);
 });
 
 test("27 accepts a matching business owner", async () => {
   const db = fakeFirestore();
 
-  const ownedCatalogue = {
-    ...catalogue,
-    business: {
-      ...catalogue.business,
-      ownerUid: "test-owner"
-    }
-  };
-
   const result = await createBooking({
     db,
-    catalogue: ownedCatalogue,
+    catalogue,
     request: request()
   });
 
   assert.equal(result.success, true);
+});
+
+// TEST 28: MANDATORY OWNERSHIP
+
+test("28 rejects a catalogue with no owner UID", async () => {
+  const db = fakeFirestore();
+
+  const unownedCatalogue = {
+    ...catalogue,
+    business: {
+      published: true,
+      acceptingBookings: true
+    }
+  };
+
+  await assert.rejects(
+    createBooking({
+      db,
+      catalogue: unownedCatalogue,
+      request: request()
+    }),
+    /ownership is missing/
+  );
+
+  assert.equal(db.documents.size, 0);
 });
