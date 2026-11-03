@@ -16,6 +16,8 @@ on:
       - 'functions/androidBookingAdapter.test.js'
       - 'functions/bookingMigrationPlan.js'
       - 'functions/bookingMigrationPlan.test.js'
+      - 'functions/bookingMigrationValidator.js'
+      - 'functions/bookingMigrationValidator.test.js'
       - 'functions/package.json'
       - '.github/workflows/booking-tests.yml'
 
@@ -46,44 +48,28 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Check Firebase Functions syntax
-        run: node --check index.js
+      - name: Check all JavaScript syntax
+        run: |
+          node --check index.js
+          node --check bookingEngine.js
+          node --check bookingEngine.test.js
+          node --check trustedCatalogue.js
+          node --check trustedCatalogue.test.js
+          node --check trustedBooking.js
+          node --check trustedBooking.test.js
+          node --check androidBookingAdapter.js
+          node --check androidBookingAdapter.test.js
+          node --check bookingMigrationPlan.js
+          node --check bookingMigrationPlan.test.js
+          node --check bookingMigrationValidator.js
+          node --check bookingMigrationValidator.test.js
 
-      - name: Check booking engine syntax
-        run: node --check bookingEngine.js
-
-      - name: Check catalogue loader syntax
-        run: node --check trustedCatalogue.js
-
-      - name: Check trusted booking syntax
-        run: node --check trustedBooking.js
-
-      - name: Check Android adapter syntax
-        run: node --check androidBookingAdapter.js
-
-      - name: Check migration planner syntax
-        run: node --check bookingMigrationPlan.js
-
-      - name: Check booking engine test syntax
-        run: node --check bookingEngine.test.js
-
-      - name: Check catalogue test syntax
-        run: node --check trustedCatalogue.test.js
-
-      - name: Check integration test syntax
-        run: node --check trustedBooking.test.js
-
-      - name: Check Android adapter test syntax
-        run: node --check androidBookingAdapter.test.js
-
-      - name: Check migration planner test syntax
-        run: node --check bookingMigrationPlan.test.js
-
-      - name: Run all 97 automated tests
+      - name: Run all 117 automated tests
         run: |
           node --test \
             bookingEngine.test.js \
             trustedCatalogue.test.js \
             trustedBooking.test.js \
             androidBookingAdapter.test.js \
-            bookingMigrationPlan.test.js
+            bookingMigrationPlan.test.js \
+            bookingMigrationValidator.test.js
