@@ -1,32 +1,34 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8C.2
+ * BOUSTIO — PHASE 8C.4
  * Secure appointment booking engine.
  *
  * Backend-only module.
- *
  * Not a public HTTP endpoint.
- * Does not deploy or activate bookings.
  *
- * All booking times are represented as
- * YYYY-MM-DD dates and HH:mm local times.
- *
- * Initial implementation:
- * - Validates booking requests
- * - Checks working hours
- * - Checks recurring breaks
- * - Checks staff time off
- * - Reserves 15-minute lock intervals
- * - Prevents overlapping bookings
- * - Creates private appointment records
+ * Features:
+ * - Request validation
+ * - UK local date protection
+ * - Maximum 90-day booking window
+ * - Staff working hours
+ * - Recurring breaks
+ * - Staff time off
+ * - Service assignments
+ * - 15-minute booking locks
+ * - Atomic Firestore transactions
+ * - Private appointment records
  *
  * IMPORTANT:
- * Catalogue data must come from a trusted,
- * server-controlled source.
+ * The caller must load the catalogue from
+ * trusted server-controlled storage.
  *
- * The browser must never supply the
- * authoritative staff schedule or price.
+ * Never accept an authoritative catalogue
+ * directly from the customer's browser.
+ *
+ * Existing Android appointments must be
+ * migrated or included in conflict checks
+ * before public bookings are enabled.
  */
 
 const {
@@ -42,6 +44,9 @@ const DAYS = [
   "friday",
   "saturday"
 ];
+
+const TIME_ZONE = "Europe/London";
+const MAX_ADVANCE_DAYS = 90;
 
 const DATE_PATTERN =
   /^\d{4}-\d{2}-\d{2}$/;
@@ -116,8 +121,87 @@ function overlaps(
     firstEnd > secondStart;
 }
 
+/**
+ * Returns the current date and time in
+ * the UK, accounting for GMT/BST.
+ */
+function ukNow() {
+  const parts = new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      timeZone: TIME_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    }
+  ).formatToParts(new Date());
+
+  const values = {};
+
+  for (const part of parts) {
+    if (part.type !== "literal") {
+      values[part.type] = part.value;
+    }
+  }
+
+  return {
+    date:
+      values.year + "-" +
+      values.month + "-" +
+      values.day,
+    time:
+      values.hour + ":" +
+      values.minute
+  };
+}
+
+/**
+ * Reject past dates and dates beyond
+ * the initial 90-day booking window.
+ *
+ * Uses calendar days rather than a
+ * fixed 24-hour difference, so changes
+ * between GMT and BST do not affect
+ * the booking window.
+ */
+function validateBookingDate(date, startTime) {
+  const selected = parseDate(date);
+  const now = ukNow();
+
+  const today = parseDate(now.date);
+
+  const difference = Math.round(
+    (selected.getTime() - today.getTime()) /
+    86400000
+  );
+
+  if (difference < 0) {
+    fail("Appointments cannot be booked in the past.");
+  }
+
+  if (difference > MAX_ADVANCE_DAYS) {
+    fail("Appointments can only be booked 90 days ahead.");
+  }
+
+  if (
+    difference === 0 &&
+    parseTime(startTime) <= parseTime(now.time)
+  ) {
+    fail("This appointment time has already passed.");
+  }
+
+  return true;
+}
+
 function validateRequest(input) {
-  if (!input || typeof input !== "object") {
+  if (
+    !input ||
+    typeof input !== "object" ||
+    Array.isArray(input)
+  ) {
     fail("Missing booking information.");
   }
 
@@ -145,7 +229,9 @@ function validateRequest(input) {
   const start = parseTime(startTime);
 
   if (start % 15 !== 0) {
-    fail("Appointments must start on a 15-minute interval.");
+    fail(
+      "Appointments must start on a 15-minute interval."
+    );
   }
 
   if (
@@ -187,7 +273,8 @@ function validateRequest(input) {
 
 function findService(catalogue, serviceId) {
   const service = catalogue.services.find(
-    item => item.id === serviceId &&
+    item =>
+      item.id === serviceId &&
       item.active === true
   );
 
@@ -216,7 +303,8 @@ function findService(catalogue, serviceId) {
 
 function findStaff(catalogue, staffId, serviceId) {
   const member = catalogue.staff.find(
-    item => item.id === staffId &&
+    item =>
+      item.id === staffId &&
       item.active === true
   );
 
@@ -228,7 +316,9 @@ function findStaff(catalogue, staffId, serviceId) {
     !Array.isArray(member.serviceIds) ||
     !member.serviceIds.includes(serviceId)
   ) {
-    fail("This professional does not offer that service.");
+    fail(
+      "This professional does not offer that service."
+    );
   }
 
   return member;
@@ -244,7 +334,9 @@ function workingHours(catalogue, member, day) {
   const interval = schedule?.[day];
 
   if (!interval) {
-    fail("The professional is not working on this date.");
+    fail(
+      "The professional is not working on this date."
+    );
   }
 
   const open = parseTime(interval.open);
@@ -266,7 +358,8 @@ function validateAvailability(
 ) {
   const selectedDate = parseDate(date);
 
-  const day = DAYS[selectedDate.getUTCDay()];
+  const day =
+    DAYS[selectedDate.getUTCDay()];
 
   const { open, close } =
     workingHours(catalogue, member, day);
@@ -279,12 +372,15 @@ function validateAvailability(
     end > close ||
     end > 1440
   ) {
-    fail("Appointment is outside working hours.");
+    fail(
+      "Appointment is outside working hours."
+    );
   }
 
-  const breaks = Array.isArray(member.weeklyBreaks)
-    ? member.weeklyBreaks
-    : [];
+  const breaks =
+    Array.isArray(member.weeklyBreaks)
+      ? member.weeklyBreaks
+      : [];
 
   for (const item of breaks) {
     if (item.day !== day) {
@@ -302,13 +398,16 @@ function validateAvailability(
         breakEnd
       )
     ) {
-      fail("Appointment overlaps a staff break.");
+      fail(
+        "Appointment overlaps a staff break."
+      );
     }
   }
 
-  const timeOff = Array.isArray(member.timeOff)
-    ? member.timeOff
-    : [];
+  const timeOff =
+    Array.isArray(member.timeOff)
+      ? member.timeOff
+      : [];
 
   for (const item of timeOff) {
     if (item.date !== date) {
@@ -326,7 +425,9 @@ function validateAvailability(
         offEnd
       )
     ) {
-      fail("The professional is unavailable.");
+      fail(
+        "The professional is unavailable."
+      );
     }
   }
 
@@ -334,14 +435,8 @@ function validateAvailability(
 }
 
 /**
- * Reserve every 15-minute grid cell touched
- * by the appointment.
- *
- * Example:
- * 10:00–10:20 reserves:
- * 10:00 and 10:15.
- *
- * 10:15–10:45 would collide.
+ * Each lock represents a 15-minute
+ * interval occupied by an appointment.
  */
 function createLockIds(
   staffId,
@@ -351,7 +446,8 @@ function createLockIds(
 ) {
   const result = [];
 
-  const first = Math.floor(start / 15) * 15;
+  const first =
+    Math.floor(start / 15) * 15;
 
   for (
     let minute = first;
@@ -369,17 +465,20 @@ function createLockIds(
 }
 
 /**
- * The caller must supply:
+ * Creates a booking using a Firestore
+ * transaction.
  *
- * - A trusted Firestore Admin database
- * - A trusted business catalogue
- * - A validated booking request
+ * Security requirements:
  *
- * The catalogue must not be accepted directly
- * from the public browser.
+ * 1. db must be an Admin SDK Firestore.
+ * 2. catalogue must be server-controlled.
+ * 3. The caller must resolve and verify
+ *    the correct business owner UID.
+ * 4. Existing Android bookings must be
+ *    represented in the same lock system.
  *
- * All appointment and lock reads happen before
- * writes inside the Firestore transaction.
+ * These requirements must be completed
+ * before enabling public booking requests.
  */
 async function createBooking({
   db,
@@ -395,23 +494,48 @@ async function createBooking({
 
   if (
     !catalogue ||
+    !catalogue.business ||
     !Array.isArray(catalogue.services) ||
     !Array.isArray(catalogue.staff)
   ) {
-    fail("Business catalogue is unavailable.");
+    fail(
+      "Business catalogue is unavailable."
+    );
   }
 
   const input = validateRequest(request);
 
+  // If the trusted catalogue contains
+  // an owner UID, it must match the
+  // destination business document.
   if (
-    catalogue.business?.published !== true ||
-    catalogue.business?.acceptingBookings !== true
+    typeof catalogue.business.ownerUid === "string" &&
+    catalogue.business.ownerUid !== input.businessId
   ) {
-    fail("This business is not accepting bookings.");
+    fail("Business ownership mismatch.");
   }
 
+  if (
+    catalogue.business.published !== true ||
+    catalogue.business.acceptingBookings !== true
+  ) {
+    fail(
+      "This business is not accepting bookings."
+    );
+  }
+
+  // Validate the date before accessing
+  // the booking database.
+  validateBookingDate(
+    input.date,
+    input.startTime
+  );
+
   const service =
-    findService(catalogue, input.serviceId);
+    findService(
+      catalogue,
+      input.serviceId
+    );
 
   const member =
     findStaff(
@@ -445,74 +569,102 @@ async function createBooking({
     .doc();
 
   const lockRefs = lockIds.map(id =>
-    businessRef.collection("bookingLocks").doc(id)
+    businessRef
+      .collection("bookingLocks")
+      .doc(id)
   );
 
-  await db.runTransaction(async transaction => {
-    const snapshots = [];
+  await db.runTransaction(
+    async transaction => {
+      const snapshots = [];
 
-    for (const ref of lockRefs) {
-      snapshots.push(
-        await transaction.get(ref)
-      );
-    }
+      // All reads must happen before
+      // any transaction writes.
+      for (const ref of lockRefs) {
+        snapshots.push(
+          await transaction.get(ref)
+        );
+      }
 
-    if (snapshots.some(snapshot => snapshot.exists)) {
-      fail("This appointment time is already booked.");
-    }
+      if (
+        snapshots.some(
+          snapshot => snapshot.exists
+        )
+      ) {
+        fail(
+          "This appointment time is already booked."
+        );
+      }
 
-    // All transaction reads are now complete.
-
-    const appointment = {
-      businessId: input.businessId,
-      serviceId: input.serviceId,
-      serviceName: service.name,
-      staffId: input.staffId,
-      staffName: member.name,
-      date: input.date,
-      startTime: input.startTime,
-      endTime: formatTime(end),
-      durationMinutes: service.durationMinutes,
-      price: service.price,
-      customerName: input.customerName,
-      customerEmail: input.customerEmail,
-      customerPhone: input.customerPhone,
-      status: "confirmed",
-      source: "online",
-      schemaVersion: 1,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
-    };
-
-    transaction.create(
-      appointmentRef,
-      appointment
-    );
-
-    for (const ref of lockRefs) {
-      transaction.create(ref, {
-        appointmentId: appointmentRef.id,
+      const appointment = {
         businessId: input.businessId,
+        serviceId: input.serviceId,
+        serviceName: service.name,
         staffId: input.staffId,
+        staffName: member.name,
         date: input.date,
-        createdAt: FieldValue.serverTimestamp()
-      });
+        startTime: input.startTime,
+        endTime: formatTime(end),
+        durationMinutes:
+          service.durationMinutes,
+        price: service.price,
+        customerName:
+          input.customerName,
+        customerEmail:
+          input.customerEmail,
+        customerPhone:
+          input.customerPhone,
+        status: "confirmed",
+        source: "online",
+        schemaVersion: 1,
+        createdAt:
+          FieldValue.serverTimestamp(),
+        updatedAt:
+          FieldValue.serverTimestamp()
+      };
+
+      transaction.create(
+        appointmentRef,
+        appointment
+      );
+
+      for (const ref of lockRefs) {
+        transaction.create(ref, {
+          appointmentId:
+            appointmentRef.id,
+          businessId:
+            input.businessId,
+          staffId:
+            input.staffId,
+          date:
+            input.date,
+          createdAt:
+            FieldValue.serverTimestamp()
+        });
+      }
     }
-  });
+  );
 
   return {
     success: true,
-    appointmentId: appointmentRef.id,
-    date: input.date,
-    startTime: input.startTime,
-    endTime: formatTime(end),
-    serviceName: service.name,
-    staffName: member.name
+    appointmentId:
+      appointmentRef.id,
+    date:
+      input.date,
+    startTime:
+      input.startTime,
+    endTime:
+      formatTime(end),
+    serviceName:
+      service.name,
+    staffName:
+      member.name
   };
 }
 
 module.exports = {
   validateRequest,
+  validateBookingDate,
   validateAvailability,
   createLockIds,
   createBooking
