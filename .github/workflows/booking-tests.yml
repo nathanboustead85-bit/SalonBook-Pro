@@ -52,8 +52,10 @@ jobs:
           node --check bookingMigrationValidator.test.js
           node --check firestoreMigrationPreview.js
           node --check firestoreMigrationPreview.test.js
+          node --check authenticatedMigrationPreview.js
+          node --check authenticatedMigrationPreview.test.js
 
-      - name: Run all 137 automated tests
+      - name: Run all 157 automated tests
         run: |
           node --test \
             bookingEngine.test.js \
@@ -62,4 +64,5 @@ jobs:
             androidBookingAdapter.test.js \
             bookingMigrationPlan.test.js \
             bookingMigrationValidator.test.js \
-            firestoreMigrationPreview.test.js
+            firestoreMigrationPreview.test.js \
+            authenticatedMigrationPreview.test.js
