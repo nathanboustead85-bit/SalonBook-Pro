@@ -1,18 +1,16 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8C.8
+ * BOUSTIO — PHASE 8C.9
  *
  * Firebase Cloud Functions.
  *
- * Existing functions preserved:
+ * Active exported functions:
  * - publishBusiness
  * - unpublishBusiness
  *
- * New internal booking integration:
- * - load trusted catalogue
- * - verify public business status
- * - call secure booking engine
+ * Secure booking logic is maintained
+ * separately in trustedBooking.js.
  *
  * No public booking endpoint is enabled.
  */
@@ -31,20 +29,12 @@ const {
   FieldValue
 } = require("firebase-admin/firestore");
 
-const {
-  loadTrustedCatalogue
-} = require("./trustedCatalogue");
-
-const {
-  createBooking
-} = require("./bookingEngine");
-
 initializeApp();
 
 const db = getFirestore();
 
 /**
- * Existing authentication check.
+ * Verify Firebase Authentication.
  */
 function verifiedUser(request) {
   const auth = request.auth;
@@ -64,7 +54,7 @@ function verifiedUser(request) {
 }
 
 /**
- * Existing slug validation.
+ * Validate business URL slug.
  */
 function validSlug(value) {
   return (
@@ -76,7 +66,7 @@ function validSlug(value) {
 }
 
 /**
- * Existing text validation.
+ * Validate text field length.
  */
 function safeText(value, maxLength) {
   return (
@@ -86,7 +76,7 @@ function safeText(value, maxLength) {
 }
 
 /**
- * Existing business profile validation.
+ * Validate private business profile.
  */
 function validateProfile(profile, uid) {
   if (
@@ -117,9 +107,11 @@ function validateProfile(profile, uid) {
 
 /**
  * PHASE 7C
+ *
  * Publish a business profile.
  *
- * Public booking remains disabled.
+ * This function never enables
+ * live customer bookings.
  */
 exports.publishBusiness = onCall(
   {
@@ -259,9 +251,11 @@ exports.publishBusiness = onCall(
 
 /**
  * PHASE 7C
- * Unpublish business.
  *
- * Keeps the existing slug reserved.
+ * Unpublish a business.
+ *
+ * The slug remains reserved
+ * to its existing owner.
  */
 exports.unpublishBusiness = onCall(
   {
@@ -305,116 +299,31 @@ exports.unpublishBusiness = onCall(
 );
 
 /**
- * PHASE 8C.8
- * INTERNAL TRUSTED BOOKING INTEGRATION
+ * PHASE 8C.9
  *
- * This is intentionally NOT exported as a
- * Firebase Cloud Function.
+ * Booking integration is now maintained
+ * in the separate trustedBooking.js module.
  *
- * No HTTP or callable booking endpoint
- * exists yet.
+ * That module:
  *
- * Future requirements before activation:
+ * - Verifies the public business document
+ * - Loads the trusted Firestore catalogue
+ * - Checks business ownership
+ * - Excludes customer-supplied prices
+ * - Invokes the transactional booking engine
  *
- * 1. Trusted catalogue publishing
- * 2. Android booking synchronisation
- * 3. Existing booking lock migration
- * 4. Firestore transaction integration
- * 5. Abuse prevention and rate limiting
- * 6. End-to-end emulator testing
+ * It is not exposed through an HTTP
+ * or callable Firebase endpoint.
  *
- * The public business document is checked
- * independently of the catalogue.
- */
-async function createTrustedBooking(
-  bookingRequest
-) {
-  if (
-    !bookingRequest ||
-    typeof bookingRequest !== "object" ||
-    Array.isArray(bookingRequest)
-  ) {
-    throw new Error(
-      "Invalid booking request."
-    );
-  }
-
-  const businessId =
-    bookingRequest.businessId;
-
-  if (
-    typeof businessId !== "string" ||
-    !/^[A-Za-z0-9_-]{1,100}$/.test(
-      businessId
-    )
-  ) {
-    throw new Error(
-      "Invalid business identifier."
-    );
-  }
-
-  const publicRef = db
-    .collection("publicBusinesses")
-    .doc(businessId);
-
-  const publicSnapshot =
-    await publicRef.get();
-
-  if (!publicSnapshot.exists) {
-    throw new Error(
-      "Business is unavailable."
-    );
-  }
-
-  const publicBusiness =
-    publicSnapshot.data();
-
-  if (
-    !publicBusiness ||
-    publicBusiness.businessId !== businessId ||
-    publicBusiness.published !== true ||
-    publicBusiness.acceptingBookings !== true
-  ) {
-    throw new Error(
-      "Business is not accepting bookings."
-    );
-  }
-
-  const catalogue =
-    await loadTrustedCatalogue({
-      db,
-      businessId
-    });
-
-  if (
-    catalogue.business.ownerUid !== businessId
-  ) {
-    throw new Error(
-      "Business ownership mismatch."
-    );
-  }
-
-  return createBooking({
-    db,
-    catalogue,
-    request: bookingRequest
-  });
-}
-
-/**
- * SECURITY NOTE
+ * Before public bookings can be enabled:
  *
- * createTrustedBooking is private to
- * this module and cannot be invoked
- * directly by a customer.
+ * 1. Publish trusted catalogues
+ * 2. Synchronise existing Android bookings
+ * 3. Migrate existing bookings into locks
+ * 4. Test real Firestore transactions
+ * 5. Add abuse prevention
+ * 6. Complete end-to-end testing
  *
- * It is deliberately not exported.
- *
- * Existing Android appointments are not
- * yet represented by the booking locks
- * used by the server booking engine.
- *
- * Public booking activation must wait
- * until both systems share a consistent
- * conflict-prevention mechanism.
+ * Keep acceptingBookings disabled
+ * until these requirements are met.
  */
