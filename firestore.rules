@@ -3,7 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Shared security functions
+    // SHARED SECURITY FUNCTIONS
 
     function isOwner(userId) {
       return request.auth != null
@@ -115,13 +115,6 @@ service cloud.firestore {
     }
 
     // PHASE 7C: PUBLIC BUSINESS DIRECTORY
-    //
-    // Public profiles contain only approved
-    // information intended for customers.
-    //
-    // No direct client-side writes are allowed.
-    // Publication will use trusted server code
-    // after ownership and slug validation.
 
     match /publicBusinesses/{businessId} {
 
@@ -132,11 +125,45 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
-    // DEFAULT SECURITY: DENY ALL OTHER ACCESS
+    // PHASE 8C: PRIVATE CUSTOMER APPOINTMENTS
+    //
+    // The businessId in this collection must
+    // be the Firebase Authentication owner UID,
+    // not the public booking-page slug.
+    //
+    // Verified owners can read appointments.
+    // All client-side writes are blocked.
+    //
+    // Future trusted Cloud Functions using the
+    // Firebase Admin SDK can perform validated
+    // transactional writes. Admin SDK access
+    // is governed by IAM, not these rules.
+
+    match /businesses/{businessId}/appointments/{appointmentId} {
+
+      allow get, list: if isVerifiedOwner(businessId);
+
+      allow create, update, delete: if false;
+    }
+
+    // PHASE 8C: PRIVATE BOOKING LOCKS
+    //
+    // Future backend transactions will use
+    // these documents to prevent overlapping
+    // reservations.
+    //
+    // No browser or Android client may read
+    // or modify these lock records directly.
+
+    match /businesses/{businessId}/bookingLocks/{lockId} {
+
+      allow read, write: if false;
+    }
+
+    // DEFAULT SECURITY: DENY EVERYTHING ELSE
 
     match /{document=**} {
       allow read, write: if false;
     }
   }
 }
-
