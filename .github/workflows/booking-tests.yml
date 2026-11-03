@@ -5,20 +5,7 @@ on:
     branches:
       - phase-7c-live-booking
     paths:
-      - 'functions/index.js'
-      - 'functions/bookingEngine.js'
-      - 'functions/bookingEngine.test.js'
-      - 'functions/trustedCatalogue.js'
-      - 'functions/trustedCatalogue.test.js'
-      - 'functions/trustedBooking.js'
-      - 'functions/trustedBooking.test.js'
-      - 'functions/androidBookingAdapter.js'
-      - 'functions/androidBookingAdapter.test.js'
-      - 'functions/bookingMigrationPlan.js'
-      - 'functions/bookingMigrationPlan.test.js'
-      - 'functions/bookingMigrationValidator.js'
-      - 'functions/bookingMigrationValidator.test.js'
-      - 'functions/package.json'
+      - 'functions/**'
       - '.github/workflows/booking-tests.yml'
 
   workflow_dispatch:
@@ -63,8 +50,10 @@ jobs:
           node --check bookingMigrationPlan.test.js
           node --check bookingMigrationValidator.js
           node --check bookingMigrationValidator.test.js
+          node --check firestoreMigrationPreview.js
+          node --check firestoreMigrationPreview.test.js
 
-      - name: Run all 117 automated tests
+      - name: Run all 137 automated tests
         run: |
           node --test \
             bookingEngine.test.js \
@@ -72,4 +61,5 @@ jobs:
             trustedBooking.test.js \
             androidBookingAdapter.test.js \
             bookingMigrationPlan.test.js \
-            bookingMigrationValidator.test.js
+            bookingMigrationValidator.test.js \
+            firestoreMigrationPreview.test.js
