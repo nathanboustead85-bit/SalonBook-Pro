@@ -12,6 +12,8 @@ on:
       - 'functions/trustedCatalogue.test.js'
       - 'functions/trustedBooking.js'
       - 'functions/trustedBooking.test.js'
+      - 'functions/androidBookingAdapter.js'
+      - 'functions/androidBookingAdapter.test.js'
       - 'functions/package.json'
       - '.github/workflows/booking-tests.yml'
 
@@ -54,6 +56,9 @@ jobs:
       - name: Check trusted booking syntax
         run: node --check trustedBooking.js
 
+      - name: Check Android adapter syntax
+        run: node --check androidBookingAdapter.js
+
       - name: Check booking engine test syntax
         run: node --check bookingEngine.test.js
 
@@ -63,5 +68,13 @@ jobs:
       - name: Check integration test syntax
         run: node --check trustedBooking.test.js
 
-      - name: Run all 58 automated tests
-        run: node --test bookingEngine.test.js trustedCatalogue.test.js trustedBooking.test.js
+      - name: Check Android adapter test syntax
+        run: node --check androidBookingAdapter.test.js
+
+      - name: Run all 79 automated tests
+        run: |
+          node --test \
+            bookingEngine.test.js \
+            trustedCatalogue.test.js \
+            trustedBooking.test.js \
+            androidBookingAdapter.test.js
