@@ -1,0 +1,47 @@
+name: Boustio Booking Engine Tests
+
+on:
+  push:
+    branches:
+      - phase-7c-live-booking
+    paths:
+      - 'functions/bookingEngine.js'
+      - 'functions/bookingEngine.test.js'
+      - 'functions/package.json'
+      - '.github/workflows/booking-tests.yml'
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  booking-tests:
+    name: Run Booking Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: functions
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Check booking engine syntax
+        run: node --check bookingEngine.js
+
+      - name: Check test file syntax
+        run: node --check bookingEngine.test.js
+
+      - name: Run all booking tests
+        run: node --test bookingEngine.test.js
