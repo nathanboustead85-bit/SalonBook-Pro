@@ -5,10 +5,13 @@ on:
     branches:
       - phase-7c-live-booking
     paths:
+      - 'functions/index.js'
       - 'functions/bookingEngine.js'
       - 'functions/bookingEngine.test.js'
       - 'functions/trustedCatalogue.js'
       - 'functions/trustedCatalogue.test.js'
+      - 'functions/trustedBooking.js'
+      - 'functions/trustedBooking.test.js'
       - 'functions/package.json'
       - '.github/workflows/booking-tests.yml'
 
@@ -39,17 +42,26 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Check Firebase Functions syntax
+        run: node --check index.js
+
       - name: Check booking engine syntax
         run: node --check bookingEngine.js
 
       - name: Check catalogue loader syntax
         run: node --check trustedCatalogue.js
 
-      - name: Check booking test syntax
+      - name: Check trusted booking syntax
+        run: node --check trustedBooking.js
+
+      - name: Check booking engine test syntax
         run: node --check bookingEngine.test.js
 
       - name: Check catalogue test syntax
         run: node --check trustedCatalogue.test.js
 
-      - name: Run all booking and catalogue tests
-        run: node --test bookingEngine.test.js trustedCatalogue.test.js
+      - name: Check integration test syntax
+        run: node --check trustedBooking.test.js
+
+      - name: Run all 58 automated tests
+        run: node --test bookingEngine.test.js trustedCatalogue.test.js trustedBooking.test.js
