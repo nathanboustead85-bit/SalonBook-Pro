@@ -7,6 +7,7 @@ on:
     paths:
       - 'functions/**'
       - 'firebase.json'
+      - 'firebase.http-emulator.json'
       - '.github/workflows/booking-tests.yml'
 
   workflow_dispatch:
@@ -18,7 +19,7 @@ jobs:
   booking-tests:
     name: Run Booking Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -39,12 +40,17 @@ jobs:
         working-directory: functions
         run: npm install --no-audit --no-fund
 
+      - name: Install isolated HTTP emulator dependencies
+        working-directory: functions/http-emulator
+        run: npm install --no-audit --no-fund
+
       - name: Check JavaScript syntax
         working-directory: functions
         run: |
           for file in *.js; do
             node --check "$file"
           done
+          node --check http-emulator/index.js
 
       - name: Run 191 unit tests
         working-directory: functions
@@ -71,3 +77,16 @@ jobs:
             --project demo-boustio-migration \
             --only firestore \
             "cd functions && node --test firestoreMigrationEmulator.test.js authenticatedCallableEmulator.test.js"
+
+      - name: Run callable HTTP integration tests
+        env:
+          GCLOUD_PROJECT: demo-boustio-migration
+          GOOGLE_CLOUD_PROJECT: demo-boustio-migration
+          FUNCTIONS_EMULATOR_HOST: 127.0.0.1:5001
+        run: |
+          npx --yes firebase-tools@14.25.1 \
+            --config firebase.http-emulator.json \
+            emulators:exec \
+            --project demo-boustio-migration \
+            --only auth,firestore,functions \
+            "cd functions && node --test migrationCallableHttpEmulator.test.js"
