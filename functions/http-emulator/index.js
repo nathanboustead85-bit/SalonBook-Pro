@@ -1,30 +1,21 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.29
+ * BOUSTIO — PHASE 8D.34
  *
- * ISOLATED FIREBASE FUNCTIONS
- * EMULATOR ENTRY POINT.
+ * Isolated HTTP Emulator entry point.
  *
- * This file is exclusively for
- * local HTTP integration testing.
- *
- * It is NOT the production entry point.
- * Never deploy this test source.
+ * IMPORTANT:
+ * This file is for emulator testing only.
+ * It must never be deployed to production.
  */
-
-const {
-  initializeApp,
-  getApps
-} = require("firebase-admin/app");
 
 const PROJECT_ID =
   "demo-boustio-migration";
 
 /**
- * Fail closed unless running inside
- * the dedicated Firebase Emulator
- * environment.
+ * Verify this is our isolated
+ * Firebase Emulator environment.
  */
 function verifyEmulatorEnvironment() {
   const project =
@@ -66,8 +57,25 @@ function verifyEmulatorEnvironment() {
 verifyEmulatorEnvironment();
 
 /**
- * Initialise Admin SDK against the
- * dedicated emulator project.
+ * IMPORTANT FIX:
+ *
+ * Load Firebase Admin from the parent
+ * functions directory.
+ *
+ * migrationPreviewCallable.js also loads
+ * Firebase Admin from that directory.
+ *
+ * This ensures both modules use the
+ * same Firebase Admin app registry.
+ */
+const {
+  initializeApp,
+  getApps
+} = require("../node_modules/firebase-admin/app");
+
+/**
+ * Initialise the shared Firebase
+ * Admin instance.
  */
 if (!getApps().length) {
   initializeApp({
@@ -76,12 +84,11 @@ if (!getApps().length) {
 }
 
 /**
- * Export only the read-only callable
- * for isolated HTTP testing.
+ * Load the existing read-only
+ * migration preview callable.
  *
- * Do not add booking creation,
- * migration execution or payment
- * functions to this entry point.
+ * No booking creation or migration
+ * execution is exposed.
  */
 const {
   migrationPreviewCallable
