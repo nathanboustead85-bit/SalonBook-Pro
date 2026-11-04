@@ -52,6 +52,11 @@ jobs:
           done
           node --check http-emulator/index.js
 
+      - name: Run production deployment safety checks
+        working-directory: functions
+        run: |
+          node --test productionDeploymentGuard.test.js
+
       - name: Run 191 unit tests
         working-directory: functions
         run: |
