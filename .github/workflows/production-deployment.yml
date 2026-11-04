@@ -67,7 +67,7 @@ jobs:
             functions/productionDeploymentGuard.test.js
 
   approval-gate:
-    name: Production Environment Authentication Test
+    name: Production Permission Verification
     needs: validate
     if: >-
       github.ref == 'refs/heads/phase-7c-live-booking' &&
@@ -101,16 +101,85 @@ jobs:
         shell: bash
         run: |
           if [ -z "$GOOGLE_ACCESS_TOKEN" ]; then
-            echo "::error::Google Cloud authentication failed."
+            echo "::error::Authentication failed."
             exit 1
           fi
+          echo "Keyless Google Cloud authentication passed."
 
-          echo "Google Cloud authentication succeeded."
-          echo "A short-lived access token was issued."
-          echo "No Firebase deployment was performed."
+      - name: Check deployment permissions
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > permission-request.json <<'JSON'
+          {
+            "permissions": [
+              "cloudfunctions.functions.create",
+              "cloudfunctions.functions.update",
+              "run.services.create",
+              "run.services.update",
+              "cloudbuild.builds.create"
+            ]
+          }
+          JSON
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer ${GOOGLE_ACCESS_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data @permission-request.json \
+            "https://cloudresourcemanager.googleapis.com/v1/projects/salonbook-pro-ad5ff:testIamPermissions" \
+            --output permission-response.json
+
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const response = JSON.parse(
+            fs.readFileSync(
+              "permission-response.json",
+              "utf8"
+            )
+          );
+
+          const expected = [
+            "cloudfunctions.functions.create",
+            "cloudfunctions.functions.update",
+            "run.services.create",
+            "run.services.update",
+            "cloudbuild.builds.create"
+          ];
+
+          const granted = new Set(
+            response.permissions || []
+          );
+
+          let missing = 0;
+
+          for (const permission of expected) {
+            if (granted.has(permission)) {
+              console.log("PASS: " + permission);
+            } else {
+              console.log("NOT CONFIRMED: " + permission);
+              missing++;
+            }
+          }
+
+          if (missing > 0) {
+            throw new Error(
+              missing +
+              " deployment permissions were not confirmed."
+            );
+          }
+
+          console.log(
+            "All requested project permission checks passed."
+          );
+          NODE
 
       - name: Confirm deployment remains disabled
         run: |
-          echo "Boustio production authentication test passed."
+          echo "Permission verification completed."
           echo "No Firebase deployment commands executed."
-          echo "No customer bookings were modified."
+          echo "No production resources modified."
