@@ -1,13 +1,14 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.37
+ * BOUSTIO — PHASE 8D.40
  *
- * Production deployment safety guard.
+ * Production deployment and Firebase
+ * project configuration safeguards.
  *
- * Static checks only.
- * Does not connect to Firebase.
- * Does not deploy any functions.
+ * Static tests only.
+ * No production deployment.
+ * No Firestore modifications.
  */
 
 const test = require("node:test");
@@ -39,6 +40,9 @@ const productionConfig =
 const emulatorConfig =
   readJson("firebase.http-emulator.json");
 
+const firebaseProjects =
+  readJson(".firebaserc");
+
 const productionSource =
   readSource("functions/index.js");
 
@@ -53,7 +57,7 @@ test(
   async t => {
 
     await t.test(
-      "1 - production source is correct",
+      "1 - production functions configuration",
       () => {
         assert.equal(
           productionConfig.functions.source,
@@ -73,7 +77,7 @@ test(
     );
 
     await t.test(
-      "2 - test source remains isolated",
+      "2 - HTTP emulator remains isolated",
       () => {
         assert.equal(
           emulatorConfig.functions.source,
@@ -88,7 +92,7 @@ test(
     );
 
     await t.test(
-      "3 - production exports are restricted",
+      "3 - only approved functions exported",
       () => {
         assert.deepEqual(
           [...productionExports].sort(),
@@ -101,7 +105,7 @@ test(
     );
 
     await t.test(
-      "4 - migration callable is not exported",
+      "4 - migration preview not exported",
       () => {
         assert.equal(
           productionExports.includes(
@@ -113,7 +117,7 @@ test(
     );
 
     await t.test(
-      "5 - booking endpoints are not exported",
+      "5 - booking endpoints not exported",
       () => {
         const forbidden = [
           "createBooking",
@@ -134,24 +138,27 @@ test(
     );
 
     await t.test(
-      "6 - public bookings remain disabled",
+      "6 - customer bookings remain disabled",
       () => {
-        assert.match(
-          productionSource,
-          /acceptingBookings:\s*false/g
+        const disabledMatches =
+          productionSource.match(
+            /acceptingBookings:\s*false\b/g
+          ) || [];
+
+        assert.ok(
+          disabledMatches.length >= 2,
+          "Publish and unpublish must disable bookings"
         );
 
-        assert.equal(
-          /acceptingBookings:\s*true\b/.test(
-            productionSource
-          ),
-          false
+        assert.doesNotMatch(
+          productionSource,
+          /acceptingBookings:\s*true\b/
         );
       }
     );
 
     await t.test(
-      "7 - production config excludes test source",
+      "7 - production and emulator sources differ",
       () => {
         assert.notEqual(
           productionConfig.functions.source,
@@ -161,11 +168,90 @@ test(
     );
 
     await t.test(
-      "8 - production does not enforce App Check prematurely",
+      "8 - App Check enforcement not enabled prematurely",
       () => {
+        const settings =
+          productionSource.match(
+            /enforceAppCheck:\s*(true|false)/g
+          ) || [];
+
+        assert.equal(settings.length, 2);
+
+        for (const setting of settings) {
+          assert.match(
+            setting,
+            /enforceAppCheck:\s*false/
+          );
+        }
+      }
+    );
+
+    await t.test(
+      "9 - production Firebase project ID",
+      () => {
+        assert.equal(
+          firebaseProjects.projects.production,
+          "salonbook-pro-ad5ff"
+        );
+      }
+    );
+
+    await t.test(
+      "10 - emulator Firebase project ID",
+      () => {
+        assert.equal(
+          firebaseProjects.projects.emulator,
+          "demo-boustio-migration"
+        );
+      }
+    );
+
+    await t.test(
+      "11 - default project matches production",
+      () => {
+        assert.equal(
+          firebaseProjects.projects.default,
+          firebaseProjects.projects.production
+        );
+      }
+    );
+
+    await t.test(
+      "12 - production and emulator IDs differ",
+      () => {
+        assert.notEqual(
+          firebaseProjects.projects.production,
+          firebaseProjects.projects.emulator
+        );
+
         assert.match(
-          productionSource,
-          /enforceAppCheck:\s*false/
+          firebaseProjects.projects.emulator,
+          /^demo-/
+        );
+      }
+    );
+
+    await t.test(
+      "13 - emulator configuration uses test codebase",
+      () => {
+        assert.notEqual(
+          emulatorConfig.functions.codebase,
+          productionConfig.functions.codebase
+        );
+      }
+    );
+
+    await t.test(
+      "14 - production configuration does not reference emulator source",
+      () => {
+        assert.notEqual(
+          productionConfig.functions.source,
+          "functions/http-emulator"
+        );
+
+        assert.equal(
+          productionConfig.functions.source,
+          "functions"
         );
       }
     );
