@@ -1,7 +1,0 @@
-{
-  "projects": {
-    "default": "salonbook-pro-ad5ff",
-    "production": "salonbook-pro-ad5ff",
-    "emulator": "demo-boustio-migration"
-  }
-}
