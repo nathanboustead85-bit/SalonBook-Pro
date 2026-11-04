@@ -1,22 +1,17 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.34
+ * BOUSTIO — PHASE 8D.35
  *
- * Isolated HTTP Emulator entry point.
+ * Isolated Firebase callable HTTP
+ * integration test entry point.
  *
- * IMPORTANT:
- * This file is for emulator testing only.
- * It must never be deployed to production.
+ * Emulator only. Never deploy.
  */
 
 const PROJECT_ID =
   "demo-boustio-migration";
 
-/**
- * Verify this is our isolated
- * Firebase Emulator environment.
- */
 function verifyEmulatorEnvironment() {
   const project =
     process.env.GCLOUD_PROJECT ||
@@ -57,25 +52,25 @@ function verifyEmulatorEnvironment() {
 verifyEmulatorEnvironment();
 
 /**
- * IMPORTANT FIX:
- *
  * Load Firebase Admin from the parent
- * functions directory.
+ * functions/node_modules directory.
  *
- * migrationPreviewCallable.js also loads
- * Firebase Admin from that directory.
+ * This uses the same Admin SDK instance
+ * as migrationPreviewCallable.js.
  *
- * This ensures both modules use the
- * same Firebase Admin app registry.
+ * The previous path was missing one
+ * directory level.
  */
 const {
   initializeApp,
   getApps
-} = require("../node_modules/firebase-admin/app");
+} = require(
+  "../../functions/node_modules/firebase-admin/app"
+);
 
 /**
- * Initialise the shared Firebase
- * Admin instance.
+ * Initialise the shared Admin SDK
+ * against the isolated test project.
  */
 if (!getApps().length) {
   initializeApp({
@@ -84,11 +79,8 @@ if (!getApps().length) {
 }
 
 /**
- * Load the existing read-only
- * migration preview callable.
- *
- * No booking creation or migration
- * execution is exposed.
+ * Expose only the read-only migration
+ * preview callable to the emulator.
  */
 const {
   migrationPreviewCallable
