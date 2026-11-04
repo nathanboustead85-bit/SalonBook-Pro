@@ -1,16 +1,13 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.17
+ * BOUSTIO — PHASE 8D.20
  *
- * Authenticated Firebase callable
- * migration preview.
+ * Secure, read-only Firebase
+ * migration preview callable.
  *
- * Read-only.
- *
- * NOT exported from index.js yet.
- * Do not deploy until security and
- * integration tests are complete.
+ * NOT exported from index.js.
+ * NOT ready for production deployment.
  */
 
 const {
@@ -24,15 +21,13 @@ const {
 
 const {
   authenticatedMigrationPreview,
-  MigrationAuthError
+  MigrationAuthError,
+  verifiedOwner
 } = require("./authenticatedMigrationPreview");
 
 /**
- * Convert internal errors to safe
- * Firebase callable error responses.
- *
- * Do not expose Firestore paths,
- * customer data or stack traces.
+ * Translate internal errors into safe
+ * client-facing Firebase errors.
  */
 function toCallableError(error) {
   if (error instanceof HttpsError) {
@@ -40,22 +35,31 @@ function toCallableError(error) {
   }
 
   if (error instanceof MigrationAuthError) {
-    const allowedCodes = [
-      "unauthenticated",
-      "permission-denied",
-      "unavailable"
-    ];
+    switch (error.code) {
+      case "unauthenticated":
+        return new HttpsError(
+          "unauthenticated",
+          "Sign in to your business account."
+        );
 
-    const code = allowedCodes.includes(
-      error.code
-    )
-      ? error.code
-      : "internal";
+      case "permission-denied":
+        return new HttpsError(
+          "permission-denied",
+          "Verify your email before continuing."
+        );
 
-    return new HttpsError(
-      code,
-      error.message
-    );
+      case "unavailable":
+        return new HttpsError(
+          "unavailable",
+          "Migration preview is unavailable."
+        );
+
+      default:
+        return new HttpsError(
+          "internal",
+          "Migration preview failed."
+        );
+    }
   }
 
   if (
@@ -77,21 +81,24 @@ function toCallableError(error) {
 }
 
 /**
- * Callable request handler.
+ * Internal testable handler.
  *
- * Firebase Authentication supplies
- * request.auth.
+ * Dependencies are injectable for
+ * automated tests only.
  *
- * The client cannot choose which
- * business's records are read.
+ * The production callable below never
+ * accepts dependencies from request.data.
  */
 async function handleMigrationPreview(
   request,
   dependencies = {}
 ) {
   try {
-    const db = dependencies.db ||
-      getFirestore();
+    // Authenticate before database access.
+    verifiedOwner(request);
+
+    const db =
+      dependencies.db || getFirestore();
 
     const preview =
       dependencies.preview ||
@@ -107,13 +114,36 @@ async function handleMigrationPreview(
 }
 
 /**
- * Firebase callable definition.
+ * Production request handler.
  *
- * Kept separate from index.js until
- * deployment has been authorised.
+ * No caller-controlled dependencies.
+ * Business identity comes exclusively
+ * from trusted Firebase Authentication.
+ */
+async function productionMigrationPreview(
+  request
+) {
+  try {
+    // Validate before obtaining Firestore.
+    verifiedOwner(request);
+
+    return await authenticatedMigrationPreview({
+      db: getFirestore(),
+      request
+    });
+  } catch (error) {
+    throw toCallableError(error);
+  }
+}
+
+/**
+ * Callable configuration.
  *
- * App Check enforcement can be enabled
- * after client integration is ready.
+ * App Check must be configured and
+ * tested before production release.
+ *
+ * maxInstances limits scaling but is
+ * not a per-user rate limit.
  */
 const migrationPreviewCallable = onCall(
   {
@@ -123,13 +153,12 @@ const migrationPreviewCallable = onCall(
     memory: "256MiB",
     enforceAppCheck: false
   },
-  async request => {
-    return handleMigrationPreview(request);
-  }
+  productionMigrationPreview
 );
 
 module.exports = {
   migrationPreviewCallable,
   handleMigrationPreview,
+  productionMigrationPreview,
   toCallableError
 };
