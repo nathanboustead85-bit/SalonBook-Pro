@@ -20,7 +20,7 @@ jobs:
   validate:
     name: Validate Production Deployment
     if: >-
-      github.ref == 'refs/heads/phase-7c-live-booking' &&
+      github.ref == 'refs/heads/production-release' &&
       inputs.confirmation == 'PREPARE-BOUSTIO'
     runs-on: ubuntu-latest
 
@@ -51,7 +51,8 @@ jobs:
             rc.projects.production !== "salonbook-pro-ad5ff" ||
             rc.projects.emulator !== "demo-boustio-migration" ||
             config.functions.source !== "functions" ||
-            config.functions.codebase !== "default"
+            config.functions.codebase !== "default" ||
+            config.functions.runtime !== "nodejs22"
           ) {
             throw new Error(
               "Production deployment configuration mismatch"
@@ -59,6 +60,43 @@ jobs:
           }
 
           console.log("Firebase configuration verified.");
+          NODE
+
+      - name: Verify approved production exports
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const source = fs.readFileSync(
+            "functions/index.js",
+            "utf8"
+          );
+
+          const exportsFound = [
+            ...source.matchAll(
+              /exports\.([A-Za-z_$][\w$]*)\s*=/g
+            )
+          ].map(match => match[1]);
+
+          const approved = [
+            "publishBusiness",
+            "unpublishBusiness"
+          ];
+
+          if (
+            exportsFound.length !== approved.length ||
+            exportsFound.some(name => !approved.includes(name))
+          ) {
+            throw new Error(
+              "Unexpected production function exports: " +
+              exportsFound.join(", ")
+            );
+          }
+
+          console.log(
+            "Only approved production functions are exported."
+          );
           NODE
 
       - name: Run production safeguards
@@ -70,7 +108,7 @@ jobs:
     name: Production Permission Verification
     needs: validate
     if: >-
-      github.ref == 'refs/heads/phase-7c-live-booking' &&
+      github.ref == 'refs/heads/production-release' &&
       inputs.confirmation == 'PREPARE-BOUSTIO'
     runs-on: ubuntu-latest
 
@@ -104,6 +142,7 @@ jobs:
             echo "::error::Authentication failed."
             exit 1
           fi
+
           echo "Keyless Google Cloud authentication passed."
 
       - name: Check deployment permissions
@@ -155,22 +194,14 @@ jobs:
             response.permissions || []
           );
 
-          let missing = 0;
-
           for (const permission of expected) {
-            if (granted.has(permission)) {
-              console.log("PASS: " + permission);
-            } else {
-              console.log("NOT CONFIRMED: " + permission);
-              missing++;
+            if (!granted.has(permission)) {
+              throw new Error(
+                "Permission not confirmed: " + permission
+              );
             }
-          }
 
-          if (missing > 0) {
-            throw new Error(
-              missing +
-              " deployment permissions were not confirmed."
-            );
+            console.log("PASS: " + permission);
           }
 
           console.log(
@@ -178,8 +209,10 @@ jobs:
           );
           NODE
 
-      - name: Confirm deployment remains disabled
+      - name: Confirm production deployment remains disabled
+        shell: bash
         run: |
-          echo "Permission verification completed."
+          echo "Boustio production verification passed."
           echo "No Firebase deployment commands executed."
           echo "No production resources modified."
+          echo "Customer bookings remain disabled."
