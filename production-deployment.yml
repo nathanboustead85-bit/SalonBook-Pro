@@ -1,0 +1,81 @@
+name: Boustio Production Deployment Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type PREPARE-BOUSTIO to confirm'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: boustio-production-deployment
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate Production Deployment
+    if: >-
+      github.ref == 'refs/heads/phase-7c-live-booking' &&
+      inputs.confirmation == 'PREPARE-BOUSTIO'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify deployment configuration
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const rc = JSON.parse(
+            fs.readFileSync(".firebaserc", "utf8")
+          );
+
+          const config = JSON.parse(
+            fs.readFileSync("firebase.json", "utf8")
+          );
+
+          if (
+            rc.projects.production !== "salonbook-pro-ad5ff" ||
+            rc.projects.emulator !== "demo-boustio-migration" ||
+            config.functions.source !== "functions" ||
+            config.functions.codebase !== "default"
+          ) {
+            throw new Error(
+              "Production deployment configuration mismatch"
+            );
+          }
+
+          console.log("Firebase configuration verified.");
+          NODE
+
+      - name: Run production safeguards
+        run: |
+          node --test \
+            functions/productionDeploymentGuard.test.js
+
+  approval-gate:
+    name: Production Environment Gate
+    needs: validate
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+
+    steps:
+      - name: Confirm safe preparation
+        run: |
+          echo "Boustio production environment gate passed."
+          echo "This workflow does NOT deploy Firebase."
+          echo "No production credentials are used."
+          echo "Customer bookings remain disabled."
