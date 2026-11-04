@@ -10,6 +10,10 @@ on:
       - 'firebase.http-emulator.json'
       - '.github/workflows/booking-tests.yml'
 
+  pull_request:
+    branches:
+      - production-release
+
   workflow_dispatch:
 
 permissions:
