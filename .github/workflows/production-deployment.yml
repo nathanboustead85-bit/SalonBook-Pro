@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
   group: boustio-production-deployment
@@ -66,16 +67,50 @@ jobs:
             functions/productionDeploymentGuard.test.js
 
   approval-gate:
-    name: Production Environment Gate
+    name: Production Environment Authentication Test
     needs: validate
+    if: >-
+      github.ref == 'refs/heads/phase-7c-live-booking' &&
+      inputs.confirmation == 'PREPARE-BOUSTIO'
     runs-on: ubuntu-latest
+
     environment:
       name: production
 
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
-      - name: Confirm safe preparation
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/107806967630/locations/global/workloadIdentityPools/boustio-github/providers/github'
+          service_account: 'boustio-github-deploy@salonbook-pro-ad5ff.iam.gserviceaccount.com'
+          token_format: access_token
+          create_credentials_file: false
+          export_environment_variables: false
+
+      - name: Verify authentication
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
         run: |
-          echo "Boustio production environment gate passed."
-          echo "This workflow does NOT deploy Firebase."
-          echo "No production credentials are used."
-          echo "Customer bookings remain disabled."
+          if [ -z "$GOOGLE_ACCESS_TOKEN" ]; then
+            echo "::error::Google Cloud authentication failed."
+            exit 1
+          fi
+
+          echo "Google Cloud authentication succeeded."
+          echo "A short-lived access token was issued."
+          echo "No Firebase deployment was performed."
+
+      - name: Confirm deployment remains disabled
+        run: |
+          echo "Boustio production authentication test passed."
+          echo "No Firebase deployment commands executed."
+          echo "No customer bookings were modified."
