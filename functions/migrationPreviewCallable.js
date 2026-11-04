@@ -1,13 +1,12 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.20
+ * BOUSTIO — PHASE 8D.21
  *
- * Secure, read-only Firebase
- * migration preview callable.
+ * Secure, read-only migration preview.
  *
- * NOT exported from index.js.
- * NOT ready for production deployment.
+ * Not exported from index.js.
+ * Not deployed.
  */
 
 const {
@@ -26,8 +25,7 @@ const {
 } = require("./authenticatedMigrationPreview");
 
 /**
- * Translate internal errors into safe
- * client-facing Firebase errors.
+ * Safe error conversion.
  */
 function toCallableError(error) {
   if (error instanceof HttpsError) {
@@ -81,20 +79,45 @@ function toCallableError(error) {
 }
 
 /**
+ * Only an empty request body is allowed.
+ *
+ * No business IDs, booking records,
+ * prices or Firestore paths are accepted.
+ */
+function validateRequestData(request) {
+  const data = request && request.data;
+
+  if (
+    data === undefined ||
+    data === null
+  ) {
+    return;
+  }
+
+  if (
+    typeof data !== "object" ||
+    Array.isArray(data) ||
+    Object.keys(data).length !== 0
+  ) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Migration preview does not " +
+      "accept request parameters."
+    );
+  }
+}
+
+/**
  * Internal testable handler.
  *
- * Dependencies are injectable for
+ * Dependency injection is for
  * automated tests only.
- *
- * The production callable below never
- * accepts dependencies from request.data.
  */
 async function handleMigrationPreview(
   request,
   dependencies = {}
 ) {
   try {
-    // Authenticate before database access.
     verifiedOwner(request);
 
     const db =
@@ -114,18 +137,19 @@ async function handleMigrationPreview(
 }
 
 /**
- * Production request handler.
+ * Production handler.
  *
- * No caller-controlled dependencies.
- * Business identity comes exclusively
- * from trusted Firebase Authentication.
+ * Authenticate first.
+ * Reject client-supplied data.
+ * Use the trusted Firestore database.
  */
 async function productionMigrationPreview(
   request
 ) {
   try {
-    // Validate before obtaining Firestore.
     verifiedOwner(request);
+
+    validateRequestData(request);
 
     return await authenticatedMigrationPreview({
       db: getFirestore(),
@@ -137,13 +161,11 @@ async function productionMigrationPreview(
 }
 
 /**
- * Callable configuration.
+ * Prepared Firebase callable.
  *
- * App Check must be configured and
- * tested before production release.
- *
- * maxInstances limits scaling but is
- * not a per-user rate limit.
+ * App Check enforcement and
+ * rate limiting require further work
+ * before deployment.
  */
 const migrationPreviewCallable = onCall(
   {
@@ -160,5 +182,6 @@ module.exports = {
   migrationPreviewCallable,
   handleMigrationPreview,
   productionMigrationPreview,
+  validateRequestData,
   toCallableError
 };
