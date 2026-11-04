@@ -70,4 +70,4 @@ jobs:
             emulators:exec \
             --project demo-boustio-migration \
             --only firestore \
-            "cd functions && node --test firestoreMigrationEmulator.test.js"
+            "cd functions && node --test firestoreMigrationEmulator.test.js authenticatedCallableEmulator.test.js"
