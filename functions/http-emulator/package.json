@@ -1,0 +1,17 @@
+{
+  "name": "boustio-http-emulator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Isolated Firebase callable HTTP integration tests for Boustio",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "check": "node --check index.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.0"
+  }
+}
