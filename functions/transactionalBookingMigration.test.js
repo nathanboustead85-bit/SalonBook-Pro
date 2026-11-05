@@ -1,19 +1,24 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.56
- * Transactional migration safety tests.
+ * BOUSTIO — PHASE 8D.78
+ *
+ * Verified Transactional Migration Safety Tests
  *
  * No Firebase connection.
  * No database writes.
  * No production deployment.
+ *
+ * All tests now use the verified migration
+ * entry point. The legacy unverified
+ * migration function has been removed.
  */
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
-  migrateAndroidBookings,
+  migrateVerifiedAndroidBookings,
   validatePlan,
   verifyOwner,
   verifySource,
@@ -206,10 +211,11 @@ test("15 migration ID remains stable", () => {
 
 test("16 invalid database is rejected", async () => {
   await assert.rejects(
-    migrateAndroidBookings({
+    migrateVerifiedAndroidBookings({
       db: null,
       businessId: "owner123",
-      authenticatedUid: "owner123"
+      authenticatedUid: "owner123",
+      expectedHash: "a".repeat(64)
     }),
     /Firestore database is unavailable/
   );
@@ -228,10 +234,11 @@ test("17 unauthorised migration is rejected", async () => {
   };
 
   await assert.rejects(
-    migrateAndroidBookings({
+    migrateVerifiedAndroidBookings({
       db,
       businessId: "owner123",
-      authenticatedUid: "other123"
+      authenticatedUid: "other123",
+      expectedHash: "a".repeat(64)
     }),
     /ownership verification failed/
   );
