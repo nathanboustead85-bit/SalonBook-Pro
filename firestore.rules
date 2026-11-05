@@ -3,7 +3,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ===================================
     // SHARED SECURITY FUNCTIONS
+    // ===================================
 
     function isOwner(userId) {
       return request.auth != null
@@ -15,7 +17,20 @@ service cloud.firestore {
         && request.auth.token.email_verified == true;
     }
 
+    // PHASE 8D.61:
+    // Detect a completed Android migration.
+    // Only trusted backend code can create
+    // the migration marker.
+
+    function migrationCompleted(userId) {
+      return exists(
+        /databases/$(database)/documents/businesses/$(userId)/migrations/android-bookings-v1
+      );
+    }
+
+    // ===================================
     // PHASE 5: CLOUD BACKUP AND RESTORE
+    // ===================================
 
     match /users/{userId}/backups/{backupId} {
 
@@ -23,7 +38,10 @@ service cloud.firestore {
         && backupId == "latest";
     }
 
+    // ===================================
     // PHASE 6: CLOUD SYNCHRONISATION
+    // PHASE 8D.61: CUTOVER PROTECTION
+    // ===================================
 
     match /users/{userId}/liveData/{dataType} {
 
@@ -40,20 +58,36 @@ service cloud.firestore {
           "services",
           "staff"
         ]
+
+        // Once migration completes,
+        // Android cannot overwrite
+        // legacy booking data.
+
+        && (
+          dataType != "bookings"
+          || !migrationCompleted(userId)
+        )
+
         && request.resource.data.keys().hasOnly([
           "json",
           "schemaVersion",
           "updatedAt"
         ])
+
         && request.resource.data.json is string
+
         && request.resource.data.schemaVersion == 1
+
         && request.resource.data.updatedAt is timestamp
+
         && request.resource.data.json.size() <= 500000;
 
       allow delete: if false;
     }
 
+    // ===================================
     // PHASE 7A: PRIVATE BUSINESS PROFILE
+    // ===================================
 
     match /users/{userId}/business/{documentId} {
 
@@ -62,6 +96,7 @@ service cloud.firestore {
 
       allow create, update: if isVerifiedOwner(userId)
         && documentId == "profile"
+
         && request.resource.data.keys().hasOnly([
           "businessId",
           "name",
@@ -75,6 +110,7 @@ service cloud.firestore {
           "schemaVersion",
           "updatedAt"
         ])
+
         && request.resource.data.keys().hasAll([
           "businessId",
           "name",
@@ -88,8 +124,10 @@ service cloud.firestore {
           "schemaVersion",
           "updatedAt"
         ])
+
         && request.resource.data.businessId is string
         && request.resource.data.businessId == userId
+
         && request.resource.data.name is string
         && request.resource.data.slug is string
         && request.resource.data.category is string
@@ -97,24 +135,33 @@ service cloud.firestore {
         && request.resource.data.phone is string
         && request.resource.data.address is string
         && request.resource.data.description is string
+
         && request.resource.data.acceptingBookings is bool
+
         && request.resource.data.schemaVersion == 1
+
         && request.resource.data.updatedAt is timestamp
+
         && request.resource.data.name.size() >= 3
         && request.resource.data.name.size() <= 100
+
         && request.resource.data.slug.size() >= 3
         && request.resource.data.slug.size() <= 50
+
         && request.resource.data.category.size() <= 100
         && request.resource.data.email.size() <= 254
         && request.resource.data.phone.size() <= 50
         && request.resource.data.address.size() <= 500
         && request.resource.data.description.size() <= 2000
+
         && request.resource.data.acceptingBookings == false;
 
       allow delete: if false;
     }
 
+    // ===================================
     // PHASE 7C: PUBLIC BUSINESS DIRECTORY
+    // ===================================
 
     match /publicBusinesses/{businessId} {
 
@@ -125,42 +172,44 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
-    // PHASE 8C: PRIVATE CUSTOMER APPOINTMENTS
-    //
-    // The businessId in this collection must
-    // be the Firebase Authentication owner UID,
-    // not the public booking-page slug.
-    //
-    // Verified owners can read appointments.
-    // All client-side writes are blocked.
-    //
-    // Future trusted Cloud Functions using the
-    // Firebase Admin SDK can perform validated
-    // transactional writes. Admin SDK access
-    // is governed by IAM, not these rules.
+    // ===================================
+    // PHASE 8C: PRIVATE APPOINTMENTS
+    // ===================================
 
     match /businesses/{businessId}/appointments/{appointmentId} {
 
       allow get, list: if isVerifiedOwner(businessId);
 
+      // Appointment changes must go
+      // through the trusted backend.
+
       allow create, update, delete: if false;
     }
 
-    // PHASE 8C: PRIVATE BOOKING LOCKS
-    //
-    // Future backend transactions will use
-    // these documents to prevent overlapping
-    // reservations.
-    //
-    // No browser or Android client may read
-    // or modify these lock records directly.
+    // ===================================
+    // PHASE 8C: BOOKING LOCKS
+    // ===================================
 
     match /businesses/{businessId}/bookingLocks/{lockId} {
 
       allow read, write: if false;
     }
 
-    // DEFAULT SECURITY: DENY EVERYTHING ELSE
+    // ===================================
+    // PHASE 8D.61: MIGRATION MARKERS
+    // ===================================
+
+    match /businesses/{businessId}/migrations/{migrationId} {
+
+      // Clients cannot create, edit,
+      // read or delete migration markers.
+
+      allow read, write: if false;
+    }
+
+    // ===================================
+    // DEFAULT DENY
+    // ===================================
 
     match /{document=**} {
       allow read, write: if false;
