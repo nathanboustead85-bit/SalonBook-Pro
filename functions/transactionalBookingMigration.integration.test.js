@@ -1,13 +1,26 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.57
- * Firestore Transaction Integration Tests
+ * BOUSTIO — PHASE 8D.58
  *
- * EMULATOR ONLY.
+ * Transactional Android Booking Migration
+ * Firestore Emulator Integration Tests
  *
- * No production database access.
- * No public booking activation.
+ * 12 integration tests:
+ * 01 Successful migration
+ * 02 Duplicate migration prevention
+ * 03 Existing booking lock
+ * 04 Existing appointment ID
+ * 05 Invalid source
+ * 06 Missing source
+ * 07 Wrong owner
+ * 08 Multiple appointments
+ * 09 Legacy appointment overlap
+ * 10 Simultaneous migration
+ * 11 Updated source before migration
+ * 12 Competing booking lock
+ *
+ * EMULATOR ONLY — NOT PRODUCTION.
  */
 
 const test = require("node:test");
@@ -20,11 +33,11 @@ const {
   MIGRATION_ID
 } = require("./transactionalBookingMigration");
 
-// Never connect these tests to production.
+// Block execution without Firestore emulator.
 if (!process.env.FIRESTORE_EMULATOR_HOST) {
   throw new Error(
-    "Firestore emulator is required. " +
-    "Production execution is forbidden."
+    "Firestore emulator required. " +
+    "Production execution forbidden."
   );
 }
 
@@ -34,7 +47,9 @@ if (
   process.env.GCLOUD_PROJECT &&
   process.env.GCLOUD_PROJECT !== PROJECT_ID
 ) {
-  throw new Error("Unexpected Firebase project.");
+  throw new Error(
+    "Unexpected Firebase project."
+  );
 }
 
 if (admin.apps.length === 0) {
@@ -88,12 +103,16 @@ function refs(owner) {
   return {
     business,
     source,
+
     appointments:
       business.collection("appointments"),
+
     locks:
       business.collection("bookingLocks"),
+
     marker:
-      business.collection("migrations")
+      business
+        .collection("migrations")
         .doc(MIGRATION_ID)
   };
 }
@@ -136,7 +155,9 @@ async function counts(r) {
   };
 }
 
-// TEST 01
+// =====================================
+// TEST 01 — SUCCESSFUL MIGRATION
+// =====================================
 
 test(
   "01 successful migration creates appointments and locks",
@@ -178,7 +199,9 @@ test(
   }
 );
 
-// TEST 02
+// =====================================
+// TEST 02 — REPEAT MIGRATION
+// =====================================
 
 test(
   "02 repeat migration cannot duplicate appointments",
@@ -193,7 +216,8 @@ test(
 
     await assert.rejects(
       migrate(owner),
-      error => error.code === "already-migrated"
+      error =>
+        error.code === "already-migrated"
     );
 
     assert.deepEqual(
@@ -207,7 +231,9 @@ test(
   }
 );
 
-// TEST 03
+// =====================================
+// TEST 03 — EXISTING LOCK
+// =====================================
 
 test(
   "03 existing booking lock blocks entire migration",
@@ -218,15 +244,14 @@ test(
       booking()
     ]);
 
-    const occupiedLock =
-      "staff1_2026-11-12_1000";
-
-    await r.locks.doc(occupiedLock).set({
-      appointmentId: "existingBooking",
-      businessId: owner,
-      staffId: "staff1",
-      date: "2026-11-12"
-    });
+    await r.locks
+      .doc("staff1_2026-11-12_1000")
+      .set({
+        appointmentId: "existingBooking",
+        businessId: owner,
+        staffId: "staff1",
+        date: "2026-11-12"
+      });
 
     await assert.rejects(
       migrate(owner),
@@ -244,7 +269,9 @@ test(
   }
 );
 
-// TEST 04
+// =====================================
+// TEST 04 — DUPLICATE APPOINTMENT ID
+// =====================================
 
 test(
   "04 existing appointment ID blocks entire migration",
@@ -278,7 +305,9 @@ test(
   }
 );
 
-// TEST 05
+// =====================================
+// TEST 05 — INVALID SOURCE
+// =====================================
 
 test(
   "05 invalid source causes no migration writes",
@@ -309,12 +338,15 @@ test(
   }
 );
 
-// TEST 06
+// =====================================
+// TEST 06 — MISSING SOURCE
+// =====================================
 
 test(
   "06 missing source causes no migration writes",
   async () => {
     const owner = uniqueOwner();
+
     const r = refs(owner);
 
     await assert.rejects(
@@ -333,7 +365,9 @@ test(
   }
 );
 
-// TEST 07
+// =====================================
+// TEST 07 — WRONG OWNER
+// =====================================
 
 test(
   "07 different owner is rejected before database writes",
@@ -364,7 +398,9 @@ test(
   }
 );
 
-// TEST 08
+// =====================================
+// TEST 08 — MULTIPLE BOOKINGS
+// =====================================
 
 test(
   "08 multiple valid appointments migrate together",
@@ -384,8 +420,15 @@ test(
 
     const result = await migrate(owner);
 
-    assert.equal(result.appointmentCount, 2);
-    assert.equal(result.lockCount, 4);
+    assert.equal(
+      result.appointmentCount,
+      2
+    );
+
+    assert.equal(
+      result.lockCount,
+      4
+    );
 
     assert.deepEqual(
       await counts(r),
@@ -398,7 +441,9 @@ test(
   }
 );
 
-// TEST 09 — PHASE 8D.57
+// =====================================
+// TEST 09 — LEGACY APPOINTMENT OVERLAP
+// =====================================
 
 test(
   "09 legacy appointment without locks blocks migration",
@@ -413,9 +458,6 @@ test(
       })
     ]);
 
-    // Existing appointment with a
-    // different ID but overlapping time.
-    // No booking locks exist.
     await r.appointments
       .doc("legacyBooking1")
       .set({
@@ -435,8 +477,6 @@ test(
       /overlap|conflict|occupied/i
     );
 
-    // No new appointment, lock,
-    // or migration marker is allowed.
     assert.deepEqual(
       await counts(r),
       {
@@ -450,12 +490,167 @@ test(
       .doc("legacyBooking1")
       .get();
 
-    assert.equal(original.exists, true);
+    assert.equal(
+      original.exists,
+      true
+    );
 
     const android = await r.appointments
       .doc("androidBooking1")
       .get();
 
-    assert.equal(android.exists, false);
+    assert.equal(
+      android.exists,
+      false
+    );
+  }
+);
+
+// =====================================
+// TEST 10 — SIMULTANEOUS MIGRATION
+// =====================================
+
+test(
+  "10 simultaneous migrations cannot create duplicates",
+  async () => {
+    const owner = uniqueOwner();
+
+    const r = await seed(owner, [
+      booking()
+    ]);
+
+    const results = await Promise.allSettled([
+      migrate(owner),
+      migrate(owner)
+    ]);
+
+    const successful = results.filter(
+      result =>
+        result.status === "fulfilled"
+    );
+
+    const rejected = results.filter(
+      result =>
+        result.status === "rejected"
+    );
+
+    assert.equal(
+      successful.length,
+      1
+    );
+
+    assert.equal(
+      rejected.length,
+      1
+    );
+
+    assert.deepEqual(
+      await counts(r),
+      {
+        appointments: 1,
+        locks: 2,
+        marker: true
+      }
+    );
+  }
+);
+
+// =====================================
+// TEST 11 — UPDATED ANDROID SOURCE
+// =====================================
+
+test(
+  "11 migration uses latest source data",
+  async () => {
+    const owner = uniqueOwner();
+
+    const r = await seed(owner, [
+      booking({
+        id: "oldBooking",
+        time: "10:00"
+      })
+    ]);
+
+    await r.source.update({
+      json: JSON.stringify([
+        booking({
+          id: "newBooking",
+          time: "11:00"
+        })
+      ]),
+      updatedAt: new Date().toISOString()
+    });
+
+    const result = await migrate(owner);
+
+    assert.equal(
+      result.success,
+      true
+    );
+
+    const oldAppointment = await r.appointments
+      .doc("oldBooking")
+      .get();
+
+    const newAppointment = await r.appointments
+      .doc("newBooking")
+      .get();
+
+    assert.equal(
+      oldAppointment.exists,
+      false
+    );
+
+    assert.equal(
+      newAppointment.exists,
+      true
+    );
+
+    assert.deepEqual(
+      await counts(r),
+      {
+        appointments: 1,
+        locks: 2,
+        marker: true
+      }
+    );
+  }
+);
+
+// =====================================
+// TEST 12 — COMPETING BOOKING LOCK
+// =====================================
+
+test(
+  "12 competing booking lock prevents migration",
+  async () => {
+    const owner = uniqueOwner();
+
+    const r = await seed(owner, [
+      booking()
+    ]);
+
+    await r.locks
+      .doc("staff1_2026-11-12_1015")
+      .set({
+        businessId: owner,
+        staffId: "staff1",
+        date: "2026-11-12",
+        appointmentId: "onlineBooking"
+      });
+
+    await assert.rejects(
+      migrate(owner),
+      /occupied/
+    );
+
+    assert.deepEqual(
+      await counts(r),
+      {
+        appointments: 0,
+        locks: 1,
+        marker: false
+      }
+    );
   }
 );
