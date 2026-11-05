@@ -1,18 +1,22 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8C.9
+ * BOUSTIO — PHASE 8D.80
  *
  * Firebase Cloud Functions.
  *
- * Active exported functions:
+ * Active exports:
  * - publishBusiness
  * - unpublishBusiness
  *
- * Secure booking logic is maintained
- * separately in trustedBooking.js.
+ * Booking endpoints remain disabled.
  *
- * No public booking endpoint is enabled.
+ * Domain preparation:
+ * - Existing Firebase URL remains default.
+ * - Boustio domain can be activated later
+ *   through BOUSTIO_PUBLIC_BASE_URL.
+ *
+ * DO NOT ENABLE LIVE BOOKINGS YET.
  */
 
 const {
@@ -33,8 +37,42 @@ initializeApp();
 
 const db = getFirestore();
 
+const DEFAULT_PUBLIC_BASE_URL =
+  "https://salonbook-pro-ad5ff.web.app";
+
+const BOUSTIO_PUBLIC_DOMAIN =
+  "https://boustio.co.uk";
+
 /**
- * Verify Firebase Authentication.
+ * Keep the existing URL until custom-domain
+ * hosting, DNS and HTTPS are verified.
+ *
+ * This value is server-controlled, never
+ * accepted from customer requests.
+ */
+function publicBaseUrl() {
+  const configured =
+    process.env.BOUSTIO_PUBLIC_BASE_URL;
+
+  if (
+    configured === BOUSTIO_PUBLIC_DOMAIN
+  ) {
+    return BOUSTIO_PUBLIC_DOMAIN;
+  }
+
+  return DEFAULT_PUBLIC_BASE_URL;
+}
+
+function bookingUrl(slug) {
+  return (
+    publicBaseUrl() +
+    "/book/" +
+    encodeURIComponent(slug)
+  );
+}
+
+/**
+ * Require a verified Firebase account.
  */
 function verifiedUser(request) {
   const auth = request.auth;
@@ -106,11 +144,9 @@ function validateProfile(profile, uid) {
 }
 
 /**
- * PHASE 7C
- *
  * Publish a business profile.
  *
- * This function never enables
+ * Publishing a catalogue does not enable
  * live customer bookings.
  */
 exports.publishBusiness = onCall(
@@ -238,9 +274,7 @@ exports.publishBusiness = onCall(
           success: true,
           businessId: uid,
           slug,
-          bookingUrl:
-            "https://salonbook-pro-ad5ff.web.app/book/" +
-            encodeURIComponent(slug)
+          bookingUrl: bookingUrl(slug)
         };
       }
     );
@@ -250,12 +284,9 @@ exports.publishBusiness = onCall(
 );
 
 /**
- * PHASE 7C
- *
  * Unpublish a business.
  *
- * The slug remains reserved
- * to its existing owner.
+ * Its slug remains reserved to its owner.
  */
 exports.unpublishBusiness = onCall(
   {
@@ -299,31 +330,18 @@ exports.unpublishBusiness = onCall(
 );
 
 /**
- * PHASE 8C.9
+ * BOOKING DEPLOYMENT SAFETY
  *
- * Booking integration is now maintained
- * in the separate trustedBooking.js module.
+ * trustedBooking.js remains internal.
  *
- * That module:
+ * Before enabling customer bookings:
+ * 1. Complete final security checks.
+ * 2. Verify all Android booking data synced.
+ * 3. Test verified migration.
+ * 4. Confirm Firestore transaction safety.
+ * 5. Add production abuse prevention.
+ * 6. Complete end-to-end testing.
  *
- * - Verifies the public business document
- * - Loads the trusted Firestore catalogue
- * - Checks business ownership
- * - Excludes customer-supplied prices
- * - Invokes the transactional booking engine
- *
- * It is not exposed through an HTTP
- * or callable Firebase endpoint.
- *
- * Before public bookings can be enabled:
- *
- * 1. Publish trusted catalogues
- * 2. Synchronise existing Android bookings
- * 3. Migrate existing bookings into locks
- * 4. Test real Firestore transactions
- * 5. Add abuse prevention
- * 6. Complete end-to-end testing
- *
- * Keep acceptingBookings disabled
- * until these requirements are met.
+ * acceptingBookings must remain false
+ * until the production release is approved.
  */
