@@ -6,6 +6,7 @@ on:
       - phase-7c-live-booking
     paths:
       - 'functions/**'
+      - 'firestore.cutover.test.rules'
       - 'firebase.json'
       - 'firebase.http-emulator.json'
       - '.github/workflows/booking-tests.yml'
@@ -48,6 +49,13 @@ jobs:
         working-directory: functions/http-emulator
         run: npm install --no-audit --no-fund
 
+      - name: Install cutover test dependencies
+        working-directory: functions
+        run: |
+          npm install --no-save --no-audit --no-fund \
+            firebase@12 \
+            @firebase/rules-unit-testing@5
+
       - name: Check JavaScript syntax
         working-directory: functions
         run: |
@@ -87,6 +95,17 @@ jobs:
             --project demo-boustio-migration \
             --only firestore \
             "cd functions && node --test firestoreMigrationEmulator.test.js authenticatedCallableEmulator.test.js transactionalBookingMigration.integration.test.js"
+
+      - name: Run cutover security integration tests
+        env:
+          GCLOUD_PROJECT: demo-boustio-migration
+          GOOGLE_CLOUD_PROJECT: demo-boustio-migration
+        run: |
+          npx --yes firebase-tools@14.25.1 \
+            emulators:exec \
+            --project demo-boustio-migration \
+            --only firestore \
+            "cd functions && node --test cutoverSecurity.integration.test.js"
 
       - name: Run callable HTTP integration tests
         env:
