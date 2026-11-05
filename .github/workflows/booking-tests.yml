@@ -61,7 +61,7 @@ jobs:
         run: |
           node --test productionDeploymentGuard.test.js
 
-      - name: Run 191 unit tests
+      - name: Run unit tests
         working-directory: functions
         run: |
           node --test \
@@ -74,7 +74,8 @@ jobs:
             firestoreMigrationPreview.test.js \
             authenticatedMigrationPreview.test.js \
             migrationPreviewCallable.test.js \
-            migrationPreviewRequestSecurity.test.js
+            migrationPreviewRequestSecurity.test.js \
+            transactionalBookingMigration.test.js
 
       - name: Run Firestore Emulator integration tests
         env:
@@ -85,7 +86,7 @@ jobs:
             emulators:exec \
             --project demo-boustio-migration \
             --only firestore \
-            "cd functions && node --test firestoreMigrationEmulator.test.js authenticatedCallableEmulator.test.js"
+            "cd functions && node --test firestoreMigrationEmulator.test.js authenticatedCallableEmulator.test.js transactionalBookingMigration.integration.test.js"
 
       - name: Run callable HTTP integration tests
         env:
