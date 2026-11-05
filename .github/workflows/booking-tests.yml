@@ -77,6 +77,7 @@ jobs:
             bookingMode.test.js \
             freezeBookingMode.test.js \
             finalBookingSyncVerifier.test.js \
+            migrationFinalSyncGuard.test.js \
             bookingEngine.test.js \
             trustedCatalogue.test.js \
             trustedBooking.test.js \
