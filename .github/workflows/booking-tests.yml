@@ -99,7 +99,7 @@ jobs:
             emulators:exec \
             --project demo-boustio-migration \
             --only firestore \
-            "cd functions && node --test firestoreMigrationEmulator.test.js authenticatedCallableEmulator.test.js transactionalBookingMigration.integration.test.js"
+            "cd functions && node --test firestoreMigrationEmulator.test.js authenticatedCallableEmulator.test.js transactionalBookingMigration.integration.test.js verifiedBookingMigration.integration.test.js"
 
       - name: Run isolated booking freeze integration tests
         env:
