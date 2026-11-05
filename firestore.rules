@@ -144,7 +144,6 @@ service cloud.firestore {
 
         && request.resource.data.name.size() >= 3
         && request.resource.data.name.size() <= 100
-
         && request.resource.data.slug.size() >= 3
         && request.resource.data.slug.size() <= 50
 
@@ -193,6 +192,24 @@ service cloud.firestore {
     match /businesses/{businessId}/bookingLocks/{lockId} {
 
       allow read, write: if false;
+    }
+
+    // ===================================
+    // PHASE 8D.63: BOOKING MODE
+    // ===================================
+
+    match /businesses/{businessId}/settings/{settingId} {
+
+      // Verified owners can read their
+      // server-controlled booking mode.
+
+      allow get: if isVerifiedOwner(businessId)
+        && settingId == "bookingMode";
+
+      // Only trusted backend code can
+      // create or change booking mode.
+
+      allow list, create, update, delete: if false;
     }
 
     // ===================================
