@@ -1,23 +1,25 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.76
+ * BOUSTIO — PHASE 8D.78
  *
- * Transactional Android Booking Migration
- * with verified final-sync protection.
+ * Verified transactional Android booking migration.
  *
- * BACKEND ONLY.
- * NOT A CLOUD FUNCTION.
+ * BACKEND ONLY — NOT A CLOUD FUNCTION.
  * NOT FOR PRODUCTION DEPLOYMENT.
  *
- * migrateVerifiedAndroidBookings:
- *   Requires frozen mode and an independently
- *   confirmed expected source hash.
+ * The unverified migration route has been removed.
+ * All migrations require:
+ * - Matching authenticated business owner
+ * - Valid expected final source hash
+ * - Frozen booking mode
+ * - No previous migration marker
+ * - Matching Firestore source snapshot
+ * - Valid appointments and booking locks
+ * - No existing appointment conflicts
  *
- * migrateAndroidBookings:
- *   Legacy internal entry point retained
- *   temporarily for existing emulator tests.
- *   MUST NOT be exposed to production callers.
+ * All reads and writes occur within one
+ * Firestore transaction.
  */
 
 const {
@@ -33,6 +35,7 @@ const {
 } = require("./migrationFinalSyncGuard");
 
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,100}$/;
+const HASH_PATTERN = /^[a-f0-9]{64}$/;
 
 const MAX_TRANSACTION_WRITES = 450;
 const MIGRATION_ID = "android-bookings-v1";
@@ -181,8 +184,7 @@ function appointmentRange(appointment) {
     ) &&
     start !== null
   ) {
-    end =
-      start + appointment.durationMinutes;
+    end = start + appointment.durationMinutes;
   }
 
   if (
@@ -208,8 +210,7 @@ function checkLegacyConflicts(
 ) {
   const incomingRanges =
     incomingAppointments.map(appointment => {
-      const range =
-        appointmentRange(appointment);
+      const range = appointmentRange(appointment);
 
       if (!range) {
         fail(
@@ -263,31 +264,26 @@ function requireDatabase(db) {
 }
 
 /**
- * Shared internal transaction implementation.
+ * The only migration entry point.
  *
- * verified=true:
- *   Uses the tested final-sync guard.
+ * expectedHash must come from a trusted,
+ * independently confirmed final snapshot.
  *
- * verified=false:
- *   Temporary legacy test compatibility.
- *   NOT authorised for production.
+ * Never accept an arbitrary client hash
+ * as proof of completed device syncing.
  */
-async function executeMigration({
+async function migrateVerifiedAndroidBookings({
   db,
   businessId,
   authenticatedUid,
-  expectedHash,
-  verified
+  expectedHash
 }) {
   requireDatabase(db);
   verifyOwner(businessId, authenticatedUid);
 
   if (
-    verified &&
-    (
-      typeof expectedHash !== "string" ||
-      !/^[a-f0-9]{64}$/.test(expectedHash)
-    )
+    typeof expectedHash !== "string" ||
+    !HASH_PATTERN.test(expectedHash)
   ) {
     fail("A valid final booking hash is required.");
   }
@@ -296,61 +292,30 @@ async function executeMigration({
     .collection("businesses")
     .doc(businessId);
 
-  const sourceRef = db
-    .collection("users")
-    .doc(authenticatedUid)
-    .collection("liveData")
-    .doc("bookings");
-
   const migrationRef = businessRef
     .collection("migrations")
     .doc(MIGRATION_ID);
 
   return db.runTransaction(async transaction => {
-    let source;
-    let sourceHash = null;
-
     /*
-     * All reads must precede all writes.
+     * Verify frozen mode, migration marker
+     * and source hash inside this transaction.
      *
-     * The verified guard reads mode, marker
-     * and source inside THIS transaction.
+     * No writes before all validation
+     * and conflict reads are complete.
      */
 
-    if (verified) {
-      const verification =
-        await verifyMigrationFinalSync({
-          transaction,
-          db,
-          businessId,
-          authenticatedUid,
-          expectedHash
-        });
+    const verification =
+      await verifyMigrationFinalSync({
+        transaction,
+        db,
+        businessId,
+        authenticatedUid,
+        expectedHash
+      });
 
-      source = verification.source;
-      sourceHash = verification.sourceHash;
-    } else {
-      /*
-       * LEGACY INTERNAL TEST PATH.
-       *
-       * Remove after all integration tests
-       * have migrated to verified mode.
-       */
-      const migrationSnapshot =
-        await transaction.get(migrationRef);
-
-      if (migrationSnapshot.exists) {
-        fail(
-          "Android bookings have already been migrated.",
-          "already-migrated"
-        );
-      }
-
-      const sourceSnapshot =
-        await transaction.get(sourceRef);
-
-      source = verifySource(sourceSnapshot);
-    }
+    const source = verification.source;
+    const sourceHash = verification.sourceHash;
 
     const plan = makeMigrationPlan({
       businessId,
@@ -420,10 +385,8 @@ async function executeMigration({
     );
 
     /*
-     * ALL READS COMPLETE.
-     *
-     * Every write below belongs to the
-     * same Firestore transaction.
+     * ALL TRANSACTION READS COMPLETE.
+     * Begin atomic writes.
      */
 
     for (
@@ -482,8 +445,8 @@ async function executeMigration({
           plan.appointmentCount,
         lockCount: plan.lockCount,
         writeCount,
-        verifiedFinalSync: verified,
-        ...(verified ? { sourceHash } : {}),
+        verifiedFinalSync: true,
+        sourceHash,
         completedAt:
           FieldValue.serverTimestamp()
       }
@@ -497,62 +460,13 @@ async function executeMigration({
         plan.appointmentCount,
       lockCount: plan.lockCount,
       status: "completed",
-      verifiedFinalSync: verified,
-      ...(verified ? { sourceHash } : {})
+      verifiedFinalSync: true,
+      sourceHash
     };
   });
 }
 
-/**
- * PHASE 8D.76
- *
- * New verified migration entry point.
- *
- * IMPORTANT:
- * expectedHash must come from a trusted
- * independently confirmed final snapshot,
- * not an arbitrary client request.
- *
- * This is not a public callable.
- */
-async function migrateVerifiedAndroidBookings({
-  db,
-  businessId,
-  authenticatedUid,
-  expectedHash
-}) {
-  return executeMigration({
-    db,
-    businessId,
-    authenticatedUid,
-    expectedHash,
-    verified: true
-  });
-}
-
-/**
- * DEPRECATED — TEST COMPATIBILITY ONLY.
- *
- * Retained so the existing emulator suite
- * continues running during the transition.
- *
- * DO NOT DEPLOY OR EXPOSE.
- */
-async function migrateAndroidBookings({
-  db,
-  businessId,
-  authenticatedUid
-}) {
-  return executeMigration({
-    db,
-    businessId,
-    authenticatedUid,
-    verified: false
-  });
-}
-
 module.exports = {
-  migrateAndroidBookings,
   migrateVerifiedAndroidBookings,
   validatePlan,
   verifyOwner,
