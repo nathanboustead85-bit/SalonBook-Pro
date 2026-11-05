@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.56
+ * BOUSTIO — PHASE 8D.57
  * Firestore Transaction Integration Tests
  *
  * EMULATOR ONLY.
@@ -138,7 +138,8 @@ async function counts(r) {
 
 // TEST 01
 
-test("01 successful migration creates appointments and locks",
+test(
+  "01 successful migration creates appointments and locks",
   async () => {
     const owner = uniqueOwner();
 
@@ -179,7 +180,8 @@ test("01 successful migration creates appointments and locks",
 
 // TEST 02
 
-test("02 repeat migration cannot duplicate appointments",
+test(
+  "02 repeat migration cannot duplicate appointments",
   async () => {
     const owner = uniqueOwner();
 
@@ -207,7 +209,8 @@ test("02 repeat migration cannot duplicate appointments",
 
 // TEST 03
 
-test("03 existing booking lock blocks entire migration",
+test(
+  "03 existing booking lock blocks entire migration",
   async () => {
     const owner = uniqueOwner();
 
@@ -243,7 +246,8 @@ test("03 existing booking lock blocks entire migration",
 
 // TEST 04
 
-test("04 existing appointment ID blocks entire migration",
+test(
+  "04 existing appointment ID blocks entire migration",
   async () => {
     const owner = uniqueOwner();
 
@@ -251,10 +255,12 @@ test("04 existing appointment ID blocks entire migration",
       booking()
     ]);
 
-    await r.appointments.doc("booking1").set({
-      source: "existing",
-      status: "confirmed"
-    });
+    await r.appointments
+      .doc("booking1")
+      .set({
+        source: "existing",
+        status: "confirmed"
+      });
 
     await assert.rejects(
       migrate(owner),
@@ -274,7 +280,8 @@ test("04 existing appointment ID blocks entire migration",
 
 // TEST 05
 
-test("05 invalid source causes no migration writes",
+test(
+  "05 invalid source causes no migration writes",
   async () => {
     const owner = uniqueOwner();
 
@@ -304,7 +311,8 @@ test("05 invalid source causes no migration writes",
 
 // TEST 06
 
-test("06 missing source causes no migration writes",
+test(
+  "06 missing source causes no migration writes",
   async () => {
     const owner = uniqueOwner();
     const r = refs(owner);
@@ -327,7 +335,8 @@ test("06 missing source causes no migration writes",
 
 // TEST 07
 
-test("07 different owner is rejected before database writes",
+test(
+  "07 different owner is rejected before database writes",
   async () => {
     const owner = uniqueOwner();
 
@@ -357,7 +366,8 @@ test("07 different owner is rejected before database writes",
 
 // TEST 08
 
-test("08 multiple valid appointments migrate together",
+test(
+  "08 multiple valid appointments migrate together",
   async () => {
     const owner = uniqueOwner();
 
@@ -385,5 +395,67 @@ test("08 multiple valid appointments migrate together",
         marker: true
       }
     );
+  }
+);
+
+// TEST 09 — PHASE 8D.57
+
+test(
+  "09 legacy appointment without locks blocks migration",
+  async () => {
+    const owner = uniqueOwner();
+
+    const r = await seed(owner, [
+      booking({
+        id: "androidBooking1",
+        time: "10:00",
+        duration: 30
+      })
+    ]);
+
+    // Existing appointment with a
+    // different ID but overlapping time.
+    // No booking locks exist.
+    await r.appointments
+      .doc("legacyBooking1")
+      .set({
+        businessId: owner,
+        staffId: "staff1",
+        serviceId: "service1",
+        date: "2026-11-12",
+        startTime: "10:15",
+        endTime: "10:45",
+        durationMinutes: 30,
+        status: "confirmed",
+        source: "legacy"
+      });
+
+    await assert.rejects(
+      migrate(owner),
+      /overlap|conflict|occupied/i
+    );
+
+    // No new appointment, lock,
+    // or migration marker is allowed.
+    assert.deepEqual(
+      await counts(r),
+      {
+        appointments: 1,
+        locks: 0,
+        marker: false
+      }
+    );
+
+    const original = await r.appointments
+      .doc("legacyBooking1")
+      .get();
+
+    assert.equal(original.exists, true);
+
+    const android = await r.appointments
+      .doc("androidBooking1")
+      .get();
+
+    assert.equal(android.exists, false);
   }
 );
