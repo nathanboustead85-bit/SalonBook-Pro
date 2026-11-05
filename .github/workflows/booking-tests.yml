@@ -107,7 +107,7 @@ jobs:
             emulators:exec \
             --project demo-boustio-migration \
             --only firestore \
-            "cd functions && node --test cutoverSecurity.integration.test.js bookingModeSecurity.integration.test.js"
+            "cd functions && node --test cutoverSecurity.integration.test.js bookingModeSecurity.integration.test.js bookingModeWriteGuard.integration.test.js"
 
       - name: Run callable HTTP integration tests
         env:
