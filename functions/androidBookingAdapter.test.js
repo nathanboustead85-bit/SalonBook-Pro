@@ -1,397 +1,320 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.3
+ * BOUSTIO — PHASE 8D.55
  *
- * Android Booking Migration Tests
+ * Booking Migration Plan Tests
  *
  * 20 automated tests.
  *
- * No Firebase deployment.
- * No database writes.
- * No existing bookings modified.
+ * SAFETY:
+ * - No Firebase deployment
+ * - No Firestore writes
+ * - No existing bookings modified
+ * - No public booking activation
  */
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
-  normalizeBooking,
-  detectConflicts,
-  prepareAndroidBookings
-} = require("./androidBookingAdapter");
+  makeMigrationPlan
+} = require("./bookingMigrationPlan");
 
-const BUSINESS = "test-owner";
+const BUSINESS_ID = "testBusiness123";
 
 function booking(overrides = {}) {
   return {
-    id: "booking-001",
-    client: "Test Customer",
+    id: "booking1",
+    client: "Test Client",
     service: "Haircut",
-    date: "2026-12-07",
+    serviceId: "service1",
+    staffId: "staff1",
+    date: "2026-11-12",
     time: "10:00",
-    notes: "",
-    serviceId: "haircut",
-    staffId: "kody",
     duration: 30,
     price: "20.00",
+    notes: "",
     ...overrides
   };
 }
 
-function prepare(records) {
-  return prepareAndroidBookings({
-    businessId: BUSINESS,
-    bookingsJson: JSON.stringify(records)
+function plan(bookings) {
+  return makeMigrationPlan({
+    businessId: BUSINESS_ID,
+    bookingsJson: JSON.stringify(bookings)
   });
 }
 
 // TEST 01
 
-test("01 converts a valid Android booking", () => {
-  const result = normalizeBooking(
-    booking(),
-    BUSINESS
-  );
+test("1 - empty bookings are safe", () => {
+  const result = plan([]);
 
-  assert.equal(result.valid, true);
-  assert.equal(
-    result.appointment.businessId,
-    BUSINESS
-  );
-  assert.equal(
-    result.appointment.startTime,
-    "10:00"
-  );
-  assert.equal(
-    result.appointment.endTime,
-    "10:30"
-  );
-  assert.equal(
-    result.appointment.price,
-    20
-  );
+  assert.equal(result.safeToMigrate, true);
+  assert.equal(result.sourceCount, 0);
+  assert.equal(result.lockCount, 0);
 });
 
 // TEST 02
 
-test("02 accepts a valid JSON booking array", () => {
-  const result = prepare([
-    booking()
-  ]);
+test("2 - valid appointment generates two locks", () => {
+  const result = plan([booking()]);
 
-  assert.equal(result.total, 1);
-  assert.equal(result.readyCount, 1);
-  assert.equal(result.rejectedCount, 0);
   assert.equal(result.safeToMigrate, true);
+  assert.equal(result.appointmentCount, 1);
+  assert.equal(result.lockCount, 2);
 });
 
 // TEST 03
 
-test("03 accepts an empty booking list", () => {
-  const result = prepare([]);
+test("3 - locks use correct identifiers", () => {
+  const result = plan([booking()]);
 
-  assert.equal(result.total, 0);
-  assert.equal(result.readyCount, 0);
-  assert.equal(result.safeToMigrate, true);
+  assert.deepEqual(
+    result.locks.map(item => item.lockId),
+    [
+      "staff1_2026-11-12_1000",
+      "staff1_2026-11-12_1015"
+    ]
+  );
 });
 
 // TEST 04
 
-test("04 rejects missing staff ID", () => {
-  const result = prepare([
-    booking({ staffId: "" })
+test("4 - 45 minute booking generates three locks", () => {
+  const result = plan([
+    booking({ duration: 45 })
   ]);
 
-  assert.equal(result.readyCount, 0);
-  assert.match(
-    result.rejected[0].errors.join(" "),
-    /staff ID/
-  );
+  assert.equal(result.lockCount, 3);
 });
 
 // TEST 05
 
-test("05 rejects missing service ID", () => {
-  const result = prepare([
-    booking({ serviceId: "" })
+test("5 - adjacent bookings do not overlap", () => {
+  const result = plan([
+    booking(),
+    booking({
+      id: "booking2",
+      time: "10:30"
+    })
   ]);
 
-  assert.equal(result.readyCount, 0);
-  assert.match(
-    result.rejected[0].errors.join(" "),
-    /service ID/
-  );
+  assert.equal(result.safeToMigrate, true);
+  assert.equal(result.appointmentCount, 2);
+  assert.equal(result.lockCount, 4);
 });
 
 // TEST 06
 
-test("06 rejects an invalid calendar date", () => {
-  const result = prepare([
-    booking({ date: "2026-02-30" })
+test("6 - overlapping appointments are rejected", () => {
+  const result = plan([
+    booking(),
+    booking({
+      id: "booking2",
+      time: "10:15"
+    })
   ]);
 
-  assert.equal(result.readyCount, 0);
-  assert.match(
-    result.rejected[0].errors.join(" "),
-    /date/
-  );
+  assert.equal(result.safeToMigrate, false);
+  assert.equal(result.rejectedCount, 2);
+  assert.equal(result.appointmentCount, 0);
 });
 
 // TEST 07
 
-test("07 rejects an invalid time", () => {
-  const result = prepare([
-    booking({ time: "25:00" })
+test("7 - different staff may share a time", () => {
+  const result = plan([
+    booking(),
+    booking({
+      id: "booking2",
+      staffId: "staff2"
+    })
   ]);
 
-  assert.equal(result.readyCount, 0);
-  assert.match(
-    result.rejected[0].errors.join(" "),
-    /time/
-  );
+  assert.equal(result.safeToMigrate, true);
+  assert.equal(result.lockCount, 4);
 });
 
 // TEST 08
 
-test("08 rejects zero duration", () => {
-  const result = prepare([
-    booking({ duration: 0 })
+test("8 - duplicate booking IDs block migration", () => {
+  const result = plan([
+    booking(),
+    booking({
+      client: "Another Client",
+      time: "11:00"
+    })
   ]);
 
-  assert.equal(result.readyCount, 0);
-  assert.match(
-    result.rejected[0].errors.join(" "),
-    /duration/
-  );
+  assert.equal(result.safeToMigrate, false);
+  assert.equal(result.rejectedCount, 1);
 });
 
 // TEST 09
 
-test("09 rejects negative duration", () => {
-  const result = prepare([
-    booking({ duration: -30 })
+test("9 - missing staff ID blocks migration", () => {
+  const result = plan([
+    booking({ staffId: "" })
   ]);
 
-  assert.equal(result.readyCount, 0);
+  assert.equal(result.safeToMigrate, false);
+  assert.equal(result.appointmentCount, 0);
 });
 
 // TEST 10
 
-test("10 rejects an appointment beyond midnight", () => {
-  const result = prepare([
+test("10 - missing service ID blocks migration", () => {
+  const result = plan([
+    booking({ serviceId: "" })
+  ]);
+
+  assert.equal(result.safeToMigrate, false);
+});
+
+// TEST 11
+
+test("11 - invalid date blocks migration", () => {
+  const result = plan([
+    booking({ date: "2026-02-30" })
+  ]);
+
+  assert.equal(result.safeToMigrate, false);
+});
+
+// TEST 12
+
+test("12 - invalid duration blocks migration", () => {
+  const result = plan([
+    booking({ duration: 0 })
+  ]);
+
+  assert.equal(result.safeToMigrate, false);
+});
+
+// TEST 13
+
+test("13 - booking extending past midnight is rejected", () => {
+  const result = plan([
     booking({
       time: "23:45",
       duration: 30
     })
   ]);
 
-  assert.equal(result.readyCount, 0);
-  assert.match(
-    result.rejected[0].errors.join(" "),
-    /midnight/
-  );
-});
-
-// TEST 11
-
-test("11 allows an appointment ending at midnight", () => {
-  const result = prepare([
-    booking({
-      time: "23:30",
-      duration: 30
-    })
-  ]);
-
-  assert.equal(result.readyCount, 1);
-  assert.equal(
-    result.ready[0].endTime,
-    "24:00"
-  );
-});
-
-// TEST 12
-
-test("12 rejects a negative price", () => {
-  const result = prepare([
-    booking({ price: "-1.00" })
-  ]);
-
-  assert.equal(result.readyCount, 0);
-  assert.match(
-    result.rejected[0].errors.join(" "),
-    /price/
-  );
-});
-
-// TEST 13
-
-test("13 rejects a missing client name", () => {
-  const result = prepare([
-    booking({ client: "" })
-  ]);
-
-  assert.equal(result.readyCount, 0);
-  assert.match(
-    result.rejected[0].errors.join(" "),
-    /client/
-  );
+  assert.equal(result.safeToMigrate, false);
 });
 
 // TEST 14
 
-test("14 rejects duplicate booking IDs", () => {
-  const result = prepare([
-    booking(),
-    booking({
-      client: "Another Customer",
-      time: "11:00"
-    })
-  ]);
-
-  assert.equal(result.total, 2);
-  assert.equal(result.readyCount, 1);
-  assert.equal(result.rejectedCount, 1);
-  assert.match(
-    result.rejected[0].errors.join(" "),
-    /Duplicate booking ID/
-  );
+test("14 - invalid JSON throws", () => {
+  assert.throws(() => {
+    makeMigrationPlan({
+      businessId: BUSINESS_ID,
+      bookingsJson: "{broken"
+    });
+  });
 });
 
 // TEST 15
 
-test("15 detects overlapping staff appointments", () => {
-  const result = prepare([
-    booking({
-      id: "booking-001",
-      time: "10:00",
-      duration: 30
-    }),
-    booking({
-      id: "booking-002",
-      time: "10:15",
-      duration: 30
-    })
-  ]);
+test("15 - planner provides a read-only warning", () => {
+  const result = plan([booking()]);
 
-  assert.equal(result.readyCount, 0);
-  assert.equal(result.rejectedCount, 2);
-  assert.equal(result.safeToMigrate, false);
+  assert.match(result.warning, /READ-ONLY/);
+  assert.match(result.warning, /No Firestore/);
 });
 
 // TEST 16
 
-test("16 accepts adjacent non-overlapping bookings", () => {
-  const result = prepare([
+test("16 - mixed valid and invalid records block migration", () => {
+  const result = plan([
+    booking(),
     booking({
-      id: "booking-001",
-      time: "10:00"
-    }),
-    booking({
-      id: "booking-002",
-      time: "10:30"
+      id: "booking2",
+      staffId: ""
     })
   ]);
 
-  assert.equal(result.readyCount, 2);
-  assert.equal(result.rejectedCount, 0);
+  assert.equal(result.safeToMigrate, false);
+  assert.equal(result.appointmentCount, 1);
+  assert.equal(result.rejectedCount, 1);
 });
 
 // TEST 17
 
-test("17 allows different staff at the same time", () => {
-  const result = prepare([
+test("17 - non-aligned bookings reveal lock collisions", () => {
+  const result = plan([
     booking({
-      id: "booking-001",
-      staffId: "kody"
+      time: "10:01",
+      duration: 10
     }),
     booking({
-      id: "booking-002",
-      staffId: "olivia"
+      id: "booking2",
+      time: "10:12",
+      duration: 10
     })
   ]);
 
-  assert.equal(result.readyCount, 2);
-  assert.equal(result.rejectedCount, 0);
+  assert.equal(result.safeToMigrate, false);
+  assert.ok(result.problems.length > 0);
 });
 
 // TEST 18
 
-test("18 rejects malformed JSON", () => {
-  assert.throws(
-    () => prepareAndroidBookings({
-      businessId: BUSINESS,
-      bookingsJson: "{invalid"
-    }),
-    /JSON is invalid/
-  );
+test("18 - source appointment remains unchanged", () => {
+  const original = booking();
+  const snapshot = JSON.stringify(original);
+
+  plan([original]);
+
+  assert.equal(JSON.stringify(original), snapshot);
 });
 
 // TEST 19
 
-test("19 rejects an invalid business identifier", () => {
-  assert.throws(
-    () => prepareAndroidBookings({
-      businessId: "invalid/business",
-      bookingsJson: "[]"
+test("19 - partial migration must not be authorised", () => {
+  const result = plan([
+    booking({
+      id: "valid-booking",
+      time: "09:00"
     }),
-    /Invalid business identifier/
+    booking({
+      id: "invalid-booking",
+      staffId: ""
+    })
+  ]);
+
+  assert.equal(result.sourceCount, 2);
+  assert.equal(result.appointmentCount, 1);
+  assert.equal(result.rejectedCount, 1);
+  assert.equal(result.safeToMigrate, false);
+
+  // Partial plans must not authorise writes.
+  assert.notEqual(
+    result.appointmentCount,
+    result.sourceCount
   );
 });
 
 // TEST 20
 
-test("20 reports valid and invalid bookings separately", () => {
-  const result = prepare([
+test("20 - overlapping bookings block migration", () => {
+  const result = plan([
     booking({
-      id: "booking-001",
-      time: "09:00"
+      id: "first",
+      time: "10:00",
+      duration: 45
     }),
     booking({
-      id: "booking-002",
-      staffId: ""
-    }),
-    booking({
-      id: "booking-003",
-      time: "11:00"
+      id: "second",
+      time: "10:15",
+      duration: 30
     })
   ]);
 
-  assert.equal(result.total, 3);
-  assert.equal(result.readyCount, 2);
-  assert.equal(result.rejectedCount, 1);
   assert.equal(result.safeToMigrate, false);
-
-  assert.deepEqual(
-    result.ready.map(item => item.id),
-    ["booking-001", "booking-003"]
-  );
-});
-
-// Extra direct conflict check
-
-test("21 direct conflict detection identifies overlaps", () => {
-  const first = normalizeBooking(
-    booking({
-      id: "a",
-      time: "10:00"
-    }),
-    BUSINESS
-  ).appointment;
-
-  const second = normalizeBooking(
-    booking({
-      id: "b",
-      time: "10:15"
-    }),
-    BUSINESS
-  ).appointment;
-
-  const conflicts = detectConflicts([
-    first,
-    second
-  ]);
-
-  assert.equal(conflicts.has("a"), true);
-  assert.equal(conflicts.has("b"), true);
+  assert.equal(result.appointmentCount, 0);
+  assert.equal(result.rejectedCount, 2);
 });
