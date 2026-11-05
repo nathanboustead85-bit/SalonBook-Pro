@@ -1,5 +1,19 @@
 "use strict";
 
+/**
+ * BOUSTIO — PHASE 8D.55
+ *
+ * Booking Migration Plan Tests
+ *
+ * 20 automated tests.
+ *
+ * SAFETY:
+ * - No Firebase deployment
+ * - No Firestore writes
+ * - No existing bookings modified
+ * - No public booking activation
+ */
+
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -32,6 +46,8 @@ function plan(bookings) {
   });
 }
 
+// TEST 01
+
 test("1 - empty bookings are safe", () => {
   const result = plan([]);
 
@@ -40,6 +56,8 @@ test("1 - empty bookings are safe", () => {
   assert.equal(result.lockCount, 0);
 });
 
+// TEST 02
+
 test("2 - valid appointment generates two locks", () => {
   const result = plan([booking()]);
 
@@ -47,6 +65,8 @@ test("2 - valid appointment generates two locks", () => {
   assert.equal(result.appointmentCount, 1);
   assert.equal(result.lockCount, 2);
 });
+
+// TEST 03
 
 test("3 - locks use correct identifiers", () => {
   const result = plan([booking()]);
@@ -60,6 +80,8 @@ test("3 - locks use correct identifiers", () => {
   );
 });
 
+// TEST 04
+
 test("4 - 45 minute booking generates three locks", () => {
   const result = plan([
     booking({ duration: 45 })
@@ -67,6 +89,8 @@ test("4 - 45 minute booking generates three locks", () => {
 
   assert.equal(result.lockCount, 3);
 });
+
+// TEST 05
 
 test("5 - adjacent bookings do not overlap", () => {
   const result = plan([
@@ -82,6 +106,8 @@ test("5 - adjacent bookings do not overlap", () => {
   assert.equal(result.lockCount, 4);
 });
 
+// TEST 06
+
 test("6 - overlapping appointments are rejected", () => {
   const result = plan([
     booking(),
@@ -96,6 +122,8 @@ test("6 - overlapping appointments are rejected", () => {
   assert.equal(result.appointmentCount, 0);
 });
 
+// TEST 07
+
 test("7 - different staff may share a time", () => {
   const result = plan([
     booking(),
@@ -108,6 +136,8 @@ test("7 - different staff may share a time", () => {
   assert.equal(result.safeToMigrate, true);
   assert.equal(result.lockCount, 4);
 });
+
+// TEST 08
 
 test("8 - duplicate booking IDs block migration", () => {
   const result = plan([
@@ -122,6 +152,8 @@ test("8 - duplicate booking IDs block migration", () => {
   assert.equal(result.rejectedCount, 1);
 });
 
+// TEST 09
+
 test("9 - missing staff ID blocks migration", () => {
   const result = plan([
     booking({ staffId: "" })
@@ -131,6 +163,8 @@ test("9 - missing staff ID blocks migration", () => {
   assert.equal(result.appointmentCount, 0);
 });
 
+// TEST 10
+
 test("10 - missing service ID blocks migration", () => {
   const result = plan([
     booking({ serviceId: "" })
@@ -138,6 +172,8 @@ test("10 - missing service ID blocks migration", () => {
 
   assert.equal(result.safeToMigrate, false);
 });
+
+// TEST 11
 
 test("11 - invalid date blocks migration", () => {
   const result = plan([
@@ -147,6 +183,8 @@ test("11 - invalid date blocks migration", () => {
   assert.equal(result.safeToMigrate, false);
 });
 
+// TEST 12
+
 test("12 - invalid duration blocks migration", () => {
   const result = plan([
     booking({ duration: 0 })
@@ -154,6 +192,8 @@ test("12 - invalid duration blocks migration", () => {
 
   assert.equal(result.safeToMigrate, false);
 });
+
+// TEST 13
 
 test("13 - booking extending past midnight is rejected", () => {
   const result = plan([
@@ -166,6 +206,8 @@ test("13 - booking extending past midnight is rejected", () => {
   assert.equal(result.safeToMigrate, false);
 });
 
+// TEST 14
+
 test("14 - invalid JSON throws", () => {
   assert.throws(() => {
     makeMigrationPlan({
@@ -175,12 +217,16 @@ test("14 - invalid JSON throws", () => {
   });
 });
 
+// TEST 15
+
 test("15 - planner provides a read-only warning", () => {
   const result = plan([booking()]);
 
   assert.match(result.warning, /READ-ONLY/);
   assert.match(result.warning, /No Firestore/);
 });
+
+// TEST 16
 
 test("16 - mixed valid and invalid records block migration", () => {
   const result = plan([
@@ -195,6 +241,8 @@ test("16 - mixed valid and invalid records block migration", () => {
   assert.equal(result.appointmentCount, 1);
   assert.equal(result.rejectedCount, 1);
 });
+
+// TEST 17
 
 test("17 - non-aligned bookings reveal lock collisions", () => {
   const result = plan([
@@ -213,6 +261,8 @@ test("17 - non-aligned bookings reveal lock collisions", () => {
   assert.ok(result.problems.length > 0);
 });
 
+// TEST 18
+
 test("18 - source appointment remains unchanged", () => {
   const original = booking();
   const snapshot = JSON.stringify(original);
@@ -220,4 +270,51 @@ test("18 - source appointment remains unchanged", () => {
   plan([original]);
 
   assert.equal(JSON.stringify(original), snapshot);
+});
+
+// TEST 19
+
+test("19 - partial migration must not be authorised", () => {
+  const result = plan([
+    booking({
+      id: "valid-booking",
+      time: "09:00"
+    }),
+    booking({
+      id: "invalid-booking",
+      staffId: ""
+    })
+  ]);
+
+  assert.equal(result.sourceCount, 2);
+  assert.equal(result.appointmentCount, 1);
+  assert.equal(result.rejectedCount, 1);
+  assert.equal(result.safeToMigrate, false);
+
+  // Partial plans must not authorise writes.
+  assert.notEqual(
+    result.appointmentCount,
+    result.sourceCount
+  );
+});
+
+// TEST 20
+
+test("20 - overlapping bookings block migration", () => {
+  const result = plan([
+    booking({
+      id: "first",
+      time: "10:00",
+      duration: 45
+    }),
+    booking({
+      id: "second",
+      time: "10:15",
+      duration: 30
+    })
+  ]);
+
+  assert.equal(result.safeToMigrate, false);
+  assert.equal(result.appointmentCount, 0);
+  assert.equal(result.rejectedCount, 2);
 });
