@@ -1,0 +1,110 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(userId) {
+      return request.auth != null
+        && request.auth.uid == userId;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isOwner(userId)
+        && request.auth.token.email_verified == true;
+    }
+
+    function migrationCompleted(userId) {
+      return exists(
+        /databases/$(database)/documents/businesses/$(userId)/migrations/android-bookings-v1
+      );
+    }
+
+    // ==================================
+    // PHASE 8D.60A
+    // LEGACY ANDROID BOOKING PROTECTION
+    // ==================================
+
+    match /users/{userId}/liveData/{dataType} {
+
+      allow read: if isVerifiedOwner(userId)
+        && dataType in [
+          "bookings",
+          "services",
+          "staff"
+        ];
+
+      allow create, update: if
+        isVerifiedOwner(userId)
+
+        && dataType in [
+          "bookings",
+          "services",
+          "staff"
+        ]
+
+        // Block legacy booking writes
+        // after migration is complete.
+        && (
+          dataType != "bookings"
+          || !migrationCompleted(userId)
+        )
+
+        && request.resource.data.keys().hasOnly([
+          "json",
+          "schemaVersion",
+          "updatedAt"
+        ])
+
+        && request.resource.data.json is string
+
+        && request.resource.data.schemaVersion == 1
+
+        && request.resource.data.updatedAt is timestamp
+
+        && request.resource.data.json.size() <= 500000;
+
+      allow delete: if false;
+    }
+
+    // ==================================
+    // CLOUD APPOINTMENTS
+    // ==================================
+
+    match /businesses/{businessId}/appointments/{appointmentId} {
+
+      allow read: if isVerifiedOwner(businessId);
+
+      // Only trusted backend services
+      // may modify cloud appointments.
+      allow create, update, delete: if false;
+    }
+
+    // ==================================
+    // BOOKING LOCKS
+    // ==================================
+
+    match /businesses/{businessId}/bookingLocks/{lockId} {
+
+      allow read, write: if false;
+    }
+
+    // ==================================
+    // MIGRATION MARKERS
+    // ==================================
+
+    match /businesses/{businessId}/migrations/{migrationId} {
+
+      // The client cannot forge or
+      // remove migration completion.
+      allow read, write: if false;
+    }
+
+    // ==================================
+    // DEFAULT DENY
+    // ==================================
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
