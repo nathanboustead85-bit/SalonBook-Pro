@@ -6,6 +6,7 @@ on:
       - phase-7c-live-booking
     paths:
       - 'functions/**'
+      - 'firestore.rules'
       - 'firestore.cutover.test.rules'
       - 'firebase.json'
       - 'firebase.http-emulator.json'
@@ -105,7 +106,7 @@ jobs:
             emulators:exec \
             --project demo-boustio-migration \
             --only firestore \
-            "cd functions && node --test cutoverSecurity.integration.test.js"
+            "cd functions && node --test cutoverSecurity.integration.test.js bookingModeSecurity.integration.test.js"
 
       - name: Run callable HTTP integration tests
         env:
