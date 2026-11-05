@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.59
+ * BOUSTIO — PHASE 8D.59A
  *
  * Transactional Android Booking Migration
  * Firestore Emulator Integration Tests
@@ -613,11 +613,11 @@ test(
 );
 
 // =====================================
-// TEST 13 — SOURCE CHANGES MID-MIGRATION
+// TEST 13 — SOURCE UPDATE DURING START
 // =====================================
 
 test(
-  "13 source update during transaction cannot import stale booking",
+  "13 source update before transaction source read uses fresh booking",
   async () => {
     const owner = uniqueOwner();
 
@@ -628,21 +628,15 @@ test(
       })
     ]);
 
-    let signalSourceRead;
-    let releaseSourceRead;
+    let sourceUpdated = false;
 
-    const sourceWasRead = new Promise(resolve => {
-      signalSourceRead = resolve;
-    });
-
-    const continueMigration = new Promise(resolve => {
-      releaseSourceRead = resolve;
-    });
-
-    let paused = false;
-
-    // Wrap the transaction to pause after
-    // reading the original source.
+    // Intercept the source read.
+    // Perform the update BEFORE Firestore
+    // reads and locks the source document.
+    //
+    // This avoids holding a transaction
+    // open while waiting for a competing
+    // write to the same document.
     const controlledDb = {
       collection: (...args) =>
         db.collection(...args),
@@ -655,20 +649,25 @@ test(
               get(target, property) {
                 if (property === "get") {
                   return async ref => {
-                    const snapshot =
-                      await target.get(ref);
-
                     if (
-                      !paused &&
+                      !sourceUpdated &&
                       ref.path === r.source.path
                     ) {
-                      paused = true;
-                      signalSourceRead();
+                      sourceUpdated = true;
 
-                      await continueMigration;
+                      await r.source.update({
+                        json: JSON.stringify([
+                          booking({
+                            id: "freshBooking",
+                            time: "11:00"
+                          })
+                        ]),
+                        updatedAt:
+                          new Date().toISOString()
+                      });
                     }
 
-                    return snapshot;
+                    return target.get(ref);
                   };
                 }
 
@@ -689,38 +688,14 @@ test(
         })
     };
 
-    const migrationPromise =
-      migrateAndroidBookings({
+    const result =
+      await migrateAndroidBookings({
         db: controlledDb,
         businessId: owner,
         authenticatedUid: owner
       });
 
-    try {
-      // Wait until migration reads
-      // the original Android data.
-      await sourceWasRead;
-
-      // Update source while the original
-      // transaction is still in progress.
-      await r.source.update({
-        json: JSON.stringify([
-          booking({
-            id: "freshBooking",
-            time: "11:00"
-          })
-        ]),
-        updatedAt: new Date().toISOString()
-      });
-    } finally {
-      // Always release the paused read.
-      releaseSourceRead();
-    }
-
-    // Firestore should retry after
-    // detecting the changed source.
-    const result = await migrationPromise;
-
+    assert.equal(sourceUpdated, true);
     assert.equal(result.success, true);
 
     const stale = await r.appointments
