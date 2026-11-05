@@ -18,14 +18,44 @@ service cloud.firestore {
     }
 
     // PHASE 8D.61:
-    // Detect a completed Android migration.
-    // Only trusted backend code can create
-    // the migration marker.
+    // Completed migration marker.
+    // Only trusted backend can create it.
 
     function migrationCompleted(userId) {
       return exists(
         /databases/$(database)/documents/businesses/$(userId)/migrations/android-bookings-v1
       );
+    }
+
+    // ===================================
+    // PHASE 8D.68: BOOKING MODE GUARD
+    // ===================================
+
+    function bookingModePath(userId) {
+      return /databases/$(database)/documents/businesses/$(userId)/settings/bookingMode;
+    }
+
+    // Transitional compatibility:
+    //
+    // Missing mode:
+    //   Existing legacy clients remain
+    //   compatible until backend rollout.
+    //
+    // legacy:
+    //   Legacy booking uploads permitted.
+    //
+    // frozen/cloud/invalid:
+    //   Legacy booking uploads denied.
+    //
+    // Migration marker always blocks
+    // legacy booking uploads.
+
+    function legacyBookingWriteAllowed(userId) {
+      return !migrationCompleted(userId)
+        && (
+          !exists(bookingModePath(userId))
+          || get(bookingModePath(userId)).data.mode == "legacy"
+        );
     }
 
     // ===================================
@@ -40,7 +70,7 @@ service cloud.firestore {
 
     // ===================================
     // PHASE 6: CLOUD SYNCHRONISATION
-    // PHASE 8D.61: CUTOVER PROTECTION
+    // PHASE 8D.68: MODE PROTECTION
     // ===================================
 
     match /users/{userId}/liveData/{dataType} {
@@ -59,13 +89,9 @@ service cloud.firestore {
           "staff"
         ]
 
-        // Once migration completes,
-        // Android cannot overwrite
-        // legacy booking data.
-
         && (
           dataType != "bookings"
-          || !migrationCompleted(userId)
+          || legacyBookingWriteAllowed(userId)
         )
 
         && request.resource.data.keys().hasOnly([
@@ -144,6 +170,7 @@ service cloud.firestore {
 
         && request.resource.data.name.size() >= 3
         && request.resource.data.name.size() <= 100
+
         && request.resource.data.slug.size() >= 3
         && request.resource.data.slug.size() <= 50
 
@@ -200,14 +227,13 @@ service cloud.firestore {
 
     match /businesses/{businessId}/settings/{settingId} {
 
-      // Verified owners can read their
-      // server-controlled booking mode.
+      // Verified owner can read mode.
 
       allow get: if isVerifiedOwner(businessId)
         && settingId == "bookingMode";
 
-      // Only trusted backend code can
-      // create or change booking mode.
+      // Only trusted backend can
+      // create or modify mode.
 
       allow list, create, update, delete: if false;
     }
@@ -218,8 +244,7 @@ service cloud.firestore {
 
     match /businesses/{businessId}/migrations/{migrationId} {
 
-      // Clients cannot create, edit,
-      // read or delete migration markers.
+      // No client access to markers.
 
       allow read, write: if false;
     }
