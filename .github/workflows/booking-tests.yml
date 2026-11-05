@@ -97,7 +97,18 @@ jobs:
             emulators:exec \
             --project demo-boustio-migration \
             --only firestore \
-            "cd functions && node --test firestoreMigrationEmulator.test.js authenticatedCallableEmulator.test.js transactionalBookingMigration.integration.test.js freezeBookingMode.integration.test.js"
+            "cd functions && node --test firestoreMigrationEmulator.test.js authenticatedCallableEmulator.test.js transactionalBookingMigration.integration.test.js"
+
+      - name: Run isolated booking freeze integration tests
+        env:
+          GCLOUD_PROJECT: demo-boustio-migration
+          GOOGLE_CLOUD_PROJECT: demo-boustio-migration
+        run: |
+          npx --yes firebase-tools@14.25.1 \
+            emulators:exec \
+            --project demo-boustio-migration \
+            --only firestore \
+            "cd functions && node --test freezeBookingMode.integration.test.js"
 
       - name: Run cutover security integration tests
         env:
