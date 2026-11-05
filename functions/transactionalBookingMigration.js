@@ -1,23 +1,18 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.56
+ * BOUSTIO — PHASE 8D.57
  *
  * Transactional Android Booking Migration
+ * with legacy appointment conflict protection.
  *
  * BACKEND ONLY.
+ * Not a callable or HTTP endpoint.
+ * Not exported from functions/index.js.
  *
- * NOT a callable function.
- * NOT a public HTTP endpoint.
- * NOT exported from functions/index.js.
- *
- * No operation occurs until this function
- * is explicitly invoked by trusted backend
- * code with a Firestore database instance.
- *
- * IMPORTANT:
- * Must pass emulator integration tests
- * before any production use.
+ * Do not deploy or use with real customers
+ * until further security and concurrency
+ * testing has been completed.
  */
 
 const {
@@ -30,10 +25,7 @@ const {
 
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,100}$/;
 
-// Conservative limit below Firestore's
-// 500-write transaction limit.
 const MAX_TRANSACTION_WRITES = 450;
-
 const MIGRATION_ID = "android-bookings-v1";
 
 function fail(message, code = "migration-blocked") {
@@ -81,11 +73,10 @@ function verifySource(snapshot) {
 }
 
 function validatePlan(plan) {
-  if (
-    !plan ||
-    plan.safeToMigrate !== true
-  ) {
-    fail("Migration contains invalid or overlapping bookings.");
+  if (!plan || plan.safeToMigrate !== true) {
+    fail(
+      "Migration contains invalid or overlapping bookings."
+    );
   }
 
   if (
@@ -116,7 +107,9 @@ function validatePlan(plan) {
       !validId(appointment.id) ||
       appointmentIds.has(appointment.id)
     ) {
-      fail("Invalid or duplicate appointment identifier.");
+      fail(
+        "Invalid or duplicate appointment identifier."
+      );
     }
 
     appointmentIds.add(appointment.id);
@@ -140,29 +133,121 @@ function validatePlan(plan) {
   return writes;
 }
 
-/**
- * Explicit trusted-server migration.
- *
- * Preconditions:
- * - authenticatedUid must be supplied by
- *   verified server-side authentication
- * - caller must independently verify
- *   email verification and authorisation
- * - businessId is the owner's Firebase UID
- * - existing online booking writes must
- *   remain disabled during migration
- *
- * Transaction reads:
- * - Migration completion marker
- * - Android liveData booking source
- * - Every proposed appointment document
- * - Every proposed booking lock
- *
- * All reads happen before writes.
- *
- * Any detected conflict aborts the entire
- * Firestore transaction.
- */
+function timeToMinutes(value) {
+  if (
+    typeof value !== "string" ||
+    !/^([01]\d|2[0-3]):[0-5]\d$|^24:00$/.test(value)
+  ) {
+    return null;
+  }
+
+  const [hours, minutes] =
+    value.split(":").map(Number);
+
+  return hours * 60 + minutes;
+}
+
+function appointmentRange(appointment) {
+  if (
+    !appointment ||
+    !validId(appointment.staffId) ||
+    typeof appointment.date !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(appointment.date)
+  ) {
+    return null;
+  }
+
+  const start = timeToMinutes(
+    appointment.startTime
+  );
+
+  let end = timeToMinutes(
+    appointment.endTime
+  );
+
+  if (
+    end === null &&
+    Number.isInteger(
+      appointment.durationMinutes
+    ) &&
+    start !== null
+  ) {
+    end =
+      start + appointment.durationMinutes;
+  }
+
+  if (
+    start === null ||
+    end === null ||
+    start >= end ||
+    end > 1440
+  ) {
+    return null;
+  }
+
+  return {
+    staffId: appointment.staffId,
+    date: appointment.date,
+    start,
+    end
+  };
+}
+
+function checkLegacyConflicts(
+  incomingAppointments,
+  existingDocuments
+) {
+  const incomingRanges =
+    incomingAppointments.map(appointment => {
+      const range =
+        appointmentRange(appointment);
+
+      if (!range) {
+        fail(
+          "Incoming appointment has an invalid time range."
+        );
+      }
+
+      return range;
+    });
+
+  for (const existingDoc of existingDocuments) {
+    const existing = existingDoc.data();
+
+    // Cancelled appointments do not
+    // reserve a booking time.
+    if (existing.status === "cancelled") {
+      continue;
+    }
+
+    const range = appointmentRange(existing);
+
+    // If an existing appointment cannot
+    // be understood safely, stop rather
+    // than risk creating a double booking.
+    if (!range) {
+      fail(
+        "Existing server appointment has " +
+        "an invalid time range."
+      );
+    }
+
+    for (const incoming of incomingRanges) {
+      if (
+        range.staffId === incoming.staffId &&
+        range.date === incoming.date &&
+        range.start < incoming.end &&
+        incoming.start < range.end
+      ) {
+        fail(
+          "Migration blocked: overlapping " +
+          "legacy server appointment."
+        );
+      }
+    }
+  }
+}
+
 async function migrateAndroidBookings({
   db,
   businessId,
@@ -193,7 +278,8 @@ async function migrateAndroidBookings({
     .doc(MIGRATION_ID);
 
   return db.runTransaction(async transaction => {
-    // READ 1: Migration marker.
+    // All reads must precede all writes.
+
     const migrationSnapshot =
       await transaction.get(migrationRef);
 
@@ -204,16 +290,15 @@ async function migrateAndroidBookings({
       );
     }
 
-    // READ 2: Current Android source.
-    // This is read inside the transaction to
-    // protect against concurrent source edits.
+    // Reading the source inside the
+    // transaction protects against
+    // concurrent source modifications
+    // during this transaction.
     const sourceSnapshot =
       await transaction.get(sourceRef);
 
     const source = verifySource(sourceSnapshot);
 
-    // Build the plan from the transactional
-    // source snapshot, not an earlier preview.
     const plan = makeMigrationPlan({
       businessId,
       bookingsJson: source.json
@@ -235,23 +320,11 @@ async function migrateAndroidBookings({
           .doc(lock.lockId)
       );
 
-    // READ 3: Existing appointment IDs.
-    // READ 4: Existing lock IDs.
-    //
-    // Firestore transaction reads must
-    // complete before any write.
+    // Check duplicate appointment IDs.
     const appointmentSnapshots = [];
 
     for (const ref of appointmentRefs) {
       appointmentSnapshots.push(
-        await transaction.get(ref)
-      );
-    }
-
-    const lockSnapshots = [];
-
-    for (const ref of lockRefs) {
-      lockSnapshots.push(
         await transaction.get(ref)
       );
     }
@@ -266,6 +339,15 @@ async function migrateAndroidBookings({
       );
     }
 
+    // Check existing booking locks.
+    const lockSnapshots = [];
+
+    for (const ref of lockRefs) {
+      lockSnapshots.push(
+        await transaction.get(ref)
+      );
+    }
+
     if (
       lockSnapshots.some(
         snapshot => snapshot.exists
@@ -276,30 +358,48 @@ async function migrateAndroidBookings({
       );
     }
 
-    // WRITE: Appointment records.
+    // PHASE 8D.57:
+    // Also inspect existing server
+    // appointments that may have no locks.
+    const existingAppointments =
+      await transaction.get(
+        businessRef.collection("appointments")
+      );
+
+    checkLegacyConflicts(
+      plan.appointments,
+      existingAppointments.docs
+    );
+
+    // All validation has passed.
+    // Begin atomic writes.
+
     for (
       let i = 0;
       i < plan.appointments.length;
       i++
     ) {
-      const appointment = plan.appointments[i];
+      const appointment =
+        plan.appointments[i];
 
       transaction.create(
         appointmentRefs[i],
         {
           ...appointment,
-          customerName: appointment.clientName,
+          customerName:
+            appointment.clientName,
           schemaVersion: 1,
           migrationId: MIGRATION_ID,
           source: "android",
           status: "confirmed",
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp()
+          createdAt:
+            FieldValue.serverTimestamp(),
+          updatedAt:
+            FieldValue.serverTimestamp()
         }
       );
     }
 
-    // WRITE: Booking locks.
     for (
       let i = 0;
       i < plan.locks.length;
@@ -312,14 +412,12 @@ async function migrateAndroidBookings({
         {
           ...lock,
           migrationId: MIGRATION_ID,
-          createdAt: FieldValue.serverTimestamp()
+          createdAt:
+            FieldValue.serverTimestamp()
         }
       );
     }
 
-    // WRITE: Completion marker.
-    // This is created in the same transaction
-    // as the appointments and booking locks.
     transaction.create(
       migrationRef,
       {
@@ -328,10 +426,12 @@ async function migrateAndroidBookings({
         schemaVersion: 1,
         status: "completed",
         sourceCount: plan.sourceCount,
-        appointmentCount: plan.appointmentCount,
+        appointmentCount:
+          plan.appointmentCount,
         lockCount: plan.lockCount,
         writeCount,
-        completedAt: FieldValue.serverTimestamp()
+        completedAt:
+          FieldValue.serverTimestamp()
       }
     );
 
@@ -339,7 +439,8 @@ async function migrateAndroidBookings({
       success: true,
       migrationId: MIGRATION_ID,
       businessId,
-      appointmentCount: plan.appointmentCount,
+      appointmentCount:
+        plan.appointmentCount,
       lockCount: plan.lockCount,
       status: "completed"
     };
