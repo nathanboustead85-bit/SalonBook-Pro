@@ -74,6 +74,7 @@ jobs:
         working-directory: functions
         run: |
           node --test \
+            bookingMode.test.js \
             bookingEngine.test.js \
             trustedCatalogue.test.js \
             trustedBooking.test.js \
