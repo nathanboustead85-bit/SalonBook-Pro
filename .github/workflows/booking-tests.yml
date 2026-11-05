@@ -110,6 +110,17 @@ jobs:
             --only firestore \
             "cd functions && node --test freezeBookingMode.integration.test.js"
 
+      - name: Run delayed booking upload integration tests
+        env:
+          GCLOUD_PROJECT: demo-boustio-migration
+          GOOGLE_CLOUD_PROJECT: demo-boustio-migration
+        run: |
+          npx --yes firebase-tools@14.25.1 \
+            emulators:exec \
+            --project demo-boustio-migration \
+            --only firestore \
+            "cd functions && node --test pendingBookingUpload.integration.test.js"
+
       - name: Run cutover security integration tests
         env:
           GCLOUD_PROJECT: demo-boustio-migration
