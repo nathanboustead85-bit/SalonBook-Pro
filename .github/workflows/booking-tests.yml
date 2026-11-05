@@ -75,6 +75,7 @@ jobs:
         run: |
           node --test \
             bookingMode.test.js \
+            freezeBookingMode.test.js \
             bookingEngine.test.js \
             trustedCatalogue.test.js \
             trustedBooking.test.js \
