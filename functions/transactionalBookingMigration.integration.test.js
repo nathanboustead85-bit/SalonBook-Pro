@@ -1,24 +1,12 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.58
+ * BOUSTIO — PHASE 8D.59
  *
  * Transactional Android Booking Migration
  * Firestore Emulator Integration Tests
  *
- * 12 integration tests:
- * 01 Successful migration
- * 02 Duplicate migration prevention
- * 03 Existing booking lock
- * 04 Existing appointment ID
- * 05 Invalid source
- * 06 Missing source
- * 07 Wrong owner
- * 08 Multiple appointments
- * 09 Legacy appointment overlap
- * 10 Simultaneous migration
- * 11 Updated source before migration
- * 12 Competing booking lock
+ * Tests 01–13
  *
  * EMULATOR ONLY — NOT PRODUCTION.
  */
@@ -33,7 +21,6 @@ const {
   MIGRATION_ID
 } = require("./transactionalBookingMigration");
 
-// Block execution without Firestore emulator.
 if (!process.env.FIRESTORE_EMULATOR_HOST) {
   throw new Error(
     "Firestore emulator required. " +
@@ -47,9 +34,7 @@ if (
   process.env.GCLOUD_PROJECT &&
   process.env.GCLOUD_PROJECT !== PROJECT_ID
 ) {
-  throw new Error(
-    "Unexpected Firebase project."
-  );
+  throw new Error("Unexpected Firebase project.");
 }
 
 if (admin.apps.length === 0) {
@@ -103,16 +88,12 @@ function refs(owner) {
   return {
     business,
     source,
-
     appointments:
       business.collection("appointments"),
-
     locks:
       business.collection("bookingLocks"),
-
     marker:
-      business
-        .collection("migrations")
+      business.collection("migrations")
         .doc(MIGRATION_ID)
   };
 }
@@ -346,7 +327,6 @@ test(
   "06 missing source causes no migration writes",
   async () => {
     const owner = uniqueOwner();
-
     const r = refs(owner);
 
     await assert.rejects(
@@ -490,19 +470,13 @@ test(
       .doc("legacyBooking1")
       .get();
 
-    assert.equal(
-      original.exists,
-      true
-    );
+    assert.equal(original.exists, true);
 
     const android = await r.appointments
       .doc("androidBooking1")
       .get();
 
-    assert.equal(
-      android.exists,
-      false
-    );
+    assert.equal(android.exists, false);
   }
 );
 
@@ -534,15 +508,8 @@ test(
         result.status === "rejected"
     );
 
-    assert.equal(
-      successful.length,
-      1
-    );
-
-    assert.equal(
-      rejected.length,
-      1
-    );
+    assert.equal(successful.length, 1);
+    assert.equal(rejected.length, 1);
 
     assert.deepEqual(
       await counts(r),
@@ -583,10 +550,7 @@ test(
 
     const result = await migrate(owner);
 
-    assert.equal(
-      result.success,
-      true
-    );
+    assert.equal(result.success, true);
 
     const oldAppointment = await r.appointments
       .doc("oldBooking")
@@ -596,15 +560,8 @@ test(
       .doc("newBooking")
       .get();
 
-    assert.equal(
-      oldAppointment.exists,
-      false
-    );
-
-    assert.equal(
-      newAppointment.exists,
-      true
-    );
+    assert.equal(oldAppointment.exists, false);
+    assert.equal(newAppointment.exists, true);
 
     assert.deepEqual(
       await counts(r),
@@ -650,6 +607,139 @@ test(
         appointments: 0,
         locks: 1,
         marker: false
+      }
+    );
+  }
+);
+
+// =====================================
+// TEST 13 — SOURCE CHANGES MID-MIGRATION
+// =====================================
+
+test(
+  "13 source update during transaction cannot import stale booking",
+  async () => {
+    const owner = uniqueOwner();
+
+    const r = await seed(owner, [
+      booking({
+        id: "staleBooking",
+        time: "10:00"
+      })
+    ]);
+
+    let signalSourceRead;
+    let releaseSourceRead;
+
+    const sourceWasRead = new Promise(resolve => {
+      signalSourceRead = resolve;
+    });
+
+    const continueMigration = new Promise(resolve => {
+      releaseSourceRead = resolve;
+    });
+
+    let paused = false;
+
+    // Wrap the transaction to pause after
+    // reading the original source.
+    const controlledDb = {
+      collection: (...args) =>
+        db.collection(...args),
+
+      runTransaction: callback =>
+        db.runTransaction(async transaction => {
+          const controlledTransaction = new Proxy(
+            transaction,
+            {
+              get(target, property) {
+                if (property === "get") {
+                  return async ref => {
+                    const snapshot =
+                      await target.get(ref);
+
+                    if (
+                      !paused &&
+                      ref.path === r.source.path
+                    ) {
+                      paused = true;
+                      signalSourceRead();
+
+                      await continueMigration;
+                    }
+
+                    return snapshot;
+                  };
+                }
+
+                const value = Reflect.get(
+                  target,
+                  property,
+                  target
+                );
+
+                return typeof value === "function"
+                  ? value.bind(target)
+                  : value;
+              }
+            }
+          );
+
+          return callback(controlledTransaction);
+        })
+    };
+
+    const migrationPromise =
+      migrateAndroidBookings({
+        db: controlledDb,
+        businessId: owner,
+        authenticatedUid: owner
+      });
+
+    try {
+      // Wait until migration reads
+      // the original Android data.
+      await sourceWasRead;
+
+      // Update source while the original
+      // transaction is still in progress.
+      await r.source.update({
+        json: JSON.stringify([
+          booking({
+            id: "freshBooking",
+            time: "11:00"
+          })
+        ]),
+        updatedAt: new Date().toISOString()
+      });
+    } finally {
+      // Always release the paused read.
+      releaseSourceRead();
+    }
+
+    // Firestore should retry after
+    // detecting the changed source.
+    const result = await migrationPromise;
+
+    assert.equal(result.success, true);
+
+    const stale = await r.appointments
+      .doc("staleBooking")
+      .get();
+
+    const fresh = await r.appointments
+      .doc("freshBooking")
+      .get();
+
+    assert.equal(stale.exists, false);
+    assert.equal(fresh.exists, true);
+
+    assert.deepEqual(
+      await counts(r),
+      {
+        appointments: 1,
+        locks: 2,
+        marker: true
       }
     );
   }
