@@ -1,40 +1,37 @@
 "use strict";
 
 /**
- * BOUSTIO — PHASE 8D.59A
+ * BOUSTIO — PHASE 8D.78
  *
- * Transactional Android Booking Migration
- * Firestore Emulator Integration Tests
+ * Transactional booking migration tests.
+ * All migration calls use the verified route.
  *
- * Tests 01–13
- *
- * EMULATOR ONLY — NOT PRODUCTION.
+ * EMULATOR ONLY — NEVER PRODUCTION.
  */
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-
 const admin = require("firebase-admin");
 
 const {
-  migrateAndroidBookings,
+  migrateVerifiedAndroidBookings,
   MIGRATION_ID
 } = require("./transactionalBookingMigration");
 
-if (!process.env.FIRESTORE_EMULATOR_HOST) {
-  throw new Error(
-    "Firestore emulator required. " +
-    "Production execution forbidden."
-  );
-}
+const {
+  digestBookings
+} = require("./finalBookingSyncVerifier");
 
 const PROJECT_ID = "demo-boustio-migration";
 
 if (
-  process.env.GCLOUD_PROJECT &&
-  process.env.GCLOUD_PROJECT !== PROJECT_ID
+  !process.env.FIRESTORE_EMULATOR_HOST ||
+  process.env.GCLOUD_PROJECT !== PROJECT_ID ||
+  process.env.GOOGLE_CLOUD_PROJECT !== PROJECT_ID
 ) {
-  throw new Error("Unexpected Firebase project.");
+  throw new Error(
+    "Dedicated Firestore emulator required."
+  );
 }
 
 if (admin.apps.length === 0) {
@@ -44,12 +41,10 @@ if (admin.apps.length === 0) {
 }
 
 const db = admin.firestore();
-
 let counter = 0;
 
 function uniqueOwner() {
-  counter += 1;
-
+  counter++;
   return (
     "migrationTest_" +
     process.pid + "_" +
@@ -79,27 +74,34 @@ function refs(owner) {
     .collection("businesses")
     .doc(owner);
 
-  const source = db
-    .collection("users")
-    .doc(owner)
-    .collection("liveData")
-    .doc("bookings");
-
   return {
     business,
-    source,
+    mode: business
+      .collection("settings")
+      .doc("bookingMode"),
+    source: db
+      .collection("users")
+      .doc(owner)
+      .collection("liveData")
+      .doc("bookings"),
     appointments:
       business.collection("appointments"),
     locks:
       business.collection("bookingLocks"),
-    marker:
-      business.collection("migrations")
-        .doc(MIGRATION_ID)
+    marker: business
+      .collection("migrations")
+      .doc(MIGRATION_ID)
   };
 }
 
 async function seed(owner, bookings) {
   const r = refs(owner);
+
+  await r.mode.set({
+    mode: "frozen",
+    schemaVersion: 1,
+    updatedAt: new Date()
+  });
 
   await r.source.set({
     schemaVersion: 1,
@@ -110,11 +112,36 @@ async function seed(owner, bookings) {
   return r;
 }
 
-function migrate(owner) {
-  return migrateAndroidBookings({
+/*
+ * For emulator fixtures only:
+ *
+ * The test helper obtains a source hash.
+ * This is NOT a production cutover protocol.
+ *
+ * Production must obtain its expectedHash
+ * from a trusted independent confirmation.
+ */
+async function expectedHash(r) {
+  const snapshot = await r.source.get();
+
+  if (!snapshot.exists) {
+    return digestBookings("[]");
+  }
+
+  return digestBookings(
+    snapshot.data().json
+  );
+}
+
+async function migrate(owner, options = {}) {
+  const r = refs(owner);
+
+  return migrateVerifiedAndroidBookings({
     db,
     businessId: owner,
-    authenticatedUid: owner
+    authenticatedUid: owner,
+    expectedHash: await expectedHash(r),
+    ...options
   });
 }
 
@@ -136,33 +163,24 @@ async function counts(r) {
   };
 }
 
-// =====================================
-// TEST 01 — SUCCESSFUL MIGRATION
-// =====================================
-
 test(
-  "01 successful migration creates appointments and locks",
+  "01 verified migration creates appointments and locks",
   async () => {
     const owner = uniqueOwner();
-
-    const r = await seed(owner, [
-      booking()
-    ]);
+    const r = await seed(owner, [booking()]);
 
     const result = await migrate(owner);
 
     assert.equal(result.success, true);
+    assert.equal(result.verifiedFinalSync, true);
     assert.equal(result.appointmentCount, 1);
     assert.equal(result.lockCount, 2);
 
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 1,
-        locks: 2,
-        marker: true
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 1,
+      locks: 2,
+      marker: true
+    });
 
     const saved = await r.appointments
       .doc("booking1")
@@ -173,57 +191,36 @@ test(
       "Test Client"
     );
 
-    assert.equal(
-      saved.data().source,
-      "android"
-    );
+    assert.equal(saved.data().source, "android");
   }
 );
-
-// =====================================
-// TEST 02 — REPEAT MIGRATION
-// =====================================
 
 test(
   "02 repeat migration cannot duplicate appointments",
   async () => {
     const owner = uniqueOwner();
-
-    const r = await seed(owner, [
-      booking()
-    ]);
+    const r = await seed(owner, [booking()]);
 
     await migrate(owner);
 
     await assert.rejects(
       migrate(owner),
-      error =>
-        error.code === "already-migrated"
+      /already migrated/
     );
 
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 1,
-        locks: 2,
-        marker: true
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 1,
+      locks: 2,
+      marker: true
+    });
   }
 );
 
-// =====================================
-// TEST 03 — EXISTING LOCK
-// =====================================
-
 test(
-  "03 existing booking lock blocks entire migration",
+  "03 existing booking lock blocks migration",
   async () => {
     const owner = uniqueOwner();
-
-    const r = await seed(owner, [
-      booking()
-    ]);
+    const r = await seed(owner, [booking()]);
 
     await r.locks
       .doc("staff1_2026-11-12_1000")
@@ -239,29 +236,19 @@ test(
       /booking slots are already occupied/
     );
 
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 0,
-        locks: 1,
-        marker: false
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 0,
+      locks: 1,
+      marker: false
+    });
   }
 );
 
-// =====================================
-// TEST 04 — DUPLICATE APPOINTMENT ID
-// =====================================
-
 test(
-  "04 existing appointment ID blocks entire migration",
+  "04 existing appointment ID blocks migration",
   async () => {
     const owner = uniqueOwner();
-
-    const r = await seed(owner, [
-      booking()
-    ]);
+    const r = await seed(owner, [booking()]);
 
     await r.appointments
       .doc("booking1")
@@ -275,23 +262,16 @@ test(
       /appointment already exists/
     );
 
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 1,
-        locks: 0,
-        marker: false
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 1,
+      locks: 0,
+      marker: false
+    });
   }
 );
 
-// =====================================
-// TEST 05 — INVALID SOURCE
-// =====================================
-
 test(
-  "05 invalid source causes no migration writes",
+  "05 invalid source plan creates no writes",
   async () => {
     const owner = uniqueOwner();
 
@@ -308,82 +288,60 @@ test(
       /invalid or overlapping bookings/
     );
 
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 0,
-        locks: 0,
-        marker: false
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 0,
+      locks: 0,
+      marker: false
+    });
   }
 );
 
-// =====================================
-// TEST 06 — MISSING SOURCE
-// =====================================
-
 test(
-  "06 missing source causes no migration writes",
+  "06 missing source creates no migration writes",
   async () => {
     const owner = uniqueOwner();
     const r = refs(owner);
 
+    await r.mode.set({
+      mode: "frozen"
+    });
+
     await assert.rejects(
       migrate(owner),
-      /backup is missing/
+      /source is missing/
     );
 
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 0,
-        locks: 0,
-        marker: false
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 0,
+      locks: 0,
+      marker: false
+    });
   }
 );
 
-// =====================================
-// TEST 07 — WRONG OWNER
-// =====================================
-
 test(
-  "07 different owner is rejected before database writes",
+  "07 different owner is rejected",
   async () => {
     const owner = uniqueOwner();
-
-    const r = await seed(owner, [
-      booking()
-    ]);
+    const r = await seed(owner, [booking()]);
 
     await assert.rejects(
-      migrateAndroidBookings({
-        db,
-        businessId: owner,
+      migrate(owner, {
         authenticatedUid: "anotherOwner"
       }),
       /ownership verification failed/
     );
 
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 0,
-        locks: 0,
-        marker: false
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 0,
+      locks: 0,
+      marker: false
+    });
   }
 );
 
-// =====================================
-// TEST 08 — MULTIPLE BOOKINGS
-// =====================================
-
 test(
-  "08 multiple valid appointments migrate together",
+  "08 multiple bookings migrate atomically",
   async () => {
     const owner = uniqueOwner();
 
@@ -400,33 +358,19 @@ test(
 
     const result = await migrate(owner);
 
-    assert.equal(
-      result.appointmentCount,
-      2
-    );
+    assert.equal(result.appointmentCount, 2);
+    assert.equal(result.lockCount, 4);
 
-    assert.equal(
-      result.lockCount,
-      4
-    );
-
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 2,
-        locks: 4,
-        marker: true
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 2,
+      locks: 4,
+      marker: true
+    });
   }
 );
 
-// =====================================
-// TEST 09 — LEGACY APPOINTMENT OVERLAP
-// =====================================
-
 test(
-  "09 legacy appointment without locks blocks migration",
+  "09 legacy appointment overlap blocks migration",
   async () => {
     const owner = uniqueOwner();
 
@@ -457,77 +401,60 @@ test(
       /overlap|conflict|occupied/i
     );
 
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 1,
-        locks: 0,
-        marker: false
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 1,
+      locks: 0,
+      marker: false
+    });
 
     const original = await r.appointments
       .doc("legacyBooking1")
       .get();
 
-    assert.equal(original.exists, true);
-
     const android = await r.appointments
       .doc("androidBooking1")
       .get();
 
+    assert.equal(original.exists, true);
     assert.equal(android.exists, false);
   }
 );
 
-// =====================================
-// TEST 10 — SIMULTANEOUS MIGRATION
-// =====================================
-
 test(
-  "10 simultaneous migrations cannot create duplicates",
+  "10 concurrent migrations cannot duplicate",
   async () => {
     const owner = uniqueOwner();
-
-    const r = await seed(owner, [
-      booking()
-    ]);
+    const r = await seed(owner, [booking()]);
 
     const results = await Promise.allSettled([
       migrate(owner),
       migrate(owner)
     ]);
 
-    const successful = results.filter(
-      result =>
-        result.status === "fulfilled"
+    assert.equal(
+      results.filter(
+        result => result.status === "fulfilled"
+      ).length,
+      1
     );
 
-    const rejected = results.filter(
-      result =>
-        result.status === "rejected"
+    assert.equal(
+      results.filter(
+        result => result.status === "rejected"
+      ).length,
+      1
     );
 
-    assert.equal(successful.length, 1);
-    assert.equal(rejected.length, 1);
-
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 1,
-        locks: 2,
-        marker: true
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 1,
+      locks: 2,
+      marker: true
+    });
   }
 );
 
-// =====================================
-// TEST 11 — UPDATED ANDROID SOURCE
-// =====================================
-
 test(
-  "11 migration uses latest source data",
+  "11 confirmed latest source migrates",
   async () => {
     const owner = uniqueOwner();
 
@@ -548,6 +475,8 @@ test(
       updatedAt: new Date().toISOString()
     });
 
+    // The test confirms the NEW source hash
+    // before invoking verified migration.
     const result = await migrate(owner);
 
     assert.equal(result.success, true);
@@ -563,29 +492,19 @@ test(
     assert.equal(oldAppointment.exists, false);
     assert.equal(newAppointment.exists, true);
 
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 1,
-        locks: 2,
-        marker: true
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 1,
+      locks: 2,
+      marker: true
+    });
   }
 );
 
-// =====================================
-// TEST 12 — COMPETING BOOKING LOCK
-// =====================================
-
 test(
-  "12 competing booking lock prevents migration",
+  "12 competing booking lock blocks migration",
   async () => {
     const owner = uniqueOwner();
-
-    const r = await seed(owner, [
-      booking()
-    ]);
+    const r = await seed(owner, [booking()]);
 
     await r.locks
       .doc("staff1_2026-11-12_1015")
@@ -601,23 +520,16 @@ test(
       /occupied/
     );
 
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 0,
-        locks: 1,
-        marker: false
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 0,
+      locks: 1,
+      marker: false
+    });
   }
 );
 
-// =====================================
-// TEST 13 — SOURCE UPDATE DURING START
-// =====================================
-
 test(
-  "13 source update before transaction source read uses fresh booking",
+  "13 source changed after hash confirmation is blocked",
   async () => {
     const owner = uniqueOwner();
 
@@ -628,75 +540,27 @@ test(
       })
     ]);
 
-    let sourceUpdated = false;
+    // Confirm the original source snapshot.
+    const confirmedHash = await expectedHash(r);
 
-    // Intercept the source read.
-    // Perform the update BEFORE Firestore
-    // reads and locks the source document.
-    //
-    // This avoids holding a transaction
-    // open while waiting for a competing
-    // write to the same document.
-    const controlledDb = {
-      collection: (...args) =>
-        db.collection(...args),
-
-      runTransaction: callback =>
-        db.runTransaction(async transaction => {
-          const controlledTransaction = new Proxy(
-            transaction,
-            {
-              get(target, property) {
-                if (property === "get") {
-                  return async ref => {
-                    if (
-                      !sourceUpdated &&
-                      ref.path === r.source.path
-                    ) {
-                      sourceUpdated = true;
-
-                      await r.source.update({
-                        json: JSON.stringify([
-                          booking({
-                            id: "freshBooking",
-                            time: "11:00"
-                          })
-                        ]),
-                        updatedAt:
-                          new Date().toISOString()
-                      });
-                    }
-
-                    return target.get(ref);
-                  };
-                }
-
-                const value = Reflect.get(
-                  target,
-                  property,
-                  target
-                );
-
-                return typeof value === "function"
-                  ? value.bind(target)
-                  : value;
-              }
-            }
-          );
-
-          return callback(controlledTransaction);
+    // Simulate a delayed Android upload
+    // arriving after confirmation.
+    await r.source.update({
+      json: JSON.stringify([
+        booking({
+          id: "freshBooking",
+          time: "11:00"
         })
-    };
+      ]),
+      updatedAt: new Date().toISOString()
+    });
 
-    const result =
-      await migrateAndroidBookings({
-        db: controlledDb,
-        businessId: owner,
-        authenticatedUid: owner
-      });
-
-    assert.equal(sourceUpdated, true);
-    assert.equal(result.success, true);
+    await assert.rejects(
+      migrate(owner, {
+        expectedHash: confirmedHash
+      }),
+      /snapshot mismatch/
+    );
 
     const stale = await r.appointments
       .doc("staleBooking")
@@ -707,15 +571,12 @@ test(
       .get();
 
     assert.equal(stale.exists, false);
-    assert.equal(fresh.exists, true);
+    assert.equal(fresh.exists, false);
 
-    assert.deepEqual(
-      await counts(r),
-      {
-        appointments: 1,
-        locks: 2,
-        marker: true
-      }
-    );
+    assert.deepEqual(await counts(r), {
+      appointments: 0,
+      locks: 0,
+      marker: false
+    });
   }
 );
