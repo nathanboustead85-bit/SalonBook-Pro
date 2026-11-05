@@ -7,7 +7,24 @@ import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.ListenerRegistration
 import org.json.JSONArray
+import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * BOUSTIO — PHASE 8D.62
+ *
+ * Legacy Android cloud-sync safety.
+ *
+ * Booking uploads:
+ * - Require a successful server read first.
+ * - Reject offline / unverifiable status.
+ * - Wait for server acknowledgement.
+ * - Rely on Firestore rules for the final
+ *   migration-completion write restriction.
+ *
+ * IMPORTANT:
+ * This is NOT a complete atomic migration
+ * cutover or a production-ready booking engine.
+ */
 class CloudSyncManager {
 
     private val auth = FirebaseAuth.getInstance()
@@ -43,51 +60,139 @@ class CloudSyncManager {
             .collection("liveData")
             .document(key)
 
-    /*
-     * Upload data to Firestore.
+    /**
+     * Validate JSON and prepare the same
+     * Firestore document schema used by
+     * previous Boustio Android builds.
+     */
+    private fun uploadData(
+        json: String
+    ): Map<String, Any> {
+
+        JSONArray(json)
+
+        return mapOf(
+            "json" to json,
+            "schemaVersion" to 1,
+            "updatedAt" to FieldValue.serverTimestamp()
+        )
+    }
+
+    /**
+     * Upload services, staff or bookings.
      *
-     * Firestore queues writes locally when offline.
-     * The success callback fires when the server
-     * acknowledges the write.
+     * Booking uploads must first establish
+     * server connectivity.
+     *
+     * This check does not prove migration
+     * is incomplete. The Firestore rules
+     * enforce the migration marker check
+     * when the write reaches the server.
      */
     fun upload(
         key: String,
         json: String,
         callback: (Result<Unit>) -> Unit
     ) {
+        val completed = AtomicBoolean(false)
+
+        fun finish(result: Result<Unit>) {
+            if (completed.compareAndSet(false, true)) {
+                callback(result)
+            }
+        }
+
         try {
             require(key in allowedKeys) {
                 "Invalid sync category"
             }
 
-            JSONArray(json)
+            val ownerAtStart = userId()
+            val data = uploadData(json)
+            val reference = document(key)
 
-            val data = mapOf(
-                "json" to json,
-                "schemaVersion" to 1,
-                "updatedAt" to FieldValue.serverTimestamp()
-            )
+            if (key != "bookings") {
+                reference.set(data)
+                    .addOnSuccessListener {
+                        finish(Result.success(Unit))
+                    }
+                    .addOnFailureListener { error ->
+                        finish(Result.failure(error))
+                    }
 
-            document(key)
-                .set(data)
+                return
+            }
+
+            /*
+             * A server read is required before
+             * attempting a legacy booking write.
+             *
+             * The migration marker itself is
+             * intentionally not client-readable.
+             */
+            reference.get(Source.SERVER)
                 .addOnSuccessListener {
-                    callback(Result.success(Unit))
+
+                    try {
+                        check(userId() == ownerAtStart) {
+                            "Account changed during sync"
+                        }
+
+                        /*
+                         * Firestore rules must reject
+                         * this write if migration has
+                         * completed.
+                         *
+                         * A successful preflight read
+                         * alone is not sufficient.
+                         */
+                        reference.set(data)
+                            .addOnSuccessListener {
+                                finish(
+                                    Result.success(Unit)
+                                )
+                            }
+                            .addOnFailureListener { error ->
+                                finish(
+                                    Result.failure(
+                                        IllegalStateException(
+                                            "Booking upload was not " +
+                                            "accepted by Firestore. " +
+                                            "It may be blocked by " +
+                                            "migration protection.",
+                                            error
+                                        )
+                                    )
+                                )
+                            }
+
+                    } catch (e: Exception) {
+                        finish(Result.failure(e))
+                    }
                 }
                 .addOnFailureListener { error ->
-                    callback(Result.failure(error))
+                    finish(
+                        Result.failure(
+                            IllegalStateException(
+                                "Cannot verify cloud " +
+                                "connectivity. Legacy booking " +
+                                "upload has been blocked.",
+                                error
+                            )
+                        )
+                    )
                 }
 
         } catch (e: Exception) {
-            callback(Result.failure(e))
+            finish(Result.failure(e))
         }
     }
 
-    /*
+    /**
      * Download verified server data.
      *
-     * This deliberately reads from SERVER,
-     * rather than silently restoring stale
-     * cached information.
+     * Never silently substitute stale
+     * cached data for a server response.
      */
     fun download(
         key: String,
@@ -101,6 +206,7 @@ class CloudSyncManager {
             document(key)
                 .get(Source.SERVER)
                 .addOnSuccessListener { snapshot ->
+
                     try {
                         val json =
                             if (snapshot.exists()) {
@@ -135,16 +241,11 @@ class CloudSyncManager {
         }
     }
 
-    /*
-     * Observe the synchronization status
-     * of a Firestore document.
+    /**
+     * Observe Firestore synchronization.
      *
-     * PENDING means Firestore has local
-     * writes that the server has not yet
-     * acknowledged.
-     *
-     * SYNCED means the snapshot came from
-     * the server with no pending writes.
+     * PENDING indicates cached data or
+     * locally pending writes.
      */
     fun observeSyncStatus(
         key: String,
@@ -162,12 +263,7 @@ class CloudSyncManager {
                 MetadataChanges.INCLUDE
             ) { snapshot, error ->
 
-                if (error != null) {
-                    callback(SyncStatus.ERROR)
-                    return@addSnapshotListener
-                }
-
-                if (snapshot == null) {
+                if (error != null || snapshot == null) {
                     callback(SyncStatus.ERROR)
                     return@addSnapshotListener
                 }
@@ -180,8 +276,6 @@ class CloudSyncManager {
                     }
 
                     metadata.isFromCache -> {
-                        // Cached data alone does not
-                        // prove server synchronization.
                         callback(SyncStatus.PENDING)
                     }
 
@@ -203,15 +297,11 @@ class CloudSyncManager {
         }
     }
 
-    /*
-     * Wait for currently pending Firestore
-     * writes to be acknowledged.
+    /**
+     * Wait for pending Firestore writes.
      *
-     * This is useful for a manual
-     * "Check Sync" action.
-     *
-     * When offline, completion can remain
-     * pending until connectivity returns.
+     * This does not independently prove
+     * that a migration can safely begin.
      */
     fun waitForPendingUploads(
         callback: (Result<Unit>) -> Unit
