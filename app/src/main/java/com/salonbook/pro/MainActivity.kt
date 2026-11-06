@@ -588,7 +588,7 @@ class MainActivity : Activity() {
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(12), dp(20), dp(16))
-            setBackgroundColor(background)
+            setBackgroundColor(this@MainActivity.background)
         }
         fun section(heading: String, description: String): LinearLayout {
             val card = LinearLayout(this).apply {
