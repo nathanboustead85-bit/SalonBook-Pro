@@ -11,6 +11,9 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Build
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
 import android.view.WindowManager
 import android.view.Gravity
 import android.view.View
@@ -133,23 +136,15 @@ class MainActivity : Activity() {
             elevation = dp(8).toFloat()
         }
         root.addView(navigationBar, LinearLayout.LayoutParams(-1, dp(70)))
+        if (Build.VERSION.SDK_INT >= 30) {
+            window.setDecorFitsSystemWindows(false)
+        }
         setContentView(root)
         if (Build.VERSION.SDK_INT >= 30) {
             root.setOnApplyWindowInsetsListener { _, insets ->
-                val systemBars = insets.getInsets(
-                    android.view.WindowInsets.Type.statusBars() or
-                        android.view.WindowInsets.Type.navigationBars()
-                )
-                // Only add insets when the activity is laid out edge-to-edge.
-                val frame = android.graphics.Rect()
-                root.getWindowVisibleDisplayFrame(frame)
-                val edgeToEdgeTop = frame.top < systemBars.top / 2
-                root.setPadding(
-                    0,
-                    if (edgeToEdgeTop) systemBars.top else 0,
-                    0,
-                    if (edgeToEdgeTop) systemBars.bottom else 0
-                )
+                val topInset = insets.getInsets(android.view.WindowInsets.Type.statusBars()).top
+                val bottomInset = insets.getInsets(android.view.WindowInsets.Type.navigationBars()).bottom
+                root.setPadding(0, topInset, 0, bottomInset)
                 insets
             }
         }
@@ -166,6 +161,57 @@ class MainActivity : Activity() {
         }
     }
 
+    private class NavIcon(context: android.content.Context, private val kind: String,
+                          private val tint: Int) : View(context) {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = tint; style = Paint.Style.STROKE; strokeWidth = 2f
+            strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND
+        }
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            val size = minOf(width, height).toFloat()
+            canvas.save()
+            canvas.translate((width - size) / 2f, (height - size) / 2f)
+            canvas.scale(size / 24f, size / 24f)
+            when (kind) {
+                "dashboard" -> {
+                    val path = Path().apply {
+                        moveTo(3f, 11f); lineTo(12f, 3f); lineTo(21f, 11f)
+                        moveTo(5f, 10f); lineTo(5f, 21f); lineTo(19f, 21f); lineTo(19f, 10f)
+                    }
+                    canvas.drawPath(path, paint)
+                    canvas.drawRect(10f, 14f, 14f, 21f, paint)
+                }
+                "calendar" -> {
+                    canvas.drawRoundRect(3f, 5f, 21f, 21f, 2f, 2f, paint)
+                    canvas.drawLine(3f, 10f, 21f, 10f, paint)
+                    canvas.drawLine(8f, 3f, 8f, 7f, paint)
+                    canvas.drawLine(16f, 3f, 16f, 7f, paint)
+                    for (x in listOf(8f, 12f, 16f)) for (y in listOf(14f, 18f))
+                        canvas.drawCircle(x, y, 0.7f, paint)
+                }
+                "clients" -> {
+                    canvas.drawCircle(12f, 8f, 3f, paint)
+                    canvas.drawArc(5f, 13f, 19f, 22f, 180f, 180f, false, paint)
+                    canvas.drawArc(1f, 7f, 7f, 15f, 200f, 135f, false, paint)
+                    canvas.drawArc(17f, 7f, 23f, 15f, 205f, 135f, false, paint)
+                }
+                "settings" -> {
+                    canvas.drawCircle(12f, 12f, 3f, paint)
+                    canvas.drawCircle(12f, 12f, 8f, paint)
+                    for (i in 0 until 8) {
+                        val a = i * Math.PI / 4
+                        canvas.drawLine(12f + 8f * kotlin.math.cos(a).toFloat(),
+                            12f + 8f * kotlin.math.sin(a).toFloat(),
+                            12f + 10f * kotlin.math.cos(a).toFloat(),
+                            12f + 10f * kotlin.math.sin(a).toFloat(), paint)
+                    }
+                }
+            }
+            canvas.restore()
+        }
+    }
+
     private fun updateNavigation(mode: String) {
         if (!::navigationBar.isInitialized) return
         navigationBar.removeAllViews()
@@ -175,18 +221,14 @@ class MainActivity : Activity() {
             "settings" -> "settings"
             else -> "dashboard"
         }
-        val destinations = listOf(
-            Triple("Home", "⌂", "dashboard"),
-            Triple("Calendar", "▦", "calendar"),
-            Triple("Clients", "♙", "clients"),
-            Triple("Settings", "⚙", "settings")
-        )
-        destinations.forEach { (title, symbol, destination) ->
+        val destinations = listOf("Home" to "dashboard", "Calendar" to "calendar",
+            "Clients" to "clients", "Settings" to "settings")
+        destinations.forEach { (title, destination) ->
             val selected = destination == active
             val item = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
-                setPadding(dp(2), dp(4), dp(2), dp(4))
+                setPadding(dp(2), dp(5), dp(2), dp(5))
                 background = rounded(if (selected) paleOrange else Color.WHITE, 12)
                 isClickable = true
                 isFocusable = true
@@ -200,15 +242,13 @@ class MainActivity : Activity() {
                     }
                 }
             }
-            item.addView(label(symbol, 23f, if (selected) orange else muted, selected).apply {
-                gravity = Gravity.CENTER
-            })
+            item.addView(NavIcon(this, destination, if (selected) orange else muted),
+                LinearLayout.LayoutParams(dp(24), dp(24)))
             item.addView(label(title, 11f, if (selected) orange else muted, selected).apply {
                 gravity = Gravity.CENTER
-            })
+            }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(3) })
             navigationBar.addView(item, LinearLayout.LayoutParams(0, -1, 1f).apply {
-                marginStart = dp(2)
-                marginEnd = dp(2)
+                marginStart = dp(2); marginEnd = dp(2)
             })
         }
     }
@@ -237,7 +277,7 @@ class MainActivity : Activity() {
             showAppointments()
         }
         button("Back to Dashboard") { showDashboard() }
-        text("BOUSTIO  •  Phase 9B.1", 12f)
+        text("BOUSTIO  •  Phase 9B.2", 12f)
     }
 
     private fun text(value: String, size: Float = 16f) {
@@ -380,7 +420,7 @@ class MainActivity : Activity() {
         actionCard("Test Appointment Availability", "Check available booking slots", "✓") {
             showAvailabilityTester()
         }
-        container.addView(label("BOUSTIO  •  Phase 9B.1", 12f, muted),
+        container.addView(label("BOUSTIO  •  Phase 9B.2", 12f, muted),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
     }
 
@@ -812,4 +852,5 @@ class MainActivity : Activity() {
     private fun message(value: String) {
         Toast.makeText(this, value, Toast.LENGTH_SHORT).show()
     }
+
 }
