@@ -149,7 +149,12 @@ class MainActivity : Activity() {
             }
         }
         updateNavigation(mode)
-        container.addView(label("BOUSTIO", 14f, orange, true))
+        container.addView(ImageView(this).apply {
+            setImageResource(R.drawable.boustio_logo)
+            scaleType = ImageView.ScaleType.FIT_START
+            adjustViewBounds = true
+            contentDescription = "Boustio"
+        }, LinearLayout.LayoutParams(dp(166), dp(54)))
         container.addView(label(title, 29f, dark, true), LinearLayout.LayoutParams(-1, -2).apply {
             topMargin = dp(12)
         })
@@ -277,7 +282,7 @@ class MainActivity : Activity() {
             showAppointments()
         }
         button("Back to Dashboard") { showDashboard() }
-        text("BOUSTIO  •  Phase 9B.2", 12f)
+        text("BOUSTIO  •  Phase 9B.3", 12f)
     }
 
     private fun text(value: String, size: Float = 16f) {
@@ -420,7 +425,7 @@ class MainActivity : Activity() {
         actionCard("Test Appointment Availability", "Check available booking slots", "✓") {
             showAvailabilityTester()
         }
-        container.addView(label("BOUSTIO  •  Phase 9B.2", 12f, muted),
+        container.addView(label("BOUSTIO  •  Phase 9B.3", 12f, muted),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
     }
 
