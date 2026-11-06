@@ -288,7 +288,7 @@ class MainActivity : Activity() {
             showAppointments()
         }
         button("Back to Dashboard") { showDashboard() }
-        text("BOUSTIO  •  Phase 9D.2", 12f)
+        text("BOUSTIO  •  Phase 9D.3", 12f)
     }
 
     private fun text(value: String, size: Float = 16f) {
@@ -431,7 +431,7 @@ class MainActivity : Activity() {
         actionCard("Test Appointment Availability", "Check available booking slots", "✓") {
             showAvailabilityTester()
         }
-        container.addView(label("BOUSTIO  •  Phase 9D.2", 12f, muted),
+        container.addView(label("BOUSTIO  •  Phase 9D.3", 12f, muted),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
     }
 
@@ -900,6 +900,78 @@ class MainActivity : Activity() {
             .collection("clientProfiles").document(digest)
     }
 
+    // The baseline is scoped to the signed-in Firebase UID, never shared between accounts.
+    private fun clientSyncBaselineKey(name: String): String? {
+        val user = FirebaseAuth.getInstance().currentUser ?: return null
+        if (!user.isEmailVerified) return null
+        return "client_sync_baseline_${user.uid}_" + clientProfileKey(name)
+    }
+
+    private fun clientFields(phone: String, email: String, notes: String): String =
+        JSONObject().apply {
+            put("phone", phone)
+            put("email", email)
+            put("notes", notes)
+        }.toString()
+
+    private fun autoSyncClient(name: String, local: JSONObject, status: TextView) {
+        val ref = clientCloudDocument(name)
+        val baselineKey = clientSyncBaselineKey(name)
+        if (ref == null || baselineKey == null) {
+            status.text = "Saved locally — sign in with a verified account for cloud sync"
+            return
+        }
+        val phone = local.optString("phone")
+        val email = local.optString("email")
+        val notes = local.optString("notes")
+        if (name.trim().length > 150 || phone.length > 50 ||
+            email.length > 254 || notes.length > 5000) {
+            status.text = "Saved locally — client details exceed cloud limits"
+            return
+        }
+        val localFields = clientFields(phone, email, notes)
+        val baseline = prefs.getString(baselineKey, null)
+        val expectedUid = FirebaseAuth.getInstance().currentUser?.uid
+        status.text = "Checking cloud version…"
+        FirebaseFirestore.getInstance().runTransaction { transaction ->
+            val remote = transaction.get(ref)
+            if (remote.exists()) {
+                if (!remote.getString("name").orEmpty().equals(name.trim(), ignoreCase = true)) {
+                    throw IllegalStateException("Cloud profile identity mismatch")
+                }
+                val remoteFields = clientFields(
+                    remote.getString("phone").orEmpty(),
+                    remote.getString("email").orEmpty(),
+                    remote.getString("notes").orEmpty()
+                )
+                if (remoteFields != localFields) {
+                    if (baseline == null || remoteFields != baseline) {
+                        throw IllegalStateException("Cloud conflict: use manual restore or backup after reviewing both versions")
+                    }
+                } else {
+                    return@runTransaction Unit
+                }
+            } else if (baseline != null) {
+                throw IllegalStateException("Cloud profile missing: automatic overwrite blocked")
+            }
+            transaction.set(ref, mapOf(
+                "name" to name.trim(), "phone" to phone, "email" to email,
+                "notes" to notes, "schemaVersion" to 1,
+                "updatedAt" to FieldValue.serverTimestamp()
+            ))
+            Unit
+        }.addOnSuccessListener {
+            if (FirebaseAuth.getInstance().currentUser?.uid == expectedUid) {
+                prefs.edit().putString(baselineKey, localFields).apply()
+                status.text = "Saved locally and synced to cloud"
+            } else {
+                status.text = "Account changed — verify cloud status"
+            }
+        }.addOnFailureListener { error ->
+            status.text = "Saved locally; cloud sync not completed: ${error.localizedMessage}"
+        }
+    }
+
     private fun showClientProfile(name: String) {
         screen("Client Profile", name, "client_profile")
         val key = clientProfileKey(name)
@@ -930,6 +1002,9 @@ class MainActivity : Activity() {
             android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
         val notes = input("Client notes", saved.optString("notes"))
         addPanel(contact)
+        section("Secure cloud profile")
+        val cloudStatus = label("Changes sync when you save. Cloud conflicts require manual review.", 13f, muted)
+        container.addView(cloudStatus)
         button("Save Client Details") {
             val data = JSONObject().apply {
                 put("phone", phone.text.toString().trim())
@@ -937,10 +1012,8 @@ class MainActivity : Activity() {
                 put("notes", notes.text.toString().trim())
             }
             prefs.edit().putString(key, data.toString()).apply()
-            message("Client details saved on this device")
+            autoSyncClient(name, data, cloudStatus)
         }
-        section("Secure cloud profile")
-        text("Cloud changes are manual. Local details are never replaced without confirmation.", 13f)
         button("Back Up This Client to Cloud") {
             val ref = clientCloudDocument(name)
             if (ref == null) {
@@ -964,6 +1037,11 @@ class MainActivity : Activity() {
                                 "updatedAt" to FieldValue.serverTimestamp()
                             )
                             ref.set(data).addOnSuccessListener {
+                                clientSyncBaselineKey(name)?.let { baselineKey ->
+                                    prefs.edit().putString(baselineKey,
+                                        clientFields(phoneValue, emailValue, notesValue)).apply()
+                                }
+                                cloudStatus.text = "Cloud backup confirmed"
                                 message("Cloud backup confirmed for $name")
                             }.addOnFailureListener { error ->
                                 message("Cloud backup failed: ${error.localizedMessage}")
@@ -1010,6 +1088,13 @@ class MainActivity : Activity() {
                                     put("notes", snapshot.getString("notes").orEmpty())
                                 }
                                 prefs.edit().putString(key, restored.toString()).apply()
+                                clientSyncBaselineKey(name)?.let { baselineKey ->
+                                    prefs.edit().putString(baselineKey,
+                                        clientFields(restored.optString("phone"),
+                                            restored.optString("email"),
+                                            restored.optString("notes"))).apply()
+                                }
+                                cloudStatus.text = "Cloud profile restored"
                                 phone.setText(restored.optString("phone"))
                                 email.setText(restored.optString("email"))
                                 notes.setText(restored.optString("notes"))
