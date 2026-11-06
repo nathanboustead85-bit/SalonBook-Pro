@@ -282,7 +282,7 @@ class MainActivity : Activity() {
             showAppointments()
         }
         button("Back to Dashboard") { showDashboard() }
-        text("BOUSTIO  •  Phase 9C.2", 12f)
+        text("BOUSTIO  •  Phase 9C.3", 12f)
     }
 
     private fun text(value: String, size: Float = 16f) {
@@ -425,7 +425,7 @@ class MainActivity : Activity() {
         actionCard("Test Appointment Availability", "Check available booking slots", "✓") {
             showAvailabilityTester()
         }
-        container.addView(label("BOUSTIO  •  Phase 9C.2", 12f, muted),
+        container.addView(label("BOUSTIO  •  Phase 9C.3", 12f, muted),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
     }
 
@@ -619,6 +619,21 @@ class MainActivity : Activity() {
             }
         val clientCard = section("01  Client details", "Who is this appointment for?")
         val client = field(clientCard, "Client name", existing?.client ?: "")
+        val knownClients = bookings.map { it.client.trim() }.filter { it.isNotBlank() }
+            .distinct().sorted()
+        if (knownClients.isNotEmpty()) {
+            val chooseClient = Button(this).apply {
+                text = "Choose existing client  ▾"
+                styleButton(this, false)
+            }
+            clientCard.addView(chooseClient, LinearLayout.LayoutParams(-1, dp(44)))
+            chooseClient.setOnClickListener {
+                AlertDialog.Builder(this).setTitle("Existing clients")
+                    .setItems(knownClients.toTypedArray()) { _, index ->
+                        client.setText(knownClients[index])
+                    }.show()
+            }
+        }
         val notes = field(clientCard, "Notes (optional)", existing?.notes ?: "")
         val serviceCard = section("02  Service & professional", "Choose the treatment and team member")
         val serviceSpinner = Spinner(this).apply {
@@ -651,8 +666,10 @@ class MainActivity : Activity() {
         } catch (_: Exception) { iso }
         fun premiumPicker(textValue: String): Button = Button(this).apply {
             text = textValue
-            textSize = 15f
+            textSize = 13f
             isAllCaps = false
+            setSingleLine(true)
+            ellipsize = android.text.TextUtils.TruncateAt.END
             gravity = Gravity.CENTER_VERTICAL or Gravity.START
             setPadding(dp(16), 0, dp(12), 0)
             setTextColor(orange)
@@ -662,10 +679,11 @@ class MainActivity : Activity() {
                 setStroke(dp(1), orange)
             }
         }
-        val dateButton = premiumPicker("▦   ${displayBookingDate(date)}")
+        var refreshChoices: () -> Unit = {}
+        val dateButton = premiumPicker("▦  ${displayBookingDate(date)}")
         dateButton.contentDescription = "Choose appointment date"
         dateButton.setOnClickListener {
-            pickDate(date) { date = it; dateButton.text = "▦   ${displayBookingDate(date)}" }
+            pickDate(date) { date = it; dateButton.text = "▦  ${displayBookingDate(date)}"; refreshChoices() }
         }
         whenCard.addView(dateButton, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(10) })
         val timeButton = premiumPicker("◷   $time")
@@ -675,9 +693,82 @@ class MainActivity : Activity() {
             TimePickerDialog(this, { _, hour, minute ->
                 time = String.format(Locale.UK, "%02d:%02d", hour, minute)
                 timeButton.text = "◷   $time"
+                refreshChoices()
             }, parts[0].toInt(), parts[1].toInt(), true).show()
         }
         whenCard.addView(timeButton, LinearLayout.LayoutParams(-1, dp(54)))
+        val slotTitle = label("Available start times", 13f, dark, true)
+        whenCard.addView(slotTitle, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
+        val slotGrid = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        whenCard.addView(slotGrid)
+        val summaryCard = section("04  Booking summary", "Review the appointment before saving")
+        val summary = label("", 14f, dark)
+        summaryCard.addView(summary)
+        fun refreshBookingChoices() {
+            val service = services[serviceSpinner.selectedItemPosition.coerceIn(0, services.lastIndex)]
+            val member = staff[staffSpinner.selectedItemPosition.coerceIn(0, staff.lastIndex)]
+            val duration = service.optInt("duration", 0)
+            val staffId = member.optString("id")
+            summary.text = "${service.optString("name")}  ·  £${service.optString("price")}\n" +
+                "${member.optString("name")}  ·  $duration minutes\n" +
+                "${displayBookingDate(date)} at $time"
+            slotGrid.removeAllViews()
+            if (duration <= 0) {
+                slotGrid.addView(label("Set a valid service duration to see times.", 12f, muted))
+                return
+            }
+            val options = (0 until 1440 step 30).filter { start ->
+                start + duration <= 1440 &&
+                    withinWorkingHours(member.optString("hours"), date, start, start + duration) &&
+                    bookings.none { other ->
+                        other.id != existing?.id && other.date == date &&
+                            other.staffId == staffId && other.duration > 0 &&
+                            start < toMinutes(other.time) + other.duration &&
+                            toMinutes(other.time) < start + duration
+                    }
+            }
+            if (options.isEmpty()) {
+                slotGrid.addView(label("No available slots for this staff member on this date.", 12f, muted))
+            } else {
+                options.chunked(3).forEach { group ->
+                    val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                    group.forEach { start ->
+                        val choice = Button(this).apply {
+                            text = formatTime(start)
+                            textSize = 12f
+                            isAllCaps = false
+                            setTextColor(orange)
+                            backgroundTintList = ColorStateList.valueOf(paleOrange)
+                            setOnClickListener {
+                                time = formatTime(start)
+                                timeButton.text = "◷   $time"
+                                refreshBookingChoices()
+                            }
+                        }
+                        row.addView(choice, LinearLayout.LayoutParams(0, dp(46), 1f).apply {
+                            marginEnd = dp(4)
+                        })
+                    }
+                    slotGrid.addView(row)
+                }
+            }
+        }
+        serviceSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                refreshBookingChoices()
+            }
+        }
+        staffSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                refreshBookingChoices()
+            }
+        }
+        refreshChoices = { refreshBookingChoices() }
+        refreshBookingChoices()
         form.addView(label("Availability and overlap checks run when you save.", 12f, muted))
         val dialog = AlertDialog.Builder(this)
             .setTitle(if (existing == null) "New Appointment" else "Edit Appointment")
@@ -903,5 +994,4 @@ class MainActivity : Activity() {
     private fun message(value: String) {
         Toast.makeText(this, value, Toast.LENGTH_SHORT).show()
     }
-
 }
