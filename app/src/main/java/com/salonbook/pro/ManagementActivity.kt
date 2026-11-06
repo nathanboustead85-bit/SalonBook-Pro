@@ -5,7 +5,9 @@ import android.app.AlertDialog
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.*
 import com.google.firebase.auth.FirebaseAuth
@@ -20,8 +22,10 @@ class ManagementActivity : Activity() {
 
     private val orange = Color.rgb(242, 110, 36)
     private val dark = Color.rgb(32, 36, 43)
+    private val muted = Color.rgb(111, 116, 124)
     private val backgroundColor = Color.rgb(250, 249, 247)
     private val panelColor = Color.rgb(245, 241, 237)
+    private val white = Color.WHITE
 
     private val prefs by lazy {
         getSharedPreferences("salonbook_data", MODE_PRIVATE)
@@ -73,9 +77,23 @@ class ManagementActivity : Activity() {
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
+    private fun rounded(
+        colour: Int,
+        radius: Int = 18,
+        border: Int? = null
+    ): GradientDrawable {
+        return GradientDrawable().apply {
+            setColor(colour)
+            cornerRadius = dp(radius).toFloat()
+            if (border != null) {
+                setStroke(dp(1), border)
+            }
+        }
+    }
+
     private fun styleInput(input: EditText) {
         input.setTextColor(dark)
-        input.setHintTextColor(Color.GRAY)
+        input.setHintTextColor(muted)
         input.backgroundTintList =
             ColorStateList.valueOf(orange)
     }
@@ -88,9 +106,25 @@ class ManagementActivity : Activity() {
 
     private fun styleButton(button: Button) {
         button.isAllCaps = false
-        button.setTextColor(Color.WHITE)
+        button.setTextColor(white)
         button.backgroundTintList =
             ColorStateList.valueOf(orange)
+    }
+
+    private fun makeText(
+        value: String,
+        size: Float = 16f,
+        colour: Int = dark,
+        bold: Boolean = false
+    ): TextView {
+        return TextView(this).apply {
+            text = value
+            textSize = size
+            setTextColor(colour)
+            if (bold) {
+                typeface = Typeface.DEFAULT_BOLD
+            }
+        }
     }
 
     private fun load() {
@@ -102,9 +136,10 @@ class ManagementActivity : Activity() {
             for (i in 0 until array.length()) {
                 records.add(array.getJSONObject(i))
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(
-                this, "Unable to load saved data",
+                this,
+                "Unable to load saved data",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -125,9 +160,10 @@ class ManagementActivity : Activity() {
                     result.add(item)
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(
-                this, "Unable to load services",
+                this,
+                "Unable to load services",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -143,7 +179,6 @@ class ManagementActivity : Activity() {
             val id = array.optString(i)
             if (id.isNotBlank()) result.add(id)
         }
-
         return result
     }
 
@@ -172,7 +207,7 @@ class ManagementActivity : Activity() {
         return try {
             LocalDate.parse(value)
             true
-        } catch (e: DateTimeParseException) {
+        } catch (_: DateTimeParseException) {
             false
         }
     }
@@ -231,7 +266,6 @@ class ManagementActivity : Activity() {
 
         days.forEach { day ->
             val period = schedule.optJSONObject(day)
-
             if (period != null) {
                 active.add(
                     "${day.take(3).replaceFirstChar { it.uppercase() }} " +
@@ -290,32 +324,149 @@ class ManagementActivity : Activity() {
         layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(
-                dp(20), dp(24), dp(20), dp(30)
+                dp(18), dp(24), dp(18), dp(30)
             )
         }
 
         scroll.addView(layout)
         setContentView(scroll)
 
-        addText(
-            if (staffMode) "BOUSTIO STAFF MANAGEMENT"
-            else "BOUSTIO SERVICES & PRICES",
-            25f
+        val title = if (staffMode) {
+            "Your Team"
+        } else {
+            "Services & Prices"
+        }
+
+        layout.addView(
+            makeText(
+                "BOUSTIO",
+                14f,
+                orange,
+                true
+            )
         )
 
-        addText(
-            "Manage your business and choose what " +
-                "appears on your public Boustio booking page.",
-            15f
+        layout.addView(
+            makeText(
+                title,
+                29f,
+                dark,
+                true
+            ),
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(8)
+            }
+        )
+
+        layout.addView(
+            makeText(
+                if (staffMode) {
+                    "Manage your team, working hours and availability."
+                } else {
+                    "Keep your treatments, prices and durations organised."
+                },
+                15f,
+                muted
+            ),
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(8)
+                bottomMargin = dp(20)
+            }
+        )
+
+        val summary = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(
+                dp(20), dp(18), dp(20), dp(18)
+            )
+            background = rounded(orange)
+        }
+
+        summary.addView(
+            makeText(
+                if (staffMode) "TEAM MEMBERS" else "ACTIVE SERVICES",
+                13f,
+                white,
+                true
+            )
+        )
+
+        summary.addView(
+            makeText(
+                records.size.toString(),
+                36f,
+                white,
+                true
+            )
+        )
+
+        summary.addView(
+            makeText(
+                "${records.count {
+                    it.optBoolean("publicVisible", false)
+                }} visible on your public catalogue",
+                13f,
+                white
+            )
+        )
+
+        layout.addView(
+            summary,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dp(20)
+            }
         )
 
         addButton(
-            if (staffMode) "Add Staff Member"
-            else "Add Service"
-        ) { edit(null) }
+            if (staffMode) "+ Add Staff Member"
+            else "+ Add New Service"
+        ) {
+            edit(null)
+        }
+
+        sectionHeading(
+            if (staffMode) "TEAM DIRECTORY"
+            else "SERVICE CATALOGUE"
+        )
 
         if (records.isEmpty()) {
-            addText("Nothing added yet.")
+            val empty = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setPadding(
+                    dp(20), dp(30), dp(20), dp(30)
+                )
+                background = rounded(white)
+            }
+
+            empty.addView(
+                makeText(
+                    if (staffMode) "No team members yet"
+                    else "No services yet",
+                    19f,
+                    dark,
+                    true
+                )
+            )
+
+            empty.addView(
+                makeText(
+                    "Tap the orange button above to get started.",
+                    14f,
+                    muted
+                )
+            )
+
+            layout.addView(empty)
         }
 
         val serviceNames = if (staffMode) {
@@ -327,86 +478,231 @@ class ManagementActivity : Activity() {
         }
 
         records.forEach { item ->
-            val visibility = if (
-                item.optBoolean("publicVisible", false)
-            ) "Public: Yes" else "Public: No"
-
-            val description = if (staffMode) {
-                val assigned = assignedIds(item)
-                val names = assigned.mapNotNull {
-                    serviceNames[it]
-                }
-
-                val serviceSummary = when {
-                    assigned.isEmpty() -> "None assigned"
-                    names.isEmpty() ->
-                        "Assigned services unavailable"
-                    else -> names.joinToString(", ")
-                }
-
-                val breaks = item.optJSONArray("weeklyBreaks")
-                    ?.length() ?: 0
-
-                val timeOff = item.optJSONArray("timeOff")
-                    ?.length() ?: 0
-
-                "${item.optString("name")}\n" +
-                    "${item.optString("role")}\n" +
-                    "Hours: ${scheduleSummary(item)}\n" +
-                    "Services: $serviceSummary\n" +
-                    "Weekly breaks: $breaks\n" +
-                    "Time-off periods: $timeOff\n" +
-                    visibility
-            } else {
-                "${item.optString("name")}\n" +
-                    "£${item.optString("price")} · " +
-                    "${item.optInt("duration")} minutes\n" +
-                    visibility
-            }
-
-            addText(description)
-            addButton("Edit / Delete") {
-                options(item)
-            }
+            recordCard(item, serviceNames)
         }
 
         addButton("Back to Dashboard") {
             finish()
         }
+
+        layout.addView(
+            makeText(
+                "BOUSTIO  •  BUSINESS MANAGEMENT",
+                12f,
+                muted
+            ),
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(20)
+            }
+        )
     }
 
-    private fun addText(
-        value: String,
-        size: Float = 17f
-    ) {
-        layout.addView(TextView(this).apply {
-            text = value
-            textSize = size
+    private fun sectionHeading(label: String) {
+        layout.addView(
+            makeText(
+                label,
+                12f,
+                muted,
+                true
+            ),
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(16)
+                bottomMargin = dp(14)
+            }
+        )
+    }
 
-            setTextColor(
-                if (size >= 25f) orange else dark
+    private fun recordCard(
+        item: JSONObject,
+        serviceNames: Map<String, String>
+    ) {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(
+                dp(18), dp(18), dp(18), dp(18)
+            )
+            background = rounded(white)
+            elevation = dp(2).toFloat()
+        }
+
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        val title = makeText(
+            item.optString("name"),
+            19f,
+            dark,
+            true
+        )
+
+        header.addView(
+            title,
+            LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+        )
+
+        val visible = item.optBoolean(
+            "publicVisible", false
+        )
+
+        val status = makeText(
+            if (visible) "PUBLIC" else "PRIVATE",
+            11f,
+            if (visible) orange else muted,
+            true
+        ).apply {
+            setPadding(
+                dp(10), dp(7), dp(10), dp(7)
+            )
+            background = rounded(
+                if (visible) {
+                    Color.rgb(255, 239, 228)
+                } else {
+                    panelColor
+                },
+                12
+            )
+        }
+
+        header.addView(status)
+        card.addView(header)
+
+        if (staffMode) {
+            card.addView(
+                makeText(
+                    item.optString("role"),
+                    15f,
+                    muted
+                )
             )
 
-            if (size >= 25f) {
-                typeface = Typeface.DEFAULT_BOLD
+            val assigned = assignedIds(item)
+            val names = assigned.mapNotNull {
+                serviceNames[it]
             }
 
-            setPadding(
-                dp(8), dp(12), dp(8), dp(12)
+            val serviceSummary = when {
+                assigned.isEmpty() -> "None assigned"
+                names.isEmpty() ->
+                    "Assigned services unavailable"
+                else -> names.joinToString(", ")
+            }
+
+            val breaks = item.optJSONArray("weeklyBreaks")
+                ?.length() ?: 0
+
+            val timeOff = item.optJSONArray("timeOff")
+                ?.length() ?: 0
+
+            card.addView(
+                makeText(
+                    "Working hours\n${scheduleSummary(item)}",
+                    14f,
+                    dark
+                ),
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = dp(14)
+                }
             )
-        })
+
+            card.addView(
+                makeText(
+                    "Services: $serviceSummary\n" +
+                        "Weekly breaks: $breaks\n" +
+                        "Time-off periods: $timeOff",
+                    14f,
+                    muted
+                ),
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = dp(10)
+                }
+            )
+        } else {
+            val price = item.optString("price")
+            val duration = item.optInt("duration")
+
+            card.addView(
+                makeText(
+                    "£$price",
+                    26f,
+                    orange,
+                    true
+                ),
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = dp(12)
+                }
+            )
+
+            card.addView(
+                makeText(
+                    "$duration minutes",
+                    14f,
+                    muted
+                )
+            )
+        }
+
+        val editButton = Button(this).apply {
+            text = "Edit / Delete"
+            styleButton(this)
+            setOnClickListener {
+                options(item)
+            }
+        }
+
+        card.addView(
+            editButton,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(14)
+            }
+        )
+
+        layout.addView(
+            card,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dp(16)
+            }
+        )
     }
 
     private fun addButton(
         label: String,
         action: () -> Unit
     ) {
+        val button = Button(this).apply {
+            text = label
+            styleButton(this)
+            setOnClickListener { action() }
+        }
+
         layout.addView(
-            Button(this).apply {
-                text = label
-                styleButton(this)
-                setOnClickListener { action() }
-            },
+            button,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -448,7 +744,7 @@ class ManagementActivity : Activity() {
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(
-                dp(28), dp(12), dp(28), dp(16)
+                dp(24), dp(12), dp(24), dp(16)
             )
         }
 
@@ -462,21 +758,26 @@ class ManagementActivity : Activity() {
                 setSingleLine(true)
                 styleInput(this)
             }
-
             form.addView(input)
             return input
         }
 
         fun heading(value: String) {
-            form.addView(TextView(this).apply {
-                text = value
-                textSize = 19f
-                typeface = Typeface.DEFAULT_BOLD
-                setTextColor(orange)
-                setPadding(
-                    0, dp(24), 0, dp(8)
-                )
-            })
+            form.addView(
+                makeText(
+                    value,
+                    19f,
+                    orange,
+                    true
+                ),
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = dp(24)
+                    bottomMargin = dp(8)
+                }
+            )
         }
 
         val name = field(
@@ -531,10 +832,13 @@ class ManagementActivity : Activity() {
             heading("Services this staff member performs")
 
             if (availableServices.isEmpty()) {
-                form.addView(TextView(this).apply {
-                    text = "Add services in Services & Prices first."
-                    setTextColor(dark)
-                })
+                form.addView(
+                    makeText(
+                        "Add services in Services & Prices first.",
+                        14f,
+                        muted
+                    )
+                )
             }
 
             availableServices.forEach { service ->
@@ -564,10 +868,13 @@ class ManagementActivity : Activity() {
         if (staffMode) {
             heading("Individual Working Hours")
 
-            form.addView(TextView(this).apply {
-                text = "Tick working days. Use 24-hour HH:mm times."
-                setTextColor(dark)
-            })
+            form.addView(
+                makeText(
+                    "Tick working days. Use 24-hour HH:mm times.",
+                    14f,
+                    muted
+                )
+            )
 
             val schedule = existingSchedule(existing)
 
@@ -652,7 +959,7 @@ class ManagementActivity : Activity() {
                 setPadding(
                     dp(12), dp(12), dp(12), dp(12)
                 )
-                setBackgroundColor(panelColor)
+                background = rounded(panelColor, 12)
             }
 
             val daySpinner = if (isWeekly) {
@@ -712,7 +1019,6 @@ class ManagementActivity : Activity() {
                 } else {
                     "Reason (e.g. Holiday)"
                 }
-
                 setSingleLine(true)
                 setText(
                     saved?.optString("reason") ?: ""
@@ -760,7 +1066,15 @@ class ManagementActivity : Activity() {
                 }
             })
 
-            form.addView(parent)
+            form.addView(
+                parent,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = dp(12)
+                }
+            )
         }
 
         if (staffMode) {
