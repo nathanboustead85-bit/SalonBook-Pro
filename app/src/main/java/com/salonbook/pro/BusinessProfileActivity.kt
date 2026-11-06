@@ -26,9 +26,9 @@ class BusinessProfileActivity : Activity() {
         private const val EXPORT_REQUEST = 701
     }
 
-    private val purple = Color.rgb(111, 66, 193)
-    private val dark = Color.rgb(40, 35, 55)
-    private val backgroundColor = Color.rgb(248, 246, 252)
+    private val orange = Color.rgb(242, 110, 36)
+    private val dark = Color.rgb(32, 36, 43)
+    private val backgroundColor = Color.rgb(250, 249, 247)
 
     private val manager = BusinessProfileManager()
 
@@ -64,8 +64,14 @@ class BusinessProfileActivity : Activity() {
         "Other"
     )
 
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        window.statusBarColor = orange
+        window.navigationBarColor = backgroundColor
 
         val user = FirebaseAuth.getInstance().currentUser
 
@@ -90,7 +96,6 @@ class BusinessProfileActivity : Activity() {
     }
 
     private fun buildScreen() {
-
         val scroll = ScrollView(this).apply {
             setBackgroundColor(backgroundColor)
             isFillViewport = true
@@ -98,17 +103,19 @@ class BusinessProfileActivity : Activity() {
 
         container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(32, 40, 32, 48)
+            setPadding(
+                dp(20), dp(24), dp(20), dp(30)
+            )
         }
 
         scroll.addView(container)
         setContentView(scroll)
 
-        addTitle("Boustio Business Profile")
+        addTitle("BOUSTIO BUSINESS PROFILE")
 
         addText(
             "Manage your business information and " +
-            "prepare your public booking catalogue."
+                "prepare your public booking catalogue."
         )
 
         nameInput = addInput("Business name", false)
@@ -140,21 +147,24 @@ class BusinessProfileActivity : Activity() {
         slugText = TextView(this).apply {
             text = "Save your profile to generate a booking ID"
             textSize = 15f
-            setTextColor(purple)
-            setPadding(8, 12, 8, 20)
+            setTextColor(orange)
+            setPadding(
+                dp(8), dp(12), dp(8), dp(20)
+            )
         }
 
         container.addView(slugText)
 
         addText(
             "Your booking identifier will form part " +
-            "of your future Boustio booking link."
+                "of your future Boustio booking link."
         )
 
         bookingSwitch = Switch(this).apply {
             text = "Accept online bookings"
             textSize = 16f
             setTextColor(dark)
+            thumbTintList = ColorStateList.valueOf(orange)
             isChecked = false
             isEnabled = false
         }
@@ -163,7 +173,7 @@ class BusinessProfileActivity : Activity() {
 
         addText(
             "Online bookings remain disabled until " +
-            "secure live booking integration is complete."
+                "secure live booking integration is complete."
         )
 
         saveButton = addButton(
@@ -186,9 +196,9 @@ class BusinessProfileActivity : Activity() {
 
         addText(
             "Preview or export your locally saved " +
-            "services and staff together with your " +
-            "saved Firebase business profile. " +
-            "Exporting does not publish anything online.",
+                "services and staff together with your " +
+                "saved Firebase business profile. " +
+                "Exporting does not publish anything online.",
             14f
         )
 
@@ -196,18 +206,20 @@ class BusinessProfileActivity : Activity() {
             finish()
         }
 
-        addText("Boustio | Phase 7E", 12f)
+        addText("BOUSTIO | PHASE 9A", 12f)
     }
 
     private fun addTitle(value: String) {
         container.addView(
             TextView(this).apply {
                 text = value
-                textSize = 27f
+                textSize = 25f
                 typeface = Typeface.DEFAULT_BOLD
-                setTextColor(purple)
+                setTextColor(orange)
                 gravity = Gravity.CENTER
-                setPadding(0, 0, 0, 24)
+                setPadding(
+                    0, 0, 0, dp(24)
+                )
             }
         )
     }
@@ -221,7 +233,9 @@ class BusinessProfileActivity : Activity() {
                 text = value
                 textSize = size
                 setTextColor(dark)
-                setPadding(8, 12, 8, 12)
+                setPadding(
+                    dp(8), dp(12), dp(8), dp(12)
+                )
             }
         )
     }
@@ -236,13 +250,15 @@ class BusinessProfileActivity : Activity() {
             textSize = 16f
             setTextColor(dark)
             setHintTextColor(Color.GRAY)
+            backgroundTintList =
+                ColorStateList.valueOf(orange)
 
             if (multiline) {
                 minLines = 2
                 maxLines = 4
                 inputType =
                     android.text.InputType.TYPE_CLASS_TEXT or
-                    android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                        android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
             } else {
                 setSingleLine(true)
             }
@@ -254,7 +270,7 @@ class BusinessProfileActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                bottomMargin = 14
+                bottomMargin = dp(14)
             }
         )
 
@@ -272,7 +288,7 @@ class BusinessProfileActivity : Activity() {
             textSize = 16f
             setTextColor(Color.WHITE)
             backgroundTintList =
-                ColorStateList.valueOf(purple)
+                ColorStateList.valueOf(orange)
 
             setOnClickListener { action() }
         }
@@ -283,8 +299,8 @@ class BusinessProfileActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                topMargin = 12
-                bottomMargin = 8
+                topMargin = dp(12)
+                bottomMargin = dp(8)
             }
         )
 
@@ -306,7 +322,6 @@ class BusinessProfileActivity : Activity() {
         updateButtons()
 
         manager.loadProfile { result ->
-
             runOnUiThread {
                 if (isFinishing || isDestroyed) {
                     return@runOnUiThread
@@ -316,7 +331,6 @@ class BusinessProfileActivity : Activity() {
                 saveButton.isEnabled = true
 
                 result.onSuccess { profile ->
-
                     if (profile == null) {
                         profileLoaded = false
                         slugText.text =
@@ -358,8 +372,8 @@ class BusinessProfileActivity : Activity() {
 
                     showMessage(
                         "Unable to load profile: " +
-                        (error.localizedMessage
-                            ?: "Unknown error")
+                            (error.localizedMessage
+                                ?: "Unknown error")
                     )
                 }
             }
@@ -367,7 +381,6 @@ class BusinessProfileActivity : Activity() {
     }
 
     private fun saveProfile() {
-
         if (loadingProfile || catalogueLoading) {
             return
         }
@@ -437,15 +450,12 @@ class BusinessProfileActivity : Activity() {
     }
 
     private fun prepareCatalogue(export: Boolean) {
-
         if (
             loadingProfile ||
             !profileLoaded ||
             catalogueLoading
         ) {
-            showMessage(
-                "Save your business profile first"
-            )
+            showMessage("Save your business profile first")
             return
         }
 
@@ -453,7 +463,6 @@ class BusinessProfileActivity : Activity() {
         updateButtons()
 
         manager.loadProfile { result ->
-
             runOnUiThread {
                 if (isFinishing || isDestroyed) {
                     return@runOnUiThread
@@ -463,7 +472,6 @@ class BusinessProfileActivity : Activity() {
                 updateButtons()
 
                 result.onSuccess { profile ->
-
                     if (profile == null) {
                         showMessage(
                             "Save your business profile first"
@@ -524,18 +532,17 @@ class BusinessProfileActivity : Activity() {
         json: String,
         slug: String
     ) {
-
         AlertDialog.Builder(this)
             .setTitle("Export Boustio Catalogue")
             .setMessage(
                 "Save a private preview JSON file " +
-                "containing your business name, " +
-                "description, address, services, " +
-                "staff and working hours.\n\n" +
-                "Review these details before sharing " +
-                "or publishing the file.\n\n" +
-                "This does not publish your business " +
-                "or activate online bookings."
+                    "containing your business name, " +
+                    "description, address, services, " +
+                    "staff and working hours.\n\n" +
+                    "Review these details before sharing " +
+                    "or publishing the file.\n\n" +
+                    "This does not publish your business " +
+                    "or activate online bookings."
             )
             .setPositiveButton("Choose Save Location") { _, _ ->
                 pendingExportJson = json
@@ -621,10 +628,10 @@ class BusinessProfileActivity : Activity() {
                 .setTitle("Catalogue exported")
                 .setMessage(
                     "Your Boustio JSON file was saved " +
-                    "successfully.\n\n" +
-                    "It remains a private preview. " +
-                    "No website publishing or online " +
-                    "booking activation has occurred."
+                        "successfully.\n\n" +
+                        "It remains a private preview. " +
+                        "No website publishing or online " +
+                        "booking activation has occurred."
                 )
                 .setPositiveButton("OK", null)
                 .show()
@@ -639,14 +646,15 @@ class BusinessProfileActivity : Activity() {
     }
 
     private fun showCataloguePreview(json: String) {
-
         val scroll = ScrollView(this)
 
         val textView = TextView(this).apply {
             text = json
             textSize = 12f
             setTextColor(dark)
-            setPadding(28, 24, 28, 24)
+            setPadding(
+                dp(28), dp(24), dp(28), dp(24)
+            )
             setTextIsSelectable(true)
             typeface = Typeface.MONOSPACE
         }
@@ -657,7 +665,7 @@ class BusinessProfileActivity : Activity() {
             .setTitle("Boustio Catalogue Preview")
             .setMessage(
                 "PRIVATE PREVIEW ONLY\n" +
-                "Not published. Online bookings disabled."
+                    "Not published. Online bookings disabled."
             )
             .setView(scroll)
             .setPositiveButton("Close", null)
