@@ -10,6 +10,8 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.Build
+import android.view.WindowManager
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -28,6 +30,7 @@ class MainActivity : Activity() {
     private val background = Color.rgb(250, 249, 247)
     private val muted = Color.rgb(110, 114, 120)
     private val paleOrange = Color.rgb(255, 239, 228)
+    private val lightBorder = Color.rgb(236, 232, 227)
     private val prefs by lazy { getSharedPreferences("salonbook_data", MODE_PRIVATE) }
     private val bookings = mutableListOf<Booking>()
     private var selectedDate = today()
@@ -94,20 +97,43 @@ class MainActivity : Activity() {
 
     private fun screen(title: String, subtitle: String = "", mode: String = "other") {
         currentScreen = mode
+        // Ensure Android lays out our content below the system status bar.
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
         window.statusBarColor = background
         window.navigationBarColor = background
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or
-            View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+
         val scroll = ScrollView(this).apply {
             setBackgroundColor(this@MainActivity.background)
             isFillViewport = true
+            clipToPadding = false
         }
         container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(22), dp(18), dp(32))
+            setPadding(dp(18), dp(24), dp(18), dp(36))
         }
         scroll.addView(container)
         setContentView(scroll)
+        // Some Android edge-to-edge configurations ignore legacy status bar flags.
+        // Add the actual top inset to the content when it is not applied by the system.
+        if (Build.VERSION.SDK_INT >= 30) {
+            scroll.setOnApplyWindowInsetsListener { _, insets ->
+                val top = insets.getInsets(android.view.WindowInsets.Type.statusBars()).top
+                val bottom = insets.getInsets(android.view.WindowInsets.Type.navigationBars()).bottom
+                // Content is already offset when decorFitsSystemWindows is true.
+                // Using scroll's visible frame avoids applying the inset twice.
+                val frame = android.graphics.Rect()
+                scroll.getWindowVisibleDisplayFrame(frame)
+                val needsTop = frame.top < top / 2
+                container.setPadding(dp(18), dp(24) + if (needsTop) top else 0,
+                    dp(18), dp(36) + if (bottom > 0 && scroll.rootWindowInsets != null &&
+                        frame.bottom >= resources.displayMetrics.heightPixels - bottom / 2) bottom else 0)
+                insets
+            }
+        }
         container.addView(label("BOUSTIO", 14f, orange, true))
         container.addView(label(title, 29f, dark, true), LinearLayout.LayoutParams(-1, -2).apply {
             topMargin = dp(12)
@@ -158,33 +184,110 @@ class MainActivity : Activity() {
         addPanel(card)
     }
 
+    private fun actionCard(
+        heading: String,
+        description: String,
+        symbol: String,
+        action: () -> Unit
+    ) {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            background = rounded(Color.WHITE, 18)
+            elevation = dp(2).toFloat()
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { action() }
+        }
+        val symbolBox = TextView(this).apply {
+            text = symbol
+            textSize = 22f
+            gravity = Gravity.CENTER
+            setTextColor(orange)
+            background = rounded(paleOrange, 14)
+        }
+        row.addView(symbolBox, LinearLayout.LayoutParams(dp(52), dp(52)))
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), 0, dp(4), 0)
+        }
+        content.addView(label(heading, 16f, dark, true))
+        content.addView(label(description, 12f, muted), LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(4)
+        })
+        row.addView(content, LinearLayout.LayoutParams(0, -2, 1f))
+        row.addView(label("›", 26f, orange, true))
+        addPanel(row)
+    }
+
     private fun showDashboard() {
         screen("Your Dashboard", "Your business. Beautifully organised.", "dashboard")
-        section("Today's overview")
-        dashboardCard("Appointments today", bookings.count { it.date == today() }.toString())
-        dashboardCard("Upcoming appointments", bookings.count { it.date >= today() }.toString())
-        dashboardCard("Total saved bookings", bookings.size.toString())
+
+        val todayCount = bookings.count { it.date == today() }
+        val upcoming = bookings.count { it.date >= today() }
+        val summary = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(22), dp(22), dp(22), dp(22))
+            background = rounded(orange, 24)
+        }
+        summary.addView(label("TODAY AT A GLANCE", 13f, Color.WHITE, true))
+        summary.addView(label("$todayCount appointment${if (todayCount == 1) "" else "s"}",
+            30f, Color.WHITE, true), LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(10)
+        })
+        summary.addView(label(displayDate(today()), 14f, Color.WHITE),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5) })
+        container.addView(summary, LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(8)
+            bottomMargin = dp(16)
+        })
+
+        val stats = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        fun stat(title: String, value: String): LinearLayout {
+            return LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(16), dp(16), dp(12), dp(16))
+                background = rounded(Color.WHITE, 18)
+                elevation = dp(2).toFloat()
+                addView(label(value, 27f, dark, true))
+                addView(label(title, 12f, muted), LinearLayout.LayoutParams(-1, -2).apply {
+                    topMargin = dp(5)
+                })
+            }
+        }
+        stats.addView(stat("Upcoming", upcoming.toString()),
+            LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = dp(6) })
+        stats.addView(stat("Total bookings", bookings.size.toString()),
+            LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dp(6) })
+        container.addView(stats)
+
         section("Quick actions")
-        button("+ New Appointment") { bookingDialog() }
-        button("Appointment Calendar") { showCalendar() }
-        button("All Appointments") { showAppointments() }
+        button("+ New Appointment") { bookingDialog(defaultDate = today()) }
+        actionCard("Appointment Calendar", "View your daily schedule", "▦") { showCalendar() }
+        actionCard("All Appointments", "Browse and manage bookings", "◷") { showAppointments() }
+
         section("Manage your business")
-        button("Clients") { showClients() }
-        button("Services & Prices") {
+        actionCard("Clients", "Your client directory", "♙") { showClients() }
+        actionCard("Services & Prices", "Treatments, prices and durations", "£") {
             startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
         }
-        button("Staff & Working Hours") {
+        actionCard("Staff & Working Hours", "Team schedules and availability", "♧") {
             startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
         }
-        button("My Boustio Booking Link") {
+        actionCard("My Boustio Booking Link", "Your public booking profile", "↗") {
             startActivity(Intent(this, BusinessProfileActivity::class.java))
         }
+
         section("Account & tools")
-        button("Cloud Account & Backup") {
+        actionCard("Cloud Account & Backup", "Account, backup and restore", "☁") {
             startActivity(Intent(this, CloudActivity::class.java))
         }
-        button("Test Appointment Availability") { showAvailabilityTester() }
-        text("BOUSTIO  •  Phase 9A.4", 12f)
+        actionCard("Test Appointment Availability", "Check available booking slots", "✓") {
+            showAvailabilityTester()
+        }
+        container.addView(label("BOUSTIO  •  Phase 9A.5", 12f, muted),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
     }
 
     private fun shiftDate(date: String, days: Int): String {
@@ -615,5 +718,4 @@ class MainActivity : Activity() {
     private fun message(value: String) {
         Toast.makeText(this, value, Toast.LENGTH_SHORT).show()
     }
-
 }
