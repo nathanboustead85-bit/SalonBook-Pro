@@ -282,7 +282,7 @@ class MainActivity : Activity() {
             showAppointments()
         }
         button("Back to Dashboard") { showDashboard() }
-        text("BOUSTIO  •  Phase 9C.1", 12f)
+        text("BOUSTIO  •  Phase 9C.2", 12f)
     }
 
     private fun text(value: String, size: Float = 16f) {
@@ -425,7 +425,7 @@ class MainActivity : Activity() {
         actionCard("Test Appointment Availability", "Check available booking slots", "✓") {
             showAvailabilityTester()
         }
-        container.addView(label("BOUSTIO  •  Phase 9C.1", 12f, muted),
+        container.addView(label("BOUSTIO  •  Phase 9C.2", 12f, muted),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
     }
 
@@ -644,20 +644,40 @@ class MainActivity : Activity() {
         val whenCard = section("03  Date & time", "Select when the client will visit")
         var date = existing?.date ?: defaultDate
         var time = existing?.time ?: "09:00"
-        val dateButton = Button(this).apply { text = "Date: $date"; styleButton(this, false) }
-        dateButton.setOnClickListener {
-            pickDate(date) { date = it; dateButton.text = "Date: $date" }
+        fun displayBookingDate(iso: String): String = try {
+            val parser = SimpleDateFormat("yyyy-MM-dd", Locale.UK).apply { isLenient = false }
+            val formatter = SimpleDateFormat("EEEE d MMMM yyyy", Locale.UK)
+            formatter.format(parser.parse(iso)!!)
+        } catch (_: Exception) { iso }
+        fun premiumPicker(textValue: String): Button = Button(this).apply {
+            text = textValue
+            textSize = 15f
+            isAllCaps = false
+            gravity = Gravity.CENTER_VERTICAL or Gravity.START
+            setPadding(dp(16), 0, dp(12), 0)
+            setTextColor(orange)
+            background = GradientDrawable().apply {
+                setColor(paleOrange)
+                cornerRadius = dp(12).toFloat()
+                setStroke(dp(1), orange)
+            }
         }
-        whenCard.addView(dateButton, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(8) })
-        val timeButton = Button(this).apply { text = "Time: $time"; styleButton(this, false) }
+        val dateButton = premiumPicker("▦   ${displayBookingDate(date)}")
+        dateButton.contentDescription = "Choose appointment date"
+        dateButton.setOnClickListener {
+            pickDate(date) { date = it; dateButton.text = "▦   ${displayBookingDate(date)}" }
+        }
+        whenCard.addView(dateButton, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(10) })
+        val timeButton = premiumPicker("◷   $time")
+        timeButton.contentDescription = "Choose appointment time"
         timeButton.setOnClickListener {
             val parts = time.split(":")
             TimePickerDialog(this, { _, hour, minute ->
                 time = String.format(Locale.UK, "%02d:%02d", hour, minute)
-                timeButton.text = "Time: $time"
+                timeButton.text = "◷   $time"
             }, parts[0].toInt(), parts[1].toInt(), true).show()
         }
-        whenCard.addView(timeButton, LinearLayout.LayoutParams(-1, dp(52)))
+        whenCard.addView(timeButton, LinearLayout.LayoutParams(-1, dp(54)))
         form.addView(label("Availability and overlap checks run when you save.", 12f, muted))
         val dialog = AlertDialog.Builder(this)
             .setTitle(if (existing == null) "New Appointment" else "Edit Appointment")
@@ -666,6 +686,8 @@ class MainActivity : Activity() {
             .setNegativeButton("Cancel", null)
             .create()
         dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(orange)
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(muted)
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val name = client.text.toString().trim()
                 if (name.isBlank()) { message("Enter a client name"); return@setOnClickListener }
