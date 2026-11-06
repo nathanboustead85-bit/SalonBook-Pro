@@ -2,6 +2,7 @@ package com.salonbook.pro
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
@@ -23,6 +24,10 @@ import org.json.JSONArray
 
 class CloudActivity : Activity() {
 
+    private val orange = Color.rgb(242, 110, 36)
+    private val dark = Color.rgb(32, 36, 43)
+    private val backgroundColor = Color.rgb(250, 249, 247)
+
     private val auth by lazy {
         FirebaseAuth.getInstance()
     }
@@ -32,17 +37,10 @@ class CloudActivity : Activity() {
     }
 
     private val prefs by lazy {
-        getSharedPreferences(
-            "salonbook_data",
-            MODE_PRIVATE
-        )
+        getSharedPreferences("salonbook_data", MODE_PRIVATE)
     }
 
     private lateinit var layout: LinearLayout
-
-    private val purple = Color.rgb(111, 66, 193)
-
-    // PHASE 6C: CLOUD SYNC MONITORING
 
     private val syncListeners =
         mutableListOf<ListenerRegistration>()
@@ -53,13 +51,13 @@ class CloudActivity : Activity() {
     private var syncStatusText: TextView? = null
 
     private val syncKeys = listOf(
-        "bookings",
-        "services",
-        "staff"
+        "bookings", "services", "staff"
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.statusBarColor = orange
+        window.navigationBarColor = backgroundColor
         render()
     }
 
@@ -68,11 +66,11 @@ class CloudActivity : Activity() {
         super.onDestroy()
     }
 
-    private fun stopSyncMonitoring() {
-        syncListeners.forEach {
-            it.remove()
-        }
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 
+    private fun stopSyncMonitoring() {
+        syncListeners.forEach { it.remove() }
         syncListeners.clear()
         syncStates.clear()
         syncStatusText = null
@@ -81,16 +79,13 @@ class CloudActivity : Activity() {
     private fun startSyncMonitoring() {
         stopSyncMonitoring()
 
-        addText(
-            "Live Cloud Sync Status",
-            21f
-        )
+        addText("Live Cloud Sync Status", 21f)
 
         val statusView = TextView(this).apply {
             text = "Checking cloud connection..."
             textSize = 17f
-            setTextColor(Color.DKGRAY)
-            setPadding(8, 16, 8, 16)
+            setTextColor(dark)
+            setPadding(dp(8), dp(16), dp(8), dp(16))
         }
 
         layout.addView(statusView)
@@ -99,17 +94,11 @@ class CloudActivity : Activity() {
         val manager = CloudSyncManager()
 
         syncKeys.forEach { key ->
-
-            val listener = manager.observeSyncStatus(
-                key
-            ) { status ->
-
+            val listener = manager.observeSyncStatus(key) { status ->
                 runOnUiThread {
-
                     if (syncStatusText !== statusView) {
                         return@runOnUiThread
                     }
-
                     syncStates[key] = status
                     updateSyncStatus()
                 }
@@ -131,17 +120,12 @@ class CloudActivity : Activity() {
     }
 
     private fun updateSyncStatus() {
-
         val lines = syncKeys.map { key ->
-
             val label = key.replaceFirstChar {
                 it.uppercase()
             }
 
-            val description = when (
-                syncStates[key]
-            ) {
-
+            val description = when (syncStates[key]) {
                 CloudSyncManager.SyncStatus.SYNCED ->
                     "Connected - no pending writes"
 
@@ -154,80 +138,53 @@ class CloudActivity : Activity() {
                 CloudSyncManager.SyncStatus.SIGNED_OUT ->
                     "Signed out"
 
-                null ->
-                    "Checking..."
+                null -> "Checking..."
             }
 
             "$label: $description"
         }
 
-        syncStatusText?.text =
-            lines.joinToString("\n")
+        syncStatusText?.text = lines.joinToString("\n")
     }
 
-    // MAIN CLOUD SCREEN
-
     private fun render() {
-
         stopSyncMonitoring()
 
         val scroll = ScrollView(this).apply {
-            setBackgroundColor(
-                Color.rgb(248, 246, 252)
-            )
+            setBackgroundColor(backgroundColor)
+            isFillViewport = true
         }
 
         layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(32, 36, 32, 40)
+            setPadding(
+                dp(20), dp(24), dp(20), dp(30)
+            )
         }
 
         scroll.addView(layout)
         setContentView(scroll)
 
-        addText(
-            "SalonBook Pro Cloud",
-            26f
-        )
-
-        addText(
-            "Phase 6C - Cloud Sync Reliability"
-        )
+        addText("BOUSTIO CLOUD", 26f)
+        addText("Your business data, securely backed up.")
 
         val user = auth.currentUser
 
         if (user == null) {
-
             showLogin()
-
         } else {
-
-            addText(
-                "Signed in as:",
-                16f
-            )
-
-            addText(
-                user.email ?: user.uid,
-                18f
-            )
+            addText("Signed in as:", 16f)
+            addText(user.email ?: user.uid, 18f)
 
             if (!user.isEmailVerified) {
-
                 addText(
-                    "Verify your email before " +
-                        "accessing cloud data."
+                    "Verify your email before accessing cloud data."
                 )
 
-                addButton(
-                    "Send Verification Email"
-                ) {
-
+                addButton("Send Verification Email") {
                     user.sendEmailVerification()
                         .addOnSuccessListener {
-                            message(
-                                "Verification email sent"
-                            )
+                            message("Verification email sent")
                         }
                         .addOnFailureListener {
                             message(
@@ -236,216 +193,132 @@ class CloudActivity : Activity() {
                             )
                         }
                 }
-
             } else {
-
                 showBackupOptions()
             }
 
-            addButton(
-                "Refresh Account Status"
-            ) {
-
-                user.reload()
-                    .addOnCompleteListener {
-                        render()
-                    }
+            addButton("Refresh Account Status") {
+                user.reload().addOnCompleteListener {
+                    render()
+                }
             }
 
             addButton("Sign Out") {
-
                 stopSyncMonitoring()
                 auth.signOut()
                 render()
             }
         }
 
-        addButton(
-            "Back to Dashboard"
-        ) {
+        addButton("Back to Dashboard") {
             finish()
         }
     }
 
-    // FIREBASE LOGIN
-
     private fun showLogin() {
-
-        val email = input(
-            "Business Email"
-        )
-
+        val email = input("Business Email")
         val password = input(
-            "Password (minimum 6 characters)",
-            true
+            "Password (minimum 6 characters)", true
         )
 
         addButton("Sign In") {
-
             val e = email.text.toString().trim()
             val p = password.text.toString()
 
             if (e.isBlank() || p.isBlank()) {
-
-                message(
-                    "Enter your email and password"
-                )
-
+                message("Enter your email and password")
             } else {
-
                 auth.signInWithEmailAndPassword(e, p)
                     .addOnSuccessListener {
-
-                        message(
-                            "Signed in successfully"
-                        )
-
+                        message("Signed in successfully")
                         render()
                     }
                     .addOnFailureListener {
-
                         message(
-                            it.localizedMessage
-                                ?: "Sign-in failed"
+                            it.localizedMessage ?: "Sign-in failed"
                         )
                     }
             }
         }
 
-        addButton(
-            "Create Business Account"
-        ) {
-
+        addButton("Create Business Account") {
             val e = email.text.toString().trim()
             val p = password.text.toString()
 
             if (e.isBlank() || p.length < 6) {
-
                 message(
                     "Enter an email and password " +
                         "of at least 6 characters"
                 )
-
             } else {
-
-                auth.createUserWithEmailAndPassword(
-                    e,
-                    p
-                )
+                auth.createUserWithEmailAndPassword(e, p)
                     .addOnSuccessListener {
-
-                        auth.currentUser
-                            ?.sendEmailVerification()
-
+                        auth.currentUser?.sendEmailVerification()
                         message(
-                            "Account created. Check " +
-                                "your verification email."
+                            "Account created. Check your verification email."
                         )
-
                         render()
                     }
                     .addOnFailureListener {
-
                         message(
-                            it.localizedMessage
-                                ?: "Registration failed"
+                            it.localizedMessage ?: "Registration failed"
                         )
                     }
             }
         }
 
         addButton("Reset Password") {
-
             val e = email.text.toString().trim()
 
             if (e.isBlank()) {
-
-                message(
-                    "Enter your email first"
-                )
-
+                message("Enter your email first")
             } else {
-
                 auth.sendPasswordResetEmail(e)
                     .addOnSuccessListener {
-
                         message(
-                            "If eligible, a password " +
-                                "reset email has been sent"
+                            "If eligible, a password reset email has been sent"
                         )
                     }
                     .addOnFailureListener {
-
                         message(
-                            it.localizedMessage
-                                ?: "Reset failed"
+                            it.localizedMessage ?: "Reset failed"
                         )
                     }
             }
         }
     }
 
-    // CLOUD OPTIONS
-
     private fun showBackupOptions() {
-
-        addText(
-            "Cloud Backup",
-            21f
-        )
-
-        // PHASE 6C STATUS INDICATOR
+        addText("Cloud Backup", 21f)
 
         startSyncMonitoring()
 
-        // FIREBASE CONNECTION TEST
-
+        addText("Cloud Connection Test", 19f)
         addText(
-            "Cloud Connection Test",
-            19f
+            "Check the Firebase connection without " +
+                "changing your saved bookings."
         )
 
-        addText(
-            "Check the Firebase connection " +
-                "without changing your saved bookings."
-        )
+        addButton("Test Cloud Sync Connection") {
+            message("Checking Firebase connection...")
 
-        addButton(
-            "Test Cloud Sync Connection"
-        ) {
-
-            message(
-                "Checking Firebase connection..."
-            )
-
-            CloudSyncManager().download(
-                "bookings"
-            ) { result ->
-
+            CloudSyncManager().download("bookings") { result ->
                 runOnUiThread {
-
                     result.fold(
-
                         onSuccess = { json ->
-
                             if (json == null) {
-
                                 message(
                                     "Connection successful. " +
                                         "No live cloud bookings yet."
                                 )
-
                             } else {
-
                                 message(
                                     "Connection successful. " +
                                         "Cloud booking data found."
                                 )
                             }
                         },
-
                         onFailure = { error ->
-
                             message(
                                 "Cloud connection failed: " +
                                     (error.localizedMessage
@@ -457,132 +330,76 @@ class CloudActivity : Activity() {
             }
         }
 
-        // EXISTING MANUAL BACKUP
-
+        addText("Manual Cloud Backup", 19f)
         addText(
-            "Manual Cloud Backup",
-            19f
+            "Save your bookings, services and staff to Firebase."
         )
 
-        addText(
-            "Save your bookings, services " +
-                "and staff to Firebase."
-        )
-
-        addButton(
-            "Back Up to Cloud"
-        ) {
-
+        addButton("Back Up to Cloud") {
             AlertDialog.Builder(this)
-                .setTitle(
-                    "Replace cloud backup?"
-                )
+                .setTitle("Replace cloud backup?")
                 .setMessage(
-                    "This will overwrite the previous " +
-                        "cloud backup with data from " +
-                        "this phone."
+                    "This will overwrite the previous cloud " +
+                        "backup with data from this phone."
                 )
-                .setPositiveButton(
-                    "Back Up"
-                ) { _, _ ->
-
+                .setPositiveButton("Back Up") { _, _ ->
                     backup()
                 }
-                .setNegativeButton(
-                    "Cancel",
-                    null
-                )
+                .setNegativeButton("Cancel", null)
                 .show()
         }
 
-        addButton(
-            "Restore from Cloud"
-        ) {
-
+        addButton("Restore from Cloud") {
             AlertDialog.Builder(this)
-                .setTitle(
-                    "Replace local data?"
-                )
+                .setTitle("Replace local data?")
                 .setMessage(
                     "This will replace all bookings, " +
                         "services and staff currently " +
                         "stored on this phone."
                 )
-                .setPositiveButton(
-                    "Restore"
-                ) { _, _ ->
-
+                .setPositiveButton("Restore") { _, _ ->
                     restore()
                 }
-                .setNegativeButton(
-                    "Cancel",
-                    null
-                )
+                .setNegativeButton("Cancel", null)
                 .show()
         }
 
         addText(
-            "Manual backup and restore remain " +
-                "available. Live sync monitoring " +
-                "is being tested in Phase 6C."
+            "Manual backup and restore remain available. " +
+                "Live sync monitoring is being tested.",
+            14f
         )
     }
 
-    // FIRESTORE BACKUP LOCATION
-
     private fun backupDocument() =
         db.collection("users")
-            .document(
-                auth.currentUser!!.uid
-            )
+            .document(auth.currentUser!!.uid)
             .collection("backups")
             .document("latest")
 
-    // MANUAL CLOUD BACKUP
-
     private fun backup() {
-
         val user = auth.currentUser ?: return
 
         if (!user.isEmailVerified) {
-
-            message(
-                "Verify your email first"
-            )
-
+            message("Verify your email first")
             return
         }
 
         val bookings =
-            prefs.getString(
-                "bookings",
-                "[]"
-            ) ?: "[]"
+            prefs.getString("bookings", "[]") ?: "[]"
 
         val services =
-            prefs.getString(
-                "services",
-                "[]"
-            ) ?: "[]"
+            prefs.getString("services", "[]") ?: "[]"
 
         val staff =
-            prefs.getString(
-                "staff",
-                "[]"
-            ) ?: "[]"
+            prefs.getString("staff", "[]") ?: "[]"
 
         try {
-
             JSONArray(bookings)
             JSONArray(services)
             JSONArray(staff)
-
         } catch (_: Exception) {
-
-            message(
-                "Local data is invalid"
-            )
-
+            message("Local data is invalid")
             return
         }
 
@@ -597,32 +414,20 @@ class CloudActivity : Activity() {
         backupDocument()
             .set(data)
             .addOnSuccessListener {
-
-                message(
-                    "Cloud backup completed successfully"
-                )
+                message("Cloud backup completed successfully")
             }
             .addOnFailureListener {
-
                 message(
-                    it.localizedMessage
-                        ?: "Backup failed"
+                    it.localizedMessage ?: "Backup failed"
                 )
             }
     }
 
-    // RESTORE FROM FIREBASE
-
     private fun restore() {
-
         val user = auth.currentUser ?: return
 
         if (!user.isEmailVerified) {
-
-            message(
-                "Verify your email first"
-            )
-
+            message("Verify your email first")
             return
         }
 
@@ -631,166 +436,108 @@ class CloudActivity : Activity() {
             .addOnSuccessListener { document ->
 
                 if (!document.exists()) {
-
-                    message(
-                        "No cloud backup found"
-                    )
-
+                    message("No cloud backup found")
                     return@addOnSuccessListener
                 }
 
-                val bookings =
-                    document.getString("bookings")
-
-                val services =
-                    document.getString("services")
-
-                val staff =
-                    document.getString("staff")
+                val bookings = document.getString("bookings")
+                val services = document.getString("services")
+                val staff = document.getString("staff")
 
                 if (
                     bookings == null ||
                     services == null ||
                     staff == null
                 ) {
-
-                    message(
-                        "Backup is incomplete"
-                    )
-
+                    message("Backup is incomplete")
                     return@addOnSuccessListener
                 }
 
                 try {
-
                     JSONArray(bookings)
                     JSONArray(services)
                     JSONArray(staff)
-
                 } catch (_: Exception) {
-
-                    message(
-                        "Backup contains invalid data"
-                    )
-
+                    message("Backup contains invalid data")
                     return@addOnSuccessListener
                 }
 
                 val saved = prefs.edit()
-                    .putString(
-                        "bookings",
-                        bookings
-                    )
-                    .putString(
-                        "services",
-                        services
-                    )
-                    .putString(
-                        "staff",
-                        staff
-                    )
+                    .putString("bookings", bookings)
+                    .putString("services", services)
+                    .putString("staff", staff)
                     .commit()
 
                 if (saved) {
-
                     message(
-                        "Restore complete. " +
-                            "Return to dashboard."
+                        "Restore complete. Return to dashboard."
                     )
-
                 } else {
-
-                    message(
-                        "Unable to save restored data"
-                    )
+                    message("Unable to save restored data")
                 }
             }
             .addOnFailureListener {
-
                 message(
-                    it.localizedMessage
-                        ?: "Restore failed"
+                    it.localizedMessage ?: "Restore failed"
                 )
             }
     }
-
-    // INPUT FIELD HELPER
 
     private fun input(
         hintText: String,
         password: Boolean = false
     ): EditText {
-
         val field = EditText(this).apply {
-
             hint = hintText
             setSingleLine(true)
 
             inputType = if (password) {
-
                 InputType.TYPE_CLASS_TEXT or
                     InputType.TYPE_TEXT_VARIATION_PASSWORD
-
             } else {
-
                 InputType.TYPE_CLASS_TEXT or
                     InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
             }
+
+            backgroundTintList =
+                ColorStateList.valueOf(orange)
+            setTextColor(dark)
+            setHintTextColor(Color.GRAY)
         }
 
         layout.addView(field)
-
         return field
     }
-
-    // TEXT HELPER
 
     private fun addText(
         value: String,
         size: Float = 16f
     ) {
-
         layout.addView(
             TextView(this).apply {
-
                 text = value
                 textSize = size
-
                 setTextColor(
-                    Color.rgb(40, 35, 55)
+                    if (size >= 21f) orange else dark
                 )
-
                 setPadding(
-                    8,
-                    12,
-                    8,
-                    12
+                    dp(8), dp(12), dp(8), dp(12)
                 )
             }
         )
     }
 
-    // BUTTON HELPER
-
     private fun addButton(
         label: String,
         action: () -> Unit
     ) {
-
         val button = Button(this).apply {
-
             text = label
             isAllCaps = false
             setTextColor(Color.WHITE)
-
             backgroundTintList =
-                android.content.res.ColorStateList.valueOf(
-                    purple
-                )
-
-            setOnClickListener {
-                action()
-            }
+                ColorStateList.valueOf(orange)
+            setOnClickListener { action() }
         }
 
         layout.addView(
@@ -799,18 +546,12 @@ class CloudActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-
-                bottomMargin = 12
+                bottomMargin = dp(12)
             }
         )
     }
 
-    // MESSAGE HELPER
-
-    private fun message(
-        value: String
-    ) {
-
+    private fun message(value: String) {
         Toast.makeText(
             this,
             value,
