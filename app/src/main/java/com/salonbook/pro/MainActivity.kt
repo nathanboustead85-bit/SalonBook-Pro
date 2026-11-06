@@ -35,6 +35,7 @@ class MainActivity : Activity() {
     private val bookings = mutableListOf<Booking>()
     private var selectedDate = today()
     private lateinit var container: LinearLayout
+    private lateinit var navigationBar: LinearLayout
     private var currentScreen = "dashboard"
 
     data class Booking(
@@ -64,6 +65,7 @@ class MainActivity : Activity() {
                 "calendar" -> showCalendar()
                 "appointments" -> showAppointments()
                 "clients" -> showClients()
+                "settings" -> showSettings()
                 "availability" -> showAvailabilityTester()
                 else -> showDashboard()
             }
@@ -106,6 +108,10 @@ class MainActivity : Activity() {
         window.decorView.systemUiVisibility =
             View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
 
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(this@MainActivity.background)
+        }
         val scroll = ScrollView(this).apply {
             setBackgroundColor(this@MainActivity.background)
             isFillViewport = true
@@ -113,27 +119,41 @@ class MainActivity : Activity() {
         }
         container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(24), dp(18), dp(36))
+            setPadding(dp(18), dp(24), dp(18), dp(24))
         }
         scroll.addView(container)
-        setContentView(scroll)
-        // Some Android edge-to-edge configurations ignore legacy status bar flags.
-        // Add the actual top inset to the content when it is not applied by the system.
+        root.addView(scroll, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+        ))
+        navigationBar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), dp(6), dp(8), dp(6))
+            setBackgroundColor(Color.WHITE)
+            elevation = dp(8).toFloat()
+        }
+        root.addView(navigationBar, LinearLayout.LayoutParams(-1, dp(70)))
+        setContentView(root)
         if (Build.VERSION.SDK_INT >= 30) {
-            scroll.setOnApplyWindowInsetsListener { _, insets ->
-                val top = insets.getInsets(android.view.WindowInsets.Type.statusBars()).top
-                val bottom = insets.getInsets(android.view.WindowInsets.Type.navigationBars()).bottom
-                // Content is already offset when decorFitsSystemWindows is true.
-                // Using scroll's visible frame avoids applying the inset twice.
+            root.setOnApplyWindowInsetsListener { _, insets ->
+                val systemBars = insets.getInsets(
+                    android.view.WindowInsets.Type.statusBars() or
+                        android.view.WindowInsets.Type.navigationBars()
+                )
+                // Only add insets when the activity is laid out edge-to-edge.
                 val frame = android.graphics.Rect()
-                scroll.getWindowVisibleDisplayFrame(frame)
-                val needsTop = frame.top < top / 2
-                container.setPadding(dp(18), dp(24) + if (needsTop) top else 0,
-                    dp(18), dp(36) + if (bottom > 0 && scroll.rootWindowInsets != null &&
-                        frame.bottom >= resources.displayMetrics.heightPixels - bottom / 2) bottom else 0)
+                root.getWindowVisibleDisplayFrame(frame)
+                val edgeToEdgeTop = frame.top < systemBars.top / 2
+                root.setPadding(
+                    0,
+                    if (edgeToEdgeTop) systemBars.top else 0,
+                    0,
+                    if (edgeToEdgeTop) systemBars.bottom else 0
+                )
                 insets
             }
         }
+        updateNavigation(mode)
         container.addView(label("BOUSTIO", 14f, orange, true))
         container.addView(label(title, 29f, dark, true), LinearLayout.LayoutParams(-1, -2).apply {
             topMargin = dp(12)
@@ -144,6 +164,80 @@ class MainActivity : Activity() {
                 bottomMargin = dp(14)
             })
         }
+    }
+
+    private fun updateNavigation(mode: String) {
+        if (!::navigationBar.isInitialized) return
+        navigationBar.removeAllViews()
+        val active = when (mode) {
+            "calendar" -> "calendar"
+            "clients" -> "clients"
+            "settings" -> "settings"
+            else -> "dashboard"
+        }
+        val destinations = listOf(
+            Triple("Home", "⌂", "dashboard"),
+            Triple("Calendar", "▦", "calendar"),
+            Triple("Clients", "♙", "clients"),
+            Triple("Settings", "⚙", "settings")
+        )
+        destinations.forEach { (title, symbol, destination) ->
+            val selected = destination == active
+            val item = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setPadding(dp(2), dp(4), dp(2), dp(4))
+                background = rounded(if (selected) paleOrange else Color.WHITE, 12)
+                isClickable = true
+                isFocusable = true
+                contentDescription = title
+                setOnClickListener {
+                    when (destination) {
+                        "dashboard" -> showDashboard()
+                        "calendar" -> showCalendar()
+                        "clients" -> showClients()
+                        "settings" -> showSettings()
+                    }
+                }
+            }
+            item.addView(label(symbol, 23f, if (selected) orange else muted, selected).apply {
+                gravity = Gravity.CENTER
+            })
+            item.addView(label(title, 11f, if (selected) orange else muted, selected).apply {
+                gravity = Gravity.CENTER
+            })
+            navigationBar.addView(item, LinearLayout.LayoutParams(0, -1, 1f).apply {
+                marginStart = dp(2)
+                marginEnd = dp(2)
+            })
+        }
+    }
+
+    private fun showSettings() {
+        screen("Settings", "Your business account and tools.", "settings")
+        section("Business management")
+        actionCard("Services & Prices", "Manage your service catalogue", "£") {
+            startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
+        }
+        actionCard("Staff & Working Hours", "Manage your team and availability", "♧") {
+            startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
+        }
+        actionCard("My Boustio Booking Link", "Manage your public booking profile", "↗") {
+            startActivity(Intent(this, BusinessProfileActivity::class.java))
+        }
+        section("Account and tools")
+        actionCard("Cloud Account & Backup", "Cloud account, backup and restore", "☁") {
+            startActivity(Intent(this, CloudActivity::class.java))
+        }
+        actionCard("Test Appointment Availability", "Check booking slots", "✓") {
+            showAvailabilityTester()
+        }
+        section("Appointments")
+        actionCard("All Appointments", "Browse and manage every booking", "◷") {
+            showAppointments()
+        }
+        button("Back to Dashboard") { showDashboard() }
+        text("BOUSTIO  •  Phase 9B.1", 12f)
     }
 
     private fun text(value: String, size: Float = 16f) {
@@ -286,7 +380,7 @@ class MainActivity : Activity() {
         actionCard("Test Appointment Availability", "Check available booking slots", "✓") {
             showAvailabilityTester()
         }
-        container.addView(label("BOUSTIO  •  Phase 9A.5", 12f, muted),
+        container.addView(label("BOUSTIO  •  Phase 9B.1", 12f, muted),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
     }
 
