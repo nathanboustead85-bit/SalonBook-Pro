@@ -5,10 +5,13 @@ import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import com.google.firebase.auth.FirebaseAuth
@@ -21,9 +24,11 @@ import java.util.UUID
 
 class MainActivity : Activity() {
 
-    private val purple = Color.rgb(111, 66, 193)
-    private val dark = Color.rgb(40, 35, 55)
-    private val background = Color.rgb(248, 246, 252)
+    private val orange = Color.rgb(242, 110, 36)
+    private val dark = Color.rgb(32, 36, 43)
+    private val background = Color.rgb(250, 249, 247)
+    private val muted = Color.rgb(110, 114, 120)
+    private val purple get() = orange
 
     private val prefs by lazy {
         getSharedPreferences("salonbook_data", MODE_PRIVATE)
@@ -64,6 +69,18 @@ class MainActivity : Activity() {
         SimpleDateFormat("yyyy-MM-dd", Locale.UK)
             .format(System.currentTimeMillis())
 
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
+
+    private fun rounded(
+        colour: Int,
+        radius: Int = 16
+    ): GradientDrawable =
+        GradientDrawable().apply {
+            setColor(colour)
+            cornerRadius = dp(radius).toFloat()
+        }
+
     private fun readRecords(key: String): List<JSONObject> {
         return try {
             val array = JSONArray(
@@ -79,12 +96,13 @@ class MainActivity : Activity() {
 
     private fun screen(title: String) {
         val scroll = ScrollView(this).apply {
-            setBackgroundColor(this@MainActivity.background)
+            setBackgroundColor(background)
+            fillViewport = true
         }
 
         container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(32, 45, 32, 40)
+            setPadding(dp(20), dp(24), dp(20), dp(30))
         }
 
         scroll.addView(container)
@@ -92,11 +110,11 @@ class MainActivity : Activity() {
 
         container.addView(TextView(this).apply {
             text = title
-            textSize = 27f
+            textSize = 26f
             typeface = Typeface.DEFAULT_BOLD
-            setTextColor(purple)
+            setTextColor(orange)
             gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 24)
+            setPadding(0, 0, 0, dp(24))
         })
     }
 
@@ -108,7 +126,7 @@ class MainActivity : Activity() {
             text = value
             textSize = size
             setTextColor(dark)
-            setPadding(8, 12, 8, 12)
+            setPadding(dp(8), dp(12), dp(8), dp(12))
         })
     }
 
@@ -121,14 +139,8 @@ class MainActivity : Activity() {
             isAllCaps = false
             textSize = 16f
             setTextColor(Color.WHITE)
-
-            backgroundTintList =
-                android.content.res.ColorStateList
-                    .valueOf(purple)
-
-            setOnClickListener {
-                action()
-            }
+            backgroundTintList = ColorStateList.valueOf(orange)
+            setOnClickListener { action() }
         }
 
         container.addView(
@@ -137,47 +149,101 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                bottomMargin = 12
+                bottomMargin = dp(10)
+            }
+        )
+    }
+
+    private fun section(label: String) {
+        container.addView(TextView(this).apply {
+            text = label.uppercase(Locale.UK)
+            textSize = 12f
+            letterSpacing = 0.1f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(muted)
+            setPadding(0, dp(24), 0, dp(12))
+        })
+    }
+
+    private fun dashboardCard(
+        label: String,
+        value: String
+    ) {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(18), dp(20), dp(18))
+            background = rounded(Color.WHITE)
+            elevation = dp(2).toFloat()
+        }
+
+        card.addView(TextView(this).apply {
+            text = label
+            textSize = 14f
+            setTextColor(muted)
+        })
+
+        card.addView(TextView(this).apply {
+            text = value
+            textSize = 30f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(dark)
+            setPadding(0, dp(6), 0, 0)
+        })
+
+        container.addView(
+            card,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dp(12)
             }
         )
     }
 
     private fun showDashboard() {
-        screen("SalonBook Pro")
+        screen("BOUSTIO")
 
-        text(
-            "Your Beauty Business. Simplified.",
-            17f
+        container.addView(TextView(this).apply {
+            text = "Your business. Beautifully organised."
+            textSize = 16f
+            setTextColor(muted)
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, dp(12))
+        })
+
+        section("Today's overview")
+
+        dashboardCard(
+            "Appointments today",
+            bookings.count { it.date == today() }.toString()
         )
 
-        text(
-            "Today's appointments: " +
-                "${bookings.count { it.date == today() }}",
-            20f
+        dashboardCard(
+            "Upcoming appointments",
+            bookings.count { it.date >= today() }.toString()
         )
 
-        text(
-            "Upcoming appointments: " +
-                "${bookings.count { it.date >= today() }}",
-            20f
+        dashboardCard(
+            "Total saved bookings",
+            bookings.size.toString()
         )
 
-        text(
-            "Total saved bookings: ${bookings.size}",
-            18f
-        )
+        section("Quick actions")
 
-        button("View Appointment Calendar") {
-            showCalendar()
+        button("＋  New Appointment") {
+            bookingDialog()
         }
 
-        button("Create New Booking") {
-            bookingDialog()
+        button("Appointment Calendar") {
+            showCalendar()
         }
 
         button("All Appointments") {
             showAppointments()
         }
+
+        section("Manage your business")
 
         button("Clients") {
             showClients()
@@ -185,65 +251,43 @@ class MainActivity : Activity() {
 
         button("Services & Prices") {
             startActivity(
-                Intent(
-                    this,
-                    ManagementActivity::class.java
-                ).putExtra("staff", false)
+                Intent(this, ManagementActivity::class.java)
+                    .putExtra("staff", false)
             )
         }
 
-        button("Staff Management") {
+        button("Staff & Working Hours") {
             startActivity(
-                Intent(
-                    this,
-                    ManagementActivity::class.java
-                ).putExtra("staff", true)
+                Intent(this, ManagementActivity::class.java)
+                    .putExtra("staff", true)
             )
         }
+
+        button("My Boustio Booking Link") {
+            startActivity(
+                Intent(this, BusinessProfileActivity::class.java)
+            )
+        }
+
+        section("Account & tools")
 
         button("Cloud Account & Backup") {
             startActivity(
-                Intent(
-                    this,
-                    CloudActivity::class.java
-                )
+                Intent(this, CloudActivity::class.java)
             )
         }
 
-        // Phase 7A: Open business profile and booking setup.
-        button("My Booking Link") {
-            startActivity(
-                Intent(
-                    this,
-                    BusinessProfileActivity::class.java
-                )
-            )
-        }
-
-        // Phase 8A: Private availability testing.
         button("Test Appointment Availability") {
             showAvailabilityTester()
         }
 
-        button("Business Settings") {
-            message(
-                "Business settings are coming next"
-            )
-        }
-
-        text(
-            "SalonBook Pro | Phase 8A - Availability Testing",
-            12f
-        )
+        text("BOUSTIO  •  Phase 9A", 12f)
     }
 
     private fun showCalendar() {
         screen("Appointment Calendar")
 
-        text(
-            "Selected date: $selectedDate",
-            19f
-        )
+        text("Selected date: $selectedDate", 19f)
 
         button("Choose Date") {
             pickDate(selectedDate) {
@@ -253,29 +297,20 @@ class MainActivity : Activity() {
         }
 
         button("Add Booking for This Date") {
-            bookingDialog(
-                defaultDate = selectedDate
-            )
+            bookingDialog(defaultDate = selectedDate)
         }
 
         val daily = bookings.filter {
             it.date == selectedDate
-        }.sortedBy {
-            it.time
-        }
+        }.sortedBy { it.time }
 
-        text(
-            "${daily.size} appointments",
-            18f
-        )
+        text("${daily.size} appointments", 18f)
 
         if (daily.isEmpty()) {
             text("No appointments for this date.")
         }
 
-        daily.forEach {
-            bookingCard(it)
-        }
+        daily.forEach { bookingCard(it) }
 
         button("Back to Dashboard") {
             showDashboard()
@@ -286,20 +321,15 @@ class MainActivity : Activity() {
         screen("All Appointments")
 
         val sorted = bookings.sortedWith(
-            compareBy<Booking> {
-                it.date
-            }.thenBy {
-                it.time
-            }
+            compareBy<Booking> { it.date }
+                .thenBy { it.time }
         )
 
         if (sorted.isEmpty()) {
             text("No appointments saved yet.")
         }
 
-        sorted.forEach {
-            bookingCard(it)
-        }
+        sorted.forEach { bookingCard(it) }
 
         button("Create New Booking") {
             bookingDialog()
@@ -313,8 +343,9 @@ class MainActivity : Activity() {
     private fun bookingCard(booking: Booking) {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(22, 18, 22, 18)
-            setBackgroundColor(Color.WHITE)
+            setPadding(dp(18), dp(16), dp(18), dp(16))
+            background = rounded(Color.WHITE)
+            elevation = dp(2).toFloat()
         }
 
         val staff = readRecords("staff").firstOrNull {
@@ -331,28 +362,20 @@ class MainActivity : Activity() {
 
         val details = buildString {
             append(
-                "${booking.time}$end  •  " +
-                    "${booking.client}\n" +
-                    "${booking.service}\n" +
-                    booking.date
+                "${booking.time}$end  •  ${booking.client}\n" +
+                    "${booking.service}\n${booking.date}"
             )
 
             if (staff != null) {
-                append(
-                    "\nStaff: ${staff.optString("name")}"
-                )
+                append("\nStaff: ${staff.optString("name")}")
             }
 
             if (booking.price.isNotBlank()) {
-                append(
-                    "\nPrice: £${booking.price}"
-                )
+                append("\nPrice: £${booking.price}")
             }
 
             if (booking.notes.isNotBlank()) {
-                append(
-                    "\nNotes: ${booking.notes}"
-                )
+                append("\nNotes: ${booking.notes}")
             }
         }
 
@@ -360,13 +383,12 @@ class MainActivity : Activity() {
             text = details
             textSize = 16f
             setTextColor(dark)
-            setPadding(0, 0, 0, 12)
+            setPadding(0, 0, 0, dp(12))
         })
 
         card.addView(Button(this).apply {
             text = "Edit / Cancel"
             isAllCaps = false
-
             setOnClickListener {
                 bookingOptions(booking)
             }
@@ -378,7 +400,7 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                bottomMargin = 16
+                bottomMargin = dp(16)
             }
         )
     }
@@ -387,10 +409,7 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle(booking.client)
             .setItems(
-                arrayOf(
-                    "Edit Booking",
-                    "Cancel Booking"
-                )
+                arrayOf("Edit Booking", "Cancel Booking")
             ) { _, which ->
                 if (which == 0) {
                     bookingDialog(booking)
@@ -406,25 +425,16 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle("Cancel appointment?")
             .setMessage(
-                "Remove ${booking.client}'s " +
-                    "appointment on ${booking.date} " +
-                    "at ${booking.time}?"
+                "Remove ${booking.client}'s appointment " +
+                    "on ${booking.date} at ${booking.time}?"
             )
-            .setPositiveButton(
-                "Cancel Appointment"
-            ) { _, _ ->
-                bookings.removeAll {
-                    it.id == booking.id
-                }
-
+            .setPositiveButton("Cancel Appointment") { _, _ ->
+                bookings.removeAll { it.id == booking.id }
                 saveBookings()
                 showDashboard()
                 message("Appointment cancelled")
             }
-            .setNegativeButton(
-                "Keep Booking",
-                null
-            )
+            .setNegativeButton("Keep Booking", null)
             .show()
     }
 
@@ -439,9 +449,8 @@ class MainActivity : Activity() {
             AlertDialog.Builder(this)
                 .setTitle("Setup required")
                 .setMessage(
-                    "Add at least one service and " +
-                        "one staff member before " +
-                        "creating smart bookings."
+                    "Add at least one service and one staff " +
+                        "member before creating smart bookings."
                 )
                 .setPositiveButton("OK", null)
                 .show()
@@ -450,7 +459,7 @@ class MainActivity : Activity() {
 
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(28, 12, 28, 0)
+            setPadding(dp(28), dp(12), dp(28), 0)
         }
 
         fun field(
@@ -621,9 +630,7 @@ class MainActivity : Activity() {
                     service.optInt("duration", 0)
 
                 if (duration <= 0) {
-                    message(
-                        "Service duration must be positive"
-                    )
+                    message("Service duration must be positive")
                     return@setOnClickListener
                 }
 
@@ -652,8 +659,8 @@ class MainActivity : Activity() {
 
                 if (conflict) {
                     message(
-                        "This staff member already " +
-                            "has an overlapping booking"
+                        "This staff member already has " +
+                            "an overlapping booking"
                     )
                     return@setOnClickListener
                 }
@@ -676,11 +683,7 @@ class MainActivity : Activity() {
 
                 val booking = existing ?: Booking(
                     UUID.randomUUID().toString(),
-                    "",
-                    "",
-                    "",
-                    "",
-                    ""
+                    "", "", "", "", ""
                 )
 
                 booking.client = name
@@ -691,7 +694,8 @@ class MainActivity : Activity() {
                 booking.price = service.optString("price")
                 booking.date = date
                 booking.time = time
-                booking.notes = notes.text.toString().trim()
+                booking.notes =
+                    notes.text.toString().trim()
 
                 if (existing == null) {
                     bookings.add(booking)
@@ -775,13 +779,8 @@ class MainActivity : Activity() {
             ) % 7
 
             val names = listOf(
-                "mon",
-                "tue",
-                "wed",
-                "thu",
-                "fri",
-                "sat",
-                "sun"
+                "mon", "tue", "wed", "thu",
+                "fri", "sat", "sun"
             )
 
             val allowed = mutableSetOf<Int>()
@@ -870,10 +869,7 @@ class MainActivity : Activity() {
             it.client
         }.distinct().sorted()
 
-        text(
-            "${clients.size} clients",
-            18f
-        )
+        text("${clients.size} clients", 18f)
 
         if (clients.isEmpty()) {
             text(
@@ -896,7 +892,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // Phase 8A: Read-only availability tester.
+    // Read-only availability tester.
     private fun showAvailabilityTester(
         testDate: String = selectedDate
     ) {
@@ -944,9 +940,7 @@ class MainActivity : Activity() {
             adapter = ArrayAdapter(
                 this@MainActivity,
                 android.R.layout.simple_spinner_dropdown_item,
-                staff.map {
-                    it.optString("name")
-                }
+                staff.map { it.optString("name") }
             )
         }
 
@@ -1069,13 +1063,13 @@ class MainActivity : Activity() {
 
         val json = array.toString()
 
-        // Save locally first.
+        // Save locally before cloud upload.
         prefs.edit()
             .putString("bookings", json)
             .apply()
 
-        // Phase 6B: attempt automatic cloud upload.
-        if (FirebaseAuth.getInstance()
+        if (
+            FirebaseAuth.getInstance()
                 .currentUser?.isEmailVerified == true
         ) {
             CloudSyncManager().upload(
