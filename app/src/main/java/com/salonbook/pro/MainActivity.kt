@@ -282,7 +282,7 @@ class MainActivity : Activity() {
             showAppointments()
         }
         button("Back to Dashboard") { showDashboard() }
-        text("BOUSTIO  •  Phase 9B.3", 12f)
+        text("BOUSTIO  •  Phase 9C.1", 12f)
     }
 
     private fun text(value: String, size: Float = 16f) {
@@ -425,7 +425,7 @@ class MainActivity : Activity() {
         actionCard("Test Appointment Availability", "Check available booking slots", "✓") {
             showAvailabilityTester()
         }
-        container.addView(label("BOUSTIO  •  Phase 9B.3", 12f, muted),
+        container.addView(label("BOUSTIO  •  Phase 9C.1", 12f, muted),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
     }
 
@@ -587,18 +587,40 @@ class MainActivity : Activity() {
         }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(12), dp(24), dp(8))
+            setPadding(dp(20), dp(12), dp(20), dp(16))
+            setBackgroundColor(background)
         }
-        fun field(hintText: String, value: String = ""): EditText = EditText(this).apply {
-            hint = hintText
-            setSingleLine(true)
-            setText(value)
-            setTextColor(dark)
-            backgroundTintList = ColorStateList.valueOf(orange)
-            form.addView(this)
+        fun section(heading: String, description: String): LinearLayout {
+            val card = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(16), dp(14), dp(16), dp(16))
+                background = GradientDrawable().apply {
+                    setColor(Color.WHITE)
+                    cornerRadius = dp(18).toFloat()
+                    setStroke(dp(1), lightBorder)
+                }
+            }
+            card.addView(label(heading, 17f, dark, true))
+            card.addView(label(description, 12f, muted), LinearLayout.LayoutParams(-1, -2).apply {
+                topMargin = dp(4); bottomMargin = dp(8)
+            })
+            form.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
+            return card
         }
-        val client = field("Client name", existing?.client ?: "")
-        val notes = field("Notes (optional)", existing?.notes ?: "")
+        fun field(parent: LinearLayout, hintText: String, value: String = ""): EditText =
+            EditText(this).apply {
+                hint = hintText
+                setSingleLine(true)
+                setText(value)
+                setTextColor(dark)
+                textSize = 15f
+                backgroundTintList = ColorStateList.valueOf(orange)
+                parent.addView(this, LinearLayout.LayoutParams(-1, -2))
+            }
+        val clientCard = section("01  Client details", "Who is this appointment for?")
+        val client = field(clientCard, "Client name", existing?.client ?: "")
+        val notes = field(clientCard, "Notes (optional)", existing?.notes ?: "")
+        val serviceCard = section("02  Service & professional", "Choose the treatment and team member")
         val serviceSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item,
                 services.map { "${it.optString("name")} · £${it.optString("price")} · ${it.optInt("duration")} min" })
@@ -609,23 +631,24 @@ class MainActivity : Activity() {
                 if (old >= 0) setSelection(old)
             }
         }
-        form.addView(label("Service", 16f, dark, true))
-        form.addView(serviceSpinner)
+        serviceCard.addView(label("Service", 13f, muted, true))
+        serviceCard.addView(serviceSpinner, LinearLayout.LayoutParams(-1, dp(48)))
         val staffSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item,
                 staff.map { "${it.optString("name")} · ${it.optString("role")}" })
             val index = staff.indexOfFirst { it.optString("id") == existing?.staffId }
             if (index >= 0) setSelection(index)
         }
-        form.addView(label("Staff member", 16f, dark, true))
-        form.addView(staffSpinner)
+        serviceCard.addView(label("Staff member", 13f, muted, true))
+        serviceCard.addView(staffSpinner, LinearLayout.LayoutParams(-1, dp(48)))
+        val whenCard = section("03  Date & time", "Select when the client will visit")
         var date = existing?.date ?: defaultDate
         var time = existing?.time ?: "09:00"
         val dateButton = Button(this).apply { text = "Date: $date"; styleButton(this, false) }
         dateButton.setOnClickListener {
             pickDate(date) { date = it; dateButton.text = "Date: $date" }
         }
-        form.addView(dateButton)
+        whenCard.addView(dateButton, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(8) })
         val timeButton = Button(this).apply { text = "Time: $time"; styleButton(this, false) }
         timeButton.setOnClickListener {
             val parts = time.split(":")
@@ -634,9 +657,10 @@ class MainActivity : Activity() {
                 timeButton.text = "Time: $time"
             }, parts[0].toInt(), parts[1].toInt(), true).show()
         }
-        form.addView(timeButton)
+        whenCard.addView(timeButton, LinearLayout.LayoutParams(-1, dp(52)))
+        form.addView(label("Availability and overlap checks run when you save.", 12f, muted))
         val dialog = AlertDialog.Builder(this)
-            .setTitle(if (existing == null) "New Booking" else "Edit Booking")
+            .setTitle(if (existing == null) "New Appointment" else "Edit Appointment")
             .setView(ScrollView(this).apply { addView(form) })
             .setPositiveButton("Save", null)
             .setNegativeButton("Cancel", null)
