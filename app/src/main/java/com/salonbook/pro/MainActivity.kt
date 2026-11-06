@@ -68,6 +68,7 @@ class MainActivity : Activity() {
                 "calendar" -> showCalendar()
                 "appointments" -> showAppointments()
                 "clients" -> showClients()
+                "client_profile" -> showClients()
                 "settings" -> showSettings()
                 "availability" -> showAvailabilityTester()
                 else -> showDashboard()
@@ -243,6 +244,7 @@ class MainActivity : Activity() {
                         "dashboard" -> showDashboard()
                         "calendar" -> showCalendar()
                         "clients" -> showClients()
+                "client_profile" -> showClients()
                         "settings" -> showSettings()
                     }
                 }
@@ -282,7 +284,7 @@ class MainActivity : Activity() {
             showAppointments()
         }
         button("Back to Dashboard") { showDashboard() }
-        text("BOUSTIO  •  Phase 9C.3", 12f)
+        text("BOUSTIO  •  Phase 9D.1", 12f)
     }
 
     private fun text(value: String, size: Float = 16f) {
@@ -425,7 +427,7 @@ class MainActivity : Activity() {
         actionCard("Test Appointment Availability", "Check available booking slots", "✓") {
             showAvailabilityTester()
         }
-        container.addView(label("BOUSTIO  •  Phase 9C.3", 12f, muted),
+        container.addView(label("BOUSTIO  •  Phase 9D.1", 12f, muted),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
     }
 
@@ -880,17 +882,99 @@ class MainActivity : Activity() {
         }, parts[0].toInt(), parts[1].toInt() - 1, parts[2].toInt()).show()
     }
 
-    private fun showClients() {
-        screen("Clients", "Your appointment clients.", "clients")
-        val clients = bookings.map { it.client }.distinct().sorted()
-        text("${clients.size} clients", 18f)
-        if (clients.isEmpty()) text("Clients appear here after bookings are added.")
-        clients.forEach { name ->
-            val card = panel()
-            card.addView(label(name, 18f, dark, true))
-            card.addView(label("${bookings.count { it.client == name }} booking(s)", 14f, muted))
-            addPanel(card)
+    private fun clientProfileKey(name: String): String =
+        "client_profile_" + name.trim().lowercase(Locale.UK)
+
+    private fun showClientProfile(name: String) {
+        screen("Client Profile", name, "client_profile")
+        val key = clientProfileKey(name)
+        val saved = runCatching {
+            JSONObject(prefs.getString(key, "{}") ?: "{}")
+        }.getOrDefault(JSONObject())
+        val history = bookings.filter { it.client.trim().equals(name.trim(), ignoreCase = true) }
+            .sortedWith(compareByDescending<Booking> { it.date }.thenByDescending { it.time })
+        val card = panel()
+        card.addView(label(name, 22f, dark, true))
+        card.addView(label("${history.size} appointments", 14f, muted))
+        addPanel(card)
+        section("Contact details")
+        val contact = panel()
+        fun input(hint: String, value: String): EditText = EditText(this).apply {
+            this.hint = hint
+            setText(value)
+            setSingleLine(true)
+            textSize = 15f
+            setTextColor(dark)
+            backgroundTintList = ColorStateList.valueOf(orange)
+            contact.addView(this, LinearLayout.LayoutParams(-1, -2))
         }
+        val phone = input("Phone number", saved.optString("phone"))
+        phone.inputType = android.text.InputType.TYPE_CLASS_PHONE
+        val email = input("Email address", saved.optString("email"))
+        email.inputType = android.text.InputType.TYPE_CLASS_TEXT or
+            android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+        val notes = input("Client notes", saved.optString("notes"))
+        addPanel(contact)
+        button("Save Client Details") {
+            val data = JSONObject().apply {
+                put("phone", phone.text.toString().trim())
+                put("email", email.text.toString().trim())
+                put("notes", notes.text.toString().trim())
+            }
+            prefs.edit().putString(key, data.toString()).apply()
+            message("Client details saved on this device")
+        }
+        section("Appointment history")
+        if (history.isEmpty()) text("No appointments recorded.")
+        history.forEach { bookingCard(it) }
+        button("Back to Clients") { showClients() }
+    }
+
+    private fun showClients(query: String = "") {
+        screen("Clients", "Search your clients and view appointment history.", "clients")
+        val names = bookings.map { it.client.trim() }.filter { it.isNotBlank() }
+            .distinctBy { it.lowercase(Locale.UK) }.sortedBy { it.lowercase(Locale.UK) }
+        val search = EditText(this).apply {
+            hint = "Search clients"
+            setSingleLine(true)
+            setText(query)
+            textSize = 16f
+            setTextColor(dark)
+            backgroundTintList = ColorStateList.valueOf(orange)
+        }
+        container.addView(search, LinearLayout.LayoutParams(-1, dp(54)))
+        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        container.addView(results)
+        fun updateResults(filter: String) {
+            results.removeAllViews()
+            val matching = names.filter { it.contains(filter.trim(), ignoreCase = true) }
+            results.addView(label("${matching.size} of ${names.size} clients", 15f, muted))
+            if (names.isEmpty()) results.addView(label("Clients appear here after bookings are added.", 14f, muted))
+            else if (matching.isEmpty()) results.addView(label("No matching clients.", 14f, muted))
+            matching.forEach { name ->
+                val history = bookings.filter { it.client.trim().equals(name, ignoreCase = true) }
+                val card = panel()
+                card.addView(label(name, 18f, dark, true))
+                card.addView(label("${history.size} booking(s)", 14f, muted))
+                card.addView(Button(this).apply {
+                    text = "View Profile & History"
+                    styleButton(this, false)
+                    setOnClickListener { showClientProfile(name) }
+                })
+                results.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
+                    topMargin = dp(8)
+                    bottomMargin = dp(6)
+                })
+            }
+        }
+        search.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                updateResults(s?.toString() ?: "")
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+        updateResults(query)
         button("Back to Dashboard") { showDashboard() }
     }
 
@@ -994,4 +1078,5 @@ class MainActivity : Activity() {
     private fun message(value: String) {
         Toast.makeText(this, value, Toast.LENGTH_SHORT).show()
     }
+
 }
