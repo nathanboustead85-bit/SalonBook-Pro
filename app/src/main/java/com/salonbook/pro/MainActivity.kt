@@ -20,6 +20,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.Source
+import java.security.MessageDigest
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -284,7 +288,7 @@ class MainActivity : Activity() {
             showAppointments()
         }
         button("Back to Dashboard") { showDashboard() }
-        text("BOUSTIO  •  Phase 9D.1", 12f)
+        text("BOUSTIO  •  Phase 9D.2", 12f)
     }
 
     private fun text(value: String, size: Float = 16f) {
@@ -427,7 +431,7 @@ class MainActivity : Activity() {
         actionCard("Test Appointment Availability", "Check available booking slots", "✓") {
             showAvailabilityTester()
         }
-        container.addView(label("BOUSTIO  •  Phase 9D.1", 12f, muted),
+        container.addView(label("BOUSTIO  •  Phase 9D.2", 12f, muted),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
     }
 
@@ -885,6 +889,17 @@ class MainActivity : Activity() {
     private fun clientProfileKey(name: String): String =
         "client_profile_" + name.trim().lowercase(Locale.UK)
 
+    private fun clientCloudDocument(name: String): com.google.firebase.firestore.DocumentReference? {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null || !user.isEmailVerified) return null
+        val normalized = name.trim().lowercase(Locale.UK)
+        val digest = MessageDigest.getInstance("SHA-256")
+            .digest(normalized.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+        return FirebaseFirestore.getInstance().collection("users").document(user.uid)
+            .collection("clientProfiles").document(digest)
+    }
+
     private fun showClientProfile(name: String) {
         screen("Client Profile", name, "client_profile")
         val key = clientProfileKey(name)
@@ -923,6 +938,89 @@ class MainActivity : Activity() {
             }
             prefs.edit().putString(key, data.toString()).apply()
             message("Client details saved on this device")
+        }
+        section("Secure cloud profile")
+        text("Cloud changes are manual. Local details are never replaced without confirmation.", 13f)
+        button("Back Up This Client to Cloud") {
+            val ref = clientCloudDocument(name)
+            if (ref == null) {
+                message("Sign in with a verified email to use cloud profiles")
+            } else {
+                val phoneValue = phone.text.toString().trim()
+                val emailValue = email.text.toString().trim()
+                val notesValue = notes.text.toString().trim()
+                if (name.length > 150 || phoneValue.length > 50 ||
+                    emailValue.length > 254 || notesValue.length > 5000) {
+                    message("Client details exceed cloud field limits")
+                } else {
+                    ref.get(Source.SERVER).addOnSuccessListener { snapshot ->
+                        val proceed = {
+                            val data = mapOf(
+                                "name" to name.trim(),
+                                "phone" to phoneValue,
+                                "email" to emailValue,
+                                "notes" to notesValue,
+                                "schemaVersion" to 1,
+                                "updatedAt" to FieldValue.serverTimestamp()
+                            )
+                            ref.set(data).addOnSuccessListener {
+                                message("Cloud backup confirmed for $name")
+                            }.addOnFailureListener { error ->
+                                message("Cloud backup failed: ${error.localizedMessage}")
+                            }
+                        }
+                        if (snapshot.exists()) {
+                            AlertDialog.Builder(this)
+                                .setTitle("Replace cloud client profile?")
+                                .setMessage("A cloud profile already exists for $name. Replace it with the details currently on this screen?")
+                                .setPositiveButton("Replace") { _, _ -> proceed() }
+                                .setNegativeButton("Cancel", null).show()
+                        } else {
+                            AlertDialog.Builder(this)
+                                .setTitle("Back up client?")
+                                .setMessage("Upload $name's contact details and notes to your private Firebase account?")
+                                .setPositiveButton("Back Up") { _, _ -> proceed() }
+                                .setNegativeButton("Cancel", null).show()
+                        }
+                    }.addOnFailureListener { error ->
+                        message("Cloud verification failed: ${error.localizedMessage}")
+                    }
+                }
+            }
+        }
+        button("Restore This Client from Cloud") {
+            val ref = clientCloudDocument(name)
+            if (ref == null) {
+                message("Sign in with a verified email to restore")
+            } else {
+                ref.get(Source.SERVER).addOnSuccessListener { snapshot ->
+                    if (!snapshot.exists()) {
+                        message("No cloud profile found for $name")
+                    } else if (!snapshot.getString("name").orEmpty()
+                            .equals(name.trim(), ignoreCase = true)) {
+                        message("Cloud profile name mismatch; restore cancelled")
+                    } else {
+                        AlertDialog.Builder(this)
+                            .setTitle("Restore cloud client?")
+                            .setMessage("This will replace locally saved contact details and notes for $name. Continue?")
+                            .setPositiveButton("Restore") { _, _ ->
+                                val restored = JSONObject().apply {
+                                    put("phone", snapshot.getString("phone").orEmpty())
+                                    put("email", snapshot.getString("email").orEmpty())
+                                    put("notes", snapshot.getString("notes").orEmpty())
+                                }
+                                prefs.edit().putString(key, restored.toString()).apply()
+                                phone.setText(restored.optString("phone"))
+                                email.setText(restored.optString("email"))
+                                notes.setText(restored.optString("notes"))
+                                message("Cloud client restored")
+                            }
+                            .setNegativeButton("Cancel", null).show()
+                    }
+                }.addOnFailureListener { error ->
+                    message("Cloud restore failed: ${error.localizedMessage}")
+                }
+            }
         }
         section("Appointment history")
         if (history.isEmpty()) text("No appointments recorded.")
@@ -1078,5 +1176,4 @@ class MainActivity : Activity() {
     private fun message(value: String) {
         Toast.makeText(this, value, Toast.LENGTH_SHORT).show()
     }
-
 }
