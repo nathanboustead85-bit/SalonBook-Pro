@@ -276,6 +276,9 @@ class MainActivity : Activity() {
         actionCard("My Boustio Booking Link", "Manage your public booking profile", "↗") {
             startActivity(Intent(this, BusinessProfileActivity::class.java))
         }
+        actionCard("Customer Messages", "Private chat inbox (preview)", "✉") {
+            startActivity(Intent(this, ChatInboxActivity::class.java))
+        }
         section("Account and tools")
         actionCard("Cloud Account & Backup", "Cloud account, backup and restore", "☁") {
             startActivity(Intent(this, CloudActivity::class.java))
@@ -422,6 +425,10 @@ class MainActivity : Activity() {
         }
         actionCard("My Boustio Booking Link", "Your public booking profile", "↗") {
             startActivity(Intent(this, BusinessProfileActivity::class.java))
+        }
+
+        actionCard("Customer Messages", "Private chat inbox (preview)", "✉") {
+            startActivity(Intent(this, ChatInboxActivity::class.java))
         }
 
         section("Account & tools")
