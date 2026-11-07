@@ -21,6 +21,7 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Source
 
 import org.json.JSONArray
+import org.json.JSONObject
 
 class CloudActivity : Activity() {
 
@@ -332,7 +333,7 @@ class CloudActivity : Activity() {
 
         addText("Manual Cloud Backup", 19f)
         addText(
-            "Save your bookings, services and staff to Firebase."
+            "Save bookings, services, staff and registered clients to Firebase."
         )
 
         addButton("Back Up to Cloud") {
@@ -353,9 +354,8 @@ class CloudActivity : Activity() {
             AlertDialog.Builder(this)
                 .setTitle("Replace local data?")
                 .setMessage(
-                    "This will replace all bookings, " +
-                        "services and staff currently " +
-                        "stored on this phone."
+                    "This will replace bookings, services, staff and client data " +
+                        "on this phone if included in the backup."
                 )
                 .setPositiveButton("Restore") { _, _ ->
                     restore()
@@ -403,10 +403,39 @@ class CloudActivity : Activity() {
             return
         }
 
+        val manualClients = prefs.getString("manual_clients", "[]") ?: "[]"
+        val clientProfiles = JSONObject()
+        try {
+            val clients = JSONArray(manualClients)
+            for (i in 0 until clients.length()) {
+                val name = clients.getJSONObject(i).optString("name").trim()
+                if (name.isNotEmpty()) {
+                    val key = "client_profile_" + name.lowercase(java.util.Locale.UK)
+                    val profile = prefs.getString(key, "{}") ?: "{}"
+                    clientProfiles.put(key, JSONObject(profile))
+                }
+            }
+            // Include profiles of booked clients as well.
+            val booked = JSONArray(bookings)
+            for (i in 0 until booked.length()) {
+                val name = booked.getJSONObject(i).optString("client").trim()
+                if (name.isNotEmpty()) {
+                    val key = "client_profile_" + name.lowercase(java.util.Locale.UK)
+                    val profile = prefs.getString(key, "{}") ?: "{}"
+                    clientProfiles.put(key, JSONObject(profile))
+                }
+            }
+        } catch (_: Exception) {
+            message("Client data is invalid; backup cancelled")
+            return
+        }
+
         val data = hashMapOf<String, Any>(
             "bookings" to bookings,
             "services" to services,
             "staff" to staff,
+            "manualClients" to manualClients,
+            "clientProfiles" to clientProfiles.toString(),
             "schemaVersion" to 1,
             "updatedAt" to FieldValue.serverTimestamp()
         )
@@ -443,6 +472,8 @@ class CloudActivity : Activity() {
                 val bookings = document.getString("bookings")
                 val services = document.getString("services")
                 val staff = document.getString("staff")
+                val manualClients = document.getString("manualClients")
+                val clientProfiles = document.getString("clientProfiles")
 
                 if (
                     bookings == null ||
@@ -457,16 +488,30 @@ class CloudActivity : Activity() {
                     JSONArray(bookings)
                     JSONArray(services)
                     JSONArray(staff)
+                    if (manualClients != null) JSONArray(manualClients)
+                    if (clientProfiles != null) JSONObject(clientProfiles)
                 } catch (_: Exception) {
                     message("Backup contains invalid data")
                     return@addOnSuccessListener
                 }
 
-                val saved = prefs.edit()
+                val editor = prefs.edit()
                     .putString("bookings", bookings)
                     .putString("services", services)
                     .putString("staff", staff)
-                    .commit()
+                // Older backups did not include clients: preserve local client data.
+                if (manualClients != null) editor.putString("manual_clients", manualClients)
+                if (clientProfiles != null) {
+                    val profiles = JSONObject(clientProfiles)
+                    val keys = profiles.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        if (key.startsWith("client_profile_")) {
+                            editor.putString(key, profiles.getJSONObject(key).toString())
+                        }
+                    }
+                }
+                val saved = editor.commit()
 
                 if (saved) {
                     message(
