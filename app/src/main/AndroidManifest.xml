@@ -32,6 +32,8 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <activity android:name=".ChatInboxActivity" android:exported="false" android:screenOrientation="portrait" />
+
         <!-- Firebase cloud account and backup -->
         <activity
             android:name=".CloudActivity"
