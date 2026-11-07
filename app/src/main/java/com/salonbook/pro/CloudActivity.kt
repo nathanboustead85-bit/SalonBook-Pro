@@ -25,7 +25,7 @@ import org.json.JSONObject
 
 class CloudActivity : Activity() {
 
-    private val orange = Color.rgb(242, 110, 36)
+    private val orange = Color.rgb(0, 140, 149)
     private val dark = Color.rgb(32, 36, 43)
     private val backgroundColor = Color.rgb(250, 249, 247)
 
@@ -453,79 +453,96 @@ class CloudActivity : Activity() {
     }
 
     private fun restore() {
-        val user = auth.currentUser ?: return
-
-        if (!user.isEmailVerified) {
-            message("Verify your email first")
+        val user = auth.currentUser
+        if (user == null || !user.isEmailVerified) {
+            message("Sign in with a verified email first")
             return
         }
 
-        backupDocument()
-            .get(Source.SERVER)
+        val progress = AlertDialog.Builder(this)
+            .setTitle("Restoring cloud backup")
+            .setMessage("Contacting Firebase. Your local data has not been changed yet.")
+            .setCancelable(false)
+            .create()
+        progress.show()
+
+        backupDocument().get(Source.SERVER)
             .addOnSuccessListener { document ->
-
-                if (!document.exists()) {
-                    message("No cloud backup found")
-                    return@addOnSuccessListener
-                }
-
-                val bookings = document.getString("bookings")
-                val services = document.getString("services")
-                val staff = document.getString("staff")
-                val manualClients = document.getString("manualClients")
-                val clientProfiles = document.getString("clientProfiles")
-
-                if (
-                    bookings == null ||
-                    services == null ||
-                    staff == null
-                ) {
-                    message("Backup is incomplete")
-                    return@addOnSuccessListener
-                }
-
                 try {
+                    if (!document.exists()) {
+                        progress.dismiss()
+                        showRestoreResult("No cloud backup found", false)
+                        return@addOnSuccessListener
+                    }
+                    val bookings = document.getString("bookings")
+                    val services = document.getString("services")
+                    val staff = document.getString("staff")
+                    if (bookings == null || services == null || staff == null) {
+                        progress.dismiss()
+                        showRestoreResult("Cloud backup is incomplete. Nothing was changed.", false)
+                        return@addOnSuccessListener
+                    }
+                    // Parse and validate the entire backup before writing any local data.
                     JSONArray(bookings)
                     JSONArray(services)
                     JSONArray(staff)
+                    val manualClients = document.getString("manualClients")
                     if (manualClients != null) JSONArray(manualClients)
-                    if (clientProfiles != null) JSONObject(clientProfiles)
-                } catch (_: Exception) {
-                    message("Backup contains invalid data")
-                    return@addOnSuccessListener
-                }
-
-                val editor = prefs.edit()
-                    .putString("bookings", bookings)
-                    .putString("services", services)
-                    .putString("staff", staff)
-                // Older backups did not include clients: preserve local client data.
-                if (manualClients != null) editor.putString("manual_clients", manualClients)
-                if (clientProfiles != null) {
-                    val profiles = JSONObject(clientProfiles)
-                    val keys = profiles.keys()
-                    while (keys.hasNext()) {
-                        val key = keys.next()
-                        if (key.startsWith("client_profile_")) {
-                            editor.putString(key, profiles.getJSONObject(key).toString())
+                    val profilesRaw = document.getString("clientProfiles")
+                    val profiles = if (profilesRaw != null) JSONObject(profilesRaw) else null
+                    val validatedProfiles = mutableMapOf<String, String>()
+                    if (profiles != null) {
+                        val keys = profiles.keys()
+                        while (keys.hasNext()) {
+                            val key = keys.next()
+                            if (!key.startsWith("client_profile_")) {
+                                throw IllegalArgumentException("Invalid client profile key")
+                            }
+                            validatedProfiles[key] = profiles.getJSONObject(key).toString()
                         }
                     }
-                }
-                val saved = editor.commit()
-
-                if (saved) {
-                    message(
-                        "Restore complete. Return to dashboard."
+                    // Preserve existing local values if restoring an older backup.
+                    val editor = prefs.edit()
+                        .putString("bookings", bookings)
+                        .putString("services", services)
+                        .putString("staff", staff)
+                    if (manualClients != null) editor.putString("manual_clients", manualClients)
+                    validatedProfiles.forEach { (key, value) -> editor.putString(key, value) }
+                    if (!editor.commit()) {
+                        throw IllegalStateException("Phone storage refused the restore")
+                    }
+                    progress.dismiss()
+                    showRestoreResult(
+                        "Restore completed. Bookings, services and staff were restored." +
+                            if (profiles != null) " Client profiles were restored too."
+                            else " This older backup did not contain client profiles.",
+                        true
                     )
-                } else {
-                    message("Unable to save restored data")
+                } catch (error: Exception) {
+                    progress.dismiss()
+                    showRestoreResult(
+                        "Restore cancelled: ${error.localizedMessage ?: "Invalid backup data"}. " +
+                            "No new restore data was saved.",
+                        false
+                    )
                 }
             }
-            .addOnFailureListener {
-                message(
-                    it.localizedMessage ?: "Restore failed"
+            .addOnFailureListener { error ->
+                progress.dismiss()
+                showRestoreResult(
+                    "Firebase restore failed: ${error.localizedMessage ?: "Connection error"}. " +
+                        "Your local data was not changed.",
+                    false
                 )
             }
+    }
+
+    private fun showRestoreResult(details: String, success: Boolean) {
+        AlertDialog.Builder(this)
+            .setTitle(if (success) "Cloud restore successful" else "Cloud restore not completed")
+            .setMessage(details)
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     private fun input(
