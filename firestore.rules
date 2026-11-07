@@ -250,6 +250,23 @@ service cloud.firestore {
     }
 
     // ===================================
+    // PHASE 9E.1: PRIVATE CHAT FOUNDATION
+    // ===================================
+    // Conversation creation and customer messages will be performed by
+    // authenticated, rate-limited backend endpoints in later phases.
+    // Never permit anonymous visitors to write directly to Firestore.
+
+    match /businesses/{businessId}/conversations/{conversationId} {
+      allow get, list: if isVerifiedOwner(businessId);
+      allow create, update, delete: if false;
+
+      match /messages/{messageId} {
+        allow get, list: if isVerifiedOwner(businessId);
+        allow create, update, delete: if false;
+      }
+    }
+
+    // ===================================
     // DEFAULT DENY
     // ===================================
 
