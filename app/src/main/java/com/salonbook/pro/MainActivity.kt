@@ -625,7 +625,7 @@ class MainActivity : Activity() {
             }
         val clientCard = section("01  Client details", "Who is this appointment for?")
         val client = field(clientCard, "Client name", existing?.client ?: "")
-        val knownClients = bookings.map { it.client.trim() }.filter { it.isNotBlank() }
+        val knownClients = (bookings.map { it.client.trim() } + registeredClients()).filter { it.isNotBlank() }
             .distinct().sorted()
         if (knownClients.isNotEmpty()) {
             val chooseClient = Button(this).apply {
@@ -1113,10 +1113,84 @@ class MainActivity : Activity() {
         button("Back to Clients") { showClients() }
     }
 
+    private fun registeredClients(): List<String> = readRecords("manual_clients")
+        .map { it.optString("name").trim() }.filter { it.isNotBlank() }
+
+    private fun registerClientDialog() {
+        val form = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), dp(8))
+        }
+        fun field(hintText: String): EditText = EditText(this).apply {
+            hint = hintText
+            setSingleLine(true)
+            setTextColor(dark)
+            backgroundTintList = ColorStateList.valueOf(orange)
+            form.addView(this)
+        }
+        val nameField = field("Full name")
+        val phoneField = field("Phone number (optional)").apply {
+            inputType = android.text.InputType.TYPE_CLASS_PHONE
+        }
+        val emailField = field("Email (optional)").apply {
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+        }
+        val notesField = field("Notes (optional)").apply {
+            setSingleLine(false)
+            minLines = 2
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Add New Client")
+            .setView(form)
+            .setPositiveButton("Save Client", null)
+            .setNegativeButton("Cancel", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val clientName = nameField.text.toString().trim()
+                if (clientName.isBlank() || clientName.length > 150) {
+                    message("Enter a client name (up to 150 characters)")
+                    return@setOnClickListener
+                }
+                val known = registeredClients() + bookings.map { it.client.trim() }
+                if (known.any { it.equals(clientName, ignoreCase = true) }) {
+                    message("Client already exists — open their profile instead")
+                    return@setOnClickListener
+                }
+                val phone = phoneField.text.toString().trim()
+                val email = emailField.text.toString().trim()
+                val notes = notesField.text.toString().trim()
+                if (phone.length > 50 || email.length > 254 || notes.length > 5000) {
+                    message("Client details exceed allowed limits")
+                    return@setOnClickListener
+                }
+                val records = JSONArray(prefs.getString("manual_clients", "[]") ?: "[]")
+                records.put(JSONObject().put("name", clientName))
+                val profile = JSONObject().put("phone", phone)
+                    .put("email", email).put("notes", notes)
+                val saved = prefs.edit()
+                    .putString("manual_clients", records.toString())
+                    .putString(clientProfileKey(clientName), profile.toString())
+                    .commit()
+                if (!saved) {
+                    message("Unable to save client")
+                    return@setOnClickListener
+                }
+                dialog.dismiss()
+                showClients()
+                message("Client registered locally")
+                autoSyncClient(clientName, profile, label("", 12f, muted))
+            }
+        }
+        dialog.show()
+    }
+
     private fun showClients(query: String = "") {
         screen("Clients", "Search your clients and view appointment history.", "clients")
-        val names = bookings.map { it.client.trim() }.filter { it.isNotBlank() }
+        val names = (bookings.map { it.client.trim() } + registeredClients()).filter { it.isNotBlank() }
             .distinctBy { it.lowercase(Locale.UK) }.sortedBy { it.lowercase(Locale.UK) }
+        button("+ Add New Client") { registerClientDialog() }
         val search = EditText(this).apply {
             hint = "Search clients"
             setSingleLine(true)
@@ -1132,7 +1206,7 @@ class MainActivity : Activity() {
             results.removeAllViews()
             val matching = names.filter { it.contains(filter.trim(), ignoreCase = true) }
             results.addView(label("${matching.size} of ${names.size} clients", 15f, muted))
-            if (names.isEmpty()) results.addView(label("Clients appear here after bookings are added.", 14f, muted))
+            if (names.isEmpty()) results.addView(label("No clients yet. Tap Add New Client to register one.", 14f, muted))
             else if (matching.isEmpty()) results.addView(label("No matching clients.", 14f, muted))
             matching.forEach { name ->
                 val history = bookings.filter { it.client.trim().equals(name, ignoreCase = true) }
