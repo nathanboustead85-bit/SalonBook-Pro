@@ -345,3 +345,80 @@ exports.unpublishBusiness = onCall(
  * acceptingBookings must remain false
  * until the production release is approved.
  */
+
+/**
+ * PHASE 9E.3 — OWNER REPLY BACKEND
+ *
+ * Only a verified business owner may reply to a conversation
+ * belonging to their own business. Customer message creation
+ * remains disabled until customer identity and abuse protection
+ * are implemented.
+ */
+exports.sendBusinessChatReply = onCall(
+  {
+    region: "europe-west2",
+    maxInstances: 10,
+    enforceAppCheck: false
+  },
+  async (request) => {
+    const uid = verifiedUser(request);
+    const input = request.data || {};
+    const conversationId = input.conversationId;
+    const body = input.message;
+
+    if (
+      typeof conversationId !== "string" ||
+      !/^[A-Za-z0-9_-]{12,128}$/.test(conversationId) ||
+      typeof body !== "string" ||
+      body.trim().length < 1 ||
+      body.length > 2000
+    ) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Invalid conversation or message."
+      );
+    }
+
+    const conversationRef = db
+      .collection("businesses")
+      .doc(uid)
+      .collection("conversations")
+      .doc(conversationId);
+
+    const messageRef = conversationRef
+      .collection("messages")
+      .doc();
+
+    await db.runTransaction(async (transaction) => {
+      const conversation = await transaction.get(conversationRef);
+      if (
+        !conversation.exists ||
+        conversation.get("businessId") !== uid ||
+        conversation.get("status") === "closed"
+      ) {
+        throw new HttpsError(
+          "not-found",
+          "An active conversation was not found."
+        );
+      }
+
+      // Store text only. Attachments are intentionally disabled.
+      transaction.create(messageRef, {
+        businessId: uid,
+        conversationId,
+        senderType: "business",
+        senderId: uid,
+        text: body.trim(),
+        createdAt: FieldValue.serverTimestamp(),
+        schemaVersion: 1
+      });
+      transaction.update(conversationRef, {
+        lastMessage: body.trim().slice(0, 180),
+        lastMessageSender: "business",
+        updatedAt: FieldValue.serverTimestamp()
+      });
+    });
+
+    return { success: true, messageId: messageRef.id };
+  }
+);
