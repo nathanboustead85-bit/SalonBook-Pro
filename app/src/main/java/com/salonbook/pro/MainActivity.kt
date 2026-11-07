@@ -32,11 +32,11 @@ import java.util.Locale
 import java.util.UUID
 
 class MainActivity : Activity() {
-    private val orange = Color.rgb(242, 110, 36)
+    private val orange = Color.rgb(0, 140, 149)
     private val dark = Color.rgb(32, 36, 43)
     private val background = Color.rgb(250, 249, 247)
     private val muted = Color.rgb(110, 114, 120)
-    private val paleOrange = Color.rgb(255, 239, 228)
+    private val paleOrange = Color.rgb(225, 246, 247)
     private val lightBorder = Color.rgb(236, 232, 227)
     private val prefs by lazy { getSharedPreferences("salonbook_data", MODE_PRIVATE) }
     private val bookings = mutableListOf<Booking>()
