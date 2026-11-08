@@ -67,3 +67,12 @@ test("all four chat endpoints require server-side release gate", () => {
     assert.match(block, /requireChatEnabled\(\)/, name + " must be release-gated");
   }
 });
+
+
+test("website App Check uses the registered Enterprise site key before customer authentication", () => {
+  assert.match(website, /const APP_CHECK_SITE_KEY = "6LeyyBUuAAAAABms2cBK0MoshK_016e6BEjAb2NC";/);
+  assert.match(website, /firebase-app-check\.js/);
+  assert.match(website, /new ReCaptchaEnterpriseProvider\(APP_CHECK_SITE_KEY\)/);
+  assert.match(website, /initializeAppCheck\(app,/);
+  assert.ok(website.indexOf("initializeAppCheck(app,") < website.indexOf("signInAnonymously(auth)"));
+});
