@@ -19,6 +19,8 @@ on:
       - 'functions/phase1044KeyRotationAndAudit.js'
       - 'functions/phase1044KeyRotationAndAudit.integration.test.js'
       - 'functions/phase1045SecurityBoundaryReview.test.js'
+      - 'functions/phase1046TrustedOrchestrator.js'
+      - 'functions/phase1046TrustedOrchestrator.integration.test.js'
       - 'docs/phase-10-45-final-security-boundary-review.md'
       - 'functions/index.js'
       - 'functions/bookingMode.js'
@@ -63,3 +65,5 @@ jobs:
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1044KeyRotationAndAudit.integration.test.js"
       - name: Run Phase 10.45 final cross-phase security boundary regression tests
         run: node --test functions/phase1045SecurityBoundaryReview.test.js
+      - name: Run Phase 10.46 trusted orchestrator adversarial emulator tests
+        run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1046TrustedOrchestrator.integration.test.js"
