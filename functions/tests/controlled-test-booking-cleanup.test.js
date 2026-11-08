@@ -6,7 +6,7 @@ const {clearArchivedTestBookings,APPROVAL}=require("../controlledTestBookingClea
 const json=JSON.stringify(Array.from({length:10},(_,i)=>({id:"test"+i})));
 const archive={archiveType:"boustio-cloud-bookings-readonly",schemaVersion:1,
  bookingCount:10,bookingsJson:json,sourceSha256:digestBookings(json)};
-function fake({source=json,mode="legacy",marker=false,apps=0,locks=0}={}){
+function fake({source=json,mode="frozen",marker=false,apps=0,locks=0}={}){
  const state={source,writes:[],reads:[],paths:[]};
  function doc(path){return {path,collection:(part)=>collection(path+"/"+part)};}
  function collection(path){return {path,doc:(id)=>doc(path+"/"+id)};}
@@ -53,8 +53,8 @@ test("migration marker blocks",async()=>{
  await assert.rejects(promise,/marker/);assert.equal(state.writes.length,0);
 });
 test("cloud mode blocks",async()=>{
- const {state,promise}=await execute({mode:"cloud"});
- await assert.rejects(promise,/legacy/);assert.equal(state.writes.length,0);
+ const {state,promise}=await execute({mode:"legacy"});
+ await assert.rejects(promise,/Frozen/);assert.equal(state.writes.length,0);
 });
 test("shared appointments block",async()=>{
  const {state,promise}=await execute({apps:1});
