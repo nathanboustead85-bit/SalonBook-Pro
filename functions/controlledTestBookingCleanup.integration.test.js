@@ -21,7 +21,7 @@ const json=JSON.stringify(Array.from({length:10},(_,i)=>({
 })));
 const archive={archiveType:"boustio-cloud-bookings-readonly",
  schemaVersion:1,bookingCount:10,bookingsJson:json,sourceSha256:digestBookings(json)};
-async function fixture({mode="legacy",source=json,marker=false,appointments=false,locks=false}={}){
+async function fixture({mode="frozen",source=json,marker=false,appointments=false,locks=false}={}){
  const owner="cleanup_"+process.pid+"_"+(++counter);
  const business=db.collection("businesses").doc(owner);
  const sourceRef=db.collection("users").doc(owner).collection("liveData").doc("bookings");
@@ -42,7 +42,7 @@ test("transaction clears only matching archived source; preserves other data",as
  assert.equal(result.cleared,10);
  const source=(await f.sourceRef.get()).data();
  assert.equal(source.json,"[]");assert.equal(source.preserve,"yes");
- assert.equal((await f.business.collection("settings").doc("bookingMode").get()).data().mode,"legacy");
+ assert.equal((await f.business.collection("settings").doc("bookingMode").get()).data().mode,"frozen");
  assert.equal((await f.business.collection("appointments").get()).empty,true);
  assert.equal((await f.business.collection("bookingLocks").get()).empty,true);
 });
@@ -57,8 +57,8 @@ test("migration marker prevents cleanup",async()=>{
  assert.equal((await f.sourceRef.get()).data().json,json);
 });
 test("cloud booking mode prevents cleanup",async()=>{
- const f=await fixture({mode:"cloud"});
- await assert.rejects(execute(f),/legacy/);
+ const f=await fixture({mode:"legacy"});
+ await assert.rejects(execute(f),/Frozen/);
  assert.equal((await f.sourceRef.get()).data().json,json);
 });
 test("shared appointments prevent cleanup",async()=>{
