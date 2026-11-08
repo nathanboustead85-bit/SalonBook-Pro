@@ -171,3 +171,26 @@ test("Phase 10.48 concurrent replay attempts cannot issue twice",async()=>{
  const results=await Promise.allSettled([f.issue(),f.issue({approvalId:"approval2",operatorAssertion:second})]);
  assert.equal(results.filter(x=>x.status==="fulfilled").length,1);
 });
+
+test("Phase 10.49 missing audit anchor blocks consumption",async()=>{
+ const f=await fixture();await f.issue();
+ await f.business.collection("legacyModeAuditAnchors").doc("approval1").delete();
+ await assert.rejects(f.consume(),/audit anchor mismatch/);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.49 tampered audit anchor blocks consumption",async()=>{
+ const f=await fixture();await f.issue();
+ await f.business.collection("legacyModeAuditAnchors").doc("approval1").update({anchorHash:"forged"});
+ await assert.rejects(f.consume(),/audit anchor mismatch/);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.49 altered operator identity in anchor blocks consumption",async()=>{
+ const f=await fixture();await f.issue();
+ await f.business.collection("legacyModeAuditAnchors").doc("approval1").update({operatorId:"attacker"});
+ await assert.rejects(f.consume(),/audit anchor mismatch/);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.49 unmodified anchored approval still consumes successfully",async()=>{
+ const f=await fixture();await f.issue();
+ assert.equal((await f.consume()).initialized,true);
+});
