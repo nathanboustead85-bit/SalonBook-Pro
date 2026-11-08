@@ -13,7 +13,9 @@ const messageInput = $("chatMessage");
 const sendButton = $("chatSend");
 const status = $("chatStatus");
 const history = $("chatHistory");
-const slug = location.pathname.split("/").filter(Boolean)[1] || "demo-boustio";
+const pathParts = location.pathname.split("/").filter(Boolean);
+const slug = pathParts[0] === "book" && pathParts.length === 2 &&
+  /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(pathParts[1]) ? pathParts[1] : null;
 
 let auth, callFunction, conversation = null;
 let busy = false;
@@ -49,6 +51,7 @@ async function initialize() {
     setStatus("Customer messaging is not live yet.");
     return;
   }
+  if (!slug) throw new Error("Open a valid business booking link to start messaging.");
   // Firebase Hosting's reserved config endpoint avoids hardcoded credentials.
   const configResponse = await fetch("/__/firebase/init.json", { cache: "no-store" });
   if (!configResponse.ok) throw new Error("Firebase configuration unavailable.");
@@ -73,8 +76,9 @@ async function initialize() {
   if (!auth.currentUser) await signInAnonymously(auth);
   const key = "boustio-chat:" + slug;
   try {
-    const saved = JSON.parse(sessionStorage.getItem(key) || "null");
-    if (saved && typeof saved.businessId === "string" &&
+    const saved = JSON.parse(localStorage.getItem(key) || "null");
+    if (saved && saved.customerUid === auth.currentUser.uid &&
+        typeof saved.businessId === "string" &&
         typeof saved.conversationId === "string") conversation = saved;
   } catch (_) { /* ignore corrupted local state */ }
   if (conversation) {
@@ -102,7 +106,8 @@ sendButton.addEventListener("click", async () => {
       conversation = await callFunction("startCustomerChat", {
         slug, customerName: nameInput.value.trim(), message
       });
-      sessionStorage.setItem("boustio-chat:" + slug, JSON.stringify({
+      localStorage.setItem("boustio-chat:" + slug, JSON.stringify({
+        customerUid: auth.currentUser.uid,
         businessId: conversation.businessId,
         conversationId: conversation.conversationId
       }));
