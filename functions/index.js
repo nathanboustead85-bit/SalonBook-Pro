@@ -347,6 +347,17 @@ exports.unpublishBusiness = onCall(
  */
 
 /**
+ * Phase 9E.10 — server-side chat release gate.
+ * A deployed function stays disabled unless explicitly enabled in its
+ * environment. This is independent of the website's disabled UI switch.
+ */
+function requireChatEnabled() {
+  if (process.env.BOUSTIO_CHAT_ENABLED !== "true") {
+    throw new HttpsError("failed-precondition", "Customer messaging is not enabled.");
+  }
+}
+
+/**
  * PHASE 9E.3 — OWNER REPLY BACKEND
  *
  * Only a verified business owner may reply to a conversation
@@ -362,6 +373,7 @@ exports.sendBusinessChatReply = onCall(
   },
   async (request) => {
     const uid = verifiedUser(request);
+    requireChatEnabled();
     const input = request.data || {};
     const conversationId = input.conversationId;
     const body = input.message;
@@ -457,6 +469,7 @@ exports.startCustomerChat = onCall(
   { region: "europe-west2", maxInstances: 10, enforceAppCheck: false },
   async (request) => {
     const uid = customerChatIdentity(request);
+    requireChatEnabled();
     const input = request.data || {};
     const slug = input.slug;
     const name = input.customerName;
@@ -513,6 +526,7 @@ exports.sendCustomerChatMessage = onCall(
   { region: "europe-west2", maxInstances: 10, enforceAppCheck: false },
   async (request) => {
     const uid = customerChatIdentity(request);
+    requireChatEnabled();
     const input = request.data || {};
     const { businessId, conversationId, message } = input;
     if (typeof businessId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(businessId) ||
@@ -550,6 +564,7 @@ exports.getCustomerChatMessages = onCall(
   { region: "europe-west2", maxInstances: 10, enforceAppCheck: false },
   async (request) => {
     const uid = customerChatIdentity(request);
+    requireChatEnabled();
     const input = request.data || {};
     const { businessId, conversationId } = input;
     if (typeof businessId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(businessId) ||
