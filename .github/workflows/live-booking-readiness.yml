@@ -6,6 +6,8 @@ on:
       - phase-9d4-teal-clients
     paths:
       - 'functions/index.js'
+      - 'functions/trustedAvailability.js'
+      - 'functions/tests/trusted-availability.test.js'
       - 'functions/trustedBooking.js'
       - 'functions/tests/live-booking-readiness.test.js'
       - 'firestore.rules'
@@ -26,4 +28,4 @@ jobs:
         with:
           node-version: '22'
       - name: Check booking release safeguards
-        run: node --test functions/tests/live-booking-readiness.test.js
+        run: node --test functions/tests/live-booking-readiness.test.js functions/tests/trusted-availability.test.js
