@@ -482,3 +482,48 @@ test("Phase 10.55 duplicate receipt publication does not overwrite original",asy
  assert.equal(fs1053.readFileSync(file,"utf8"),before);
  assert.equal(fs1053.readdirSync(d.directory).length,1);
 });
+
+const {authorize:authorize1056}=require("./phase1056EmulatorPermissions");
+const permissionBase={projectId:PROJECT,businessId:"salon1",ownerUid:"salon1",verified:true,operatorRole:"legacy-mode-approver"};
+test("Phase 10.56 owner may request but cannot directly issue or consume records",()=>{
+ assert.equal(authorize1056({...permissionBase,role:"owner",action:"request-issue"}).allowed,true);
+ assert.throws(()=>authorize1056({...permissionBase,role:"owner",action:"issue-record"}),/permission denied/);
+ assert.throws(()=>authorize1056({...permissionBase,role:"owner",action:"consume-record"}),/permission denied/);
+});
+test("Phase 10.56 issuer cannot consume, sign or audit",()=>{
+ assert.equal(authorize1056({...permissionBase,role:"issuer",action:"issue-record"}).allowed,true);
+ for(const action of ["consume-record","sign-approval","verify-receipt"])
+  assert.throws(()=>authorize1056({...permissionBase,role:"issuer",action}),/permission denied/);
+});
+test("Phase 10.56 consumer cannot issue, sign or audit",()=>{
+ assert.equal(authorize1056({...permissionBase,role:"consumer",action:"consume-record"}).allowed,true);
+ for(const action of ["issue-record","sign-approval","verify-receipt"])
+  assert.throws(()=>authorize1056({...permissionBase,role:"consumer",action}),/permission denied/);
+});
+test("Phase 10.56 auditor is verification-only and operator is signing-only",()=>{
+ assert.equal(authorize1056({...permissionBase,role:"auditor",action:"verify-receipt"}).allowed,true);
+ assert.equal(authorize1056({...permissionBase,role:"operator",action:"sign-approval"}).allowed,true);
+ assert.throws(()=>authorize1056({...permissionBase,role:"auditor",action:"issue-record"}),/permission denied/);
+ assert.throws(()=>authorize1056({...permissionBase,role:"operator",action:"consume-record"}),/permission denied/);
+});
+test("Phase 10.56 cross-business or unverified owner rejected",()=>{
+ assert.throws(()=>authorize1056({...permissionBase,role:"owner",action:"request-issue",ownerUid:"other"}),/permission denied/);
+ assert.throws(()=>authorize1056({...permissionBase,role:"owner",action:"request-consume",verified:false}),/permission denied/);
+});
+test("Phase 10.56 unknown roles, actions and prototype properties rejected",()=>{
+ for(const role of ["admin","__proto__","constructor","ownerClient"])
+  assert.throws(()=>authorize1056({...permissionBase,role,action:"request-issue"}),/permission denied/);
+ assert.throws(()=>authorize1056({...permissionBase,role:"owner",action:"delete-bookings"}),/permission denied/);
+});
+test("Phase 10.56 non-demo project and missing emulator rejected",()=>{
+ assert.throws(()=>authorize1056({...permissionBase,role:"auditor",action:"verify-receipt",projectId:"salonbook-pro-ad5ff"}),/permission denied/);
+ const old=process.env.FIREBASE_AUTH_EMULATOR_HOST;
+ try{delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
+ assert.throws(()=>authorize1056({...permissionBase,role:"auditor",action:"verify-receipt"}),/permission denied/);}
+ finally{process.env.FIREBASE_AUTH_EMULATOR_HOST=old;}
+});
+test("Phase 10.56 orchestrator denies wrong owner before approval mutation",async()=>{
+ const f=await fixture(),other=await fixture();
+ await assert.rejects(f.issue({ownerToken:other.ownerToken}),/permission denied|owner/);
+ assert.equal((await f.approval.get()).exists,false);
+});
