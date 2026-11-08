@@ -5,7 +5,8 @@ const {digestBookings}=require("../finalBookingSyncVerifier");
 const {initialiseArchivedLegacyMode,APPROVAL}=require("../controlledLegacyModeInitialization");
 const json=JSON.stringify(Array.from({length:10},(_,i)=>({id:"test"+i})));
 const archive={archiveType:"boustio-cloud-bookings-readonly",schemaVersion:1,
- bookingCount:10,bookingsJson:json,sourceSha256:digestBookings(json)};
+ bookingCount:10,bookingsJson:json,sourceSha256:digestBookings(json),
+ sourcePath:"users/owner/liveData/bookings"};
 function fake({mode=false,marker=false,source=json,apps=0,locks=0}={}){
  const state={writes:[]};
  const collection=name=>({path:name,doc:id=>({
@@ -69,4 +70,13 @@ test("owner mismatch blocks",async()=>{
 test("invalid archive blocks",async()=>{
  const {state,promise}=await run({}, {archive:{...archive,sourceSha256:"0".repeat(64)}});
  await assert.rejects(promise,/archive/);assert.equal(state.writes.length,0);
+});
+
+test("archive without owner sourcePath blocks before transaction",async()=>{
+ const {state,promise}=await run({}, {archive:{...archive,sourcePath:undefined}});
+ await assert.rejects(promise,/sourcePath/);assert.equal(state.writes.length,0);
+});
+test("archive from a different owner blocks before transaction",async()=>{
+ const {state,promise}=await run({}, {archive:{...archive,sourcePath:"users/another/liveData/bookings"}});
+ await assert.rejects(promise,/sourcePath/);assert.equal(state.writes.length,0);
 });
