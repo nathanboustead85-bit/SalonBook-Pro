@@ -86,3 +86,11 @@ test("website chat state is bound to anonymous identity and valid business slug"
   assert.match(website, /pathParts\[0\] === "book"/);
   assert.doesNotMatch(website, /\|\| "demo-boustio"/);
 });
+
+test("website chat never re-enables closed conversations", () => {
+  assert.match(website, /let conversationClosed = false;/);
+  assert.match(website, /conversationClosed = result.status !== "open"/);
+  assert.match(website, /sendButton.disabled = !value \|\| busy \|\| conversationClosed/);
+  assert.match(website, /messageInput.disabled = !value \|\| conversationClosed/);
+  assert.match(website, /if \(!CHAT_ENABLED \|\| busy \|\| conversationClosed \|\| !callFunction\) return;/);
+});
