@@ -4,6 +4,9 @@
 // Remains disabled until Firebase Anonymous Auth, App Check, abuse controls,
 // functions deployment and security tests have all been verified.
 const CHAT_ENABLED = false;
+// Public reCAPTCHA Enterprise site key. Fill only after verifying the complete key.
+// Do not use a secret key here. This is deliberately fail-closed until configured.
+const APP_CHECK_SITE_KEY = "";
 const $ = (id) => document.getElementById(id);
 const nameInput = $("chatName");
 const messageInput = $("chatMessage");
@@ -51,12 +54,19 @@ async function initialize() {
   if (!configResponse.ok) throw new Error("Firebase configuration unavailable.");
   const config = await configResponse.json();
   const [{ initializeApp }, { getAuth, signInAnonymously },
-    { getFunctions, httpsCallable }] = await Promise.all([
+    { getFunctions, httpsCallable },
+    { initializeAppCheck, ReCaptchaEnterpriseProvider }] = await Promise.all([
       import("https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js"),
       import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js"),
-      import("https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js")
+      import("https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js"),
+      import("https://www.gstatic.com/firebasejs/11.10.0/firebase-app-check.js")
     ]);
   const app = initializeApp(config);
+  if (!APP_CHECK_SITE_KEY) throw new Error("Website App Check setup is incomplete.");
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(APP_CHECK_SITE_KEY),
+    isTokenAutoRefreshEnabled: true
+  });
   auth = getAuth(app);
   const functions = getFunctions(app, "europe-west2");
   callFunction = async (name, data) => (await httpsCallable(functions, name)(data)).data;
