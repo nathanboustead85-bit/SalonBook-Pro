@@ -23,6 +23,9 @@ on:
       - 'functions/phase1046TrustedOrchestrator.integration.test.js'
       - 'functions/phase1047LegacyBypassPrevention.test.js'
       - 'functions/phase1048SignedApproval.js'
+      - 'functions/phase1050ProductionArchitecturePolicy.js'
+      - 'functions/phase1050ProductionArchitecturePolicy.test.js'
+      - 'docs/phase-10-50-production-security-architecture.md'
       - 'docs/phase-10-45-final-security-boundary-review.md'
       - 'functions/index.js'
       - 'functions/bookingMode.js'
@@ -83,3 +86,5 @@ jobs:
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1046TrustedOrchestrator.integration.test.js"
       - name: Run Phase 10.47 direct legacy bypass regression tests
         run: node --test functions/phase1047LegacyBypassPrevention.test.js
+      - name: Run Phase 10.50 least-privilege architecture policy regression tests
+        run: node --test functions/phase1050ProductionArchitecturePolicy.test.js
