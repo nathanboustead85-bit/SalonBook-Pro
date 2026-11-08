@@ -93,8 +93,7 @@ async function consumeSigned({db,businessId,archive,approvalId,ownerToken,verify
   const operator=verifyRotatedAssertion({assertion,registry,expected:{
    businessId,approvalId,archiveSha256:checked.hash},nowMs});
   const digest=hashEvidence(assertion);
-  const nonceId=crypto.createHash("sha256").update(operator.operatorId+"\\0"+
-   assertion.payload.nonce).digest("hex");
+  const nonceId=crypto.createHash("sha256").update(operator.operatorId+"\0"+assertion.payload.nonce).digest("hex");
   const expectedAnchorHash=crypto.createHash("sha256").update(JSON.stringify({businessId,approvalId,operatorId:operator.operatorId,archiveSha256:checked.hash,nonceId,digest})).digest("hex");
   const anchorRecord=anch.data();
   if(!anch.exists||anchorRecord.anchorHash!==expectedAnchorHash||
@@ -107,8 +106,6 @@ async function consumeSigned({db,businessId,archive,approvalId,ownerToken,verify
    log.event!=="issued"||log.ownerUid!==businessId||
    log.approvalId!==approvalId||log.operatorId!==operator.operatorId||
    record.operatorId!==operator.operatorId)deny("signed evidence mismatch");
-  const nonceId=crypto.createHash("sha256").update(operator.operatorId+"\0"+
-   assertion.payload.nonce).digest("hex");
   if(record.nonceId!==nonceId)deny("nonce binding invalid");
   const nonceRef=db.collection("legacyModeOperatorNonces").doc(nonceId);
   const nonceSnap=await tx.get(nonceRef);
