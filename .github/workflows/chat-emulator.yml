@@ -9,7 +9,7 @@ permissions:
 jobs:
   emulator-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,7 +24,9 @@ jobs:
       - name: Install function dependencies
         working-directory: functions
         run: npm install --no-audit --no-fund
-      - name: Check unauthenticated chat access in Firebase emulators
+      - name: Check unauthenticated and authenticated chat access in Firebase emulators
         env:
           GCLOUD_PROJECT: demo-boustio-chat
-        run: npx firebase emulators:exec --project demo-boustio-chat --only functions,firestore "node --test functions/tests/chat-emulator-smoke.test.js"
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+        run: npx firebase emulators:exec --project demo-boustio-chat --only auth,functions,firestore "node --test functions/tests/chat-emulator-smoke.test.js functions/tests/chat-emulator-integration.test.js"
