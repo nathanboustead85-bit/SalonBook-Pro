@@ -317,3 +317,70 @@ test("Phase 10.52 caller cannot inject witness or bypass audit checks",async()=>
  await assert.rejects(f.consume({skipAudit:true}),/Unexpected/);
  assert.equal((await f.mode.get()).exists,false);
 });
+
+const fs1053=require("node:fs");
+const os1053=require("node:os");
+const path1053=require("node:path");
+const {createDurableAuditPrototype}=require("./phase1053DurableAuditPrototype");
+function durableFixture(){
+ const directory=fs1053.mkdtempSync(path1053.join(os1053.tmpdir(),"boustio-audit-"));
+ return {directory,store:()=>createDurableAuditPrototype({directory})};
+}
+test("Phase 10.53 durable receipt survives a fresh witness instance",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),d=durableFixture();
+ assert.equal(d.store().witness(event).witnessed,true);
+ assert.equal(d.store().reconcile(event).verified,true);
+});
+test("Phase 10.53 missing receipt never reconstructed from Firestore",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),d=durableFixture();
+ assert.throws(()=>d.store().reconcile(event),/missing independent receipt/);
+ assert.deepEqual(fs1053.readdirSync(d.directory),[]);
+});
+test("Phase 10.53 mismatched evidence rejected after restart",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),d=durableFixture();d.store().witness(event);
+ const altered=structuredClone(event);
+ altered.approval.signedOperatorAssertion.signature="forged";
+ assert.throws(()=>d.store().reconcile(altered),/audit evidence mismatch|independent receipt mismatch/);
+});
+test("Phase 10.53 concurrent receipt creation permits only one writer",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),d=durableFixture();
+ const attempts=await Promise.allSettled([Promise.resolve().then(()=>d.store().witness(event)),
+ Promise.resolve().then(()=>d.store().witness(event))]);
+ assert.equal(attempts.filter(x=>x.status==="fulfilled").length,1);
+ assert.equal(attempts.filter(x=>x.status==="rejected").length,1);
+ assert.equal(d.store().verify(event).verified,true);
+});
+test("Phase 10.53 corrupted independent receipt fails closed",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),d=durableFixture();d.store().witness(event);
+ const file=path1053.join(d.directory,fs1053.readdirSync(d.directory)[0]);
+ fs1053.writeFileSync(file,"{broken");
+ assert.throws(()=>d.store().reconcile(event),/corrupt independent receipt/);
+});
+test("Phase 10.53 outage rejects recovery and verification",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),d=durableFixture();
+ const store=d.store();store.witness(event);store.setAvailable(false);
+ assert.throws(()=>store.reconcile(event),/independent store unavailable/);
+ assert.throws(()=>store.verify(event),/independent store unavailable/);
+});
+test("Phase 10.53 concurrent recovery never creates missing receipts",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),d=durableFixture();
+ const results=await Promise.allSettled([Promise.resolve().then(()=>d.store().reconcile(event)),
+ Promise.resolve().then(()=>d.store().reconcile(event))]);
+ assert.equal(results.filter(x=>x.status==="rejected").length,2);
+ assert.deepEqual(fs1053.readdirSync(d.directory),[]);
+});
+test("Phase 10.53 non-demo environment blocks recovery",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),d=durableFixture();d.store().witness(event);
+ const old=process.env.GCLOUD_PROJECT;
+ try{process.env.GCLOUD_PROJECT="salonbook-pro-ad5ff";
+ assert.throws(()=>d.store().reconcile(event),/demo emulators required/);}
+ finally{process.env.GCLOUD_PROJECT=old;}
+});
