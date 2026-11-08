@@ -124,3 +124,50 @@ test("all caller-controlled extra fields are rejected even when legitimate",asyn
  await assert.rejects(f.issue({db}),/Unexpected/);
  assert.equal((await f.mode.get()).exists,false);
 });
+
+test("Phase 10.48 persists signed operator evidence and nonce ledger",async()=>{
+ const f=await fixture();await f.issue();
+ const approval=(await f.approval.get()).data();
+ assert.deepEqual(approval.signedOperatorAssertion,f.operatorAssertion);
+ const nonceId=crypto.createHash("sha256").update("operator1\\0"+f.payload.nonce).digest("hex");
+ const ledger=await db.collection("legacyModeOperatorNonces").doc(nonceId).get();
+ assert.equal(ledger.data().approvalId,"approval1");
+ assert.equal((await f.business.collection("legacyModeApprovalAudit").doc("approval1").get())
+  .data().operatorEvidenceSha256,approval.operatorEvidenceSha256);
+});
+test("Phase 10.48 rejects same signed nonce across distinct approval IDs",async()=>{
+ const f=await fixture();await f.issue();
+ const p={...f.payload,approvalId:"approval2"};
+ const second={keyId:"primary",payload:p,
+ signature:crypto.sign(null,Buffer.from(canonical(p)),trusted.privateKey).toString("base64url")};
+ await assert.rejects(f.issue({approvalId:"approval2",operatorAssertion:second}),/nonce replay/);
+ assert.equal((await f.business.collection("legacyModeApprovals").doc("approval2").get()).exists,false);
+});
+test("Phase 10.48 rejects tampered approval signed evidence at consumption",async()=>{
+ const f=await fixture();await f.issue();
+ await f.approval.update({"signedOperatorAssertion.signature":"tampered"});
+ await assert.rejects(f.consume(),/signature|evidence/);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.48 rejects tampered audit evidence at consumption",async()=>{
+ const f=await fixture();await f.issue();
+ await f.business.collection("legacyModeApprovalAudit").doc("approval1")
+  .update({operatorEvidenceSha256:"forged"});
+ await assert.rejects(f.consume(),/evidence mismatch/);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.48 rejects deleted nonce ledger at consumption",async()=>{
+ const f=await fixture();await f.issue();
+ const nonceId=crypto.createHash("sha256").update("operator1\\0"+f.payload.nonce).digest("hex");
+ await db.collection("legacyModeOperatorNonces").doc(nonceId).delete();
+ await assert.rejects(f.consume(),/nonce ledger/);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.48 concurrent replay attempts cannot issue twice",async()=>{
+ const f=await fixture();
+ const p={...f.payload,approvalId:"approval2"};
+ const second={keyId:"primary",payload:p,
+ signature:crypto.sign(null,Buffer.from(canonical(p)),trusted.privateKey).toString("base64url")};
+ const results=await Promise.allSettled([f.issue(),f.issue({approvalId:"approval2",operatorAssertion:second})]);
+ assert.equal(results.filter(x=>x.status==="fulfilled").length,1);
+});
