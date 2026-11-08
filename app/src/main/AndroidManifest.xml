@@ -8,6 +8,7 @@
         android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
+        android:name=".BoustioApplication"
         android:allowBackup="true"
         android:label="SalonBook Pro"
         android:supportsRtl="true"
