@@ -11,6 +11,8 @@ on:
       - 'functions/phase1039ExecutionEvidence.test.js'
       - 'functions/phase1040EmulatorLockedInitialization.js'
       - 'functions/phase1040EmulatorLockedInitialization.integration.test.js'
+      - 'functions/phase1041EmulatorApprovalIssuance.js'
+      - 'functions/phase1041EmulatorApprovalIssuance.integration.test.js'
       - 'functions/index.js'
       - 'functions/bookingMode.js'
       - '.github/workflows/legacy-mode-emulator-safety.yml'
@@ -44,3 +46,5 @@ jobs:
         run: node --test functions/phase1039ExecutionEvidence.test.js
       - name: Run Phase 10.40 isolated single-use approval and concurrency tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore "node --test functions/phase1040EmulatorLockedInitialization.integration.test.js"
+      - name: Run Phase 10.41 isolated approval issuance and audit tests
+        run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore "node --test functions/phase1041EmulatorApprovalIssuance.integration.test.js"
