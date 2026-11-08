@@ -19,8 +19,11 @@
     h2 { font-size:19px; margin:0 0 16px; }
     p { color:#64748b; line-height:1.5; }
     label { display:block; margin:16px 0 7px; font-weight:650; font-size:14px; }
-    select,input,button { width:100%; padding:14px; border:1px solid #dbe1ea; border-radius:11px; font:inherit; background:white; }
-    select:disabled,input:disabled { color:#8b95a4; background:#f6f7fa; }
+    select,input,textarea,button { width:100%; padding:14px; border:1px solid #dbe1ea; border-radius:11px; font:inherit; background:white; }
+    select:disabled,input:disabled,textarea:disabled { color:#8b95a4; background:#f6f7fa; }
+    textarea { resize:vertical; }
+    #chatSend { margin-top:14px; background:#008c95; color:white; font-weight:700; border:0; }
+    #chatSend:disabled { background:#9ca3af; }
     .notice { background:#fff7e6; color:#854d0e; padding:14px; border-radius:11px; font-size:14px; line-height:1.5; }
     .summary { background:#f1f5f9; padding:16px; border-radius:12px; margin-top:20px; line-height:1.65; font-size:14px; white-space:pre-line; }
     .status { color:#475569; font-size:14px; margin-top:10px; }
@@ -62,6 +65,17 @@
       <button class="disabled-action" type="button" disabled>Booking unavailable — preview only</button>
     </section>
   </div>
+  <section class="card" id="customerChat" aria-labelledby="chatHeading">
+    <h2 id="chatHeading">Message this business</h2>
+    <p>Private chat preview. Messages are not available until the secure messaging service is activated.</p>
+    <label for="chatName">Your name</label>
+    <input id="chatName" maxlength="80" autocomplete="name" disabled placeholder="Your name">
+    <label for="chatMessage">Your message</label>
+    <textarea id="chatMessage" maxlength="2000" rows="4" disabled placeholder="Ask a question about services or availability"></textarea>
+    <button id="chatSend" type="button" disabled>Chat coming soon</button>
+    <div id="chatStatus" class="status" role="status" aria-live="polite">Customer messaging is not live yet.</div>
+    <div id="chatHistory" class="summary hidden" aria-live="polite"></div>
+  </section>
 </main>
 <footer>Powered by Boustio · SalonBook Pro</footer>
 <script>
