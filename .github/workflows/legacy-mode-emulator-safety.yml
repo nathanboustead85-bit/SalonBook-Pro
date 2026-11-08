@@ -1,0 +1,33 @@
+name: Boustio Legacy Mode Emulator Safety
+on:
+  push:
+    branches:
+      - phase-9d4-teal-clients
+    paths:
+      - 'functions/controlledLegacyModeInitialization.js'
+      - 'functions/controlledLegacyModeInitialization.integration.test.js'
+      - '.github/workflows/legacy-mode-emulator-safety.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  legacy-mode-emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GCLOUD_PROJECT: demo-boustio-legacy-init
+      GOOGLE_CLOUD_PROJECT: demo-boustio-legacy-init
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Firebase function dependencies
+        working-directory: functions
+        run: npm install --no-audit --no-fund
+      - name: Run isolated Firestore emulator integration tests
+        run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore "node --test functions/controlledLegacyModeInitialization.integration.test.js"
