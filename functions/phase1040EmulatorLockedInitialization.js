@@ -23,6 +23,8 @@ async function initialiseWithSingleUseApproval({
  executionEnabled=false
 }={}){
  emulatorLock(db);
+ if(process.env.BOUSTIO_LEGACY_EMULATOR_TEST_GATE!=="explicit-test-only")
+  block("Direct legacy prototype disabled outside isolated test gate");
  if(executionEnabled!==true)block("Execution disabled by default");
  if(typeof verifyIdToken!=="function"||typeof idToken!=="string"||!idToken)
   block("Trusted token verifier required");
