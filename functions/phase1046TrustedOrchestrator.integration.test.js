@@ -271,3 +271,49 @@ test("Phase 10.51 non-demo environment rejects witness verification",async()=>{
  assert.throws(()=>w.verify(event),/demo emulators required/);}
  finally{process.env.GCLOUD_PROJECT=original;}
 });
+
+test("Phase 10.52 new orchestrator without witnessed event cannot consume approval",async()=>{
+ const f=await fixture();await f.issue();
+ const other=createTrustedEmulatorOrchestrator({db,operatorKeyRegistry:registry()});
+ await assert.rejects(other.consume({businessId:f.businessId,archive:f.archive,
+ approvalId:"approval1",ownerToken:f.ownerToken}),/missing independent event/);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.52 altered audit document blocks witnessed consumption",async()=>{
+ const f=await fixture();await f.issue();
+ await f.business.collection("legacyModeApprovalAudit").doc("approval1").update({operatorId:"intruder"});
+ await assert.rejects(f.consume(),/scope mismatch|signed evidence mismatch/);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.52 removed anchor blocks witnessed consumption",async()=>{
+ const f=await fixture();await f.issue();
+ await f.business.collection("legacyModeAuditAnchors").doc("approval1").delete();
+ await assert.rejects(f.consume(),/audit anchor mismatch|missing audit event/);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.52 unavailable witness aborts transaction without booking-mode write",async()=>{
+ const f=await fixture();await f.issue();
+ const {consumeSigned}=require("./phase1048SignedApproval");
+ const witness=createIndependentAuditWitness();
+ witness.setAvailable(false);
+ await assert.rejects(consumeSigned({db,businessId:f.businessId,archive:f.archive,
+ approvalId:"approval1",ownerToken:f.ownerToken,
+ verifyOwner:async token=>admin.auth().verifyIdToken(token,true),
+ registry:registry(),nowMs:Date.now(),auditWitness:witness}),/witness unavailable/);
+ assert.equal((await f.mode.get()).exists,false);
+ assert.equal((await f.approval.get()).data().status,"approved");
+});
+test("Phase 10.52 concurrent witnessed consumption remains single-use",async()=>{
+ const f=await fixture();await f.issue();
+ const results=await Promise.allSettled([f.consume(),f.consume()]);
+ assert.equal(results.filter(x=>x.status==="fulfilled").length,1);
+ assert.equal(results.filter(x=>x.status==="rejected").length,1);
+ assert.equal((await f.mode.get()).exists,true);
+ assert.equal((await f.source.get()).data().json,json);
+});
+test("Phase 10.52 caller cannot inject witness or bypass audit checks",async()=>{
+ const f=await fixture();await f.issue();
+ await assert.rejects(f.consume({auditWitness:{verify:()=>({verified:true})}}),/Unexpected/);
+ await assert.rejects(f.consume({skipAudit:true}),/Unexpected/);
+ assert.equal((await f.mode.get()).exists,false);
+});
