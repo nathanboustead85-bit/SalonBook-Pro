@@ -384,3 +384,54 @@ test("Phase 10.53 non-demo environment blocks recovery",async()=>{
  assert.throws(()=>d.store().reconcile(event),/demo emulators required/);}
  finally{process.env.GCLOUD_PROJECT=old;}
 });
+
+function durableOrchestrator(directory){
+ return createTrustedEmulatorOrchestrator({db,operatorKeyRegistry:registry(),durableAuditDirectory:directory});
+}
+async function durableApproval(){
+ const f=await fixture(),d=durableFixture();
+ const first=durableOrchestrator(d.directory);
+ const request={businessId:f.businessId,archive:f.archive,approvalId:"approval1",
+ ownerToken:f.ownerToken};
+ await first.issue({...request,operatorAssertion:f.operatorAssertion});
+ return {f,d,request,first};
+}
+test("Phase 10.54 durable orchestrator survives restart and consumes once",async()=>{
+ const {f,d,request}=await durableApproval();
+ const restarted=durableOrchestrator(d.directory);
+ assert.equal((await restarted.consume(request)).initialized,true);
+ assert.equal((await f.mode.get()).data().mode,"legacy");
+ assert.equal((await f.source.get()).data().json,json);
+});
+test("Phase 10.54 absent receipt rejects consumption after restart",async()=>{
+ const {f,d,request}=await durableApproval();
+ fs1053.unlinkSync(path1053.join(d.directory,fs1053.readdirSync(d.directory)[0]));
+ await assert.rejects(durableOrchestrator(d.directory).consume(request),/missing independent receipt/);
+ assert.equal((await f.mode.get()).exists,false);
+ assert.equal((await f.approval.get()).data().status,"approved");
+});
+test("Phase 10.54 corrupted receipt rejects consumption after restart",async()=>{
+ const {f,d,request}=await durableApproval();
+ fs1053.writeFileSync(path1053.join(d.directory,fs1053.readdirSync(d.directory)[0]),"{broken");
+ await assert.rejects(durableOrchestrator(d.directory).consume(request),/corrupt independent receipt/);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.54 changed approval evidence rejects durable verification",async()=>{
+ const {f,d,request}=await durableApproval();
+ await f.approval.update({operatorId:"tampered"});
+ await assert.rejects(durableOrchestrator(d.directory).consume(request),/signed evidence mismatch|event scope mismatch/);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.54 concurrent recovery across orchestrator instances is single-use",async()=>{
+ const {f,d,request}=await durableApproval();
+ const a=durableOrchestrator(d.directory),b=durableOrchestrator(d.directory);
+ const result=await Promise.allSettled([a.consume(request),b.consume(request)]);
+ assert.equal(result.filter(x=>x.status==="fulfilled").length,1);
+ assert.equal(result.filter(x=>x.status==="rejected").length,1);
+ assert.equal((await f.mode.get()).exists,true);
+});
+test("Phase 10.54 caller cannot override trusted durable directory",async()=>{
+ const {f,d,request}=await durableApproval();
+ await assert.rejects(durableOrchestrator(d.directory).consume({...request,durableAuditDirectory:"/tmp"}),/Unexpected/);
+ assert.equal((await f.mode.get()).exists,false);
+});
