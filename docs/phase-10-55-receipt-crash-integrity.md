@@ -1,0 +1,7 @@
+# Phase 10.55 — Audit receipt integrity and crash recovery
+
+**Emulator-only prototype. Production HOLD.**
+
+Receipt publication now writes a random exclusive `.pending` file, fsyncs its content, atomically hard-links it to the final receipt name with no replacement, fsyncs the containing directory, and removes the pending file. An interrupted write before linking leaves only a non-authoritative pending file, which verification never accepts. Existing final receipts cannot be replaced by a second issuer through this API. Receipt reads reject symbolic links, malformed JSON, missing or mismatched SHA-256 integrity checksums and evidence mismatches. Six regression tests exercise partial writes, successful publication, checksum tampering, symlinks, truncation and duplicate publication.
+
+**Important limits:** SHA-256 checksums are unkeyed and do not protect against an administrator who can rewrite both receipt and checksum. Local files are not WORM or an independently administered audit service. A crash after hard-link publication but before directory fsync can have platform-dependent durability; errors can leave an existing final receipt and cause issuance to report failure. Crash between Firestore approval issuance and receipt publication still leaves an unconsumable stranded approval. No automatic re-witnessing of missing evidence is permitted. Directory permissions, hard-link support and storage reliability are test-environment assumptions. There is no production deployment or approval.
