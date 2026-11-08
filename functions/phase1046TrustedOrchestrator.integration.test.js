@@ -129,7 +129,7 @@ test("Phase 10.48 persists signed operator evidence and nonce ledger",async()=>{
  const f=await fixture();await f.issue();
  const approval=(await f.approval.get()).data();
  assert.deepEqual(approval.signedOperatorAssertion,f.operatorAssertion);
- const nonceId=crypto.createHash("sha256").update("operator1\\0"+f.payload.nonce).digest("hex");
+ const nonceId=crypto.createHash("sha256").update("operator1\0"+f.payload.nonce).digest("hex");
  const ledger=await db.collection("legacyModeOperatorNonces").doc(nonceId).get();
  assert.equal(ledger.data().approvalId,"approval1");
  assert.equal((await f.business.collection("legacyModeApprovalAudit").doc("approval1").get())
@@ -158,7 +158,7 @@ test("Phase 10.48 rejects tampered audit evidence at consumption",async()=>{
 });
 test("Phase 10.48 rejects deleted nonce ledger at consumption",async()=>{
  const f=await fixture();await f.issue();
- const nonceId=crypto.createHash("sha256").update("operator1\\0"+f.payload.nonce).digest("hex");
+ const nonceId=crypto.createHash("sha256").update("operator1\0"+f.payload.nonce).digest("hex");
  await db.collection("legacyModeOperatorNonces").doc(nonceId).delete();
  await assert.rejects(f.consume(),/nonce ledger/);
  assert.equal((await f.mode.get()).exists,false);
