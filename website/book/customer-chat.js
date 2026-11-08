@@ -3,7 +3,7 @@
 // Phase 9E.6 — website chat client. SAFETY SWITCH:
 // Remains disabled until Firebase Anonymous Auth, App Check, abuse controls,
 // functions deployment and security tests have all been verified.
-const CHAT_ENABLED = false;
+const CHAT_ENABLED = false; // Production remains disabled; staging tests use Firebase emulators.
 // Public reCAPTCHA Enterprise site key. Fill only after verifying the complete key.
 // Do not use a secret key here. This is deliberately fail-closed until configured.
 const APP_CHECK_SITE_KEY = "6LeyyBUuAAAAABms2cBK0MoshK_016e6BEjAb2NC";
@@ -19,12 +19,13 @@ const slug = pathParts[0] === "book" && pathParts.length === 2 &&
 
 let auth, callFunction, conversation = null;
 let busy = false;
+let conversationClosed = false;
 
 function setStatus(value) { status.textContent = value; }
 function setEnabled(value) {
   nameInput.disabled = !value || Boolean(conversation);
-  messageInput.disabled = !value;
-  sendButton.disabled = !value || busy;
+  messageInput.disabled = !value || conversationClosed;
+  sendButton.disabled = !value || busy || conversationClosed;
   sendButton.textContent = conversation ? "Send message" : "Start conversation";
 }
 function showMessages(messages) {
@@ -41,7 +42,8 @@ async function loadMessages() {
   if (!conversation) return;
   const result = await callFunction("getCustomerChatMessages", conversation);
   showMessages(result.messages || []);
-  if (result.status !== "open") {
+  conversationClosed = result.status !== "open";
+  if (conversationClosed) {
     setStatus("This conversation is closed.");
     setEnabled(false);
   }
@@ -84,14 +86,14 @@ async function initialize() {
   if (conversation) {
     setEnabled(true);
     await loadMessages();
-    setStatus("Private conversation loaded. Refresh to check for replies.");
+    if (!conversationClosed) setStatus("Private conversation loaded. Refresh to check for replies.");
   } else {
     setEnabled(true);
     setStatus("Start a private conversation with this business.");
   }
 }
 sendButton.addEventListener("click", async () => {
-  if (!CHAT_ENABLED || busy || !callFunction) return;
+  if (!CHAT_ENABLED || busy || conversationClosed || !callFunction) return;
   const message = messageInput.value.trim();
   if (!message || message.length > 2000) {
     setStatus("Enter a message of up to 2,000 characters."); return;
@@ -116,7 +118,7 @@ sendButton.addEventListener("click", async () => {
     }
     messageInput.value = "";
     await loadMessages();
-    setStatus("Message sent. Refresh to check for replies.");
+    if (!conversationClosed) setStatus("Message sent. Refresh to check for replies.");
   } catch (error) {
     setStatus("Message not sent: " + (error.message || "Please try again."));
   } finally {
