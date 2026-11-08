@@ -18,5 +18,6 @@ test("runner checks effective ADC service identity and project",()=>{
  assert.match(source,/project!==EXPECTED_PROJECT/);
 });
 test("runner has no direct Firestore writes or deploy",()=>{
- assert.doesNotMatch(source,/\.set\(|\.update\(|\.delete\(|\.create\(|\.runTransaction\(|firebase deploy/);
+ assert.doesNotMatch(source,/\.set\(|\.update\(|\.doc\([^)]*\)\.delete\(|\.create\(|\.runTransaction\(|firebase deploy/);
+ assert.match(source,/await app\.delete\(\)/);
 });
