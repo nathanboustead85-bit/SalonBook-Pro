@@ -1,0 +1,35 @@
+name: Boustio Cleanup Emulator Safety
+on:
+  push:
+    branches:
+      - phase-9d4-teal-clients
+    paths:
+      - 'functions/controlledTestBookingCleanup.js'
+      - 'functions/testBookingCleanupPlan.js'
+      - 'functions/controlledTestBookingCleanup.integration.test.js'
+      - '.github/workflows/cleanup-emulator-safety.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  emulator-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GCLOUD_PROJECT: demo-boustio-cleanup
+      GOOGLE_CLOUD_PROJECT: demo-boustio-cleanup
+      FIREBASE_CLI_EXPERIMENTS: webframeworks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install function dependencies
+        working-directory: functions
+        run: npm install --no-audit --no-fund
+      - name: Run isolated Firestore emulator tests
+        run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-cleanup --only firestore "node --test functions/controlledTestBookingCleanup.integration.test.js"
