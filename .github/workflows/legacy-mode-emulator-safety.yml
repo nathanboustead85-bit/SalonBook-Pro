@@ -77,7 +77,7 @@ jobs:
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1044KeyRotationAndAudit.integration.test.js"
       - name: Run Phase 10.45 final cross-phase security boundary regression tests
         run: node --test functions/phase1045SecurityBoundaryReview.test.js
-      - name: Run Phase 10.46–10.48 trusted orchestrator and signed-evidence emulator tests
+      - name: Run Phase 10.46–10.49 trusted orchestrator, signed evidence and audit tamper tests
         env:
           BOUSTIO_LEGACY_EMULATOR_TEST_GATE: explicit-test-only
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1046TrustedOrchestrator.integration.test.js"
