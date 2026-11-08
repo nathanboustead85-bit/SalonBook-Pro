@@ -594,3 +594,52 @@ test("Phase 10.57 changed source hash rejects consumption without further source
  await assertBookingProtection(f,before);
  assert.equal((await f.mode.get()).exists,false);
 });
+
+test("Phase 10.58 cross-phase forged operator and owner cannot issue or change bookings",async()=>{
+ const f=await fixture(),before=await bookingProtectionSnapshot(f);
+ await assert.rejects(f.issue({operatorAssertion:f.signed(rogue.privateKey)}),/signature/);
+ const stranger=await fixture();
+ await assert.rejects(f.issue({ownerToken:stranger.ownerToken}));
+ assert.equal((await f.approval.get()).exists,false);
+ await assertBookingProtection(f,before);
+});
+test("Phase 10.58 cross-phase nonce replay rejected without booking mutation",async()=>{
+ const f=await fixture();await f.issue();const before=await bookingProtectionSnapshot(f);
+ const payload={...f.payload,approvalId:"approval2"};
+ const assertion={keyId:"primary",payload,signature:crypto.sign(null,Buffer.from(canonical(payload)),trusted.privateKey).toString("base64url")};
+ await assert.rejects(f.issue({approvalId:"approval2",operatorAssertion:assertion}),/nonce replay/);
+ await assertBookingProtection(f,before);
+ assert.equal((await f.business.collection("legacyModeApprovals").doc("approval2").get()).exists,false);
+});
+test("Phase 10.58 cross-phase independent receipt missing blocks recovery and preserves bookings",async()=>{
+ const {f,d,request}=await durableApproval(),before=await bookingProtectionSnapshot(f);
+ const receipt=path1053.join(d.directory,fs1053.readdirSync(d.directory)[0]);
+ fs1053.unlinkSync(receipt);
+ await assert.rejects(durableOrchestrator(d.directory).consume(request),/missing independent receipt/);
+ await assertBookingProtection(f,before);
+ assert.equal((await f.approval.get()).data().status,"approved");
+});
+test("Phase 10.58 cross-phase tampered nonce evidence blocks witnessed consumption",async()=>{
+ const {f,d,request}=await durableApproval(),before=await bookingProtectionSnapshot(f);
+ const nonceId=(await f.approval.get()).data().nonceId;
+ await db.collection("legacyModeOperatorNonces").doc(nonceId).update({operatorId:"attacker"});
+ await assert.rejects(durableOrchestrator(d.directory).consume(request));
+ await assertBookingProtection(f,before);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.58 cross-phase denied role cannot override trusted orchestrator",async()=>{
+ const {f,d,request}=await durableApproval(),before=await bookingProtectionSnapshot(f);
+ assert.throws(()=>authorize1056({...permissionBase,role:"auditor",action:"consume-record"}),/permission denied/);
+ await assert.rejects(durableOrchestrator(d.directory).consume({...request,role:"consumer"}),/Unexpected/);
+ await assertBookingProtection(f,before);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.58 cross-phase concurrent consumption preserves bookings and replay is denied",async()=>{
+ const {f,d,request}=await durableApproval(),before=await bookingProtectionSnapshot(f);
+ const outcomes=await Promise.allSettled([durableOrchestrator(d.directory).consume(request),durableOrchestrator(d.directory).consume(request)]);
+ assert.equal(outcomes.filter(x=>x.status==="fulfilled").length,1);
+ assert.equal(outcomes.filter(x=>x.status==="rejected").length,1);
+ await assert.rejects(durableOrchestrator(d.directory).consume(request));
+ await assertBookingProtection(f,before);
+ assert.equal((await f.approval.get()).data().status,"consumed");
+});
