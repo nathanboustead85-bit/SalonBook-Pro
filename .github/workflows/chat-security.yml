@@ -1,0 +1,33 @@
+name: Boustio Chat Security Checks
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - phase-9d4-teal-clients
+    paths:
+      - 'functions/index.js'
+      - 'functions/tests/chat-security.test.js'
+      - 'firestore.rules'
+      - 'website/book/customer-chat.js'
+      - '.github/workflows/chat-security.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  chat-security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Firebase Functions JavaScript syntax
+        run: node --check functions/index.js
+      - name: Check customer website JavaScript syntax
+        run: node --check website/book/customer-chat.js
+      - name: Run chat security source checks
+        run: node --test functions/tests/chat-security.test.js
