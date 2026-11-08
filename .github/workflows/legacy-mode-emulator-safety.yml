@@ -21,6 +21,7 @@ on:
       - 'functions/phase1045SecurityBoundaryReview.test.js'
       - 'functions/phase1046TrustedOrchestrator.js'
       - 'functions/phase1046TrustedOrchestrator.integration.test.js'
+      - 'functions/phase1047LegacyBypassPrevention.test.js'
       - 'docs/phase-10-45-final-security-boundary-review.md'
       - 'functions/index.js'
       - 'functions/bookingMode.js'
@@ -54,16 +55,28 @@ jobs:
       - name: Run Phase 10.39 approval and least-privilege evidence policy tests
         run: node --test functions/phase1039ExecutionEvidence.test.js
       - name: Run Phase 10.40 isolated single-use approval and concurrency tests
+        env:
+          BOUSTIO_LEGACY_EMULATOR_TEST_GATE: explicit-test-only
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore "node --test functions/phase1040EmulatorLockedInitialization.integration.test.js"
       - name: Run Phase 10.41 isolated approval issuance and audit tests
+        env:
+          BOUSTIO_LEGACY_EMULATOR_TEST_GATE: explicit-test-only
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore "node --test functions/phase1041EmulatorApprovalIssuance.integration.test.js"
       - name: Run Phase 10.42 end-to-end approval and booking preservation tests
+        env:
+          BOUSTIO_LEGACY_EMULATOR_TEST_GATE: explicit-test-only
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore "node --test functions/phase1042ApprovalEndToEnd.integration.test.js"
       - name: Run Phase 10.43 real Auth emulator and Ed25519 evidence tests
+        env:
+          BOUSTIO_LEGACY_EMULATOR_TEST_GATE: explicit-test-only
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1043TrustedEmulatorEvidence.integration.test.js"
       - name: Run Phase 10.44 signing-key rotation, revocation and signed audit tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1044KeyRotationAndAudit.integration.test.js"
       - name: Run Phase 10.45 final cross-phase security boundary regression tests
         run: node --test functions/phase1045SecurityBoundaryReview.test.js
       - name: Run Phase 10.46 trusted orchestrator adversarial emulator tests
+        env:
+          BOUSTIO_LEGACY_EMULATOR_TEST_GATE: explicit-test-only
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1046TrustedOrchestrator.integration.test.js"
+      - name: Run Phase 10.47 direct legacy bypass regression tests
+        run: node --test functions/phase1047LegacyBypassPrevention.test.js
