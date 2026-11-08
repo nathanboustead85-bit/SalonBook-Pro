@@ -75,6 +75,23 @@ test("customer isolation and owner reply end-to-end", { timeout: 120000 }, async
   assert.equal(aliceRead.status, 200, JSON.stringify(aliceRead));
   assert.deepEqual(aliceRead.data.messages.map(m => m.text), ["Hello business", "Hello Alice"]);
 
+  // Seed the boundary in the emulator rather than sending 100 messages.
+  // Verify the server rejects the 101st customer message without writing it.
+  const conversationRef = db.collection("businesses").doc(businessId)
+    .collection("conversations").doc(conversationId);
+  await conversationRef.update({
+    customerMessageCount: 100,
+    lastCustomerMessageMs: 0
+  });
+  const beforeQuota = await conversationRef.collection("messages").get();
+  const overQuota = await call("sendCustomerChatMessage", alice.idToken, {
+    businessId, conversationId, message: "Message 101 should be rejected"
+  });
+  assert.equal(overQuota.status, 429, JSON.stringify(overQuota));
+  const afterQuota = await conversationRef.collection("messages").get();
+  assert.equal(afterQuota.size, beforeQuota.size, "quota rejection must not create a message");
+  await conversationRef.update({ customerMessageCount: 2 });
+
   const bobOwnerAttempt = await call("sendBusinessChatReply", bob.idToken, {
     conversationId, message: "Impersonation"
   });
