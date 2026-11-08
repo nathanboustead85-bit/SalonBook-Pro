@@ -56,6 +56,10 @@ class CloudActivity : Activity() {
 
     private var syncStatusText: TextView? = null
 
+    private var pendingArchive: String? = null
+    private var pendingArchiveHash: String? = null
+    private val archiveRequestCode = 1011
+
     private val syncKeys = listOf(
         "bookings", "services", "staff"
     )
@@ -394,6 +398,10 @@ class CloudActivity : Activity() {
             viewCloudBookings()
         }
 
+        addButton("Save Cloud Booking Archive · No Changes") {
+            prepareCloudBookingArchive()
+        }
+
         addText("Manual Cloud Backup", 19f)
         addText(
             "Save bookings, services, staff and registered clients to Firebase."
@@ -432,6 +440,128 @@ class CloudActivity : Activity() {
                 "Live sync monitoring is being tested.",
             14f
         )
+    }
+
+    private fun prepareCloudBookingArchive() {
+        val user = auth.currentUser
+        if (user == null || !user.isEmailVerified) {
+            message("Verified business sign-in required")
+            return
+        }
+        pendingArchive = null
+        pendingArchiveHash = null
+        db.collection("users").document(user.uid)
+            .collection("liveData").document("bookings")
+            .get(Source.SERVER)
+            .addOnSuccessListener { snapshot ->
+                try {
+                    if (!snapshot.exists() || snapshot.getLong("schemaVersion") != 1L) {
+                        throw IllegalArgumentException("Cloud booking source is missing or unsupported")
+                    }
+                    val raw = snapshot.getString("json")
+                        ?: throw IllegalArgumentException("Missing booking JSON")
+                    val records = JSONArray(raw)
+                    if (records.length() != 10) {
+                        throw IllegalArgumentException(
+                            "Expected 10 test bookings; found ${records.length()}. Archive cancelled."
+                        )
+                    }
+                    for (i in 0 until records.length()) records.getJSONObject(i)
+                    val sourceHash = sha256(raw)
+                    val archive = JSONObject().apply {
+                        put("archiveType", "boustio-cloud-bookings-readonly")
+                        put("schemaVersion", 1)
+                        put("sourcePath", "users/OWNER/liveData/bookings")
+                        put("sourceSha256", sourceHash)
+                        put("bookingCount", records.length())
+                        put("bookingsJson", raw)
+                    }.toString(2)
+                    pendingArchive = archive
+                    pendingArchiveHash = sourceHash
+                    AlertDialog.Builder(this)
+                        .setTitle("Save 10 test bookings")
+                        .setMessage(
+                            "A separate JSON archive will be saved to a location you choose. " +
+                                "The original Firebase records will not change. " +
+                                "Keep the archive private because it contains customer details."
+                        )
+                        .setPositiveButton("Choose file location") { _, _ ->
+                            val intent = android.content.Intent(
+                                android.content.Intent.ACTION_CREATE_DOCUMENT
+                            ).apply {
+                                addCategory(android.content.Intent.CATEGORY_OPENABLE)
+                                type = "application/json"
+                                putExtra(
+                                    android.content.Intent.EXTRA_TITLE,
+                                    "boustio-test-bookings-archive.json"
+                                )
+                            }
+                            startActivityForResult(intent, archiveRequestCode)
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                } catch (error: Exception) {
+                    pendingArchive = null
+                    pendingArchiveHash = null
+                    message(error.localizedMessage ?: "Archive preparation failed")
+                }
+            }
+            .addOnFailureListener { error ->
+                message("Server read failed: " +
+                    (error.localizedMessage ?: "Connection error"))
+            }
+    }
+
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: android.content.Intent?
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != archiveRequestCode) return
+        val archive = pendingArchive
+        val expectedHash = pendingArchiveHash
+        pendingArchive = null
+        pendingArchiveHash = null
+        if (resultCode != Activity.RESULT_OK || data?.data == null ||
+            archive == null || expectedHash == null) return
+        try {
+            val uri = data.data!!
+            contentResolver.openOutputStream(uri, "wt").use { stream ->
+                if (stream == null) throw IllegalStateException("Cannot open selected file")
+                stream.write(archive.toByteArray(Charsets.UTF_8))
+                stream.flush()
+            }
+            val saved = contentResolver.openInputStream(uri).use { stream ->
+                if (stream == null) throw IllegalStateException("Cannot verify saved file")
+                stream.readBytes().toString(Charsets.UTF_8)
+            }
+            val savedJson = JSONObject(saved)
+            val savedRaw = savedJson.getString("bookingsJson")
+            if (saved != archive || savedJson.getInt("bookingCount") != 10 ||
+                savedJson.getString("sourceSha256") != expectedHash ||
+                sha256(savedRaw) != expectedHash) {
+                throw IllegalStateException("Saved file failed verification")
+            }
+            AlertDialog.Builder(this)
+                .setTitle("Cloud booking archive verified")
+                .setMessage(
+                    "All 10 test bookings were saved and read back successfully. " +
+                        "SHA-256: $expectedHash\n\n" +
+                        "Firebase records remain untouched. Keep this file private."
+                )
+                .setPositiveButton("OK", null)
+                .show()
+        } catch (error: Exception) {
+            AlertDialog.Builder(this)
+                .setTitle("Archive not verified")
+                .setMessage(
+                    "Do not delete any bookings. File save or verification failed: " +
+                        (error.localizedMessage ?: "Unknown error")
+                )
+                .setPositiveButton("OK", null)
+                .show()
+        }
     }
 
     private fun viewCloudBookings() {
