@@ -9,8 +9,7 @@ const PROJECT="demo-boustio-legacy-init";
 if(!process.env.FIRESTORE_EMULATOR_HOST ||
  process.env.GCLOUD_PROJECT!==PROJECT ||
  process.env.GOOGLE_CLOUD_PROJECT!==PROJECT ||
- process.env.GOOGLE_APPLICATION_CREDENTIALS ||
- process.env.FIREBASE_CONFIG)
+ process.env.GOOGLE_APPLICATION_CREDENTIALS)
  throw Error("Dedicated emulator and no production credentials required");
 if(!admin.apps.length)admin.initializeApp({projectId:PROJECT});
 const db=admin.firestore();
