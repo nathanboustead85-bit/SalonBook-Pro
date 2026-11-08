@@ -10,6 +10,7 @@ const {verifyRotatedAssertion}=require("./phase1044KeyRotationAndAudit");
 const {issueSigned,consumeSigned}=require("./phase1048SignedApproval");
 const {createIndependentAuditWitness}=require("./phase1051IndependentAuditWitness");
 const {createDurableAuditPrototype}=require("./phase1053DurableAuditPrototype");
+const {authorize}=require("./phase1056EmulatorPermissions");
 const ID=/^[A-Za-z0-9_-]{1,100}$/;
 function fail(message){const error=new Error(message);error.code="phase1046-denied";throw error;}
 function lock(db){
@@ -71,9 +72,13 @@ function createTrustedEmulatorOrchestrator({db,operatorKeyRegistry,durableAuditD
    fail("Unexpected caller-controlled fields");
   const {businessId,archive,approvalId,ownerToken,operatorAssertion}=request;
   if(!ID.test(businessId||"")||!ID.test(approvalId||""))fail("Invalid identifiers");
+  const identity=await verifyOwner(ownerToken);
+  authorize({role:"owner",action:"request-issue",projectId:PROJECT,ownerUid:identity.uid,businessId,verified:identity.email_verified});
   const nowMs=trustedNow();
   if(!exactKeys(operatorAssertion,["keyId","payload","signature"]))
    fail("Malformed signed operator assertion");
+  authorize({role:"operator",action:"sign-approval",projectId:PROJECT,operatorRole:operatorAssertion.payload?.role});
+  authorize({role:"issuer",action:"issue-record",projectId:PROJECT});
   const result=await issueSigned({db,businessId,archive,approvalId,ownerToken,assertion:operatorAssertion,verifyOwner,registry,nowMs});
   // If witnessing fails, return failure and leave the approval unconsumable.
   auditWitness.witness(await readAuditEvent(businessId,approvalId));
@@ -85,6 +90,9 @@ function createTrustedEmulatorOrchestrator({db,operatorKeyRegistry,durableAuditD
    fail("Unexpected caller-controlled fields");
   const {businessId,archive,approvalId,ownerToken}=request;
   if(!ID.test(businessId||"")||!ID.test(approvalId||""))fail("Invalid identifiers");
+  const identity=await verifyOwner(ownerToken);
+  authorize({role:"owner",action:"request-consume",projectId:PROJECT,ownerUid:identity.uid,businessId,verified:identity.email_verified});
+  authorize({role:"consumer",action:"consume-record",projectId:PROJECT});
   return consumeSigned({db,businessId,archive,approvalId,ownerToken,verifyOwner,registry,nowMs:trustedNow(),auditWitness});
  }
  return Object.freeze({issue,consume});
