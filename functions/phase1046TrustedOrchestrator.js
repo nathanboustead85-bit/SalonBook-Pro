@@ -26,6 +26,8 @@ function createTrustedEmulatorOrchestrator({db,operatorKeyRegistry}={}){
  Array.isArray(operatorKeyRegistry)||Object.keys(operatorKeyRegistry).length===0)
  fail("Trusted operator registry required");
  // Snapshot trusted configuration; never read registry or key from a request.
+ if(Object.getPrototypeOf(operatorKeyRegistry)!==Object.prototype&&Object.getPrototypeOf(operatorKeyRegistry)!==null)
+  fail("Plain trusted registry required");
  const registry=Object.create(null);
  for(const [id,item] of Object.entries(operatorKeyRegistry)){
   if(!ID.test(id)||!exactKeys(item,["status","publicKeyPem","validFromMs","validUntilMs"])||
@@ -35,6 +37,8 @@ function createTrustedEmulatorOrchestrator({db,operatorKeyRegistry}={}){
   fail("Invalid trusted key configuration");
   let key;try{key=crypto.createPublicKey(item.publicKeyPem);}catch(_){fail("Invalid trusted key");}
   if(key.asymmetricKeyType!=="ed25519")fail("Ed25519 only");
+  if(Object.getPrototypeOf(item)!==Object.prototype&&Object.getPrototypeOf(item)!==null)
+   fail("Plain key record required");
   registry[id]=Object.freeze({...item});
  }
  Object.freeze(registry);
