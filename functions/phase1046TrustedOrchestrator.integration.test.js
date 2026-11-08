@@ -527,3 +527,70 @@ test("Phase 10.56 orchestrator denies wrong owner before approval mutation",asyn
  await assert.rejects(f.issue({ownerToken:other.ownerToken}),/permission denied|owner/);
  assert.equal((await f.approval.get()).exists,false);
 });
+
+async function bookingProtectionSnapshot(f){
+ const [source,appointments,locks,migration]=await Promise.all([
+  f.source.get(),f.business.collection("appointments").get(),
+  f.business.collection("bookingLocks").get(),
+  f.business.collection("migrations").doc("android-bookings-v1").get()]);
+ return {source:source.data(),sourceExists:source.exists,
+  appointments:appointments.docs.map(x=>({id:x.id,data:x.data()})),
+  locks:locks.docs.map(x=>({id:x.id,data:x.data()})),
+  migrationExists:migration.exists,migration:migration.data()||null};
+}
+async function assertBookingProtection(f,before){
+ assert.deepEqual(await bookingProtectionSnapshot(f),before);
+}
+test("Phase 10.57 issuance preserves source bookings, appointments and locks",async()=>{
+ const f=await fixture(),before=await bookingProtectionSnapshot(f);
+ await f.issue();await assertBookingProtection(f,before);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.57 successful consumption preserves source bookings and protected collections",async()=>{
+ const {f,d,request}=await durableApproval();
+ const before=await bookingProtectionSnapshot(f);
+ await durableOrchestrator(d.directory).consume(request);
+ await assertBookingProtection(f,before);
+ assert.equal((await f.mode.get()).data().mode,"legacy");
+});
+test("Phase 10.57 missing audit receipt blocks mode but preserves all booking data",async()=>{
+ const {f,d,request}=await durableApproval(),before=await bookingProtectionSnapshot(f);
+ fs1053.unlinkSync(path1053.join(d.directory,fs1053.readdirSync(d.directory)[0]));
+ await assert.rejects(durableOrchestrator(d.directory).consume(request),/missing independent receipt/);
+ await assertBookingProtection(f,before);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.57 tampered audit evidence blocks consumption without booking writes",async()=>{
+ const {f,d,request}=await durableApproval(),before=await bookingProtectionSnapshot(f);
+ await f.business.collection("legacyModeApprovalAudit").doc("approval1").update({operatorId:"rogue"});
+ await assert.rejects(durableOrchestrator(d.directory).consume(request));
+ await assertBookingProtection(f,before);
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.57 failed owner authorisation preserves booking data and approval state",async()=>{
+ const {f,d,request}=await durableApproval(),before=await bookingProtectionSnapshot(f);
+ const other=await fixture();
+ await assert.rejects(durableOrchestrator(d.directory).consume({...request,ownerToken:other.ownerToken}));
+ await assertBookingProtection(f,before);
+ assert.equal((await f.approval.get()).data().status,"approved");
+ assert.equal((await f.mode.get()).exists,false);
+});
+test("Phase 10.57 concurrent consumption is single-use and never changes booking data",async()=>{
+ const {f,d,request}=await durableApproval(),before=await bookingProtectionSnapshot(f);
+ const results=await Promise.allSettled([
+  durableOrchestrator(d.directory).consume(request),
+  durableOrchestrator(d.directory).consume(request)]);
+ assert.equal(results.filter(x=>x.status==="fulfilled").length,1);
+ assert.equal(results.filter(x=>x.status==="rejected").length,1);
+ await assertBookingProtection(f,before);
+ assert.equal((await f.mode.get()).data().mode,"legacy");
+});
+test("Phase 10.57 changed source hash rejects consumption without further source mutation",async()=>{
+ const {f,d,request}=await durableApproval();
+ const altered=JSON.stringify(Array.from({length:10},(_,i)=>({id:"changed"+i})));
+ await f.source.update({json:altered});
+ const before=await bookingProtectionSnapshot(f);
+ await assert.rejects(durableOrchestrator(d.directory).consume(request),/source changed/);
+ await assertBookingProtection(f,before);
+ assert.equal((await f.mode.get()).exists,false);
+});
