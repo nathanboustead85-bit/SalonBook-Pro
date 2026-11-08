@@ -59,6 +59,7 @@ class CloudActivity : Activity() {
     private var pendingArchive: String? = null
     private var pendingArchiveHash: String? = null
     private val archiveRequestCode = 1011
+    private val archiveReviewRequestCode = 1012
 
     private val syncKeys = listOf(
         "bookings", "services", "staff"
@@ -402,6 +403,16 @@ class CloudActivity : Activity() {
             prepareCloudBookingArchive()
         }
 
+        addButton("Check Cleanup Readiness · Read Only") {
+            val intent = android.content.Intent(
+                android.content.Intent.ACTION_OPEN_DOCUMENT
+            ).apply {
+                addCategory(android.content.Intent.CATEGORY_OPENABLE)
+                type = "application/json"
+            }
+            startActivityForResult(intent, archiveReviewRequestCode)
+        }
+
         addText("Manual Cloud Backup", 19f)
         addText(
             "Save bookings, services, staff and registered clients to Firebase."
@@ -440,6 +451,85 @@ class CloudActivity : Activity() {
                 "Live sync monitoring is being tested.",
             14f
         )
+    }
+
+    private fun checkCleanupReadiness(uri: android.net.Uri) {
+        val user = auth.currentUser
+        if (user == null || !user.isEmailVerified) {
+            message("Verified business sign-in required")
+            return
+        }
+        val archiveHash: String
+        try {
+            val text = contentResolver.openInputStream(uri).use { input ->
+                if (input == null) throw IllegalArgumentException("Archive cannot be opened")
+                val bytes = input.readBytes()
+                if (bytes.size > 2_000_000) {
+                    throw IllegalArgumentException("Archive is too large")
+                }
+                bytes.toString(Charsets.UTF_8)
+            }
+            val archive = JSONObject(text)
+            if (archive.getString("archiveType") != "boustio-cloud-bookings-readonly" ||
+                archive.getInt("schemaVersion") != 1 ||
+                archive.getInt("bookingCount") != 10) {
+                throw IllegalArgumentException("Not a verified 10-booking archive")
+            }
+            val originalJson = archive.getString("bookingsJson")
+            if (JSONArray(originalJson).length() != 10) {
+                throw IllegalArgumentException("Archive booking count is inconsistent")
+            }
+            archiveHash = archive.getString("sourceSha256")
+            if (!archiveHash.matches(Regex("[a-f0-9]{64}")) ||
+                sha256(originalJson) != archiveHash) {
+                throw IllegalArgumentException("Archive integrity check failed")
+            }
+        } catch (error: Exception) {
+            showCleanupReview("BLOCKED: " +
+                (error.localizedMessage ?: "Archive could not be verified"))
+            return
+        }
+        db.collection("users").document(user.uid)
+            .collection("liveData").document("bookings")
+            .get(Source.SERVER)
+            .addOnSuccessListener { snapshot ->
+                try {
+                    if (!snapshot.exists() || snapshot.getLong("schemaVersion") != 1L) {
+                        throw IllegalArgumentException("Cloud booking source missing or invalid")
+                    }
+                    val raw = snapshot.getString("json")
+                        ?: throw IllegalArgumentException("Cloud booking JSON missing")
+                    val cloudCount = JSONArray(raw).length()
+                    val match = cloudCount == 10 && sha256(raw) == archiveHash
+                    showCleanupReview(
+                        if (match) {
+                            "ARCHIVE MATCH CONFIRMED\n\n" +
+                                "All 10 cloud test bookings exactly match the saved archive. " +
+                                "No changes were made. This is a preparation check only; " +
+                                "cleanup is NOT authorised or enabled."
+                        } else {
+                            "BLOCKED: Firebase has changed since the archive was saved. " +
+                                "Cloud booking count: $cloudCount. " +
+                                "Do not delete or overwrite anything."
+                        }
+                    )
+                } catch (error: Exception) {
+                    showCleanupReview("BLOCKED: " +
+                        (error.localizedMessage ?: "Invalid cloud data"))
+                }
+            }
+            .addOnFailureListener { error ->
+                showCleanupReview("BLOCKED: Fresh server verification failed. " +
+                    (error.localizedMessage ?: "Connection error"))
+            }
+    }
+
+    private fun showCleanupReview(result: String) {
+        AlertDialog.Builder(this)
+            .setTitle("Test Booking Cleanup Readiness")
+            .setMessage(result)
+            .setPositiveButton("Close", null)
+            .show()
     }
 
     private fun prepareCloudBookingArchive() {
@@ -518,6 +608,12 @@ class CloudActivity : Activity() {
         data: android.content.Intent?
     ) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == archiveReviewRequestCode) {
+            if (resultCode == Activity.RESULT_OK && data?.data != null) {
+                checkCleanupReadiness(data.data!!)
+            }
+            return
+        }
         if (requestCode != archiveRequestCode) return
         val archive = pendingArchive
         val expectedHash = pendingArchiveHash
