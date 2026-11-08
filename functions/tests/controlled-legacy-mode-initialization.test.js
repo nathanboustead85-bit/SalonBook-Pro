@@ -12,7 +12,9 @@ function fake({mode=false,marker=false,source=json,apps=0,locks=0}={}){
   path:name+"/"+id,collection:part=>collection(name+"/"+id+"/"+part)
  }),get:async()=>({empty:(name.endsWith("/appointments")?apps:locks)===0})});
  const db={collection,runTransaction:async fn=>fn({
-  get:async ref=>({
+  get:async ref=>ref.path.endsWith("/appointments")||ref.path.endsWith("/bookingLocks")
+   ? {empty:(ref.path.endsWith("/appointments")?apps:locks)===0}
+   : ({
    exists:ref.path.endsWith("/settings/bookingMode")?mode:
     ref.path.endsWith("/migrations/android-bookings-v1")?marker:true,
    data:()=>ref.path.endsWith("/liveData/bookings")?{json:source,schemaVersion:1}:{}
