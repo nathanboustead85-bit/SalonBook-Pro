@@ -23,6 +23,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Source
+import com.google.firebase.firestore.ListenerRegistration
 import java.security.MessageDigest
 import org.json.JSONArray
 import org.json.JSONObject
@@ -44,6 +45,7 @@ class MainActivity : Activity() {
     private lateinit var container: LinearLayout
     private lateinit var navigationBar: LinearLayout
     private var currentScreen = "dashboard"
+    private var cloudCalendarListener: ListenerRegistration? = null
 
     data class Booking(
         val id: String, var client: String, var service: String,
@@ -457,6 +459,57 @@ class MainActivity : Activity() {
         SimpleDateFormat(pattern, Locale.UK).format(parser.parse(date)!!)
     }.getOrDefault(date)
 
+
+    override fun onDestroy() {
+        cloudCalendarListener?.remove()
+        super.onDestroy()
+    }
+
+    private fun showSharedCloudAppointments(date: String) {
+        cloudCalendarListener?.remove()
+        cloudCalendarListener = null
+        section("Shared cloud appointments · read only")
+        val target = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        container.addView(target)
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null || !user.isEmailVerified) {
+            target.addView(label("Verified sign-in required for cloud calendar.", 13f, muted))
+            return
+        }
+        target.addView(label("Loading shared appointments…", 13f, muted))
+        cloudCalendarListener = FirebaseFirestore.getInstance()
+            .collection("businesses").document(user.uid)
+            .collection("appointments").whereEqualTo("date", date)
+            .addSnapshotListener { snapshot, error ->
+                if (currentScreen != "calendar" || selectedDate != date || isFinishing || isDestroyed) {
+                    return@addSnapshotListener
+                }
+                target.removeAllViews()
+                if (error != null || snapshot == null) {
+                    target.addView(label("Cloud calendar unavailable. Local appointments are unchanged.", 13f, muted))
+                    return@addSnapshotListener
+                }
+                val items = snapshot.documents.mapNotNull { doc ->
+                    val status = doc.getString("status")
+                    if (status == "cancelled" || status == "canceled") return@mapNotNull null
+                    val start = doc.getString("startTime") ?: return@mapNotNull null
+                    Triple(start, doc.getString("customerName") ?: "Customer",
+                        (doc.getString("serviceName") ?: "Service") + " · " +
+                        (doc.getString("staffName") ?: "Staff"))
+                }.sortedBy { it.first }
+                if (items.isEmpty()) {
+                    target.addView(label("No cloud appointments on this date.", 13f, muted))
+                }
+                items.forEach { (start, client, details) ->
+                    val item = panel()
+                    item.addView(label("$start  $client", 16f, dark, true))
+                    item.addView(label(details, 13f, muted))
+                    item.addView(label("Cloud · read only", 12f, orange))
+                    target.addView(item)
+                }
+            }
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -524,7 +577,8 @@ class MainActivity : Activity() {
             topMargin = dp(6)
             bottomMargin = dp(12)
         })
-        section("Daily schedule")
+        showSharedCloudAppointments(selectedDate)
+        section("Daily schedule · local appointments")
         if (daily.isEmpty()) {
             val empty = panel()
             empty.addView(label("No appointments scheduled", 19f, dark, true))
