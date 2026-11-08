@@ -6,6 +6,7 @@
  * migrated into the shared Firestore bookingLocks collection.
  */
 const { validateBookingDate, validateAvailability, createLockIds } = require("./bookingEngine");
+const { MIGRATION_ID, MODES } = require("./bookingMode");
 
 function fail(message) {
   const error = new Error(message);
@@ -57,11 +58,23 @@ async function getTrustedAvailability({ db, businessId, catalogue, serviceId, st
       catalogue.business.acceptingBookings !== true) fail("Bookings are disabled.");
 
   const businessRef = db.collection("businesses").doc(businessId);
-  const migration = await businessRef.collection("bookingMigration").doc("status").get();
-  // A marker alone is not proof of completeness: migration must also have
-  // an explicit audited reconciliation result from the rollout process.
-  if (!migration.exists || migration.get("androidLocksReconciled") !== true ||
-      migration.get("schemaVersion") !== 1) fail("Calendar migration is incomplete.");
+  // Use the existing Phase 8D authoritative migration marker, not a parallel flag.
+  // Cloud mode is mandatory: legacy Android writes must no longer bypass locks.
+  const [migration, mode] = await Promise.all([
+    businessRef.collection("migrations").doc(MIGRATION_ID).get(),
+    businessRef.collection("settings").doc("bookingMode").get()
+  ]);
+  if (!migration.exists || migration.get("status") !== "completed" ||
+      migration.get("verifiedFinalSync") !== true ||
+      migration.get("schemaVersion") !== 1 ||
+      migration.get("businessId") !== businessId ||
+      !Number.isInteger(migration.get("appointmentCount")) ||
+      migration.get("appointmentCount") < 1 ||
+      !Number.isInteger(migration.get("lockCount")) ||
+      migration.get("lockCount") < 1 ||
+      !mode.exists || mode.get("mode") !== MODES.CLOUD) {
+    fail("Calendar migration is incomplete.");
+  }
 
   if (!Array.isArray(catalogue.services) || !Array.isArray(catalogue.staff)) fail("Invalid catalogue.");
   const service = catalogue.services.find(x => x.id === serviceId && x.active === true);
