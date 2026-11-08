@@ -30,7 +30,8 @@ async function fixture({mode=false,marker=false,source=json,appointments=false,l
  return {owner,business,modeRef,sourceRef};
 }
 const execute=(f,overrides={})=>initialiseArchivedLegacyMode({
- db,businessId:f.owner,authenticatedUid:f.owner,archive,approval:APPROVAL,
+ db,businessId:f.owner,authenticatedUid:f.owner,
+ archive:{...archive,sourcePath:"users/"+f.owner+"/liveData/bookings"},approval:APPROVAL,
  executionEnabled:true,...overrides
 });
 async function unchanged(f){
@@ -86,5 +87,16 @@ test("different authenticated owner cannot create mode",async()=>{
 test("invalid archive cannot create mode",async()=>{
  const f=await fixture();
  await assert.rejects(execute(f,{archive:{...archive,sourceSha256:"0".repeat(64)}}),/archive/);
+ await unchanged(f);
+});
+
+test("archive from another owner cannot create mode",async()=>{
+ const f=await fixture();
+ await assert.rejects(execute(f,{archive:{...archive,sourcePath:"users/another-owner/liveData/bookings"}}),/sourcePath/);
+ await unchanged(f);
+});
+test("archive missing sourcePath cannot create mode",async()=>{
+ const f=await fixture();
+ await assert.rejects(execute(f,{archive:{...archive}}),/sourcePath/);
  await unchanged(f);
 });
