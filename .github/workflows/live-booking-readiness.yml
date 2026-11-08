@@ -27,5 +27,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install Firebase function dependencies
+        working-directory: functions
+        run: npm ci --no-audit --no-fund
       - name: Check booking release safeguards
         run: node --test functions/tests/live-booking-readiness.test.js functions/tests/trusted-availability.test.js
