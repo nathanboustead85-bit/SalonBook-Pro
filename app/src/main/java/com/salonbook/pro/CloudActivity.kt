@@ -381,6 +381,15 @@ class CloudActivity : Activity() {
             }
         }
 
+        addText("Calendar Migration Readiness · Read Only", 19f)
+        addText(
+            "Compare this phone's saved appointments with the latest " +
+                "server-confirmed cloud booking document. Nothing is uploaded or changed."
+        )
+        addButton("Check Booking Backup Match") {
+            checkBookingBackupMatch()
+        }
+
         addText("Manual Cloud Backup", 19f)
         addText(
             "Save bookings, services, staff and registered clients to Firebase."
@@ -419,6 +428,91 @@ class CloudActivity : Activity() {
                 "Live sync monitoring is being tested.",
             14f
         )
+    }
+
+    private fun checkBookingBackupMatch() {
+        val user = auth.currentUser
+        if (user == null || !user.isEmailVerified) {
+            message("Verified business sign-in required")
+            return
+        }
+        val localJson = prefs.getString("bookings", "[]") ?: "[]"
+        val localCount = try {
+            JSONArray(localJson).length()
+        } catch (_: Exception) {
+            message("Local booking data is invalid")
+            return
+        }
+        val progress = AlertDialog.Builder(this)
+            .setTitle("Checking booking backup")
+            .setMessage("Reading the latest server data. No appointments will be changed.")
+            .setCancelable(false)
+            .create()
+        progress.show()
+        db.collection("users").document(user.uid)
+            .collection("liveData").document("bookings")
+            .get(Source.SERVER)
+            .addOnSuccessListener { snapshot ->
+                progress.dismiss()
+                if (!snapshot.exists()) {
+                    showBookingMatchResult(
+                        "No cloud booking sync document exists. Phone appointments: $localCount. " +
+                            "Migration must remain blocked."
+                    )
+                    return@addOnSuccessListener
+                }
+                try {
+                    if (snapshot.getLong("schemaVersion") != 1L) {
+                        throw IllegalArgumentException("Unsupported cloud booking schema")
+                    }
+                    val cloudJson = snapshot.getString("json")
+                        ?: throw IllegalArgumentException("Cloud booking JSON missing")
+                    val cloudCount = JSONArray(cloudJson).length()
+                    val localHash = sha256(localJson)
+                    val cloudHash = sha256(cloudJson)
+                    val match = localHash == cloudHash
+                    showBookingMatchResult(
+                        "Phone appointments: $localCount\\n" +
+                            "Cloud appointments: $cloudCount\\n" +
+                            "Exact data match: ${if (match) "YES" else "NO"}\\n\\n" +
+                            if (match) {
+                                "This phone's booking JSON matches the server copy. " +
+                                    "Other devices, migration conflicts and booking locks " +
+                                    "have NOT been verified. Do not enable live bookings."
+                            } else {
+                                "Migration blocked: this phone and the server have " +
+                                    "different booking data. Do not overwrite either copy."
+                            }
+                    )
+                } catch (error: Exception) {
+                    showBookingMatchResult(
+                        "Unable to verify cloud booking data: " +
+                            (error.localizedMessage ?: "Invalid data") +
+                            ". No appointments were changed."
+                    )
+                }
+            }
+            .addOnFailureListener { error ->
+                progress.dismiss()
+                showBookingMatchResult(
+                    "Server verification unavailable: " +
+                        (error.localizedMessage ?: "Connection error") +
+                        ". Cached data was not used."
+                )
+            }
+    }
+
+    private fun sha256(value: String): String =
+        java.security.MessageDigest.getInstance("SHA-256")
+            .digest(value.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+
+    private fun showBookingMatchResult(result: String) {
+        AlertDialog.Builder(this)
+            .setTitle("Calendar Migration Readiness")
+            .setMessage(result)
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     private fun backupDocument() =
