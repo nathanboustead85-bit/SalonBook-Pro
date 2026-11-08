@@ -8,12 +8,17 @@ android {
     namespace = "com.salonbook.pro"
     compileSdk = 35
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.salonbook.pro"
         minSdk = 26
         targetSdk = 35
         versionCode = 5
         versionName = "0.5.0"
+        buildConfigField("boolean", "DEV_APP_CHECK", if (System.getenv("BOUSTIO_DEV_APP_CHECK") == "true") "true" else "false")
     }
 
     signingConfigs {
@@ -62,4 +67,5 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-functions")
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
+    implementation("com.google.firebase:firebase-appcheck-debug")
 }
