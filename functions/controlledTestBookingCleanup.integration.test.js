@@ -56,7 +56,7 @@ test("migration marker prevents cleanup",async()=>{
  await assert.rejects(execute(f),/marker/);
  assert.equal((await f.sourceRef.get()).data().json,json);
 });
-test("cloud booking mode prevents cleanup",async()=>{
+test("unfrozen legacy booking mode prevents cleanup",async()=>{
  const f=await fixture({mode:"legacy"});
  await assert.rejects(execute(f),/Frozen/);
  assert.equal((await f.sourceRef.get()).data().json,json);
