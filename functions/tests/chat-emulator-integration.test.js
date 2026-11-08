@@ -58,7 +58,18 @@ test("customer isolation and owner reply end-to-end", { timeout: 120000 }, async
   });
   assert.equal(started.status, 200, JSON.stringify(started));
   const { businessId, conversationId } = started.data;
+  const duplicate = await call("startCustomerChat", alice.idToken, {
+    slug, customerName: "Alice", message: "Second opening attempt"
+  });
+  assert.equal(duplicate.status, 409, JSON.stringify(duplicate));
+  const duplicateSnapshot = await db.collection("businesses").doc(businessId)
+    .collection("conversations").get();
+  assert.equal(duplicateSnapshot.size, 1, "duplicate start must not create another conversation");
   assert.equal(businessId, business.uid);
+  const immediateSend = await call("sendCustomerChatMessage", alice.idToken, {
+    businessId, conversationId, message: "Too soon"
+  });
+  assert.equal(immediateSend.status, 429, JSON.stringify(immediateSend));
   const otherRead = await call("getCustomerChatMessages", bob.idToken, { businessId, conversationId });
   assert.equal(otherRead.status, 403, JSON.stringify(otherRead));
   const otherSend = await call("sendCustomerChatMessage", bob.idToken, {
@@ -103,5 +114,21 @@ test("customer isolation and owner reply end-to-end", { timeout: 120000 }, async
     businessId, conversationId, message: "Thank you"
   });
   assert.equal(followUp.status, 200, JSON.stringify(followUp));
+
+  await conversationRef.update({ status: "closed", lastCustomerMessageMs: 0 });
+  const closedSend = await call("sendCustomerChatMessage", alice.idToken, {
+    businessId, conversationId, message: "After closing"
+  });
+  assert.equal(closedSend.status, 403, JSON.stringify(closedSend));
+  const closedReply = await call("sendBusinessChatReply", business.idToken, {
+    conversationId, message: "After closing"
+  });
+  assert.equal(closedReply.status, 404, JSON.stringify(closedReply));
+
+  await db.collection("publicBusinesses").doc(businessId).update({ published: false });
+  const unpublished = await call("startCustomerChat", bob.idToken, {
+    slug, customerName: "Bob", message: "Hello unpublished business"
+  });
+  assert.equal(unpublished.status, 404, JSON.stringify(unpublished));
 });
 test.after(async () => { await deleteApp(app); });
