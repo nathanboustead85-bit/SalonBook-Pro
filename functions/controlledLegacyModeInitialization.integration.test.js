@@ -100,3 +100,15 @@ test("archive missing sourcePath cannot create mode",async()=>{
  await assert.rejects(execute(f,{archive:{...archive}}),/sourcePath/);
  await unchanged(f);
 });
+
+test("two concurrent initializations cannot both create booking mode",async()=>{
+ const f=await fixture();
+ const before=(await f.sourceRef.get()).data();
+ const results=await Promise.allSettled([execute(f),execute(f)]);
+ assert.equal(results.filter(x=>x.status==="fulfilled").length,1);
+ assert.equal(results.filter(x=>x.status==="rejected").length,1);
+ assert.equal((await f.modeRef.get()).data().mode,"legacy");
+ assert.deepEqual((await f.sourceRef.get()).data(),before);
+ assert.equal((await f.business.collection("appointments").get()).empty,true);
+ assert.equal((await f.business.collection("bookingLocks").get()).empty,true);
+});
