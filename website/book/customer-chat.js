@@ -6,7 +6,7 @@
 const CHAT_ENABLED = false;
 // Public reCAPTCHA Enterprise site key. Fill only after verifying the complete key.
 // Do not use a secret key here. This is deliberately fail-closed until configured.
-const APP_CHECK_SITE_KEY = "";
+const APP_CHECK_SITE_KEY = "6LeyyBUuAAAAABms2cBK0MoshK_016e6BEjAb2NC";
 const $ = (id) => document.getElementById(id);
 const nameInput = $("chatName");
 const messageInput = $("chatMessage");
