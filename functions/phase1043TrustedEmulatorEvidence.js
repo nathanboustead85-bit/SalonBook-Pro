@@ -39,7 +39,7 @@ function verifySignedOperatorAssertion({assertion,publicKey,expected,nowMs}){
     p.issuedAtMs>nowMs||p.expiresAtMs<=nowMs||
     p.expiresAtMs-p.issuedAtMs>5*60*1000)deny("Assertion scope or lifetime invalid");
  let key;
- try{key=crypto.createPublicKey(publicKey);}catch(_){deny("Invalid trusted public key");}
+ try{key=publicKey?.type==="public"?publicKey:crypto.createPublicKey(publicKey);}catch(_){deny("Invalid trusted public key");}
  if(key.asymmetricKeyType!=="ed25519")deny("Ed25519 public key required");
  let signature;
  try{
