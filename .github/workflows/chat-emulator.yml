@@ -2,6 +2,15 @@ name: Boustio Chat Emulator Smoke Test
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - phase-9d4-teal-clients
+    paths:
+      - 'functions/index.js'
+      - 'functions/tests/chat-emulator-*.test.js'
+      - 'firebase.json'
+      - 'firestore.rules'
+      - '.github/workflows/chat-emulator.yml'
 
 permissions:
   contents: read
