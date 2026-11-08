@@ -20,6 +20,8 @@ async function issueEmulatorApproval({
  verifyOwnerToken,verifyOperatorAssertion,nowMs,executionEnabled=false
 }={}){
  lock(db);
+ if(process.env.BOUSTIO_LEGACY_EMULATOR_TEST_GATE!=="explicit-test-only")
+  fail("Direct legacy prototype disabled outside isolated test gate");
  if(executionEnabled!==true)fail("Issuance disabled by default");
  if(!ID.test(businessId||"")||!ID.test(approvalId||""))fail("Invalid identifiers");
  if(typeof verifyOwnerToken!=="function"||typeof verifyOperatorAssertion!=="function"||
