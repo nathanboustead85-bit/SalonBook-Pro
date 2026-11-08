@@ -27,6 +27,7 @@ jobs:
       - name: Check unauthenticated and authenticated chat access in Firebase emulators
         env:
           GCLOUD_PROJECT: demo-boustio-chat
+          BOUSTIO_CHAT_ENABLED: "true"
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
           FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
         run: npx firebase emulators:exec --project demo-boustio-chat --only auth,functions,firestore "node --test functions/tests/chat-emulator-smoke.test.js functions/tests/chat-emulator-integration.test.js"
