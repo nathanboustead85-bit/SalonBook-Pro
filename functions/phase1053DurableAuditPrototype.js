@@ -29,11 +29,13 @@ function createDurableAuditPrototype({directory}={}){
  const read=(businessId,approvalId)=>{
   const file=location(businessId,approvalId);
   let body;
-  try{body=fs.readFileSync(file,{encoding:"utf8",flag:"r"});}
+  try{const st=fs.lstatSync(file);if(!st.isFile()||st.isSymbolicLink())deny("unsafe receipt file");
+   body=fs.readFileSync(file,{encoding:"utf8",flag:"r"});}
   catch(error){if(error.code==="ENOENT")deny("missing independent receipt");throw error;}
   let receipt;try{receipt=JSON.parse(body);}catch(_){deny("corrupt independent receipt");}
   if(receipt?.schemaVersion!==1||receipt.businessId!==businessId||
-   receipt.approvalId!==approvalId||!(/^[a-f0-9]{64}$/).test(receipt.fingerprint))
+   receipt.approvalId!==approvalId||!(/^[a-f0-9]{64}$/).test(receipt.fingerprint)||
+   receipt.checksum!==crypto.createHash("sha256").update(canonical({schemaVersion:1,businessId,approvalId,fingerprint:receipt.fingerprint})).digest("hex"))
    deny("invalid independent receipt");
   return receipt;
  };
@@ -43,14 +45,26 @@ function createDurableAuditPrototype({directory}={}){
   witness(event){
    check();
    const fp=fingerprint(event),file=location(event.businessId,event.approvalId);
-   const record={schemaVersion:1,businessId:event.businessId,approvalId:event.approvalId,fingerprint:fp};
-   // wx creates exactly once. Parallel writers cannot overwrite or reconcile by
-   // merely trusting mutable Firestore records.
-   let fd;
-   try{fd=fs.openSync(file,"wx",0o600);}
-   catch(error){if(error.code==="EEXIST")deny("receipt already exists");throw error;}
-   try{fs.writeFileSync(fd,JSON.stringify(record));fs.fsyncSync(fd);}
-   finally{fs.closeSync(fd);}
+   const base={schemaVersion:1,businessId:event.businessId,approvalId:event.approvalId,fingerprint:fp};
+   const record={...base,checksum:crypto.createHash("sha256").update(canonical(base)).digest("hex")};
+   // Stage in a uniquely named, exclusive temporary file; fsync content, then
+   // atomically publish via hard-link (fails if destination already exists).
+   // A crash before publication leaves only a non-authoritative .pending file.
+   const pending=path.join(root,"."+crypto.randomBytes(16).toString("hex")+".pending");
+   let fd,linked=false;
+   try{
+    fd=fs.openSync(pending,"wx",0o600);
+    fs.writeFileSync(fd,JSON.stringify(record));
+    fs.fsyncSync(fd);fs.closeSync(fd);fd=undefined;
+    try{fs.linkSync(pending,file);linked=true;}
+    catch(error){if(error.code==="EEXIST")deny("receipt already exists");throw error;}
+    const dirfd=fs.openSync(root,"r");
+    try{fs.fsyncSync(dirfd);}finally{fs.closeSync(dirfd);}
+   }finally{
+    if(fd!==undefined)fs.closeSync(fd);
+    try{fs.unlinkSync(pending);}catch(error){if(error.code!=="ENOENT")throw error;}
+   }
+   if(!linked)deny("receipt publication failed");
    return {witnessed:true,fingerprint:fp,productionWriteAllowed:false};
   },
   verify(event){
