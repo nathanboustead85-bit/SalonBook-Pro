@@ -16,6 +16,8 @@ on:
       - 'functions/phase1042ApprovalEndToEnd.integration.test.js'
       - 'functions/phase1043TrustedEmulatorEvidence.js'
       - 'functions/phase1043TrustedEmulatorEvidence.integration.test.js'
+      - 'functions/phase1044KeyRotationAndAudit.js'
+      - 'functions/phase1044KeyRotationAndAudit.integration.test.js'
       - 'functions/index.js'
       - 'functions/bookingMode.js'
       - '.github/workflows/legacy-mode-emulator-safety.yml'
@@ -55,3 +57,5 @@ jobs:
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore "node --test functions/phase1042ApprovalEndToEnd.integration.test.js"
       - name: Run Phase 10.43 real Auth emulator and Ed25519 evidence tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1043TrustedEmulatorEvidence.integration.test.js"
+      - name: Run Phase 10.44 signing-key rotation, revocation and signed audit tests
+        run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1044KeyRotationAndAudit.integration.test.js"
