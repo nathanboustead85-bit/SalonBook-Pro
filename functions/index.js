@@ -422,3 +422,156 @@ exports.sendBusinessChatReply = onCall(
     return { success: true, messageId: messageRef.id };
   }
 );
+
+
+/**
+ * PHASE 9E.5 — CUSTOMER CHAT BACKEND (STAGING)
+ * Anonymous Firebase Authentication provides a distinct session per browser.
+ * Customer reads and writes use callable functions only; Firestore client rules
+ * remain owner-read-only. Do not deploy publicly before abuse tests/App Check.
+ */
+function customerChatIdentity(request) {
+  const auth = request.auth;
+  if (!auth || typeof auth.uid !== "string" || !auth.token.firebase ||
+      auth.token.firebase.sign_in_provider !== "anonymous") {
+    throw new HttpsError("unauthenticated", "Start a private guest session first.");
+  }
+  return auth.uid;
+}
+
+function chatText(value, max) {
+  return typeof value === "string" &&
+    value.trim().length > 0 && value.length <= max;
+}
+
+function chatConversationId(value) {
+  return typeof value === "string" && /^[A-Za-z0-9_-]{12,128}$/.test(value);
+}
+
+function customerConversationRef(businessId, conversationId) {
+  return db.collection("businesses").doc(businessId)
+    .collection("conversations").doc(conversationId);
+}
+
+exports.startCustomerChat = onCall(
+  { region: "europe-west2", maxInstances: 10, enforceAppCheck: false },
+  async (request) => {
+    const uid = customerChatIdentity(request);
+    const input = request.data || {};
+    const slug = input.slug;
+    const name = input.customerName;
+    const message = input.message;
+    if (!validSlug(slug) || !chatText(name, 80) || !chatText(message, 2000)) {
+      throw new HttpsError("invalid-argument", "Enter a name and message.");
+    }
+
+    const slugSnapshot = await db.collection("businessSlugs").doc(slug).get();
+    if (!slugSnapshot.exists) {
+      throw new HttpsError("not-found", "Business not found.");
+    }
+    const businessId = slugSnapshot.get("businessId");
+    if (typeof businessId !== "string") {
+      throw new HttpsError("not-found", "Business not found.");
+    }
+    const publicSnapshot = await db.collection("publicBusinesses").doc(businessId).get();
+    if (!publicSnapshot.exists || publicSnapshot.get("published") !== true ||
+        publicSnapshot.get("slug") !== slug) {
+      throw new HttpsError("not-found", "Business is not available.");
+    }
+
+    // One initial conversation per guest account and business.
+    // Stable ID prevents repeated guest starts creating unlimited threads.
+    const crypto = require("node:crypto");
+    const conversationId = crypto.createHash("sha256")
+      .update(businessId + ":" + uid).digest("hex");
+    const conversationRef = customerConversationRef(businessId, conversationId);
+    const messageRef = conversationRef.collection("messages").doc();
+    const now = Date.now();
+    await db.runTransaction(async (tx) => {
+      const existing = await tx.get(conversationRef);
+      if (existing.exists) {
+        throw new HttpsError("already-exists", "Conversation already started. Continue it instead.");
+      }
+      tx.create(conversationRef, {
+        businessId, customerUid: uid, customerName: name.trim(),
+        status: "open", lastMessage: message.trim().slice(0, 180),
+        lastMessageSender: "customer", updatedAt: FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(), lastCustomerMessageMs: now,
+        schemaVersion: 1
+      });
+      tx.create(messageRef, {
+        businessId, conversationId, senderType: "customer", senderId: uid,
+        text: message.trim(), createdAt: FieldValue.serverTimestamp(),
+        schemaVersion: 1
+      });
+    });
+    return { success: true, businessId, conversationId };
+  }
+);
+
+exports.sendCustomerChatMessage = onCall(
+  { region: "europe-west2", maxInstances: 10, enforceAppCheck: false },
+  async (request) => {
+    const uid = customerChatIdentity(request);
+    const input = request.data || {};
+    const { businessId, conversationId, message } = input;
+    if (typeof businessId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(businessId) ||
+        !chatConversationId(conversationId) || !chatText(message, 2000)) {
+      throw new HttpsError("invalid-argument", "Invalid message.");
+    }
+    const ref = customerConversationRef(businessId, conversationId);
+    const msgRef = ref.collection("messages").doc();
+    const now = Date.now();
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists || snap.get("customerUid") !== uid ||
+          snap.get("businessId") !== businessId || snap.get("status") !== "open") {
+        throw new HttpsError("permission-denied", "Conversation unavailable.");
+      }
+      if (now - (snap.get("lastCustomerMessageMs") || 0) < 5000) {
+        throw new HttpsError("resource-exhausted", "Please wait before sending another message.");
+      }
+      tx.create(msgRef, {
+        businessId, conversationId, senderType: "customer", senderId: uid,
+        text: message.trim(), createdAt: FieldValue.serverTimestamp(),
+        schemaVersion: 1
+      });
+      tx.update(ref, {
+        lastMessage: message.trim().slice(0, 180),
+        lastMessageSender: "customer", lastCustomerMessageMs: now,
+        updatedAt: FieldValue.serverTimestamp()
+      });
+    });
+    return { success: true };
+  }
+);
+
+exports.getCustomerChatMessages = onCall(
+  { region: "europe-west2", maxInstances: 10, enforceAppCheck: false },
+  async (request) => {
+    const uid = customerChatIdentity(request);
+    const input = request.data || {};
+    const { businessId, conversationId } = input;
+    if (typeof businessId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(businessId) ||
+        !chatConversationId(conversationId)) {
+      throw new HttpsError("invalid-argument", "Invalid conversation.");
+    }
+    const ref = customerConversationRef(businessId, conversationId);
+    const snap = await ref.get();
+    if (!snap.exists || snap.get("customerUid") !== uid ||
+        snap.get("businessId") !== businessId) {
+      throw new HttpsError("permission-denied", "Conversation unavailable.");
+    }
+    const messages = await ref.collection("messages")
+      .orderBy("createdAt", "desc").limit(50).get();
+    return {
+      status: snap.get("status") || "open",
+      messages: messages.docs.reverse().map((doc) => ({
+        id: doc.id,
+        senderType: doc.get("senderType"),
+        text: doc.get("text"),
+        createdAtMs: doc.get("createdAt")?.toMillis?.() || null
+      }))
+    };
+  }
+);
