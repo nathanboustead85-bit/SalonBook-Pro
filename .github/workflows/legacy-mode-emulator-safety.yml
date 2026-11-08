@@ -26,6 +26,8 @@ on:
       - 'functions/phase1051IndependentAuditWitness.js'
       - 'functions/phase1053DurableAuditPrototype.js'
       - 'functions/phase1056EmulatorPermissions.js'
+      - 'functions/phase1059FinalSecurityReview.test.js'
+      - 'docs/phase-10-59-final-security-review.md'
       - 'docs/phase-10-56-permissions.md'
       - 'docs/phase-10-57-booking-protection.md'
       - 'docs/phase-10-58-security-regression.md'
@@ -97,3 +99,5 @@ jobs:
         run: node --test functions/phase1047LegacyBypassPrevention.test.js
       - name: Run Phase 10.50 least-privilege architecture policy regression tests
         run: node --test functions/phase1050ProductionArchitecturePolicy.test.js
+      - name: Run Phase 10.59 final non-destructive security sign-off gates
+        run: node --test functions/phase1059FinalSecurityReview.test.js
