@@ -1,0 +1,29 @@
+name: Boustio Live Booking Readiness
+
+on:
+  push:
+    branches:
+      - phase-9d4-teal-clients
+    paths:
+      - 'functions/index.js'
+      - 'functions/trustedBooking.js'
+      - 'functions/tests/live-booking-readiness.test.js'
+      - 'firestore.rules'
+      - 'website/book/index.html'
+      - 'website/data/demo-business.json'
+      - '.github/workflows/live-booking-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check booking release safeguards
+        run: node --test functions/tests/live-booking-readiness.test.js
