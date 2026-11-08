@@ -23,6 +23,7 @@ on:
       - 'functions/phase1046TrustedOrchestrator.integration.test.js'
       - 'functions/phase1047LegacyBypassPrevention.test.js'
       - 'functions/phase1048SignedApproval.js'
+      - 'functions/phase1051IndependentAuditWitness.js'
       - 'functions/phase1050ProductionArchitecturePolicy.js'
       - 'functions/phase1050ProductionArchitecturePolicy.test.js'
       - 'docs/phase-10-50-production-security-architecture.md'
@@ -80,7 +81,7 @@ jobs:
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1044KeyRotationAndAudit.integration.test.js"
       - name: Run Phase 10.45 final cross-phase security boundary regression tests
         run: node --test functions/phase1045SecurityBoundaryReview.test.js
-      - name: Run Phase 10.46–10.49 trusted orchestrator, signed evidence and audit tamper tests
+      - name: Run Phase 10.46–10.51 trusted orchestrator and independent audit emulator tests
         env:
           BOUSTIO_LEGACY_EMULATOR_TEST_GATE: explicit-test-only
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1046TrustedOrchestrator.integration.test.js"
