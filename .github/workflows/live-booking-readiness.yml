@@ -8,6 +8,8 @@ on:
       - 'functions/index.js'
       - 'functions/trustedAvailability.js'
       - 'functions/calendarLockAudit.js'
+      - 'functions/ownerCalendar.js'
+      - 'functions/tests/owner-calendar.test.js'
       - 'functions/tests/calendar-lock-audit.test.js'
       - 'functions/tests/trusted-availability.test.js'
       - 'functions/tests/booking-transaction.test.js'
@@ -34,4 +36,4 @@ jobs:
         working-directory: functions
         run: npm install --no-audit --no-fund
       - name: Check booking release safeguards
-        run: node --test functions/tests/live-booking-readiness.test.js functions/tests/trusted-availability.test.js functions/tests/booking-transaction.test.js functions/tests/calendar-lock-audit.test.js
+        run: node --test functions/tests/live-booking-readiness.test.js functions/tests/trusted-availability.test.js functions/tests/booking-transaction.test.js functions/tests/calendar-lock-audit.test.js functions/tests/owner-calendar.test.js
