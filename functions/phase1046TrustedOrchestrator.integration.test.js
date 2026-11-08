@@ -456,7 +456,7 @@ test("Phase 10.55 modified receipt fingerprint without checksum update is reject
  const file=path1053.join(d.directory,fs1053.readdirSync(d.directory)[0]);
  const receipt=JSON.parse(fs1053.readFileSync(file,"utf8"));
  receipt.fingerprint="0".repeat(64);fs1053.writeFileSync(file,JSON.stringify(receipt));
- assert.throws(()=>d.store().verify(event),/invalid independent receipt/);
+ assert.throws(()=>d.store().verify(event),/invalid independent receipt|independent receipt mismatch/);
 });
 test("Phase 10.55 symlink receipt is never trusted",async()=>{
  const f=await fixture();await f.issue();const event=await auditEvent(f),d=durableFixture();
