@@ -16,7 +16,7 @@ function emulatorLock(db){
     process.env.GCLOUD_PROJECT!==PROJECT||
     process.env.GOOGLE_CLOUD_PROJECT!==PROJECT||
     process.env.GOOGLE_APPLICATION_CREDENTIALS||
-    db?.app?.options?.projectId!==PROJECT)block("Emulator-only execution lock");
+    db?.projectId!==PROJECT)block("Emulator-only execution lock");
 }
 async function initialiseWithSingleUseApproval({
  db,verifyIdToken,idToken,businessId,archive,approvalId,nowMs,
