@@ -435,3 +435,50 @@ test("Phase 10.54 caller cannot override trusted durable directory",async()=>{
  await assert.rejects(durableOrchestrator(d.directory).consume({...request,durableAuditDirectory:"/tmp"}),/Unexpected/);
  assert.equal((await f.mode.get()).exists,false);
 });
+
+test("Phase 10.55 incomplete pending receipt cannot be recovered",async()=>{
+ const f=await fixture();await f.issue();const event=await auditEvent(f),d=durableFixture();
+ fs1053.writeFileSync(path1053.join(d.directory,".interrupted.pending"),'{"schemaVersion":1');
+ assert.throws(()=>d.store().reconcile(event),/missing independent receipt/);
+});
+test("Phase 10.55 published receipts contain integrity checksum and no pending files",async()=>{
+ const f=await fixture();await f.issue();const event=await auditEvent(f),d=durableFixture();
+ d.store().witness(event);
+ const names=fs1053.readdirSync(d.directory);
+ assert.equal(names.length,1);assert.ok(names[0].endsWith(".receipt"));
+ const receipt=JSON.parse(fs1053.readFileSync(path1053.join(d.directory,names[0]),"utf8"));
+ assert.match(receipt.checksum,/^[a-f0-9]{64}$/);
+ assert.equal(d.store().verify(event).verified,true);
+});
+test("Phase 10.55 modified receipt fingerprint without checksum update is rejected",async()=>{
+ const f=await fixture();await f.issue();const event=await auditEvent(f),d=durableFixture();
+ d.store().witness(event);
+ const file=path1053.join(d.directory,fs1053.readdirSync(d.directory)[0]);
+ const receipt=JSON.parse(fs1053.readFileSync(file,"utf8"));
+ receipt.fingerprint="0".repeat(64);fs1053.writeFileSync(file,JSON.stringify(receipt));
+ assert.throws(()=>d.store().verify(event),/invalid independent receipt/);
+});
+test("Phase 10.55 symlink receipt is never trusted",async()=>{
+ const f=await fixture();await f.issue();const event=await auditEvent(f),d=durableFixture();
+ d.store().witness(event);
+ const file=path1053.join(d.directory,fs1053.readdirSync(d.directory)[0]);
+ const target=path1053.join(d.directory,"outside.json");
+ fs1053.renameSync(file,target);fs1053.symlinkSync(target,file);
+ assert.throws(()=>d.store().verify(event),/unsafe receipt file/);
+});
+test("Phase 10.55 truncated published receipt fails closed",async()=>{
+ const f=await fixture();await f.issue();const event=await auditEvent(f),d=durableFixture();
+ d.store().witness(event);
+ const file=path1053.join(d.directory,fs1053.readdirSync(d.directory)[0]);
+ fs1053.truncateSync(file,8);
+ assert.throws(()=>d.store().reconcile(event),/corrupt independent receipt/);
+});
+test("Phase 10.55 duplicate receipt publication does not overwrite original",async()=>{
+ const f=await fixture();await f.issue();const event=await auditEvent(f),d=durableFixture();
+ const store=d.store();store.witness(event);
+ const file=path1053.join(d.directory,fs1053.readdirSync(d.directory)[0]);
+ const before=fs1053.readFileSync(file,"utf8");
+ assert.throws(()=>d.store().witness(event),/receipt already exists/);
+ assert.equal(fs1053.readFileSync(file,"utf8"),before);
+ assert.equal(fs1053.readdirSync(d.directory).length,1);
+});
