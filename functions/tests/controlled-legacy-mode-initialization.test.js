@@ -8,7 +8,7 @@ const archive={archiveType:"boustio-cloud-bookings-readonly",schemaVersion:1,
  bookingCount:10,bookingsJson:json,sourceSha256:digestBookings(json)};
 function fake({mode=false,marker=false,source=json,apps=0,locks=0}={}){
  const state={writes:[]};
- const collection=name=>({doc:id=>({
+ const collection=name=>({path:name,doc:id=>({
   path:name+"/"+id,collection:part=>collection(name+"/"+id+"/"+part)
  }),get:async()=>({empty:(name.endsWith("/appointments")?apps:locks)===0})});
  const db={collection,runTransaction:async fn=>fn({
