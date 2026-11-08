@@ -9,6 +9,7 @@ const {PROJECT}=require("./phase1040EmulatorLockedInitialization");
 const {verifyRotatedAssertion}=require("./phase1044KeyRotationAndAudit");
 const {issueSigned,consumeSigned}=require("./phase1048SignedApproval");
 const {createIndependentAuditWitness}=require("./phase1051IndependentAuditWitness");
+const {createDurableAuditPrototype}=require("./phase1053DurableAuditPrototype");
 const ID=/^[A-Za-z0-9_-]{1,100}$/;
 function fail(message){const error=new Error(message);error.code="phase1046-denied";throw error;}
 function lock(db){
@@ -21,7 +22,7 @@ function exactKeys(value,keys){
  return value&&typeof value==="object"&&!Array.isArray(value)&&
  Object.keys(value).sort().join("|")===keys.slice().sort().join("|");
 }
-function createTrustedEmulatorOrchestrator({db,operatorKeyRegistry}={}){
+function createTrustedEmulatorOrchestrator({db,operatorKeyRegistry,durableAuditDirectory}={}){
  lock(db);
  if(!operatorKeyRegistry||typeof operatorKeyRegistry!=="object"||
  Array.isArray(operatorKeyRegistry)||Object.keys(operatorKeyRegistry).length===0)
@@ -44,7 +45,8 @@ function createTrustedEmulatorOrchestrator({db,operatorKeyRegistry}={}){
  }
  Object.freeze(registry);
  // Private per-orchestrator witness: never accepted from a caller request.
- const auditWitness=createIndependentAuditWitness();
+ const auditWitness=durableAuditDirectory===undefined?
+  createIndependentAuditWitness():createDurableAuditPrototype({directory:durableAuditDirectory});
  async function readAuditEvent(businessId,approvalId){
   const business=db.collection("businesses").doc(businessId);
   const approval=(await business.collection("legacyModeApprovals").doc(approvalId).get()).data();
