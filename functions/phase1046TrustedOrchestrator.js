@@ -7,8 +7,7 @@ const crypto=require("node:crypto");
 const admin=require("firebase-admin");
 const {PROJECT}=require("./phase1040EmulatorLockedInitialization");
 const {verifyRotatedAssertion}=require("./phase1044KeyRotationAndAudit");
-const {issueEmulatorApproval}=require("./phase1041EmulatorApprovalIssuance");
-const {initialiseWithSingleUseApproval}=require("./phase1040EmulatorLockedInitialization");
+const {issueSigned,consumeSigned}=require("./phase1048SignedApproval");
 const ID=/^[A-Za-z0-9_-]{1,100}$/;
 function fail(message){const error=new Error(message);error.code="phase1046-denied";throw error;}
 function lock(db){
@@ -56,12 +55,7 @@ function createTrustedEmulatorOrchestrator({db,operatorKeyRegistry}={}){
   const nowMs=trustedNow();
   if(!exactKeys(operatorAssertion,["keyId","payload","signature"]))
    fail("Malformed signed operator assertion");
-  const operator=verifyRotatedAssertion({assertion:operatorAssertion,registry,
-   expected:{businessId,approvalId,archiveSha256:archive?.sourceSha256},nowMs});
-  return issueEmulatorApproval({db,businessId,archive,approvalId,ownerToken,
-   operatorAssertion:JSON.stringify(operatorAssertion),
-   verifyOwnerToken:verifyOwner,verifyOperatorAssertion:async()=>operator,
-   nowMs,executionEnabled:true});
+  return issueSigned({db,businessId,archive,approvalId,ownerToken,assertion:operatorAssertion,verifyOwner,registry,nowMs});
  }
  async function consume(request){
   lock(db);
@@ -69,9 +63,7 @@ function createTrustedEmulatorOrchestrator({db,operatorKeyRegistry}={}){
    fail("Unexpected caller-controlled fields");
   const {businessId,archive,approvalId,ownerToken}=request;
   if(!ID.test(businessId||"")||!ID.test(approvalId||""))fail("Invalid identifiers");
-  return initialiseWithSingleUseApproval({db,businessId,archive,approvalId,
-   idToken:ownerToken,verifyIdToken:verifyOwner,
-   nowMs:trustedNow(),executionEnabled:true});
+  return consumeSigned({db,businessId,archive,approvalId,ownerToken,verifyOwner,registry,nowMs:trustedNow()});
  }
  return Object.freeze({issue,consume});
 }
