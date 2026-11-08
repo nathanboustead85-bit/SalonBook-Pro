@@ -477,17 +477,17 @@ class CloudActivity : Activity() {
                         val price = item.optString("price")
                         buildString {
                             append("${index + 1}. $date at $time")
-                            append("\\nCustomer: $client")
-                            append("\\nService: $service")
-                            append("\\nStaff ID: $staff")
-                            if (duration > 0) append("\\nDuration: $duration minutes")
-                            if (price.isNotBlank()) append("\\nPrice: £$price")
+                            append("\nCustomer: $client")
+                            append("\nService: $service")
+                            append("\nStaff ID: $staff")
+                            if (duration > 0) append("\nDuration: $duration minutes")
+                            if (price.isNotBlank()) append("\nPrice: £$price")
                         }
                     }
                     showCloudBookingList(
                         if (lines.isEmpty()) "The cloud booking list is empty."
-                        else "${items.size} cloud appointments (read only):\\n\\n" +
-                            lines.joinToString("\\n\\n")
+                        else "${items.size} cloud appointments (read only):\n\n" +
+                            lines.joinToString("\n\n")
                     )
                 } catch (error: Exception) {
                     showCloudBookingList(
@@ -565,8 +565,8 @@ class CloudActivity : Activity() {
                     val match = localHash == cloudHash
                     showBookingMatchResult(
                         "Phone appointments: $localCount\n" +
-                            "Cloud appointments: $cloudCount\\n" +
-                            "Exact data match: ${if (match) "YES" else "NO"}\\n\\n" +
+                            "Cloud appointments: $cloudCount\n" +
+                            "Exact data match: ${if (match) "YES" else "NO"}\n\n" +
                             if (match) {
                                 "This phone's booking JSON matches the server copy. " +
                                     "Other devices, migration conflicts and booking locks " +
