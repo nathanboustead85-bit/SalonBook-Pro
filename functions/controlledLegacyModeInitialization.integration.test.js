@@ -86,7 +86,7 @@ test("different authenticated owner cannot create mode",async()=>{
 });
 test("invalid archive cannot create mode",async()=>{
  const f=await fixture();
- await assert.rejects(execute(f,{archive:{...archive,sourceSha256:"0".repeat(64)}}),/archive/);
+ await assert.rejects(execute(f,{archive:{...archive,sourcePath:"users/"+f.owner+"/liveData/bookings",sourceSha256:"0".repeat(64)}}),/archive/);
  await unchanged(f);
 });
 
