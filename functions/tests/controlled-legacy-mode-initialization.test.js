@@ -9,13 +9,13 @@ const archive={archiveType:"boustio-cloud-bookings-readonly",schemaVersion:1,
 function fake({mode=false,marker=false,source=json,apps=0,locks=0}={}){
  const state={writes:[]};
  const collection=name=>({doc:id=>({
-  path:name+"/"+id,collection:part=>collection(part)
- }),get:async()=>({empty:(name==="appointments"?apps:locks)===0})});
+  path:name+"/"+id,collection:part=>collection(name+"/"+id+"/"+part)
+ }),get:async()=>({empty:(name.endsWith("/appointments")?apps:locks)===0})});
  const db={collection,runTransaction:async fn=>fn({
   get:async ref=>({
-   exists:ref.path.startsWith("settings/")?mode:
-    ref.path.startsWith("migrations/")?marker:true,
-   data:()=>ref.path.startsWith("liveData/")?{json:source,schemaVersion:1}:{}
+   exists:ref.path.endsWith("/settings/bookingMode")?mode:
+    ref.path.endsWith("/migrations/android-bookings-v1")?marker:true,
+   data:()=>ref.path.endsWith("/liveData/bookings")?{json:source,schemaVersion:1}:{}
   }),
   create:(ref,data)=>state.writes.push({path:ref.path,data})
  })};
@@ -29,7 +29,7 @@ async function run(opts={},overrides={}){
 test("creates only booking mode with valid archived data",async()=>{
  const {state,promise}=await run();const result=await promise;
  assert.equal(result.initialized,true);assert.equal(result.cleanupPerformed,false);
- assert.equal(state.writes.length,1);assert.equal(state.writes[0].path,"settings/bookingMode");
+ assert.equal(state.writes.length,1);assert.equal(state.writes[0].path,"businesses/owner/settings/bookingMode");
  assert.equal(state.writes[0].data.mode,"legacy");
 });
 test("disabled execution blocks",async()=>{
