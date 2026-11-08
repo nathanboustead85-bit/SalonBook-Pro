@@ -12,6 +12,8 @@ on:
       - 'functions/androidCalendarPreflight.js'
       - 'functions/migratedCalendarVerifier.js'
       - 'functions/testBookingCleanupPlan.js'
+      - 'functions/controlledTestBookingCleanup.js'
+      - 'functions/tests/controlled-test-booking-cleanup.test.js'
       - 'functions/tests/test-booking-cleanup-plan.test.js'
       - 'functions/tests/migrated-calendar-verifier.test.js'
       - 'functions/tests/android-calendar-preflight.test.js'
@@ -42,4 +44,4 @@ jobs:
         working-directory: functions
         run: npm install --no-audit --no-fund
       - name: Check booking release safeguards
-        run: node --test functions/tests/live-booking-readiness.test.js functions/tests/trusted-availability.test.js functions/tests/booking-transaction.test.js functions/tests/calendar-lock-audit.test.js functions/tests/owner-calendar.test.js functions/tests/android-calendar-preflight.test.js functions/tests/migrated-calendar-verifier.test.js functions/tests/test-booking-cleanup-plan.test.js
+        run: node --test functions/tests/live-booking-readiness.test.js functions/tests/trusted-availability.test.js functions/tests/booking-transaction.test.js functions/tests/calendar-lock-audit.test.js functions/tests/owner-calendar.test.js functions/tests/android-calendar-preflight.test.js functions/tests/migrated-calendar-verifier.test.js functions/tests/test-booking-cleanup-plan.test.js functions/tests/controlled-test-booking-cleanup.test.js
