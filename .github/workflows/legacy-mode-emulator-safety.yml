@@ -6,6 +6,9 @@ on:
     paths:
       - 'functions/controlledLegacyModeInitialization.js'
       - 'functions/controlledLegacyModeInitialization.integration.test.js'
+      - 'functions/phase1038ExecutionSecurity.test.js'
+      - 'functions/index.js'
+      - 'functions/bookingMode.js'
       - '.github/workflows/legacy-mode-emulator-safety.yml'
   workflow_dispatch:
 permissions:
@@ -31,3 +34,5 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Run isolated Firestore emulator integration tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore "node --test functions/controlledLegacyModeInitialization.integration.test.js"
+      - name: Run Phase 10.38 static execution security tests (no production credentials)
+        run: node --test functions/phase1038ExecutionSecurity.test.js
