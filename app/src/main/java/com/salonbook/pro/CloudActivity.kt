@@ -2,6 +2,10 @@ package com.salonbook.pro
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import com.google.firebase.FirebaseApp
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
@@ -294,6 +298,32 @@ class CloudActivity : Activity() {
         addText("Cloud Backup", 21f)
 
         startSyncMonitoring()
+
+        if (BuildConfig.DEV_APP_CHECK) {
+            addText("Development App Check Registration", 19f)
+            addText("Copy your private device debug token. Do not share it in screenshots, chat or GitHub.")
+            addButton("Copy Private Debug Token") {
+                val key = FirebaseApp.getInstance().persistenceKey
+                val store = getSharedPreferences(
+                    "com.google.firebase.appcheck.debug.store.$key",
+                    Context.MODE_PRIVATE
+                )
+                val secret = store.getString(
+                    "com.google.firebase.appcheck.debug.DEBUG_SECRET", null
+                )
+                if (secret.isNullOrBlank()) {
+                    message("No debug token found yet. Tap Test App Check Token, then try copying again.")
+                } else {
+                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("Boustio private App Check debug token", secret)
+                    clip.description.extras = android.os.PersistableBundle().apply {
+                        putBoolean("android.content.extra.IS_SENSITIVE", true)
+                    }
+                    clipboard.setPrimaryClip(clip)
+                    message("Private debug token copied. Paste it only into Firebase App Check > Manage debug tokens.")
+                }
+            }
+        }
 
         addText("App Check Diagnostic", 19f)
         addText("Check whether this installed APK can obtain a valid App Check token. No data is changed.")
