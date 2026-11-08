@@ -35,8 +35,8 @@ async function clearArchivedTestBookings({
     const [sourceSnap,modeSnap,markerSnap,appointmentsSnap,locksSnap]=await Promise.all([
       tx.get(source),tx.get(mode),tx.get(marker),tx.get(appointments),tx.get(locks)
     ]);
-    if(!modeSnap.exists||modeSnap.data().mode!==MODES.LEGACY)
-      fail("Explicit legacy mode required");
+    if(!modeSnap.exists||modeSnap.data().mode!==MODES.FROZEN)
+      fail("Frozen booking mode required to prevent stale device uploads");
     if(markerSnap.exists)fail("Migration marker exists");
     if(!appointmentsSnap.empty||!locksSnap.empty)
       fail("Shared appointments or locks exist");
@@ -50,7 +50,7 @@ async function clearArchivedTestBookings({
       fail("Cloud bookings changed since verified archive");
     // Preserve document schema and unrelated fields; do not touch other paths.
     tx.update(source,{json:"[]",schemaVersion:1,updatedAt:new Date()});
-    return {cleared:10,sourceHash:verified.hash,scope:"legacy bookings JSON only"};
+    return {cleared:10,sourceHash:verified.hash,scope:"frozen legacy bookings JSON only"};
   });
 }
 module.exports={clearArchivedTestBookings,APPROVAL};
