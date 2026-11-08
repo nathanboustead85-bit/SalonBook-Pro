@@ -510,7 +510,7 @@ exports.startCustomerChat = onCall(
         status: "open", lastMessage: message.trim().slice(0, 180),
         lastMessageSender: "customer", updatedAt: FieldValue.serverTimestamp(),
         createdAt: FieldValue.serverTimestamp(), lastCustomerMessageMs: now,
-        schemaVersion: 1
+        customerMessageCount: 1, schemaVersion: 1
       });
       tx.create(messageRef, {
         businessId, conversationId, senderType: "customer", senderId: uid,
@@ -542,6 +542,10 @@ exports.sendCustomerChatMessage = onCall(
           snap.get("businessId") !== businessId || snap.get("status") !== "open") {
         throw new HttpsError("permission-denied", "Conversation unavailable.");
       }
+      // Per-conversation quota prevents unbounded writes from one guest session.
+      if ((snap.get("customerMessageCount") || 1) >= 100) {
+        throw new HttpsError("resource-exhausted", "Conversation message limit reached.");
+      }
       if (now - (snap.get("lastCustomerMessageMs") || 0) < 5000) {
         throw new HttpsError("resource-exhausted", "Please wait before sending another message.");
       }
@@ -553,6 +557,7 @@ exports.sendCustomerChatMessage = onCall(
       tx.update(ref, {
         lastMessage: message.trim().slice(0, 180),
         lastMessageSender: "customer", lastCustomerMessageMs: now,
+        customerMessageCount: FieldValue.increment(1),
         updatedAt: FieldValue.serverTimestamp()
       });
     });
