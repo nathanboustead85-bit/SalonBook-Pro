@@ -187,6 +187,19 @@ class CloudActivity : Activity() {
             addText("Signed in as:", 16f)
             addText(user.email ?: user.uid, 18f)
 
+            addButton("Copy Firebase UID") {
+                val currentUser = auth.currentUser
+                if (currentUser == null) {
+                    message("Sign in to copy your Firebase UID")
+                } else {
+                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(
+                        ClipData.newPlainText("Boustio Firebase User UID", currentUser.uid)
+                    )
+                    message("Firebase UID copied to clipboard")
+                }
+            }
+
             if (!user.isEmailVerified) {
                 addText(
                     "Verify your email before accessing cloud data."
