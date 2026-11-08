@@ -76,3 +76,13 @@ test("website App Check uses the registered Enterprise site key before customer 
   assert.match(website, /initializeAppCheck\(app,/);
   assert.ok(website.indexOf("initializeAppCheck(app,") < website.indexOf("signInAnonymously(auth)"));
 });
+
+
+test("website chat state is bound to anonymous identity and valid business slug", () => {
+  assert.match(website, /localStorage\.getItem\(key\)/);
+  assert.match(website, /localStorage\.setItem\("boustio-chat:" \+ slug/);
+  assert.match(website, /saved\.customerUid === auth\.currentUser\.uid/);
+  assert.match(website, /customerUid: auth\.currentUser\.uid/);
+  assert.match(website, /pathParts\[0\] === "book"/);
+  assert.doesNotMatch(website, /\|\| "demo-boustio"/);
+});
