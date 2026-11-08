@@ -14,6 +14,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 
+import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -293,6 +294,25 @@ class CloudActivity : Activity() {
         addText("Cloud Backup", 21f)
 
         startSyncMonitoring()
+
+        addText("App Check Diagnostic", 19f)
+        addText("Check whether this installed APK can obtain a valid App Check token. No data is changed.")
+        addButton("Test App Check Token") {
+            message("Checking App Check token...")
+            FirebaseAppCheck.getInstance().getAppCheckToken(true)
+                .addOnSuccessListener { result ->
+                    val token = result.token
+                    message(if (token.isNotBlank()) {
+                        "App Check token obtained successfully."
+                    } else {
+                        "App Check returned an empty token."
+                    })
+                }
+                .addOnFailureListener { error ->
+                    message("App Check token failed: " +
+                        (error.localizedMessage ?: error.javaClass.simpleName))
+                }
+        }
 
         addText("Cloud Connection Test", 19f)
         addText(
