@@ -61,7 +61,7 @@ async function issueSigned({db,businessId,archive,approvalId,ownerToken,assertio
   return {issued:true,approvalId,expiresAtMs:record.expiresAtMs,productionWriteAllowed:false};
  });
 }
-async function consumeSigned({db,businessId,archive,approvalId,ownerToken,verifyOwner,registry,nowMs}){
+async function consumeSigned({db,businessId,archive,approvalId,ownerToken,verifyOwner,registry,nowMs,auditWitness}){
  lock(db);
  if(!ID.test(businessId||"")||!ID.test(approvalId||"")||
  !Number.isSafeInteger(nowMs))deny("invalid request");
@@ -112,6 +112,12 @@ async function consumeSigned({db,businessId,archive,approvalId,ownerToken,verify
   const n=nonceSnap.data();
   if(!nonceSnap.exists||n.businessId!==businessId||n.approvalId!==approvalId||
    n.operatorEvidenceSha256!==digest)deny("nonce ledger mismatch");
+  if(!auditWitness||typeof auditWitness.verify!=="function")deny("independent witness required");
+  // Verify inside the transaction before any mode or approval write. A witness
+  // outage, absent event or changed evidence aborts the entire transaction.
+  const witnessed=auditWitness.verify({businessId,approvalId,approval:record,
+   audit:log,anchor:anchorRecord,nonce:n});
+  if(witnessed?.verified!==true)deny("independent witness rejected");
   if(m.exists||mark.exists||!appts.empty||!locks.empty)deny("shared mode or booking conflict");
   if(!src.exists||src.data()?.schemaVersion!==1||
    typeof src.data()?.json!=="string")deny("source missing");
