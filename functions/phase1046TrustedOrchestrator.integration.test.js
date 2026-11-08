@@ -206,3 +206,68 @@ test("Phase 10.49 rejects private signing key in trusted registry",async()=>{
  const keys=registry();keys.primary.privateKeyPem="secret";
  assert.throws(()=>createTrustedEmulatorOrchestrator({db,operatorKeyRegistry:keys}),/Invalid trusted key configuration/);
 });
+
+const {createIndependentAuditWitness}=require("./phase1051IndependentAuditWitness");
+async function auditEvent(f){
+ const approval=(await f.approval.get()).data();
+ const audit=(await f.business.collection("legacyModeApprovalAudit").doc("approval1").get()).data();
+ const anchor=(await f.business.collection("legacyModeAuditAnchors").doc("approval1").get()).data();
+ const nonce=(await db.collection("legacyModeOperatorNonces").doc(approval.nonceId).get()).data();
+ return {businessId:f.businessId,approvalId:"approval1",approval,audit,anchor,nonce};
+}
+test("Phase 10.51 independent witness verifies unchanged emulator approval evidence",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),w=createIndependentAuditWitness();
+ assert.equal(w.witness(event).witnessed,true);
+ assert.equal(w.verify(event).verified,true);
+});
+test("Phase 10.51 missing independent witness fails closed",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f);
+ assert.throws(()=>createIndependentAuditWitness().verify(event),/missing independent event/);
+});
+test("Phase 10.51 tampered audit event fails independent witness",async()=>{
+ const f=await fixture();await f.issue();
+ const w=createIndependentAuditWitness(),event=await auditEvent(f);w.witness(event);
+ const tampered=structuredClone(event);tampered.audit.operatorId="attacker";
+ assert.throws(()=>w.verify(tampered),/scope mismatch/);
+});
+test("Phase 10.51 coordinated evidence rewrite is caught by independent fingerprint",async()=>{
+ const f=await fixture();await f.issue();
+ const w=createIndependentAuditWitness(),event=await auditEvent(f);w.witness(event);
+ const tampered=structuredClone(event);
+ tampered.approval.signedOperatorAssertion.signature="forged";
+ tampered.audit.signedOperatorAssertion.signature="forged";
+ const changed=crypto.createHash("sha256").update(JSON.stringify(tampered.approval.signedOperatorAssertion)).digest("hex");
+ tampered.approval.operatorEvidenceSha256=changed;
+ tampered.audit.operatorEvidenceSha256=changed;
+ tampered.anchor.operatorEvidenceSha256=changed;
+ tampered.nonce.operatorEvidenceSha256=changed;
+ assert.throws(()=>w.verify(tampered),/audit evidence mismatch|independent event mismatch/);
+});
+test("Phase 10.51 unavailable independent audit fails closed",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),w=createIndependentAuditWitness();w.witness(event);
+ w.setAvailable(false);
+ assert.throws(()=>w.verify(event),/witness unavailable/);
+ assert.throws(()=>w.witness(event),/witness unavailable/);
+});
+test("Phase 10.51 missing event in expected audit set is rejected",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),w=createIndependentAuditWitness();w.witness(event);
+ assert.throws(()=>w.verifyExpected(f.businessId,["approval1","approval2"],[event]),/missing or duplicate events/);
+});
+test("Phase 10.51 duplicate independent event and duplicate batch are rejected",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),w=createIndependentAuditWitness();w.witness(event);
+ assert.throws(()=>w.witness(event),/duplicate witness/);
+ assert.throws(()=>w.verifyExpected(f.businessId,["approval1","approval1"],[event,event]),/missing or duplicate events/);
+});
+test("Phase 10.51 non-demo environment rejects witness verification",async()=>{
+ const f=await fixture();await f.issue();
+ const event=await auditEvent(f),w=createIndependentAuditWitness();w.witness(event);
+ const original=process.env.GCLOUD_PROJECT;
+ try{process.env.GCLOUD_PROJECT="salonbook-pro-ad5ff";
+ assert.throws(()=>w.verify(event),/demo emulators required/);}
+ finally{process.env.GCLOUD_PROJECT=original;}
+});
