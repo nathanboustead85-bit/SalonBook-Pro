@@ -50,6 +50,7 @@ jobs:
 
       - name: Build permanently signed release APK
         env:
+          BOUSTIO_DEV_APP_CHECK: ${{ github.ref_name == 'phase-9d4-teal-clients' && 'true' || 'false' }}
           SIGNING_KEYSTORE_PATH: ${{ runner.temp }}/salonbook-release.jks
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
