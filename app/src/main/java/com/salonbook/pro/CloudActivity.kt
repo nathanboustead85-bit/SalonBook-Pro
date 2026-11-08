@@ -390,6 +390,10 @@ class CloudActivity : Activity() {
             checkBookingBackupMatch()
         }
 
+        addButton("View Cloud Bookings · Read Only") {
+            viewCloudBookings()
+        }
+
         addText("Manual Cloud Backup", 19f)
         addText(
             "Save bookings, services, staff and registered clients to Firebase."
@@ -428,6 +432,94 @@ class CloudActivity : Activity() {
                 "Live sync monitoring is being tested.",
             14f
         )
+    }
+
+    private fun viewCloudBookings() {
+        val user = auth.currentUser
+        if (user == null || !user.isEmailVerified) {
+            message("Verified business sign-in required")
+            return
+        }
+        val progress = AlertDialog.Builder(this)
+            .setTitle("Loading cloud bookings")
+            .setMessage("Reading Firebase directly. Nothing will be changed.")
+            .setCancelable(false)
+            .create()
+        progress.show()
+        db.collection("users").document(user.uid)
+            .collection("liveData").document("bookings")
+            .get(Source.SERVER)
+            .addOnSuccessListener { snapshot ->
+                progress.dismiss()
+                if (!snapshot.exists()) {
+                    showCloudBookingList("No synced cloud bookings were found.")
+                    return@addOnSuccessListener
+                }
+                try {
+                    if (snapshot.getLong("schemaVersion") != 1L) {
+                        throw IllegalArgumentException("Unsupported booking schema")
+                    }
+                    val raw = snapshot.getString("json")
+                        ?: throw IllegalArgumentException("Booking JSON is missing")
+                    val array = JSONArray(raw)
+                    val items = mutableListOf<JSONObject>()
+                    for (i in 0 until array.length()) {
+                        items.add(array.getJSONObject(i))
+                    }
+                    items.sortWith(compareBy({ it.optString("date") }, { it.optString("time") }))
+                    val lines = items.mapIndexed { index, item ->
+                        val client = item.optString("client").ifBlank { "Not recorded" }
+                        val service = item.optString("service").ifBlank { "Not recorded" }
+                        val staff = item.optString("staffId").ifBlank { "Not recorded" }
+                        val date = item.optString("date").ifBlank { "Not recorded" }
+                        val time = item.optString("time").ifBlank { "Not recorded" }
+                        val duration = item.optInt("duration", 0)
+                        val price = item.optString("price")
+                        buildString {
+                            append("${index + 1}. $date at $time")
+                            append("\\nCustomer: $client")
+                            append("\\nService: $service")
+                            append("\\nStaff ID: $staff")
+                            if (duration > 0) append("\\nDuration: $duration minutes")
+                            if (price.isNotBlank()) append("\\nPrice: £$price")
+                        }
+                    }
+                    showCloudBookingList(
+                        if (lines.isEmpty()) "The cloud booking list is empty."
+                        else "${items.size} cloud appointments (read only):\\n\\n" +
+                            lines.joinToString("\\n\\n")
+                    )
+                } catch (error: Exception) {
+                    showCloudBookingList(
+                        "Unable to read cloud bookings: " +
+                            (error.localizedMessage ?: "Invalid booking data")
+                    )
+                }
+            }
+            .addOnFailureListener { error ->
+                progress.dismiss()
+                showCloudBookingList(
+                    "Server read failed: " +
+                        (error.localizedMessage ?: "Connection error") +
+                        ". No cached copy was used."
+                )
+            }
+    }
+
+    private fun showCloudBookingList(content: String) {
+        val scroll = ScrollView(this)
+        val details = TextView(this).apply {
+            text = content
+            textSize = 16f
+            setTextColor(dark)
+            setPadding(dp(20), dp(12), dp(20), dp(12))
+        }
+        scroll.addView(details)
+        AlertDialog.Builder(this)
+            .setTitle("Cloud Booking Records")
+            .setView(scroll)
+            .setPositiveButton("Close", null)
+            .show()
     }
 
     private fun checkBookingBackupMatch() {
@@ -472,7 +564,7 @@ class CloudActivity : Activity() {
                     val cloudHash = sha256(cloudJson)
                     val match = localHash == cloudHash
                     showBookingMatchResult(
-                        "Phone appointments: $localCount\\n" +
+                        "Phone appointments: $localCount\n" +
                             "Cloud appointments: $cloudCount\\n" +
                             "Exact data match: ${if (match) "YES" else "NO"}\\n\\n" +
                             if (match) {
