@@ -3,7 +3,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { getTrustedAvailability } = require("../trustedAvailability");
 
-function fixture({ reconciled = true, occupied = [] } = {}) {
+function fixture({ reconciled = true, occupied = [], mode = "cloud" } = {}) {
   const date = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
   const day = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"][
     new Date(date + "T12:00:00Z").getUTCDay()];
@@ -21,11 +21,22 @@ function fixture({ reconciled = true, occupied = [] } = {}) {
         assert.equal(id, "owner1");
         return { collection(sub) {
           return { doc(key) {
-            if (sub === "bookingMigration") {
-              assert.equal(key, "status");
+            if (sub === "migrations") {
+              assert.equal(key, "android-bookings-v1");
               return { get: async () => ({
                 exists: reconciled,
-                get: field => ({ androidLocksReconciled: reconciled, schemaVersion: 1 })[field]
+                get: field => ({
+                  status: reconciled ? "completed" : "pending",
+                  verifiedFinalSync: reconciled, schemaVersion: 1,
+                  businessId: "owner1", appointmentCount: 1, lockCount: 2
+                })[field]
+              }) };
+            }
+            if (sub === "settings") {
+              assert.equal(key, "bookingMode");
+              return { get: async () => ({
+                exists: true,
+                get: field => field === "mode" ? mode : undefined
               }) };
             }
             assert.equal(sub, "bookingLocks");
@@ -65,4 +76,11 @@ test("catalogue identity must match business", async () => {
   const f = fixture();
   f.catalogue.business.ownerUid = "someoneElse";
   await assert.rejects(getTrustedAvailability(f), /Bookings are disabled/);
+});
+
+test("legacy booking mode blocks availability despite migration marker", async () => {
+  await assert.rejects(getTrustedAvailability(fixture({ mode: "legacy" })), /migration is incomplete/);
+});
+test("frozen booking mode blocks availability despite migration marker", async () => {
+  await assert.rejects(getTrustedAvailability(fixture({ mode: "frozen" })), /migration is incomplete/);
 });
