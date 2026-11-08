@@ -194,3 +194,15 @@ test("Phase 10.49 unmodified anchored approval still consumes successfully",asyn
  const f=await fixture();await f.issue();
  assert.equal((await f.consume()).initialized,true);
 });
+
+test("Phase 10.49 rejects inherited registry and non-plain key records",async()=>{
+ const inherited=Object.create({hidden:{status:"active"}});
+ inherited.primary=registry().primary;
+ assert.throws(()=>createTrustedEmulatorOrchestrator({db,operatorKeyRegistry:inherited}),/Plain trusted registry/);
+ const keys={primary:Object.assign(Object.create({privateKey:"hidden"}),registry().primary)};
+ assert.throws(()=>createTrustedEmulatorOrchestrator({db,operatorKeyRegistry:keys}),/Plain key record/);
+});
+test("Phase 10.49 rejects private signing key in trusted registry",async()=>{
+ const keys=registry();keys.primary.privateKeyPem="secret";
+ assert.throws(()=>createTrustedEmulatorOrchestrator({db,operatorKeyRegistry:keys}),/Invalid trusted key configuration/);
+});
