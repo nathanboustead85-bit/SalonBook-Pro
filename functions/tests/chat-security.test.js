@@ -62,8 +62,8 @@ test("all four chat endpoints require server-side release gate", () => {
   assert.match(backend, /process\.env\.BOUSTIO_CHAT_ENABLED !== "true"/);
   for (const name of ["sendBusinessChatReply", "startCustomerChat", "sendCustomerChatMessage", "getCustomerChatMessages"]) {
     const start = backend.indexOf("exports." + name + " = onCall(");
-    const next = backend.indexOf("\\nexports.", start + 1);
+    const next = backend.indexOf("\nexports.", start + 1);
     const block = backend.slice(start, next < 0 ? undefined : next);
-    assert.match(block, /requireChatEnabled\\(\\)/, name + " must be release-gated");
+    assert.match(block, /requireChatEnabled\(\)/, name + " must be release-gated");
   }
 });
