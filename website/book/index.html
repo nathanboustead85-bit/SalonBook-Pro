@@ -73,6 +73,7 @@
     <label for="chatMessage">Your message</label>
     <textarea id="chatMessage" maxlength="2000" rows="4" disabled placeholder="Ask a question about services or availability"></textarea>
     <button id="chatSend" type="button" disabled>Chat coming soon</button>
+    <p id="chatPrivacy">A private guest session will be used when chat is enabled. Keep this browser session to read replies. Do not include sensitive personal information.</p>
     <div id="chatStatus" class="status" role="status" aria-live="polite">Customer messaging is not live yet.</div>
     <div id="chatHistory" class="summary hidden" aria-live="polite"></div>
   </section>
@@ -281,5 +282,6 @@ ui.date.addEventListener("change",updateTimes);
 ui.time.addEventListener("change",updateSummary);
 loadCatalogue();
 </script>
+<script type="module" src="/book/customer-chat.js"></script>
 </body>
 </html>
