@@ -1,0 +1,15 @@
+name: Boustio Phase 10.38 Execution Security Review
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static security checks (no credentials or production access)
+        run: node --test functions/phase1038ExecutionSecurity.test.js
