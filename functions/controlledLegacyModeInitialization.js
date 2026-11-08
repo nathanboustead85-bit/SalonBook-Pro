@@ -17,6 +17,8 @@ async function initialiseArchivedLegacyMode({
  if(executionEnabled!==true)fail("Execution disabled by default");
  if(approval!==APPROVAL)fail("Separate explicit approval required");
  if(!ID.test(businessId||"")||businessId!==authenticatedUid)fail("Owner mismatch");
+ if(!archive||archive.sourcePath!=="users/"+businessId+"/liveData/bookings")
+  fail("Archive sourcePath does not match authenticated owner");
  const verified=checkArchive(archive);
  if(!verified)fail("Verified ten-booking archive required");
  if(!db||typeof db.collection!=="function"||typeof db.runTransaction!=="function")
