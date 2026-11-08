@@ -413,6 +413,10 @@ class CloudActivity : Activity() {
             startActivityForResult(intent, archiveReviewRequestCode)
         }
 
+        addButton("Phase 10.18 · Check Live Firebase · Read Only") {
+            checkLiveFirebaseState()
+        }
+
         addText("Manual Cloud Backup", 19f)
         addText(
             "Save bookings, services, staff and registered clients to Firebase."
@@ -451,6 +455,71 @@ class CloudActivity : Activity() {
                 "Live sync monitoring is being tested.",
             14f
         )
+    }
+
+    private fun checkLiveFirebaseState() {
+        val user = auth.currentUser
+        if (user == null || !user.isEmailVerified) {
+            message("Verified business sign-in required")
+            return
+        }
+        val owner = user.uid
+        val modeRef = db.collection("businesses").document(owner)
+            .collection("settings").document("bookingMode")
+        val appointmentsRef = db.collection("businesses").document(owner)
+            .collection("appointments")
+        val sourceRef = db.collection("users").document(owner)
+            .collection("liveData").document("bookings")
+
+        // Server-only reads. No writes, no freeze and no cleanup.
+        modeRef.get(Source.SERVER).addOnSuccessListener { modeSnapshot ->
+            appointmentsRef.get(Source.SERVER).addOnSuccessListener { appointmentSnapshot ->
+                sourceRef.get(Source.SERVER).addOnSuccessListener { sourceSnapshot ->
+                    try {
+                        val mode = if (modeSnapshot.exists()) {
+                            modeSnapshot.getString("mode") ?: "INVALID"
+                        } else "NOT INITIALISED"
+                        val json = sourceSnapshot.getString("json")
+                            ?: throw IllegalStateException("Cloud booking JSON unavailable")
+                        if (sourceSnapshot.getLong("schemaVersion") != 1L) {
+                            throw IllegalStateException("Unsupported booking schema")
+                        }
+                        val count = JSONArray(json).length()
+                        val hash = sha256(json)
+                        val appointments = appointmentSnapshot.size()
+                        val warning = if (appointments == 0 && count == 10) {
+                            "Booking count is as expected, but this is NOT full cleanup authorisation."
+                        } else {
+                            "BLOCKED: Unexpected cloud booking or appointment count."
+                        }
+                        showCleanupReview(
+                            "LIVE FIREBASE READ-ONLY REPORT\\n\\n" +
+                            "Booking mode: $mode\\n" +
+                            "Legacy cloud bookings: $count\\n" +
+                            "Shared appointments: $appointments\\n" +
+                            "Booking SHA-256: $hash\\n\\n" +
+                            "$warning\\n\\n" +
+                            "Booking locks and migration markers are backend-only " +
+                            "and CANNOT be verified by this Android screen. " +
+                            "An independent trusted backend check is still required.\\n\\n" +
+                            "No changes made."
+                        )
+                    } catch (error: Exception) {
+                        showCleanupReview("BLOCKED: " +
+                            (error.localizedMessage ?: "Live verification failed"))
+                    }
+                }.addOnFailureListener { error ->
+                    showCleanupReview("BLOCKED: Cloud booking server read failed: " +
+                        (error.localizedMessage ?: "Unknown error"))
+                }
+            }.addOnFailureListener { error ->
+                showCleanupReview("BLOCKED: Appointment server read failed: " +
+                    (error.localizedMessage ?: "Unknown error"))
+            }
+        }.addOnFailureListener { error ->
+            showCleanupReview("BLOCKED: Booking mode server read failed: " +
+                (error.localizedMessage ?: "Unknown error"))
+        }
     }
 
     private fun checkCleanupReadiness(uri: android.net.Uri) {
