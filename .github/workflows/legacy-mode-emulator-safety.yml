@@ -28,6 +28,7 @@ on:
       - 'functions/phase1056EmulatorPermissions.js'
       - 'docs/phase-10-56-permissions.md'
       - 'docs/phase-10-57-booking-protection.md'
+      - 'docs/phase-10-58-security-regression.md'
       - 'docs/phase-10-53-durable-audit-recovery.md'
       - 'docs/phase-10-54-durable-witness-integration.md'
       - 'docs/phase-10-55-receipt-crash-integrity.md'
@@ -88,7 +89,7 @@ jobs:
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1044KeyRotationAndAudit.integration.test.js"
       - name: Run Phase 10.45 final cross-phase security boundary regression tests
         run: node --test functions/phase1045SecurityBoundaryReview.test.js
-      - name: Run Phase 10.46–10.57 trusted orchestrator and booking protection tests
+      - name: Run Phase 10.46–10.58 comprehensive cross-phase security regressions
         env:
           BOUSTIO_LEGACY_EMULATOR_TEST_GATE: explicit-test-only
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1046TrustedOrchestrator.integration.test.js"
