@@ -39,10 +39,12 @@ async function issueSigned({db,businessId,archive,approvalId,ownerToken,assertio
  const mode=business.collection("settings").doc("bookingMode");
  const marker=business.collection("migrations").doc(MIGRATION_ID);
  const digest=hashEvidence(assertion);
+ const anchor=business.collection("legacyModeAuditAnchors").doc(approvalId);
+ const anchorHash=crypto.createHash("sha256").update(JSON.stringify({businessId,approvalId,operatorId:operator.operatorId,archiveSha256:checked.hash,nonceId,digest})).digest("hex");
  return db.runTransaction(async tx=>{
-  const [a,l,n,m,mark]=await Promise.all([tx.get(approval),tx.get(audit),
-   tx.get(nonceRef),tx.get(mode),tx.get(marker)]);
-  if(a.exists||l.exists||n.exists)deny("approval or nonce replay");
+  const [a,l,n,m,mark,anch]=await Promise.all([tx.get(approval),tx.get(audit),
+   tx.get(nonceRef),tx.get(mode),tx.get(marker),tx.get(anchor)]);
+  if(a.exists||l.exists||n.exists||anch.exists)deny("approval or nonce replay");
   if(m.exists||mark.exists)deny("mode already exists");
   const record={ownerUid:businessId,verifiedOwnerUid:businessId,
    operation:OPERATION,archiveSha256:checked.hash,status:"approved",usedAt:null,
@@ -51,6 +53,7 @@ async function issueSigned({db,businessId,archive,approvalId,ownerToken,assertio
    signedOperatorAssertion:assertion,operatorEvidenceSha256:digest,nonceId};
   tx.create(nonceRef,{businessId,approvalId,operatorId:operator.operatorId,
    nonce,operatorEvidenceSha256:digest,issuedAtMs:nowMs});
+  tx.create(anchor,{businessId,approvalId,operatorId:operator.operatorId,archiveSha256:checked.hash,nonceId,operatorEvidenceSha256:digest,anchorHash});
   tx.create(approval,record);
   tx.create(audit,{event:"issued",approvalId,ownerUid:businessId,
    operatorId:operator.operatorId,operatorEvidenceSha256:digest,
@@ -73,10 +76,11 @@ async function consumeSigned({db,businessId,archive,approvalId,ownerToken,verify
  const mode=business.collection("settings").doc("bookingMode");
  const marker=business.collection("migrations").doc(MIGRATION_ID);
  const source=db.collection("users").doc(businessId).collection("liveData").doc("bookings");
+ const anchor=business.collection("legacyModeAuditAnchors").doc(approvalId);
  return db.runTransaction(async tx=>{
-  const [a,l,m,mark,src,appts,locks]=await Promise.all([
+  const [a,l,m,mark,src,appts,locks,anch]=await Promise.all([
    tx.get(approval),tx.get(audit),tx.get(mode),tx.get(marker),tx.get(source),
-   tx.get(business.collection("appointments")),tx.get(business.collection("bookingLocks"))]);
+   tx.get(business.collection("appointments")),tx.get(business.collection("bookingLocks")),tx.get(anchor)]);
   if(!a.exists||!l.exists)deny("approval evidence missing");
   const record=a.data(),log=l.data(),assertion=record.signedOperatorAssertion;
   if(record.ownerUid!==businessId||record.verifiedOwnerUid!==businessId||
@@ -89,6 +93,15 @@ async function consumeSigned({db,businessId,archive,approvalId,ownerToken,verify
   const operator=verifyRotatedAssertion({assertion,registry,expected:{
    businessId,approvalId,archiveSha256:checked.hash},nowMs});
   const digest=hashEvidence(assertion);
+  const nonceId=crypto.createHash("sha256").update(operator.operatorId+"\\0"+
+   assertion.payload.nonce).digest("hex");
+  const expectedAnchorHash=crypto.createHash("sha256").update(JSON.stringify({businessId,approvalId,operatorId:operator.operatorId,archiveSha256:checked.hash,nonceId,digest})).digest("hex");
+  const anchorRecord=anch.data();
+  if(!anch.exists||anchorRecord.anchorHash!==expectedAnchorHash||
+   anchorRecord.businessId!==businessId||anchorRecord.approvalId!==approvalId||
+   anchorRecord.operatorId!==operator.operatorId||anchorRecord.nonceId!==nonceId||
+   anchorRecord.archiveSha256!==checked.hash||anchorRecord.operatorEvidenceSha256!==digest)
+   deny("audit anchor mismatch");
   if(digest!==record.operatorEvidenceSha256||digest!==log.operatorEvidenceSha256||
    JSON.stringify(assertion)!==JSON.stringify(log.signedOperatorAssertion)||
    log.event!=="issued"||log.ownerUid!==businessId||
