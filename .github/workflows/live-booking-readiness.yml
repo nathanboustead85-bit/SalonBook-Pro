@@ -8,6 +8,7 @@ on:
       - 'functions/index.js'
       - 'functions/trustedAvailability.js'
       - 'functions/tests/trusted-availability.test.js'
+      - 'functions/tests/booking-transaction.test.js'
       - 'functions/trustedBooking.js'
       - 'functions/tests/live-booking-readiness.test.js'
       - 'firestore.rules'
@@ -31,4 +32,4 @@ jobs:
         working-directory: functions
         run: npm install --no-audit --no-fund
       - name: Check booking release safeguards
-        run: node --test functions/tests/live-booking-readiness.test.js functions/tests/trusted-availability.test.js
+        run: node --test functions/tests/live-booking-readiness.test.js functions/tests/trusted-availability.test.js functions/tests/booking-transaction.test.js
