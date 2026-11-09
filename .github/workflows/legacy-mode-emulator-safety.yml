@@ -74,6 +74,7 @@ on:
       - 'functions/index.js'
       - 'functions/bookingMode.js'
       - '.github/workflows/legacy-mode-emulator-safety.yml'
+      - 'functions/phase1110UnifiedCalendarPreview.test.js'
       - 'app/src/debug/**'
       - 'app/build.gradle.kts'
       - 'app/src/main/java/com/salonbook/pro/MainActivity.kt'
@@ -153,6 +154,8 @@ jobs:
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase117DemoCalendarController.test.js"
       - name: Run Phase 11.7 isolated Android calendar demo integration tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase117AndroidCalendar.integration.test.js"
+      - name: Run Phase 11.10 integrated calendar preview safety tests
+        run: node --test functions/phase1110UnifiedCalendarPreview.test.js
       - name: Run Phase 11.8 isolated Android demo API security tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase118DemoAndroidCalendarServer.test.js"
 
