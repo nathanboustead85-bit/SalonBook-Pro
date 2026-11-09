@@ -78,6 +78,7 @@ on:
       - 'functions/phase1111UnifiedCalendarFeed.js'
       - 'functions/phase1111UnifiedCalendarFeed.integration.test.js'
       - 'functions/phase1112AndroidEmulatorAdapter.test.js'
+      - 'functions/phase1113UnifiedCalendarAndroid.test.js'
       - 'app/src/debug/**'
       - 'app/build.gradle.kts'
       - 'app/src/main/java/com/salonbook/pro/MainActivity.kt'
@@ -157,6 +158,8 @@ jobs:
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase117DemoCalendarController.test.js"
       - name: Run Phase 11.7 isolated Android calendar demo integration tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase117AndroidCalendar.integration.test.js"
+      - name: Run Phase 11.13 unified Android calendar lifecycle safety tests
+        run: node --test functions/phase1113UnifiedCalendarAndroid.test.js
       - name: Run Phase 11.12 Android debug emulator adapter safety tests
         run: node --test functions/phase1112AndroidEmulatorAdapter.test.js
       - name: Run Phase 11.11 website-to-unified-calendar emulator integration tests
