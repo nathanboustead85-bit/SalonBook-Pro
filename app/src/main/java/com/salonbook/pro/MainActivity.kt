@@ -534,20 +534,6 @@ class MainActivity : Activity() {
         navigation.addView(dateTitle, LinearLayout.LayoutParams(0, -2, 1f))
         navigation.addView(next, LinearLayout.LayoutParams(dp(56), -2))
         container.addView(navigation)
-        if (BuildConfig.DEBUG) {
-            container.addView(Button(this).apply {
-                text = "Website booking feed • DEV ONLY"
-                setOnClickListener {
-                    try {
-                        val activity = Class.forName("com.salonbook.pro.debug.DemoCalendarActivity")
-                        startActivity(Intent(this@MainActivity, activity))
-                    } catch (_: ClassNotFoundException) {
-                        Toast.makeText(this@MainActivity, "Development calendar unavailable", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            })
-        }
-
         val week = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         for (offset in -3..3) {
             val date = shiftDate(selectedDate, offset)
@@ -590,6 +576,9 @@ class MainActivity : Activity() {
             topMargin = dp(6)
             bottomMargin = dp(12)
         })
+        if (BuildConfig.DEBUG) {
+            showDebugWebsiteBookingPreview(selectedDate)
+        }
         showSharedCloudAppointments(selectedDate)
         section("Daily schedule · local appointments")
         if (daily.isEmpty()) {
@@ -600,6 +589,30 @@ class MainActivity : Activity() {
         } else daily.forEach { bookingCard(it) }
         button("Today") { selectedDate = today(); showCalendar() }
         button("Back to Dashboard") { showDashboard() }
+    }
+
+    /**
+     * Development-only in-calendar website booking preview.
+     * Synthetic display data is never written to local bookings or production Firestore.
+     * The authenticated emulator transport is NOT connected to this preview yet.
+     */
+    private fun showDebugWebsiteBookingPreview(date: String) {
+        section("WEBSITE BOOKINGS • DEMO PREVIEW ONLY")
+        val preview = panel()
+        preview.addView(label("Website calendar integration preview", 17f, dark, true))
+        preview.addView(label("Synthetic appointments only. No live website connection.", 13f, muted))
+        val examples = if (date == "2026-11-10") listOf(
+            Triple("10:00", "Demo haircut • Demo Barber", "CONFIRMED"),
+            Triple("11:30", "Demo colour • Demo Stylist", "CANCELLED")
+        ) else emptyList()
+        if (examples.isEmpty()) {
+            preview.addView(label("No synthetic website appointments for this date. Select 10 November 2026 to see test examples.", 13f, muted))
+        }
+        examples.forEach { (time, description, status) ->
+            preview.addView(label("$time • $description", 15f, dark, true))
+            preview.addView(label(status, 12f, if (status == "CONFIRMED") orange else muted, true))
+        }
+        addPanel(preview)
     }
 
     private fun showAppointments() {
