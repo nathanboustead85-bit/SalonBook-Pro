@@ -2,8 +2,7 @@
 const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const {createDemoCalendarController}=require("./phase117DemoCalendarController");
 const PROJECT="demo-boustio-legacy-init";
-process.env.FIRESTORE_EMULATOR_HOST="127.0.0.1:8080";
-process.env.FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099";
+if(!process.env.FIRESTORE_EMULATOR_HOST||!process.env.FIREBASE_AUTH_EMULATOR_HOST)throw Error("Real emulator process required");
 process.env.GCLOUD_PROJECT=PROJECT;process.env.GOOGLE_CLOUD_PROJECT=PROJECT;
 if(process.env.GOOGLE_APPLICATION_CREDENTIALS)throw Error("No production credentials permitted");
 const params={businessId:"demo_owner",ownerToken:"synthetic",date:"2026-11-10"};
