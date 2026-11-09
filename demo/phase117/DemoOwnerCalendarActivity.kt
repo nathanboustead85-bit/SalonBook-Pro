@@ -2,6 +2,13 @@ package uk.co.boustio.demo.phase117
 
 import android.app.Activity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.widget.Button
+import android.widget.EditText
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -20,6 +27,11 @@ class DemoOwnerCalendarActivity : Activity() {
     private val london = ZoneId.of("Europe/London")
     private val format = DateTimeFormatter.ofPattern("EEE d MMM, HH:mm")
     private var active = false
+    private val handler = Handler(Looper.getMainLooper())
+    private var epoch = 0
+    private lateinit var businessInput: EditText
+    private lateinit var dateInput: EditText
+    private lateinit var tokenInput: EditText
 
     data class DemoAppointment(
         val id: String,
@@ -39,6 +51,11 @@ class DemoOwnerCalendarActivity : Activity() {
         root.addView(TextView(this).apply { text = "BOUSTIO • EMULATOR DEMO ONLY"; textSize = 20f })
         status = TextView(this).apply { text = "Disconnected"; textSize = 16f }
         root.addView(status)
+        fun field(hint: String): EditText = EditText(this).also { it.hint = hint; root.addView(it) }
+        businessInput = field("Synthetic business ID (demo_...)")
+        dateInput = field("YYYY-MM-DD")
+        tokenInput = field("Verified emulator owner ID token")
+        root.addView(Button(this).apply { text = "Connect demo calendar"; setOnClickListener { epoch++; active = true; poll(epoch) } })
         appointments = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(ScrollView(this).apply { addView(appointments) })
         setContentView(root)
@@ -48,7 +65,7 @@ class DemoOwnerCalendarActivity : Activity() {
         super.onStart()
         active = true
         status.text = "Awaiting emulator-only calendar connection"
-        // Debug-only transport should subscribe here, and invoke showSnapshot on the UI thread.
+        // Explicit Connect is required: no automatic production network access.
     }
 
     fun showConnectionState(value: String) {
@@ -75,9 +92,43 @@ class DemoOwnerCalendarActivity : Activity() {
         }
     }
 
+    private fun poll(current: Int) {
+        if (!active || current != epoch) return
+        val business = businessInput.text.toString()
+        val date = dateInput.text.toString()
+        val token = tokenInput.text.toString()
+        Thread {
+            var conn: HttpURLConnection? = null
+            try {
+                conn = (URL("http://10.0.2.2:8765/demo/calendar").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"; connectTimeout = 2500; readTimeout = 2500
+                    doOutput = true; setRequestProperty("Content-Type", "application/json")
+                }
+                val payload = JSONObject().put("businessId", business).put("date", date).put("ownerToken", token)
+                conn.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
+                if (conn.responseCode != 200) error("Owner access denied")
+                val json = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
+                val array = json.getJSONArray("appointments")
+                val items = (0 until array.length()).map { i ->
+                    val o = array.getJSONObject(i)
+                    DemoAppointment(o.getString("id"), o.getString("startAt"), o.getString("serviceId"),
+                        o.getString("staffId"), o.getString("status"), o.getString("source"))
+                }
+                if (active && current == epoch) {
+                    showSnapshot(items)
+                    showConnectionState("Connected • ${items.size} demo appointments")
+                }
+            } catch (_: Exception) {
+                if (active && current == epoch) showConnectionState("Disconnected • retrying")
+            } finally { conn?.disconnect() }
+            handler.post { if (active && current == epoch) handler.postDelayed({ poll(current) }, 5000L) }
+        }.start()
+    }
+
     override fun onStop() {
         active = false
-        // Debug transport must unsubscribe and cancel retries here.
+        epoch++
+        handler.removeCallbacksAndMessages(null)
         super.onStop()
     }
 }
