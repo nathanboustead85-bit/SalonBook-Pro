@@ -40,7 +40,7 @@ android {
 
     buildTypes {
         getByName("debug") {
-            applicationIdSuffix = ".devcalendar"
+            applicationIdSuffix = ".devcalendar1110"
             versionNameSuffix = "-calendar-dev"
         }
         getByName("release") {
