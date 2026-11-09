@@ -9,9 +9,9 @@ function guard(){
  process.env.GOOGLE_APPLICATION_CREDENTIALS)deny("demo emulators required");
 }
 const validId=x=>typeof x==="string"&&/^[A-Za-z0-9_-]{3,80}$/.test(x);
-function createDemoBookingEngine({db,verifyCustomer}={}){
+function createDemoBookingEngine({db,verifyCustomer,scheduleValidator}={}){
  guard();
- if(!db||typeof db.runTransaction!=="function"||typeof verifyCustomer!=="function")deny("trusted dependencies required");
+ if(!db||typeof db.runTransaction!=="function"||typeof verifyCustomer!=="function"||(scheduleValidator!==undefined&&typeof scheduleValidator!=="function"))deny("trusted dependencies required");
  return Object.freeze({async book(request){
   guard();
   const keys=["businessId","serviceId","staffId","startAt","idempotencyKey","customerAccessToken"];
@@ -42,11 +42,11 @@ function createDemoBookingEngine({db,verifyCustomer}={}){
    const duration=srv.get("durationMinutes");
    if(!Number.isInteger(duration)||duration<5||duration>480)deny("invalid duration");
    const end=start+duration*60000;
-   // Demo policy: UTC business hours, 09:00–17:00, no DST conversion claimed.
+   // Phase 11.4 optionally applies a trusted UK staff schedule validator.\n   // Original UTC demo schedule is retained for backward-compatible Phase 11.3 tests.
    const day=new Date(start).getUTCDay();
    const startMinute=new Date(start).getUTCHours()*60+new Date(start).getUTCMinutes();
    const endMinute=startMinute+duration;
-   if(day===0||day===6||startMinute<540||endMinute>1020)deny("outside demo working hours");
+   if(scheduleValidator){\n    const closuresSnap=await tx.get(business);\n    scheduleValidator({startMs:start,durationMinutes:duration,staff:worker.data(),closures:closuresSnap.get("closures")||[]});\n   }else if(day===0||day===6||startMinute<540||endMinute>1020)deny("outside demo working hours");
    if(!Array.isArray(worker.get("serviceIds"))||!worker.get("serviceIds").includes(serviceId))deny("staff not qualified");
    // One transactionally read/written staff-day allocation document serialises all overlapping bookings.
    const dayId=startAt.slice(0,10);
