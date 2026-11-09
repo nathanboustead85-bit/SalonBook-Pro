@@ -463,6 +463,7 @@ class MainActivity : Activity() {
 
 
     override fun onDestroy() {
+        debugCalendarSource?.stop()
         cloudCalendarListener?.remove()
         super.onDestroy()
     }
