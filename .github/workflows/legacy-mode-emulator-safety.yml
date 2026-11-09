@@ -87,6 +87,7 @@ on:
       - 'functions/phase1116AndroidCloudContract.test.js'
       - 'functions/phase1117StagingTransport.js'
       - 'functions/phase1117StagingTransport.test.js'
+      - 'functions/phase1118StagingReadiness.test.js'
       - 'docs/phase-11-17-staging-readiness.md'
       - 'docs/phase-11-16-android-cloud-contract.md'
       - 'app/src/debug/**'
@@ -176,6 +177,8 @@ jobs:
         run: node --test functions/phase1112AndroidEmulatorAdapter.test.js
       - name: Run Phase 11.17 synthetic staging transport security tests
         run: node --test functions/phase1117StagingTransport.test.js
+      - name: Run Phase 11.18 isolated staging readiness safety tests
+        run: node --test functions/phase1118StagingReadiness.test.js
       - name: Run Phase 11.16 Android HTTPS cloud safety tests
         run: node --test functions/phase1116AndroidCloudContract.test.js
       - name: Run Phase 11.15 cloud connection readiness security contract tests
