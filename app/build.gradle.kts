@@ -39,6 +39,10 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            applicationIdSuffix = ".devcalendar"
+            versionNameSuffix = "-calendar-dev"
+        }
         getByName("release") {
             isMinifyEnabled = false
             signingConfig =
