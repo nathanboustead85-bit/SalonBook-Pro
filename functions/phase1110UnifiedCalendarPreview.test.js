@@ -7,10 +7,11 @@ test("11.10 demo website appointments render in existing calendar, not a second 
  assert.match(main,/if \(BuildConfig.DEBUG\) \{\s*showDebugWebsiteBookingPreview\(selectedDate\)/);
  assert.doesNotMatch(main,/Website booking feed • DEV ONLY/);
 });
-test("11.10 demo preview is labelled synthetic and shows confirmed and cancelled",()=>{
- assert.match(main,/DEMO PREVIEW ONLY/);
- assert.match(main,/No live website connection/);
- assert.match(main,/CONFIRMED/);assert.match(main,/CANCELLED/);
+test("11.10 successor replaces synthetic preview with explicit emulator-only status",()=>{
+ assert.match(main,/WEBSITE BOOKINGS • EMULATOR ONLY/);
+ assert.match(main,/Emulator not connected/);
+ assert.match(main,/DebugCalendarSource/);
+ assert.doesNotMatch(main,/Demo haircut • Demo Barber/);
 });
 test("11.10 preview does not save, modify or merge existing bookings",()=>{
  const start=main.indexOf("private fun showDebugWebsiteBookingPreview("),end=main.indexOf("private fun showAppointments()",start);
