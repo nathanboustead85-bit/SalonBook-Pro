@@ -26,7 +26,7 @@ function createDemoCalendarController({bridge,onRender,onState,retryDelayMs=1000
  let activeParams=null;
  function failure(error,token){
   if(closed||generation!==token||timer!==null)return;
-  stop();stop=()=>{};state(seen?"reconnecting":"connecting");
+  stop();stop=()=>{};state("reconnecting");
   timer=setTimeout(()=>{timer=null;if(!closed&&generation===token)connect(activeParams,token);},retryDelayMs);
  }
  return Object.freeze({
