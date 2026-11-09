@@ -33,3 +33,26 @@ test("11.5 local HTTP serves separate prototype and never modifies production pa
  assert.match(production,/Booking unavailable — preview only/);
 });
 test("11.5 prototype not exported from deployed functions entrypoint",()=>{const index=fs.readFileSync(path.join(__dirname,"index.js"),"utf8");for(const name of ["phase115DemoJourney","phase115LocalServer"])assert.equal(index.includes(name),false);});
+
+test("11.5 verified emulator customer books and receives confirmation through HTTP",async()=>{
+ const f=await fixture(),uid="demo_web_customer_"+process.pid+"_"+(++seq);
+ await auth.createUser({uid,email:uid+"@example.test",password:"ExampleOnly123!",emailVerified:true});
+ const custom=await auth.createCustomToken(uid);
+ const signIn=await fetch("http://"+process.env.FIREBASE_AUTH_EMULATOR_HOST+"/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=fake-emulator-key",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:custom,returnSecureToken:true})});
+ assert.equal(signIn.status,200);
+ const {idToken}=await signIn.json();
+ const server=createDemoServer({db,auth});
+ await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
+ try{
+  const base="http://127.0.0.1:"+server.address().port;
+  const post=async(route,body)=>{const r=await fetch(base+"/api/"+route,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});return {status:r.status,body:await r.json()};};
+  const query={businessId:f.id,serviceId:"cut",staffId:"stylist",date:"2026-11-10"};
+  const available=await post("availability",query);
+  assert.equal(available.status,200);assert.ok(available.body.includes("2026-11-10T10:00:00.000Z"));
+  const request={businessId:f.id,serviceId:"cut",staffId:"stylist",startAt:"2026-11-10T10:00:00.000Z",idempotencyKey:"web_demo_booking",customerAccessToken:idToken};
+  const booked=await post("book",request);assert.equal(booked.status,200,JSON.stringify(booked.body));assert.equal(booked.body.status,"confirmed");
+  const replay=await post("book",request);assert.equal(replay.status,200);assert.equal(replay.body.idempotentReplay,true);
+  const after=await post("availability",query);assert.ok(!after.body.includes(request.startAt));
+  assert.equal((await f.b.collection("bookings").get()).size,1);
+ }finally{await new Promise(resolve=>server.close(resolve));}
+});
