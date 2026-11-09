@@ -74,6 +74,9 @@ on:
       - 'functions/index.js'
       - 'functions/bookingMode.js'
       - '.github/workflows/legacy-mode-emulator-safety.yml'
+      - 'app/src/debug/**'
+      - 'app/build.gradle.kts'
+      - 'app/src/main/java/com/salonbook/pro/MainActivity.kt'
   workflow_dispatch:
 permissions:
   contents: read
@@ -152,3 +155,31 @@ jobs:
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase117AndroidCalendar.integration.test.js"
       - name: Run Phase 11.8 isolated Android demo API security tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase118DemoAndroidCalendarServer.test.js"
+
+  integrated-calendar-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Verify debug-only package and synthetic Firebase config
+        run: |
+          set -euo pipefail
+          grep -q 'applicationIdSuffix = ".devcalendar"' app/build.gradle.kts
+          grep -q 'demo-boustio-legacy-init' app/src/debug/google-services.json
+          ! grep -q 'salonbook-pro-ad5ff' app/src/debug/google-services.json
+          test -f app/src/debug/java/com/salonbook/pro/debug/DemoCalendarActivity.java
+      - name: Build integrated Boustio calendar debug APK
+        run: gradle --no-daemon :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Integrated-Calendar-DEBUG-NOT-PRODUCTION
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
