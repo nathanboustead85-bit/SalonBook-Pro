@@ -92,6 +92,8 @@ on:
       - 'functions/phase1119CalendarReconciliation.test.js'
       - 'functions/phase1120SafeCalendarRefresh.js'
       - 'functions/phase1120SafeCalendarRefresh.test.js'
+      - 'functions/phase1121CalendarReconnect.js'
+      - 'functions/phase1121CalendarReconnect.test.js'
       - 'docs/phase-11-17-staging-readiness.md'
       - 'docs/phase-11-16-android-cloud-contract.md'
       - 'app/src/debug/**'
@@ -181,6 +183,8 @@ jobs:
         run: node --test functions/phase1112AndroidEmulatorAdapter.test.js
       - name: Run Phase 11.17 synthetic staging transport security tests
         run: node --test functions/phase1117StagingTransport.test.js
+      - name: Run Phase 11.21 offline reconnect and recovery tests
+        run: node --test functions/phase1121CalendarReconnect.test.js
       - name: Run Phase 11.20 non-destructive calendar refresh tests
         run: node --test functions/phase1120SafeCalendarRefresh.test.js
       - name: Run Phase 11.19 isolated calendar reconciliation tests
