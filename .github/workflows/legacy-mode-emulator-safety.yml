@@ -40,6 +40,11 @@ on:
       - 'functions/phase115DemoJourney.js'
       - 'functions/phase115LocalServer.js'
       - 'functions/phase115DemoJourney.integration.test.js'
+      - 'functions/phase116OwnerCalendarBridge.js'
+      - 'functions/phase116OwnerAuthorizer.js'
+      - 'functions/phase116OwnerCalendarBridge.integration.test.js'
+      - 'demo/phase116/**'
+      - 'docs/phase-11-6-owner-calendar-bridge.md'
       - 'demo/phase115/**'
       - 'docs/phase-11-5-emulator-booking-website.md'
       - 'docs/phase-11-4-uk-scheduling.md'
@@ -129,3 +134,5 @@ jobs:
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase114UkSchedule.integration.test.js"
       - name: Run Phase 11.5 isolated website booking journey integration tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase115DemoJourney.integration.test.js"
+      - name: Run Phase 11.6 isolated owner calendar integration tests
+        run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase116OwnerCalendarBridge.integration.test.js"
