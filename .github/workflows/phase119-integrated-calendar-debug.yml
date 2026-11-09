@@ -20,7 +20,7 @@ jobs:
       - name: Enforce debug-only demo configuration
         run: |
           set -euo pipefail
-          grep -q 'applicationIdSuffix = ".devcalendar"' app/build.gradle.kts
+          grep -q 'applicationIdSuffix = ".devcalendar1110"' app/build.gradle.kts
           grep -q 'demo-boustio-legacy-init' app/src/debug/google-services.json
           ! grep -q 'salonbook-pro-ad5ff' app/src/debug/google-services.json
           test -f app/src/debug/java/com/salonbook/pro/debug/DemoCalendarActivity.java
