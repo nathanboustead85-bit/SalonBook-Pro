@@ -42,7 +42,7 @@ android {
         getByName("debug") {
             applicationIdSuffix = ".devcalendar1110"
             versionNameSuffix = "-calendar-dev-11.13"
-            versionCode = 1113
+            // Development build keeps the production versionCode unchanged.
         }
         getByName("release") {
             isMinifyEnabled = false
