@@ -27,6 +27,10 @@ on:
       - 'functions/phase1053DurableAuditPrototype.js'
       - 'functions/phase1056EmulatorPermissions.js'
       - 'functions/phase1059FinalSecurityReview.test.js'
+      - 'functions/phase112ArchitecturePolicy.js'
+      - 'functions/phase112ArchitecturePolicy.test.js'
+      - 'functions/phase113BookingContract.js'
+      - 'docs/phase-11-2-security-and-booking-architecture.md'
       - 'docs/phase-10-59-final-security-review.md'
       - 'docs/phase-10-56-permissions.md'
       - 'docs/phase-10-57-booking-protection.md'
@@ -101,3 +105,5 @@ jobs:
         run: node --test functions/phase1050ProductionArchitecturePolicy.test.js
       - name: Run Phase 10.59 final non-destructive security sign-off gates
         run: node --test functions/phase1059FinalSecurityReview.test.js
+      - name: Run Phase 11.2 architecture and Phase 11.3 contract static safety gates
+        run: node --test functions/phase112ArchitecturePolicy.test.js
