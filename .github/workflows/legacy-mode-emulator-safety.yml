@@ -49,6 +49,8 @@ on:
       - 'docs/phase-11-7-android-calendar-demo.md'
       - 'functions/phase117DemoCalendarController.js'
       - 'functions/phase117DemoCalendarController.test.js'
+      - 'functions/phase118DemoAndroidCalendarServer.js'
+      - 'functions/phase118DemoAndroidCalendarServer.test.js'
       - 'demo/phase117/**'
       - 'docs/phase-11-7-android-calendar-interface.md'
       - 'demo/phase116/**'
@@ -148,3 +150,5 @@ jobs:
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase117DemoCalendarController.test.js"
       - name: Run Phase 11.7 isolated Android calendar demo integration tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase117AndroidCalendar.integration.test.js"
+      - name: Run Phase 11.8 isolated Android demo API security tests
+        run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase118DemoAndroidCalendarServer.test.js"
