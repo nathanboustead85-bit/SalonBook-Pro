@@ -596,7 +596,7 @@ class MainActivity : Activity() {
 
     /** Development-only website calendar feed. No synthetic bookings or production writes. */
     private fun showDebugWebsiteBookingPreview(date: String) {
-        section("WEBSITE BOOKINGS • EMULATOR ONLY")
+        section("WEBSITE BOOKINGS • EMULATOR ONLY • PHASE 11.13")
         val preview = panel()
         val status = label("Emulator not connected • no website bookings loaded", 13f, muted)
         val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
