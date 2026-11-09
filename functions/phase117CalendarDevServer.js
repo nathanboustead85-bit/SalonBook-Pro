@@ -19,4 +19,10 @@ function createCalendarDevServer({db,auth}){
   }catch{return send(403,{error:"Calendar access denied or unavailable"});}
  });
 }
+if(require.main===module){
+ guard();
+ const admin=require("firebase-admin");
+ if(!admin.apps.length)admin.initializeApp({projectId:"demo-boustio-legacy-init"});
+ createCalendarDevServer({db:admin.firestore(),auth:admin.auth()}).listen(8765,"127.0.0.1",()=>console.log("Phase 11.7 Android emulator-only calendar bridge listening on host loopback :8765"));
+}
 module.exports={createCalendarDevServer};
