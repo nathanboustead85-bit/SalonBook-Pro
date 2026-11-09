@@ -1,0 +1,34 @@
+name: Boustio Integrated Calendar Debug Build
+on:
+  workflow_dispatch:
+jobs:
+  integrated-debug-calendar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: phase-9d4-teal-clients
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Enforce debug-only demo configuration
+        run: |
+          set -euo pipefail
+          grep -q 'applicationIdSuffix = ".devcalendar"' app/build.gradle.kts
+          grep -q 'demo-boustio-legacy-init' app/src/debug/google-services.json
+          ! grep -q 'salonbook-pro-ad5ff' app/src/debug/google-services.json
+          test -f app/src/debug/java/com/salonbook/pro/debug/DemoCalendarActivity.java
+      - name: Compile existing Boustio app with debug-only calendar screen
+        run: gradle --no-daemon :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Integrated-Calendar-DEBUG-NOT-PRODUCTION
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
