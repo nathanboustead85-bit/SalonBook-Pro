@@ -534,6 +534,19 @@ class MainActivity : Activity() {
         navigation.addView(dateTitle, LinearLayout.LayoutParams(0, -2, 1f))
         navigation.addView(next, LinearLayout.LayoutParams(dp(56), -2))
         container.addView(navigation)
+        if (BuildConfig.DEBUG) {
+            container.addView(Button(this).apply {
+                text = "Website booking feed • DEV ONLY"
+                setOnClickListener {
+                    try {
+                        val activity = Class.forName("com.salonbook.pro.debug.DemoCalendarActivity")
+                        startActivity(Intent(this@MainActivity, activity))
+                    } catch (_: ClassNotFoundException) {
+                        Toast.makeText(this@MainActivity, "Development calendar unavailable", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            })
+        }
 
         val week = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         for (offset in -3..3) {
