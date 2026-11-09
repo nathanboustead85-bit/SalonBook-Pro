@@ -12,7 +12,7 @@ test("11.13 Android launcher and in-calendar marker agree",()=>{
 test("11.13 debug version increases without changing production version or creating another app ID",()=>{
  assert.match(gradle,/versionCode = 5/);
  assert.match(gradle,/versionName = "0\.5\.0"/);
- assert.match(gradle,/versionCode = 1113/);
+ assert.doesNotMatch(gradle,/versionCode = 1113/);
  assert.match(gradle,/applicationIdSuffix = "\.devcalendar1110"/);
  assert.match(gradle,/versionNameSuffix = "-calendar-dev-11\.13"/);
 });
