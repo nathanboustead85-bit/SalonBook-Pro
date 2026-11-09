@@ -46,6 +46,7 @@ class MainActivity : Activity() {
     private lateinit var navigationBar: LinearLayout
     private var currentScreen = "dashboard"
     private var cloudCalendarListener: ListenerRegistration? = null
+    private var debugCalendarSource: DevelopmentCalendarSource? = null
 
     data class Booking(
         val id: String, var client: String, var service: String,
@@ -108,6 +109,7 @@ class MainActivity : Activity() {
     } catch (_: Exception) { emptyList() }
 
     private fun screen(title: String, subtitle: String = "", mode: String = "other") {
+        if (mode != "calendar") debugCalendarSource?.stop()
         currentScreen = mode
         // Ensure Android lays out our content below the system status bar.
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
@@ -591,28 +593,31 @@ class MainActivity : Activity() {
         button("Back to Dashboard") { showDashboard() }
     }
 
-    /**
-     * Development-only in-calendar website booking preview.
-     * Synthetic display data is never written to local bookings or production Firestore.
-     * The authenticated emulator transport is NOT connected to this preview yet.
-     */
+    /** Development-only website calendar feed. No synthetic bookings or production writes. */
     private fun showDebugWebsiteBookingPreview(date: String) {
-        section("WEBSITE BOOKINGS • DEMO PREVIEW ONLY")
+        section("WEBSITE BOOKINGS • EMULATOR ONLY")
         val preview = panel()
-        preview.addView(label("Website calendar integration preview", 17f, dark, true))
-        preview.addView(label("Synthetic appointments only. No live website connection.", 13f, muted))
-        val examples = if (date == "2026-11-10") listOf(
-            Triple("10:00", "Demo haircut • Demo Barber", "CONFIRMED"),
-            Triple("11:30", "Demo colour • Demo Stylist", "CANCELLED")
-        ) else emptyList()
-        if (examples.isEmpty()) {
-            preview.addView(label("No synthetic website appointments for this date. Select 10 November 2026 to see test examples.", 13f, muted))
-        }
-        examples.forEach { (time, description, status) ->
-            preview.addView(label("$time • $description", 15f, dark, true))
-            preview.addView(label(status, 12f, if (status == "CONFIRMED") orange else muted, true))
-        }
+        val status = label("Emulator not connected • no website bookings loaded", 13f, muted)
+        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        preview.addView(status)
+        preview.addView(results)
         addPanel(preview)
+        if (debugCalendarSource == null) {
+            debugCalendarSource = runCatching {
+                Class.forName("com.salonbook.pro.debug.DebugCalendarSource")
+                    .getDeclaredConstructor().newInstance() as DevelopmentCalendarSource
+            }.getOrNull()
+        }
+        debugCalendarSource?.display(date) { state ->
+            if (currentScreen != "calendar" || selectedDate != date || !BuildConfig.DEBUG) return@display
+            status.text = state.message
+            results.removeAllViews()
+            state.items.distinctBy { it.id }.forEach { item ->
+                results.addView(label("${item.time} • ${item.service} • ${item.staff}", 15f, dark, true))
+                results.addView(label(item.status.uppercase(Locale.UK), 12f,
+                    if (item.status == "confirmed") orange else muted, true))
+            }
+        }
     }
 
     private fun showAppointments() {
