@@ -81,6 +81,9 @@ on:
       - 'functions/phase1113UnifiedCalendarAndroid.test.js'
       - 'functions/phase1113VersionIdentity.test.js'
       - 'functions/phase1114WebsiteToAndroidHttp.integration.test.js'
+      - 'functions/phase1115CloudCalendarContract.js'
+      - 'functions/phase1115CloudCalendarContract.test.js'
+      - 'docs/phase-11-15-cloud-connection-readiness.md'
       - 'app/src/debug/**'
       - 'app/build.gradle.kts'
       - 'app/src/main/java/com/salonbook/pro/MainActivity.kt'
@@ -166,6 +169,8 @@ jobs:
         run: node --test functions/phase1113UnifiedCalendarAndroid.test.js
       - name: Run Phase 11.12 Android debug emulator adapter safety tests
         run: node --test functions/phase1112AndroidEmulatorAdapter.test.js
+      - name: Run Phase 11.15 cloud connection readiness security contract tests
+        run: node --test functions/phase1115CloudCalendarContract.test.js
       - name: Run Phase 11.14 website booking to Android HTTP end-to-end integration tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase1114WebsiteToAndroidHttp.integration.test.js"
       - name: Run Phase 11.11 website-to-unified-calendar emulator integration tests
