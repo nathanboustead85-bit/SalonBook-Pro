@@ -35,6 +35,9 @@ on:
       - 'functions/phase113BookingContract.js'
       - 'functions/phase113DemoBookingEngine.js'
       - 'functions/phase113DemoBookingEngine.integration.test.js'
+      - 'functions/phase114UkSchedule.js'
+      - 'functions/phase114UkSchedule.integration.test.js'
+      - 'docs/phase-11-4-uk-scheduling.md'
       - 'docs/phase-11-3-demo-booking-engine.md'
       - 'docs/phase-11-2-security-and-booking-architecture.md'
       - 'docs/phase-10-59-final-security-review.md'
@@ -117,3 +120,5 @@ jobs:
         run: node --test functions/phase112ArchitectureAndContract.test.js
       - name: Run Phase 11.3 isolated transactional booking integration tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase113DemoBookingEngine.integration.test.js"
+      - name: Run Phase 11.4 UK schedules and authenticated customer emulator tests
+        run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase114UkSchedule.integration.test.js"
