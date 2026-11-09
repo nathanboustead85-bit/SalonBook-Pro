@@ -20,6 +20,6 @@ test("11.10 preview does not save, modify or merge existing bookings",()=>{
 });
 test("11.10 production release remains excluded by debug condition",()=>{
  assert.match(main,/if \(BuildConfig.DEBUG\)/);
- assert.match(fs.readFileSync(path.join(root,"app/build.gradle.kts"),"utf8"),/applicationIdSuffix = ".devcalendar"/);
+ assert.match(fs.readFileSync(path.join(root,"app/build.gradle.kts"),"utf8"),/applicationIdSuffix = ".devcalendar1110"/);
  assert.equal(fs.readFileSync(path.join(root,"settings.gradle.kts"),"utf8").includes("phase118"),false);
 });
