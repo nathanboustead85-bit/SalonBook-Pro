@@ -8,7 +8,8 @@ function localParts(ms){
 }
 function localDay(ms){const p=localParts(ms);return p.year+"-"+p.month+"-"+p.day;}
 function minute(p){return Number(p.hour)*60+Number(p.minute);}
-function validateIntervals(list){return Array.isArray(list)&&list.every(i=>Array.isArray(i)&&i.length===2&&i.every(n=>Number.isInteger(n)&&n>=0&&n<=1440)&&i[0]<i[1]);}
+function bounds(i){return Array.isArray(i)?i:[i?.start,i?.end];}
+function validateIntervals(list){return Array.isArray(list)&&list.every(i=>{const [a,b]=bounds(i);return Number.isInteger(a)&&Number.isInteger(b)&&a>=0&&b<=1440&&a<b;});}
 function evaluateSchedule({startMs,durationMinutes,staff,closures=[]}){
  const endMs=startMs+durationMinutes*60000;
  if(!Number.isFinite(startMs)||!Number.isInteger(durationMinutes)||durationMinutes<=0)throw Error("invalid schedule request");
@@ -22,10 +23,10 @@ function evaluateSchedule({startMs,durationMinutes,staff,closures=[]}){
  if(!validateIntervals(hours)||!hours.length)throw Error("staff unavailable");
  const start=minute(a),end=minute(b)+1;
  if(end<=start)throw Error("DST fold or invalid local interval");
- if(!hours.some(([lo,hi])=>start>=lo&&end<=hi))throw Error("outside staff working hours");
+ if(!hours.some(i=>{const [lo,hi]=bounds(i);return start>=lo&&end<=hi;}))throw Error("outside staff working hours");
  const breaks=staff.breaks?.[String(weekday)]||[];
  if(!validateIntervals(breaks))throw Error("invalid breaks");
- if(breaks.some(([lo,hi])=>start<hi&&end>lo))throw Error("staff break");
+ if(breaks.some(i=>{const [lo,hi]=bounds(i);return start<hi&&end>lo;}))throw Error("staff break");
  // UTC interval must match wall-clock minutes, rejecting spring-forward gaps and autumn folds.
  if(end-start!==durationMinutes)throw Error("DST transition interval");
  return {localDay:day,startMinute:start,endMinute:end};
