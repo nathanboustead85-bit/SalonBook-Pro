@@ -1,0 +1,16 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const {DESIGN,OPERATIONS,validateContract}=require("./phase113BookingEngineContract");
+const {POLICY,evaluateReadiness}=require("./phase1050ProductionArchitecturePolicy");
+const index=fs.readFileSync(path.join(__dirname,"index.js"),"utf8");
+test("11.2 production remains on HOLD regardless of design",()=>{assert.equal(evaluateReadiness().approved,false);assert.equal(DESIGN.productionEnabled,false);assert.equal(DESIGN.customerBookingEnabled,false);});
+test("11.2 booking contract is not deployed or exported",()=>{assert.equal(index.includes("phase113BookingEngineContract"),false);assert.equal(index.includes("exports.createBooking"),false);});
+test("11.2 existing booking source and migration/mode excluded from planned writes",()=>{for(const p of DESIGN.prohibitedWrites)assert.equal(DESIGN.bookingWrites.includes(p),false);assert.ok(DESIGN.prohibitedWrites.includes(POLICY.prohibitedWrites[0]));});
+test("11.2 server authority, time zone, idempotency and payment defaults specified",()=>{assert.equal(DESIGN.timezone,"Europe/London");assert.match(DESIGN.slotPolicy,/server-calculated/);assert.match(DESIGN.idempotencyPolicy,/atomically/);assert.match(DESIGN.paymentPolicy,/pay-in-salon/);});
+test("11.3 all four design operations defined",()=>assert.deepEqual(OPERATIONS,["quoteAvailability","createBooking","cancelBooking","rescheduleBooking"]));
+const base={businessId:"demo1",serviceId:"cut",staffId:"staff1",startAt:"2026-11-10T10:00:00Z",customerRef:"demo-customer",idempotencyKey:"request-1"};
+test("11.3 valid synthetic booking request accepted as design validation only",()=>assert.equal(validateContract("createBooking",base).productionEnabled,false));
+test("11.3 unknown operation and injected privileged fields rejected",()=>{assert.throws(()=>validateContract("deleteBookings",base));assert.throws(()=>validateContract("createBooking",{...base,db:"production"}),/unexpected/);});
+test("11.3 incomplete and invalid booking requests rejected",()=>{assert.throws(()=>validateContract("createBooking",{...base,idempotencyKey:""}));assert.throws(()=>validateContract("createBooking",{...base,startAt:"2026-11-10 10:00"}),/UTC instant/);});
+test("11.3 date-only availability requires local calendar date",()=>{assert.equal(validateContract("quoteAvailability",{businessId:"demo1",serviceId:"cut",staffId:"staff1",localDate:"2026-11-10"}).valid,true);assert.throws(()=>validateContract("quoteAvailability",{businessId:"demo1",serviceId:"cut",staffId:"staff1",localDate:"tomorrow"}));});
+test("11.3 cancellation and reschedule require customer proof and idempotency",()=>{assert.throws(()=>validateContract("cancelBooking",{businessId:"demo1",bookingId:"booking1",customerProof:"proof"}));assert.equal(validateContract("rescheduleBooking",{businessId:"demo1",bookingId:"booking1",newStartAt:"2026-11-10T11:00:00Z",customerProof:"proof",idempotencyKey:"key"}).valid,true);});
