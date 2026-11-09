@@ -43,6 +43,10 @@ on:
       - 'functions/phase116OwnerCalendarBridge.js'
       - 'functions/phase116OwnerAuthorizer.js'
       - 'functions/phase116OwnerCalendarBridge.integration.test.js'
+      - 'functions/phase117DemoCalendarController.js'
+      - 'functions/phase117DemoCalendarController.test.js'
+      - 'demo/phase117/**'
+      - 'docs/phase-11-7-android-calendar-interface.md'
       - 'demo/phase116/**'
       - 'docs/phase-11-6-owner-calendar-bridge.md'
       - 'demo/phase115/**'
@@ -136,3 +140,5 @@ jobs:
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase115DemoJourney.integration.test.js"
       - name: Run Phase 11.6 isolated owner calendar integration tests
         run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase116OwnerCalendarBridge.integration.test.js"
+      - name: Run Phase 11.7 isolated Android calendar UI and reconnect tests
+        run: npx --yes firebase-tools@latest emulators:exec --project demo-boustio-legacy-init --only firestore,auth "node --test functions/phase117DemoCalendarController.test.js"
