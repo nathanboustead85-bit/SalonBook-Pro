@@ -1,0 +1,41 @@
+name: Boustio Phase 11.8 Isolated Android Demo APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [phase-9d4-teal-clients]
+    paths:
+      - 'demo/phase118/**'
+      - 'functions/phase118DemoAndroidCalendarServer.js'
+      - 'functions/phase118DemoAndroidCalendarServer.test.js'
+      - '.github/workflows/phase118-demo-android.yml'
+jobs:
+  isolated-demo-apk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Verify no production package or production Firebase configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -f demo/phase118/demoapp/google-services.json
+          ! grep -R -E 'salonbook-pro-ad5ff|com.salonbook.pro|SIGNING_KEYSTORE' demo/phase118
+          test -f demo/phase118/demoapp/src/main/res/xml/demo_network_security.xml
+      - name: Build separate unsigned debug-only APK
+        working-directory: demo/phase118
+        run: gradle --no-daemon :demoapp:assembleDebug
+      - name: Upload separate demo APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase118-Calendar-DEMO-ONLY
+          path: demo/phase118/demoapp/build/outputs/apk/debug/demoapp-debug.apk
+          if-no-files-found: error
+          retention-days: 7
