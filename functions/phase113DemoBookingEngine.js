@@ -42,11 +42,15 @@ function createDemoBookingEngine({db,verifyCustomer,scheduleValidator}={}){
    const duration=srv.get("durationMinutes");
    if(!Number.isInteger(duration)||duration<5||duration>480)deny("invalid duration");
    const end=start+duration*60000;
-   // Phase 11.4 optionally applies a trusted UK staff schedule validator.\n   // Original UTC demo schedule is retained for backward-compatible Phase 11.3 tests.
+   // Phase 11.4 optionally applies a trusted UK staff schedule validator.
+   // Original UTC demo schedule is retained for backward-compatible Phase 11.3 tests.
    const day=new Date(start).getUTCDay();
    const startMinute=new Date(start).getUTCHours()*60+new Date(start).getUTCMinutes();
    const endMinute=startMinute+duration;
-   if(scheduleValidator){\n    const closuresSnap=await tx.get(business);\n    scheduleValidator({startMs:start,durationMinutes:duration,staff:worker.data(),closures:closuresSnap.get("closures")||[]});\n   }else if(day===0||day===6||startMinute<540||endMinute>1020)deny("outside demo working hours");
+   if(scheduleValidator){
+    const closuresSnap=await tx.get(business);
+    scheduleValidator({startMs:start,durationMinutes:duration,staff:worker.data(),closures:closuresSnap.get("closures")||[]});
+   }else if(day===0||day===6||startMinute<540||endMinute>1020)deny("outside demo working hours");
    if(!Array.isArray(worker.get("serviceIds"))||!worker.get("serviceIds").includes(serviceId))deny("staff not qualified");
    // One transactionally read/written staff-day allocation document serialises all overlapping bookings.
    const dayId=startAt.slice(0,10);
