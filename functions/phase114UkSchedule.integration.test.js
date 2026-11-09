@@ -26,7 +26,7 @@ let seq=0;
 async function fixture(){
  const businessId="demo_uk_"+process.pid+"_"+(++seq);
  const business=db.collection("phase113DemoBusinesses").doc(businessId);
- await Promise.all([business.set({closures:[]}),business.collection("services").doc("haircut").set({active:true,durationMinutes:30}),business.collection("staff").doc("barber").set(schedule)]);
+ await Promise.all([business.set({closures:[]}),business.collection("services").doc("haircut").set({active:true,durationMinutes:30}),business.collection("staff").doc("barber").set({...schedule,weeklyHours:Object.fromEntries(Object.entries(schedule.weeklyHours).map(([day,intervals])=>[day,intervals.map(([start,end])=>({start,end}))])),breaks:Object.fromEntries(Object.entries(schedule.breaks).map(([day,intervals])=>[day,intervals.map(([start,end])=>({start,end}))]))})]);
  const engine=createDemoBookingEngine({db,verifyCustomer:async t=>t==="verified"?{uid:"customer_uk",verified:true}:null,scheduleValidator:evaluateSchedule});
  return {business,engine,req:{businessId,serviceId:"haircut",staffId:"barber",startAt:"2026-07-07T09:00:00.000Z",idempotencyKey:"request_uk",customerAccessToken:"verified"}};
 }
@@ -55,7 +55,7 @@ test("11.4 real Auth emulator verifies email-verified customer ID token",async()
  const response=await fetch("http://"+host+"/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=fake-emulator-key",{
   method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:custom,returnSecureToken:true})
  });
- assert.equal(response.ok,true,await response.text());
+ assert.equal(response.ok,true);
  const body=await response.json();
  const verify=createVerifiedCustomer({auth});
  const customer=await verify(body.idToken);
