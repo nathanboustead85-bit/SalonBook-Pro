@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
- <application android:networkSecurityConfig="@xml/debug_calendar_network_security">
+ <application android:label="Boustio Calendar DEV 11.10" android:networkSecurityConfig="@xml/debug_calendar_network_security">
   <activity android:name="com.salonbook.pro.debug.DemoCalendarActivity" android:exported="false"/>
  </application>
 </manifest>
