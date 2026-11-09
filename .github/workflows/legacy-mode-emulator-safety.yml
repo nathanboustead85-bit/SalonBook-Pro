@@ -98,6 +98,8 @@ on:
       - 'functions/phase1122BookingConflicts.test.js'
       - 'functions/phase1123SafeConflictResolution.js'
       - 'functions/phase1123SafeConflictResolution.test.js'
+      - 'functions/phase1124IdempotentCalendarSync.js'
+      - 'functions/phase1124IdempotentCalendarSync.test.js'
       - 'docs/phase-11-17-staging-readiness.md'
       - 'docs/phase-11-16-android-cloud-contract.md'
       - 'app/src/debug/**'
@@ -187,6 +189,8 @@ jobs:
         run: node --test functions/phase1112AndroidEmulatorAdapter.test.js
       - name: Run Phase 11.17 synthetic staging transport security tests
         run: node --test functions/phase1117StagingTransport.test.js
+      - name: Run Phase 11.24 idempotent calendar synchronization tests
+        run: node --test functions/phase1124IdempotentCalendarSync.test.js
       - name: Run Phase 11.23 conservative booking conflict resolution tests
         run: node --test functions/phase1123SafeConflictResolution.test.js
       - name: Run Phase 11.22 booking conflict detection tests
