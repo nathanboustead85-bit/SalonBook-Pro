@@ -41,7 +41,8 @@ android {
     buildTypes {
         getByName("debug") {
             applicationIdSuffix = ".devcalendar1110"
-            versionNameSuffix = "-calendar-dev"
+            versionNameSuffix = "-calendar-dev-11.13"
+            versionCode = 1113
         }
         getByName("release") {
             isMinifyEnabled = false
