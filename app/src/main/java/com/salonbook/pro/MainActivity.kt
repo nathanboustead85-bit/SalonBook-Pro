@@ -821,7 +821,7 @@ class MainActivity : Activity() {
             }
             val options = (0 until 1440 step 30).filter { start ->
                 start + duration <= 1440 &&
-                    withinWorkingHours(member.optString("hours"), date, start, start + duration) &&
+                    withinWorkingHours(member, date, start, start + duration) &&
                     bookings.none { other ->
                         other.id != existing?.id && other.date == date &&
                             other.staffId == staffId && other.duration > 0 &&
@@ -902,8 +902,7 @@ class MainActivity : Activity() {
                     message("This staff member already has an overlapping booking")
                     return@setOnClickListener
                 }
-                val hours = member.optString("hours")
-                if (!withinWorkingHours(hours, date, start, start + duration)) {
+                if (!withinWorkingHours(member, date, start, start + duration)) {
                     message("Outside staff working hours. Use e.g. Mon-Fri 09:00-17:00")
                     return@setOnClickListener
                 }
@@ -934,6 +933,25 @@ class MainActivity : Activity() {
     }
     private fun formatTime(minutes: Int): String =
         String.format(Locale.UK, "%02d:%02d", minutes / 60, minutes % 60)
+
+    private fun withinWorkingHours(member: JSONObject, date: String, start: Int, end: Int): Boolean {
+        val schedule = member.optJSONObject("weeklySchedule")
+        if (schedule != null) {
+            val parsed = runCatching {
+                SimpleDateFormat("yyyy-MM-dd", Locale.UK).apply { isLenient = false }.parse(date)
+            }.getOrNull() ?: return false
+            val day = listOf("sunday", "monday", "tuesday", "wednesday",
+                "thursday", "friday", "saturday")[
+                Calendar.getInstance().apply { time = parsed }.get(Calendar.DAY_OF_WEEK) - 1
+            ]
+            val period = schedule.optJSONObject(day) ?: return false
+            val from = runCatching { toMinutes(period.getString("open")) }.getOrNull() ?: return false
+            val until = runCatching { toMinutes(period.getString("close")) }.getOrNull() ?: return false
+            return from in 0..1439 && until in 1..1440 && from < until &&
+                start >= from && end <= until
+        }
+        return withinWorkingHours(member.optString("hours"), date, start, end)
+    }
 
     private fun withinWorkingHours(hours: String, date: String, start: Int, end: Int): Boolean {
         val pattern = Regex("^(?:(.+?)\\s+)?(\\d{2}:\\d{2})\\s*-\\s*(\\d{2}:\\d{2})$",
