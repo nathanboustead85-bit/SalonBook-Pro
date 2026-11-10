@@ -38,6 +38,7 @@ jobs:
         run: |
           test -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           echo "Android SDK: ${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+      # Re-run Firebase validation after refreshing the development JSON secret.
       - name: Firebase configuration guard tests
         run: node --test scripts/validateFirebaseDebugConfig.test.js
       - name: Install registered development Firebase configuration
