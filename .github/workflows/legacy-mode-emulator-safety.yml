@@ -104,6 +104,8 @@ on:
       - 'functions/phase1125OfflineCalendarReplay.test.js'
       - 'functions/phase1126ReconnectRecovery.js'
       - 'functions/phase1126ReconnectRecovery.test.js'
+      - 'functions/phase1127MultiDeviceCalendar.js'
+      - 'functions/phase1127MultiDeviceCalendar.test.js'
       - 'docs/phase-11-17-staging-readiness.md'
       - 'docs/phase-11-16-android-cloud-contract.md'
       - 'app/src/debug/**'
@@ -193,6 +195,8 @@ jobs:
         run: node --test functions/phase1112AndroidEmulatorAdapter.test.js
       - name: Run Phase 11.17 synthetic staging transport security tests
         run: node --test functions/phase1117StagingTransport.test.js
+      - name: Run Phase 11.27 multi-device calendar conflict and revision tests
+        run: node --test functions/phase1127MultiDeviceCalendar.test.js
       - name: Run Phase 11.26 reconnect interruption and recovery tests
         run: node --test functions/phase1126ReconnectRecovery.test.js
       - name: Run Phase 11.25 bounded offline replay safety tests
