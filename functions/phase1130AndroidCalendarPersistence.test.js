@@ -40,3 +40,16 @@ test("11.30 debug-only source cannot write production appointments",()=>{
  assert.doesNotMatch(cache+source,/saveBookings\(|bookings.add\(|FirebaseFirestore|collection\(/);
  assert.match(cache,/Debug-only, device-local cache/);
 });
+
+test("11.30 appointment availability reads per-day staff weeklySchedule",()=>{
+ assert.match(main,/member\.optJSONObject\("weeklySchedule"\)/);
+ assert.match(main,/schedule\.optJSONObject\(day\) \?: return false/);
+ assert.match(main,/period\.getString\("open"\)/);
+ assert.match(main,/period\.getString\("close"\)/);
+ assert.match(main,/withinWorkingHours\(member, date, start, start \+ duration\)/);
+ assert.doesNotMatch(main,/withinWorkingHours\(member\.optString\("hours"\), date, start, start \+ duration\)/);
+ const date=new Date("2026-11-12T12:00:00Z");
+ assert.equal(date.getUTCDay(),4);
+ const open=9*60,close=17*60,start=9*60,duration=30;
+ assert.ok(start>=open && start+duration<=close);
+});
