@@ -43,11 +43,11 @@ jobs:
         run: node --test scripts/validateFirebaseDebugConfig.test.js
       - name: Install registered development Firebase configuration
         env:
-          BOUSTIO_DEBUG_GOOGLE_SERVICES_JSON: ${{ secrets.BOUSTIO_DEBUG_GOOGLE_SERVICES_JSON }}
+          BOUSTIO_DEBUG_GOOGLE_SERVICES_B64: ${{ secrets.BOUSTIO_DEBUG_GOOGLE_SERVICES_B64 }}
         run: |
-          test -n "$BOUSTIO_DEBUG_GOOGLE_SERVICES_JSON" || { echo "::error::Register com.salonbook.pro.devcalendar1110 in Firebase, then set repository secret BOUSTIO_DEBUG_GOOGLE_SERVICES_JSON to its downloaded google-services.json"; exit 1; }
+          test -n "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" || { echo "::error::Register com.salonbook.pro.devcalendar1110 in Firebase, then set repository secret BOUSTIO_DEBUG_GOOGLE_SERVICES_B64 to Base64 encoding of its downloaded google-services.json"; exit 1; }
           mkdir -p app/src/debug
-          printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_JSON" > app/src/debug/google-services.json
+          printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
       - name: Phase 11.30 Android persistence safety checks
         run: node --test functions/phase1130AndroidCalendarPersistence.test.js
