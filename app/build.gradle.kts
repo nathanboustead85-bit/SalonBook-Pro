@@ -42,6 +42,10 @@ android {
         getByName("debug") {
             applicationIdSuffix = ".devcalendar1110"
             versionNameSuffix = "-calendar-dev-11.13"
+            // Use the existing stable signing identity only when CI supplies it.
+            if (!System.getenv("SIGNING_KEYSTORE_PATH").isNullOrBlank()) {
+                signingConfig = signingConfigs.getByName("salonbookRelease")
+            }
             // Development build keeps the production versionCode unchanged.
         }
         getByName("release") {
