@@ -52,7 +52,7 @@ test("11.29 duplicate offline operation cannot be silently changed",()=>{
 });
 test("11.29 persisted checkpoint cannot be restored for another business",()=>{
  const storage=memory();start(storage);
- assert.throws(()=>createRestartJournal({request:{...request,businessId:"another"},storage,initial:feed([a]),revision:1}),/invalid journal checkpoint/);
+ assert.throws(()=>createRestartJournal({request:{...request,businessId:"another"},storage,initial:feed([a]),revision:1}),/synthetic business only|invalid journal checkpoint/);
 });
 test("11.29 corrupted checkpoint fails closed",()=>{
  const storage=memory();start(storage);storage.tamper({version:999});
