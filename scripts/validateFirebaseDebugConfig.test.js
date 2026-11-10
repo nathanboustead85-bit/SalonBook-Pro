@@ -14,7 +14,8 @@ test('development build remains isolated from production installation', () => {
 });
 test('Firebase debug configuration is not silently substituted by production', () => {
   const workflow = fs.readFileSync(path.join(root,'.github/workflows/boustio-phase-1130-android-persistence.yml'),'utf8');
-  assert.match(workflow, /BOUSTIO_DEBUG_GOOGLE_SERVICES_JSON/);
+  assert.match(workflow, /BOUSTIO_DEBUG_GOOGLE_SERVICES_B64/);
   assert.match(workflow, /validateFirebaseDebugConfig\.js/);
-  assert.match(workflow, /test -n "\$BOUSTIO_DEBUG_GOOGLE_SERVICES_JSON"/);
+  assert.match(workflow, /base64 --decode/);
+  assert.match(workflow, /test -n "\$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64"/);
 });
