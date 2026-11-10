@@ -30,7 +30,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      # The hosted runner already includes an Android SDK; setup-android@v3
+      # attempts to install the removed 'tools' package on newer runners.
+      - name: Verify Android SDK
+        run: |
+          test -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "Android SDK: ${ANDROID_HOME:-/usr/local/lib/android/sdk}"
       - name: Phase 11.30 Android persistence safety checks
         run: node --test functions/phase1130AndroidCalendarPersistence.test.js
       - name: Phase 11.29 recovery regression
