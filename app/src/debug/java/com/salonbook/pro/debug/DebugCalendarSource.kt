@@ -8,7 +8,7 @@ import com.salonbook.pro.DevelopmentCalendarSource
  * Explicitly opt-in emulator session. Credentials remain in memory only.
  * No configuration means no network calls and no invented appointments.
  */
-class DebugCalendarSource : DevelopmentCalendarSource {
+class DebugCalendarSource(private val context: android.content.Context) : DevelopmentCalendarSource {
     companion object {
         @Volatile private var demoBusiness: String? = null
         @Volatile private var demoOwnerToken: String? = null
@@ -21,6 +21,7 @@ class DebugCalendarSource : DevelopmentCalendarSource {
         fun clear() { demoBusiness = null; demoOwnerToken = null }
     }
     private val session = UnifiedCalendarSession()
+    private val cache = DebugCalendarDiskCache(context)
     override fun display(date: String, onChange: (CalendarFeedState) -> Unit) {
         session.stop()
         val id = demoBusiness
@@ -29,7 +30,13 @@ class DebugCalendarSource : DevelopmentCalendarSource {
             onChange(CalendarFeedState("Emulator not connected • no website bookings loaded", emptyList()))
             return
         }
+        cache.load(id, date)?.let { saved ->
+            onChange(CalendarFeedState("Saved emulator preview • awaiting refresh", saved.map {
+                CalendarFeedItem(it.id, it.time, it.service, it.staff, it.status)
+            }))
+        }
         session.start(id, token, date) { state ->
+            if (state.connected) runCatching { cache.save(id, date, state.appointments) }
             onChange(CalendarFeedState(state.message, state.appointments.map {
                 CalendarFeedItem(it.id, it.time, it.service, it.staff, it.status)
             }))
