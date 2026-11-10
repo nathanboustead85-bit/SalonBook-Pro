@@ -171,6 +171,15 @@ class CloudSyncManager {
                                 "Account changed during sync"
                             }
                             val latest = transaction.get(reference)
+                            // If another device changes the snapshot between the
+                            // verified preflight and this transaction, fail closed.
+                            // Do not replace an edited or deleted appointment.
+                            check(latest.exists() == preflight.exists() &&
+                                (!latest.exists() ||
+                                    latest.getString("json") == preflight.getString("json"))) {
+                                "Cloud bookings changed during upload. " +
+                                    "Refresh before trying again."
+                            }
                             if (latest.exists()) {
                                 check(latest.getLong("schemaVersion") == 1L) {
                                     "Unsupported cloud booking schema; upload blocked"
