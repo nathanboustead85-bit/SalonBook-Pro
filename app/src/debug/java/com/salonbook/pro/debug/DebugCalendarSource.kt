@@ -37,7 +37,9 @@ class DebugCalendarSource(private val context: android.content.Context) : Develo
         }
         session.start(id, token, date) { state ->
             if (state.connected) runCatching { cache.save(id, date, state.appointments) }
-            onChange(CalendarFeedState(state.message, state.appointments.map {
+            val shown = if (state.connected) state.appointments else cache.load(id, date).orEmpty()
+            val message = if (!state.connected && shown.isNotEmpty()) "Offline • saved emulator preview (not live)" else state.message
+            onChange(CalendarFeedState(message, shown.map {
                 CalendarFeedItem(it.id, it.time, it.service, it.staff, it.status)
             }))
         }
