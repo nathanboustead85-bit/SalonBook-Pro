@@ -1,0 +1,33 @@
+name: Boustio Phase 11.29 Restart Recovery
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - phase-9d4-teal-clients
+    paths:
+      - 'functions/phase1129RestartJournal.js'
+      - 'functions/phase1129RestartJournal.test.js'
+      - 'functions/phase1127MultiDeviceCalendar.js'
+      - '.github/workflows/boustio-phase-1129-restart.yml'
+permissions:
+  contents: read
+jobs:
+  restart-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+      GCLOUD_PROJECT: demo-boustio-legacy-init
+      GOOGLE_CLOUD_PROJECT: demo-boustio-legacy-init
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 11.27 multi-device baseline
+        run: node --test functions/phase1127MultiDeviceCalendar.test.js
+      - name: Phase 11.28 reliability regression
+        run: node --test functions/phase1128MultiDeviceReliability.test.js
+      - name: Phase 11.29 restart and persistent recovery
+        run: node --test functions/phase1129RestartJournal.test.js
