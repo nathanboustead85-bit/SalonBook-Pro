@@ -606,7 +606,8 @@ class MainActivity : Activity() {
         if (debugCalendarSource == null) {
             debugCalendarSource = runCatching {
                 Class.forName("com.salonbook.pro.debug.DebugCalendarSource")
-                    .getDeclaredConstructor().newInstance() as DevelopmentCalendarSource
+                    .getDeclaredConstructor(android.content.Context::class.java)
+                    .newInstance(this) as DevelopmentCalendarSource
             }.getOrNull()
         }
         debugCalendarSource?.display(date) { state ->
