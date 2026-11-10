@@ -9,6 +9,8 @@ on:
       - 'app/src/debug/java/com/salonbook/pro/debug/DebugCalendarSource.kt'
       - 'app/src/main/java/com/salonbook/pro/MainActivity.kt'
       - 'functions/phase1130AndroidCalendarPersistence.test.js'
+      - 'scripts/validateFirebaseDebugConfig.js'
+      - 'scripts/validateFirebaseDebugConfig.test.js'
       - '.github/workflows/boustio-phase-1130-android-persistence.yml'
 permissions:
   contents: read
@@ -36,6 +38,16 @@ jobs:
         run: |
           test -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           echo "Android SDK: ${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+      - name: Firebase configuration guard tests
+        run: node --test scripts/validateFirebaseDebugConfig.test.js
+      - name: Install registered development Firebase configuration
+        env:
+          BOUSTIO_DEBUG_GOOGLE_SERVICES_JSON: ${{ secrets.BOUSTIO_DEBUG_GOOGLE_SERVICES_JSON }}
+        run: |
+          test -n "$BOUSTIO_DEBUG_GOOGLE_SERVICES_JSON" || { echo "::error::Register com.salonbook.pro.devcalendar1110 in Firebase, then set repository secret BOUSTIO_DEBUG_GOOGLE_SERVICES_JSON to its downloaded google-services.json"; exit 1; }
+          mkdir -p app/src/debug
+          printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_JSON" > app/src/debug/google-services.json
+          node scripts/validateFirebaseDebugConfig.js
       - name: Phase 11.30 Android persistence safety checks
         run: node --test functions/phase1130AndroidCalendarPersistence.test.js
       - name: Phase 11.29 recovery regression
