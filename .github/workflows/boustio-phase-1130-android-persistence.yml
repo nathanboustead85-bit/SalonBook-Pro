@@ -1,0 +1,46 @@
+name: Boustio Phase 11.30 Android Restart Persistence
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - phase-9d4-teal-clients
+    paths:
+      - 'app/src/debug/java/com/salonbook/pro/debug/DebugCalendarDiskCache.kt'
+      - 'app/src/debug/java/com/salonbook/pro/debug/DebugCalendarSource.kt'
+      - 'app/src/main/java/com/salonbook/pro/MainActivity.kt'
+      - 'functions/phase1130AndroidCalendarPersistence.test.js'
+      - '.github/workflows/boustio-phase-1130-android-persistence.yml'
+permissions:
+  contents: read
+jobs:
+  android-restart-persistence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+      GCLOUD_PROJECT: demo-boustio-legacy-init
+      GOOGLE_CLOUD_PROJECT: demo-boustio-legacy-init
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Phase 11.30 Android persistence safety checks
+        run: node --test functions/phase1130AndroidCalendarPersistence.test.js
+      - name: Phase 11.29 recovery regression
+        run: node --test functions/phase1129RestartJournal.test.js
+      - name: Phase 11.13 Android calendar contract regression
+        run: node --test functions/phase1113UnifiedCalendarAndroid.test.js
+      - name: Compile Android debug APK
+        run: bash ./gradlew :app:assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: boustio-phase-1130-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
