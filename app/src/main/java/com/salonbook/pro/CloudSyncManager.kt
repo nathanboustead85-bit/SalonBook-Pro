@@ -79,6 +79,31 @@ class CloudSyncManager {
     }
 
     /**
+     * Reject a stale phone snapshot that would delete a booking created on
+     * another device. IDs are checked inside the Firestore transaction.
+     * This is a conservative legacy safety gate, not a two-way merge.
+     */
+    private fun assertNoRemoteBookingsLost(remoteJson: String?, localJson: String) {
+        if (remoteJson == null) return
+        val remote = JSONArray(remoteJson)
+        val local = JSONArray(localJson)
+        val localIds = mutableSetOf<String>()
+        for (index in 0 until local.length()) {
+            val id = local.getJSONObject(index).optString("id")
+            require(id.isNotBlank() && localIds.add(id)) {
+                "Invalid or duplicate local booking ID; upload blocked"
+            }
+        }
+        for (index in 0 until remote.length()) {
+            val id = remote.getJSONObject(index).optString("id")
+            check(id.isNotBlank() && id in localIds) {
+                "Cloud contains a booking missing from this phone. " +
+                    "Upload blocked to protect another device's data."
+            }
+        }
+    }
+
+    /**
      * Upload services, staff or bookings.
      *
      * Booking uploads must first establish
@@ -124,63 +149,53 @@ class CloudSyncManager {
             }
 
             /*
-             * A server read is required before
-             * attempting a legacy booking write.
-             *
-             * The migration marker itself is
-             * intentionally not client-readable.
+             * Phase 11.33: preserve the legacy server preflight, then use
+             * an atomic Firestore transaction. A concurrent writer forces
+             * the transaction to retry and recheck its latest booking IDs.
+             * Never silently remove another device's newly added booking.
              */
             reference.get(Source.SERVER)
-                .addOnSuccessListener {
-
+                .addOnSuccessListener { preflight ->
                     try {
                         check(userId() == ownerAtStart) {
                             "Account changed during sync"
                         }
-
-                        /*
-                         * Firestore rules must reject
-                         * this write if migration has
-                         * completed.
-                         *
-                         * A successful preflight read
-                         * alone is not sufficient.
-                         */
-                        reference.set(data)
-                            .addOnSuccessListener {
-                                finish(
-                                    Result.success(Unit)
-                                )
+                        if (preflight.exists()) {
+                            check(preflight.getLong("schemaVersion") == 1L) {
+                                "Unsupported cloud booking schema; upload blocked"
                             }
-                            .addOnFailureListener { error ->
-                                finish(
-                                    Result.failure(
-                                        IllegalStateException(
-                                            "Booking upload was not " +
-                                            "accepted by Firestore. " +
-                                            "It may be blocked by " +
-                                            "migration protection.",
-                                            error
-                                        )
-                                    )
-                                )
+                            assertNoRemoteBookingsLost(preflight.getString("json"), json)
+                        }
+                        db.runTransaction { transaction ->
+                            check(userId() == ownerAtStart) {
+                                "Account changed during sync"
                             }
-
+                            val latest = transaction.get(reference)
+                            if (latest.exists()) {
+                                check(latest.getLong("schemaVersion") == 1L) {
+                                    "Unsupported cloud booking schema; upload blocked"
+                                }
+                                assertNoRemoteBookingsLost(latest.getString("json"), json)
+                            }
+                            transaction.set(reference, data)
+                            Unit
+                        }.addOnSuccessListener {
+                            finish(Result.success(Unit))
+                        }.addOnFailureListener { error ->
+                            finish(Result.failure(IllegalStateException(
+                                "Booking cloud update blocked or failed. " +
+                                    "Review the server bookings before retrying.", error
+                            )))
+                        }
                     } catch (e: Exception) {
                         finish(Result.failure(e))
                     }
                 }
                 .addOnFailureListener { error ->
-                    finish(
-                        Result.failure(
-                            IllegalStateException(
-                                "Cannot verify cloud " +
-                                "connectivity. Legacy booking " +
-                                "upload has been blocked.",
-                                error
-                            )
-                        )
-                    )
+                    finish(Result.failure(IllegalStateException(
+                        "Cannot verify cloud connectivity. " +
+                            "Legacy booking upload has been blocked.", error
+                    )))
                 }
 
         } catch (e: Exception) {
