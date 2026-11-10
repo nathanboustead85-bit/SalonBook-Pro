@@ -11,7 +11,7 @@ test("11.33 server preflight and atomic transaction guard legacy bookings",()=>{
  assert.match(source,/db\.runTransaction \{ transaction ->/);
  assert.match(source,/transaction\.get\(reference\)/);
  assert.match(source,/transaction\.set\(reference, data\)/);
- assert.doesNotMatch(source,/reference\.set\(data\)[\s\S]*?\/\*\*\s*\* Download verified server data/);
+ assert.match(source,/if \(key != "bookings"\) \{/);
 });
 test("11.33 rejects remote booking IDs missing locally and duplicate IDs",()=>{
  assert.match(source,/id\.isNotBlank\(\) && localIds\.add\(id\)/);
