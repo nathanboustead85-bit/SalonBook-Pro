@@ -11,6 +11,7 @@ on:
       - 'app/build.gradle.kts'
       - 'functions/phase1130AndroidCalendarPersistence.test.js'
       - 'functions/phase1131StableSigning.test.js'
+      - 'functions/phase1132MultiDeviceReadiness.test.js'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
       - '.github/workflows/boustio-phase-1130-android-persistence.yml'
@@ -51,6 +52,8 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.32 multi-device readiness checks
+        run: node --test functions/phase1132MultiDeviceReadiness.test.js
       - name: Phase 11.31 stable signing guard tests
         run: node --test functions/phase1131StableSigning.test.js
       - name: Phase 11.30 Android persistence safety checks
