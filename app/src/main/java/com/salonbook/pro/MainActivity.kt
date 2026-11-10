@@ -513,6 +513,62 @@ class MainActivity : Activity() {
             }
     }
 
+    // Phase 11.32: server-confirmed, read-only comparison. Never auto-overwrite
+    // local appointments from a different device or a stale cloud snapshot.
+    private fun showLegacyMultiDeviceReadiness(date: String) {
+        section("Multi-device readiness · read only")
+        val status = label("Checking server-confirmed booking data…", 13f, muted)
+        container.addView(status)
+        val owner = FirebaseAuth.getInstance().currentUser
+        if (owner == null || !owner.isEmailVerified) {
+            status.text = "Sign in with a verified account to compare devices."
+            return
+        }
+        FirebaseFirestore.getInstance().collection("users").document(owner.uid)
+            .collection("liveData").document("bookings").get(Source.SERVER)
+            .addOnSuccessListener { document ->
+                if (currentScreen != "calendar" || selectedDate != date ||
+                    isFinishing || isDestroyed || FirebaseAuth.getInstance().currentUser?.uid != owner.uid) {
+                    return@addOnSuccessListener
+                }
+                if (!document.exists()) {
+                    status.text = "No server booking snapshot. Automatic device merge is disabled."
+                    return@addOnSuccessListener
+                }
+                try {
+                    if (document.getLong("schemaVersion") != 1L) {
+                        status.text = "Unsupported cloud booking schema. No changes made."
+                        return@addOnSuccessListener
+                    }
+                    val remote = JSONArray(document.getString("json") ?: throw IllegalStateException("Missing booking data"))
+                    val cloudIds = mutableSetOf<String>()
+                    var cloudCount = 0
+                    for (i in 0 until remote.length()) {
+                        val entry = remote.getJSONObject(i)
+                        if (entry.optString("date") == date) {
+                            cloudCount++
+                            cloudIds.add(entry.optString("id"))
+                        }
+                    }
+                    val local = bookings.filter { it.date == date }
+                    val localIds = local.map { it.id }.toSet()
+                    status.text = if (cloudIds == localIds && cloudCount == local.size) {
+                        "Server and phone agree on ${local.size} appointment(s) for this date. Read-only check."
+                    } else {
+                        "Device difference: phone ${local.size}, server $cloudCount appointment(s). " +
+                            "Do not overwrite either copy. Review both before synchronising."
+                    }
+                } catch (_: Exception) {
+                    status.text = "Cloud booking data could not be compared safely. No changes made."
+                }
+            }
+            .addOnFailureListener {
+                if (currentScreen == "calendar" && selectedDate == date && !isFinishing && !isDestroyed) {
+                    status.text = "Server comparison unavailable. Local appointments unchanged."
+                }
+            }
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -583,6 +639,7 @@ class MainActivity : Activity() {
             showDebugWebsiteBookingPreview(selectedDate)
         }
         showSharedCloudAppointments(selectedDate)
+        showLegacyMultiDeviceReadiness(selectedDate)
         section("Daily schedule · local appointments")
         if (daily.isEmpty()) {
             val empty = panel()
