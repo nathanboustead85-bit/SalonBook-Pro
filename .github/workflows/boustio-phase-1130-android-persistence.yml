@@ -42,8 +42,11 @@ jobs:
         run: node --test functions/phase1129RestartJournal.test.js
       - name: Phase 11.13 Android calendar contract regression
         run: node --test functions/phase1113UnifiedCalendarAndroid.test.js
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
       - name: Compile Android debug APK
-        run: bash ./gradlew :app:assembleDebug --no-daemon
+        run: gradle --no-daemon :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: boustio-phase-1130-debug-apk
