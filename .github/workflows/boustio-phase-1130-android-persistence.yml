@@ -13,6 +13,7 @@ on:
       - 'functions/phase1131StableSigning.test.js'
       - 'functions/phase1132MultiDeviceReadiness.test.js'
       - 'functions/phase1133CloudConflictGuard.test.js'
+      - 'functions/phase1134ConcurrentBookingConflict.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
@@ -54,6 +55,8 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.34 concurrent booking conflict simulation
+        run: node --test functions/phase1134ConcurrentBookingConflict.test.js
       - name: Phase 11.33 cloud conflict guard checks
         run: node --test functions/phase1133CloudConflictGuard.test.js
       - name: Phase 11.32 multi-device readiness checks
