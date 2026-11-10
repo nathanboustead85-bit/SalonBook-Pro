@@ -8,7 +8,9 @@ on:
       - 'app/src/debug/java/com/salonbook/pro/debug/DebugCalendarDiskCache.kt'
       - 'app/src/debug/java/com/salonbook/pro/debug/DebugCalendarSource.kt'
       - 'app/src/main/java/com/salonbook/pro/MainActivity.kt'
+      - 'app/build.gradle.kts'
       - 'functions/phase1130AndroidCalendarPersistence.test.js'
+      - 'functions/phase1131StableSigning.test.js'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
       - '.github/workflows/boustio-phase-1130-android-persistence.yml'
@@ -49,6 +51,8 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.31 stable signing guard tests
+        run: node --test functions/phase1131StableSigning.test.js
       - name: Phase 11.30 Android persistence safety checks
         run: node --test functions/phase1130AndroidCalendarPersistence.test.js
       - name: Phase 11.29 recovery regression
@@ -58,7 +62,28 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Compile Android debug APK
+      - name: Restore stable Android signing keystore
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for value in SIGNING_KEYSTORE_BASE64 SIGNING_STORE_PASSWORD SIGNING_KEY_ALIAS SIGNING_KEY_PASSWORD; do
+            if [[ -z "${!value}" ]]; then
+              echo "::error::Missing stable signing secret: $value"
+              exit 1
+            fi
+          done
+          printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/boustio-stable.jks"
+          chmod 600 "$RUNNER_TEMP/boustio-stable.jks"
+      - name: Compile consistently signed Android debug APK
+        env:
+          SIGNING_KEYSTORE_PATH: ${{ runner.temp }}/boustio-stable.jks
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: gradle --no-daemon :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
