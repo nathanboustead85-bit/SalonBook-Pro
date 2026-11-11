@@ -23,13 +23,10 @@ on:
       - 'functions/phase1141AndroidRecoveryRehearsal.test.js'
       - 'functions/phase1142OfflineSyncPending.test.js'
       - 'functions/phase1143OfflineReconnectEmulator.test.js'
-      - 'functions/phase1133CloudConflictGuard.test.js'
       - 'functions/phase1144OfflineReconnectRehearsal.test.js'
       - 'functions/phase1145PendingSyncReview.test.js'
       - 'functions/phase1146StaleBookingEditGuard.test.js'
-      - 'functions/phase1143OfflineReconnectEmulator.test.js'
       - 'functions/phase1147TwoDeviceConflictEmulator.test.js'
-      - 'functions/phase1146StaleBookingEditGuard.test.js'
       - 'functions/phase1148ConflictRecoveryReview.test.js'
       - 'functions/phase1149VerifiedCloudBaseline.test.js'
       - 'functions/phase1150VerifiedBookingEditEmulator.test.js'
@@ -37,8 +34,8 @@ on:
       - 'functions/phase1152BookingSyncStatus.test.js'
       - 'functions/phase1153IsolatedAndroidEditRehearsal.test.js'
       - 'functions/phase1154SafeCloudEditRecoveryEmulator.test.js'
-      - 'functions/phase1147TwoDeviceConflictEmulator.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
+      - 'scripts/phase1155TestReliability.test.js'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
       - '.github/workflows/boustio-phase-1130-android-persistence.yml'
@@ -69,6 +66,9 @@ jobs:
           test -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           echo "Android SDK: ${ANDROID_HOME:-/usr/local/lib/android/sdk}"
       # Re-run Firebase validation using the newly configured Base64 secret.
+      - name: Phase 11.55 fast booking guard regression preflight
+        run: |
+          node --test scripts/phase1155TestReliability.test.js functions/phase1133CloudConflictGuard.test.js functions/phase1146StaleBookingEditGuard.test.js functions/phase1153IsolatedAndroidEditRehearsal.test.js functions/phase1152BookingSyncStatus.test.js
       - name: Firebase configuration guard tests
         run: node --test scripts/validateFirebaseDebugConfig.test.js
       - name: Install registered development Firebase configuration
