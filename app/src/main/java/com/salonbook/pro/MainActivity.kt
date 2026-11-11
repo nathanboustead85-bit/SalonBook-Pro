@@ -2068,7 +2068,7 @@ class MainActivity : Activity() {
     }
 
     private fun showClientProfile(name: String) {
-        screen("Client Profile", name, "client_profile")
+        screen("Client profile", "Everything about your client, in one place.", "client_profile")
         val key = clientProfileKey(name)
         val saved = runCatching {
             JSONObject(prefs.getString(key, "{}") ?: "{}")
@@ -2076,10 +2076,26 @@ class MainActivity : Activity() {
         val history = bookings.filter { it.client.trim().equals(name.trim(), ignoreCase = true) }
             .sortedWith(compareByDescending<Booking> { it.date }.thenByDescending { it.time })
         val card = panel()
-        card.addView(label(name, 22f, dark, true))
-        card.addView(label("${history.size} appointments", 14f, muted))
+        val identity = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        val avatar = label(name.trim().take(1).uppercase(Locale.UK), 24f, orange, true).apply {
+            gravity = Gravity.CENTER
+            background = rounded(paleOrange, 22)
+        }
+        identity.addView(avatar, LinearLayout.LayoutParams(dp(64), dp(64)).apply {
+            marginEnd = dp(16)
+        })
+        val heading = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        heading.addView(label("CLIENT PROFILE", 12f, orange, true))
+        heading.addView(label(name, 22f, dark, true))
+        heading.addView(label("${history.size} appointment${if (history.size == 1) "" else "s"}", 13f, muted))
+        identity.addView(heading, LinearLayout.LayoutParams(0, -2, 1f))
+        card.addView(identity)
         addPanel(card)
         section("Contact details")
+        container.addView(label("Private information, available when you need it.", 13f, muted))
         val contact = panel()
         fun input(hint: String, value: String): EditText = EditText(this).apply {
             this.hint = hint
@@ -2203,6 +2219,7 @@ class MainActivity : Activity() {
             }
         }
         section("Appointment history")
+        container.addView(label("Previous visits, shown newest first.", 13f, muted))
         if (history.isEmpty()) text("No appointments recorded.")
         history.forEach { bookingCard(it) }
         button("Back to Clients") { showClients() }
