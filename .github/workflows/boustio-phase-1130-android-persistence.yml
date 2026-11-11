@@ -33,6 +33,7 @@ on:
       - 'functions/phase1151BookingSaveAcknowledgementEmulator.test.js'
       - 'functions/phase1152BookingSyncStatus.test.js'
       - 'functions/phase1153IsolatedAndroidEditRehearsal.test.js'
+      - 'functions/phase1154SafeCloudEditRecoveryEmulator.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
@@ -74,6 +75,10 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.54 safe cloud edit and recovery emulator integration
+        run: |
+          npm --prefix functions install --no-audit --no-fund
+          GCLOUD_PROJECT=demo-boustio-phase-1154 GOOGLE_CLOUD_PROJECT=demo-boustio-phase-1154 npx --yes firebase-tools@14 emulators:exec --project demo-boustio-phase-1154 --only firestore 'GCLOUD_PROJECT=demo-boustio-phase-1154 node --test functions/phase1154SafeCloudEditRecoveryEmulator.test.js'
       - name: Phase 11.53 isolated Android appointment edit rehearsal checks
         run: node --test functions/phase1153IsolatedAndroidEditRehearsal.test.js
       - name: Phase 11.52 Android booking sync status safety checks
