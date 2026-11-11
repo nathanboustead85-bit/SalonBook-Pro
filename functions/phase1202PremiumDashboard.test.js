@@ -3,7 +3,7 @@ const test=require("node:test"),assert=require("node:assert/strict"),fs=require(
 const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
 const a=src.indexOf("private fun showDashboard()"),b=src.indexOf("private fun shiftDate(",a),dash=src.slice(a,b);
 test("12.2 dashboard uses premium welcome and branded hero",()=>{assert.match(dash,/Good to see you/);assert.match(dash,/YOUR DAY  •  BOUSTIO/);});
-test("12.2 upcoming appointments are derived only from local booking records",()=>{assert.match(dash,/bookings\.filter \{ it\.date >= today\(\) \}/);assert.match(dash,/take\(3\)/);assert.match(dash,/sortedWith\(compareBy<Booking>/);});
+test("12.2 upcoming appointments are derived only from local booking records",()=>{assert.match(dash,/val upcomingBookings = bookings\.filter/);assert.match(dash,/it\.date > today\(\)/);assert.match(dash,/it\.time >= currentClock/);assert.match(dash,/val nextBookings = upcomingBookings/);assert.match(dash,/take\(3\)/);assert.match(dash,/sortedWith\(compareBy<Booking>/);});
 test("12.2 empty schedule has helpful message",()=>{assert.match(dash,/Your schedule is clear/);});
 test("12.2 upcoming cards show date time client and service",()=>{for(const field of ["appointment.time","appointment.date","appointment.client","appointment.service"])assert.ok(dash.includes(field));});
 test("12.2 existing booking navigation remains available",()=>{assert.match(dash,/bookingDialog\(defaultDate = today\(\)\)/);assert.match(dash,/showCalendar\(\)/);assert.match(dash,/showAppointments\(\)/);});
