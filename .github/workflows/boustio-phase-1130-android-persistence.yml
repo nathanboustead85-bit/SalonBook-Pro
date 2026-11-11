@@ -27,6 +27,7 @@ on:
       - 'functions/phase1145PendingSyncReview.test.js'
       - 'functions/phase1146StaleBookingEditGuard.test.js'
       - 'functions/phase1147TwoDeviceConflictEmulator.test.js'
+      - 'functions/phase1148ConflictRecoveryReview.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
@@ -68,6 +69,8 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.48 read-only conflict recovery Android safety checks
+        run: node --test functions/phase1148ConflictRecoveryReview.test.js
       - name: Phase 11.47 isolated two-device conflict Firestore integration
         run: |
           npm --prefix functions install --no-audit --no-fund
