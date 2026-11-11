@@ -867,6 +867,18 @@ class MainActivity : Activity() {
             pickDate(selectedDate) { selectedDate = it; showCalendar() }
         }
         button("+ Add Appointment") { bookingDialog(defaultDate = selectedDate) }
+        // Phase 11.42: never mistake a locally saved booking for a cloud-confirmed one.
+        val pendingOwner = FirebaseAuth.getInstance().currentUser?.uid
+        if (pendingOwner != null &&
+            prefs.getString("bookingSyncPendingOwner", null) == pendingOwner) {
+            section("Cloud sync needs review · phone bookings preserved")
+            container.addView(label(
+                "A previous cloud upload was not confirmed. Your appointments are saved " +
+                    "on this phone. Review cloud booking differences before taking action. " +
+                    "Nothing will be uploaded automatically on reconnect.",
+                13f, muted))
+        }
+
         val daily = bookings.filter { it.date == selectedDate }.sortedBy { it.time }
         val summary = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -1724,14 +1736,29 @@ class MainActivity : Activity() {
             })
         }
         val json = array.toString()
-        prefs.edit().putString("bookings", json).apply()
-        if (FirebaseAuth.getInstance().currentUser?.isEmailVerified == true) {
+        // Phase 11.42: persist local data first, then record unconfirmed upload
+        // until the server acknowledges THIS exact snapshot. No automatic retry.
+        val ownerAtSave = FirebaseAuth.getInstance().currentUser
+        val editor = prefs.edit().putString("bookings", json)
+        if (ownerAtSave != null && ownerAtSave.isEmailVerified) {
+            editor.putString("bookingSyncPendingOwner", ownerAtSave.uid)
+                .putString("bookingSyncPendingJson", json)
+        }
+        editor.apply()
+        if (ownerAtSave != null && ownerAtSave.isEmailVerified) {
             CloudSyncManager().upload("bookings", json) { result ->
-                result.exceptionOrNull()?.let { error ->
-                    runOnUiThread {
-                        if (!isFinishing && !isDestroyed) {
-                            message("Cloud sync failed: ${error.localizedMessage ?: "Unknown error"}")
+                runOnUiThread {
+                    if (FirebaseAuth.getInstance().currentUser?.uid != ownerAtSave.uid) return@runOnUiThread
+                    if (result.isSuccess) {
+                        // A newer local edit must not be marked synced by an older callback.
+                        if (prefs.getString("bookingSyncPendingOwner", null) == ownerAtSave.uid &&
+                            prefs.getString("bookingSyncPendingJson", null) == json &&
+                            prefs.getString("bookings", null) == json) {
+                            prefs.edit().remove("bookingSyncPendingOwner")
+                                .remove("bookingSyncPendingJson").apply()
                         }
+                    } else if (!isFinishing && !isDestroyed) {
+                        message("Saved on phone; cloud sync not confirmed. Review Calendar.")
                     }
                 }
             }
