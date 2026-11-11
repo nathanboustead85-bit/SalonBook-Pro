@@ -1,0 +1,10 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
+const a=src.indexOf("private fun bookingCard("),b=src.indexOf("private fun bookingOptions(",a),card=src.slice(a,b);
+test("12.8 premium cards show appointment time and visual hierarchy",()=>{for(const x of ["APPOINTMENT TIME","SERVICE PRICE","rounded(paleOrange, 14)","lightBorder"])assert.ok(card.includes(x));});
+test("12.8 retains client service and appointment date",()=>{for(const x of ["booking.client","booking.service","displayDate(booking.date)"])assert.ok(card.includes(x));});
+test("12.8 retains staff duration notes and prices",()=>{for(const x of ["booking.staffId","booking.duration","booking.notes","booking.price"])assert.ok(card.includes(x));});
+test("12.8 preserves edit cancel navigation",()=>{assert.match(card,/Edit \/ Cancel/);assert.match(card,/bookingOptions\(booking\)/);});
+test("12.8 card is read only",()=>{assert.doesNotMatch(card,/saveBookings\(|prefs\.edit\(|bookings\.remove|\.delete\(|runTransaction/);});
+test("12.8 card is included in existing appointments flow",()=>assert.match(src,/sorted\.forEach \{ bookingCard\(it\) \}/));
