@@ -1,0 +1,10 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
+const a=src.indexOf("private fun bookingDialog("),b=src.indexOf("private fun ",a+20),form=src.slice(a,b);
+test("12.9 booking form has premium introductory header",()=>{for(const s of ["BOUSTIO  •  APPOINTMENTS","Create an appointment","Update appointment details","formIntro"])assert.ok(form.includes(s));});
+test("12.9 four existing form sections remain",()=>{for(const s of ["01  Client details","02  Service & professional","03  Date & time","04  Booking summary"])assert.ok(form.includes(s));});
+test("12.9 retains existing client selection",()=>{assert.ok(form.includes("Choose existing client"));});
+test("12.9 retains date and time pickers",()=>{assert.ok(form.includes("pickDate(date)"));assert.ok(form.includes("TimePickerDialog("));});
+test("12.9 retains overlap and working hours validation",()=>{assert.ok(form.includes("withinWorkingHours("));assert.ok(form.includes("This staff member already has an overlapping booking"));});
+test("12.9 retains save and cancel actions",()=>{assert.ok(form.includes('setPositiveButton("Save", null)'));assert.ok(form.includes('setNegativeButton("Cancel", null)'));});
