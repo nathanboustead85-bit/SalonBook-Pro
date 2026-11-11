@@ -47,6 +47,7 @@ on:
       - 'functions/phase1166WebsiteCacheSafety.test.js'
       - 'functions/phase1201PremiumDesign.test.js'
       - 'functions/phase1202PremiumDashboard.test.js'
+      - 'functions/phase1203PremiumCalendar.test.js'
       - 'functions/phase1165UnifiedDailyOverview.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/phase1155TestReliability.test.js'
@@ -95,6 +96,8 @@ jobs:
           node scripts/validateFirebaseDebugConfig.js
       - name: Phase 11.65 website count overview and safety checks
         run: node --test functions/phase1165UnifiedDailyOverview.test.js
+      - name: Phase 12.3 premium calendar regression checks
+        run: node --test functions/phase1203PremiumCalendar.test.js
       - name: Phase 12.2 premium dashboard regression checks
         run: node --test functions/phase1202PremiumDashboard.test.js
       - name: Phase 12.1 premium design regression checks
