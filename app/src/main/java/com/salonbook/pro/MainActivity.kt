@@ -1154,6 +1154,73 @@ class MainActivity : Activity() {
             }.setNegativeButton("Close", null).show()
     }
 
+    /** Phase 11.57: read-only real-device verification; never creates or edits appointments. */
+    private fun verifyDeviceCloudBookingsReadOnly(date: String) {
+        if (!BuildConfig.DEBUG) return
+        val owner = FirebaseAuth.getInstance().currentUser
+        if (owner == null || !owner.isEmailVerified) {
+            AlertDialog.Builder(this).setTitle("Device sync verification")
+                .setMessage("Sign in with a verified account before checking the cloud.")
+                .setPositiveButton("OK", null).show()
+            return
+        }
+        val localAtStart = prefs.getString("bookings", "[]") ?: "[]"
+        if (prefs.getString("bookingSyncPendingOwner", null) == owner.uid) {
+            AlertDialog.Builder(this).setTitle("Cloud confirmation pending")
+                .setMessage("A phone edit is pending. This read-only check will not retry or clear it. Review pending cloud sync first.")
+                .setPositiveButton("OK", null).show()
+            return
+        }
+        FirebaseFirestore.getInstance().collection("users").document(owner.uid)
+            .collection("liveData").document("bookings").get(Source.SERVER)
+            .addOnSuccessListener { snapshot ->
+                if (isFinishing || isDestroyed || currentScreen != "calendar" ||
+                    selectedDate != date ||
+                    FirebaseAuth.getInstance().currentUser?.uid != owner.uid ||
+                    prefs.getString("bookings", "[]") != localAtStart ||
+                    prefs.getString("bookingSyncPendingOwner", null) == owner.uid
+                ) return@addOnSuccessListener
+                val report = try {
+                    check(snapshot.exists() && snapshot.getLong("schemaVersion") == 1L) {
+                        "Cloud snapshot unavailable or unsupported"
+                    }
+                    val server = snapshot.getString("json") ?: error("Cloud JSON missing")
+                    val phoneItems = JSONArray(localAtStart)
+                    val cloudItems = JSONArray(server)
+                    fun ids(items: JSONArray): Set<String> {
+                        val result = mutableSetOf<String>()
+                        for (i in 0 until items.length()) {
+                            val id = items.getJSONObject(i).optString("id")
+                            require(id.isNotBlank() && result.add(id)) { "Invalid or duplicate booking ID" }
+                        }
+                        return result
+                    }
+                    val phoneIds = ids(phoneItems)
+                    val cloudIds = ids(cloudItems)
+                    val equal = server == localAtStart
+                    "Phone appointments: ${phoneItems.length()}\\n" +
+                        "Cloud appointments: ${cloudItems.length()}\\n" +
+                        "Cloud-only IDs: ${(cloudIds - phoneIds).size}\\n" +
+                        "Phone-only IDs: ${(phoneIds - cloudIds).size}\\n" +
+                        "Exact snapshot match: ${if (equal) "YES" else "NO"}\\n\\n" +
+                        if (equal) "Read-only server verification passed. No bookings changed."
+                        else "Differences detected. Do not force sync or overwrite; review conflict recovery."
+                } catch (e: Exception) {
+                    "Verification could not complete: ${e.message}. No changes made."
+                }
+                AlertDialog.Builder(this).setTitle("Phase 11.57 · Device/cloud check")
+                    .setMessage(report).setPositiveButton("OK", null).show()
+            }
+            .addOnFailureListener {
+                if (!isFinishing && !isDestroyed && currentScreen == "calendar" &&
+                    selectedDate == date && FirebaseAuth.getInstance().currentUser?.uid == owner.uid) {
+                    AlertDialog.Builder(this).setTitle("Cloud verification unavailable")
+                        .setMessage("Server read failed. No changes or retries were made.")
+                        .setPositiveButton("OK", null).show()
+                }
+            }
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -1252,6 +1319,9 @@ class MainActivity : Activity() {
         if (BuildConfig.DEBUG) {
             button("Demo recovery rehearsal · no real changes") {
                 showIsolatedRecoveryRehearsal(selectedDate)
+            }
+            button("Verify device/cloud appointments · read only") {
+                verifyDeviceCloudBookingsReadOnly(selectedDate)
             }
             button("Demo appointment edit · no real changes") {
                 showIsolatedAppointmentEditRehearsal()
