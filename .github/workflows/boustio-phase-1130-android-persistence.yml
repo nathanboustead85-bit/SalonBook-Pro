@@ -40,6 +40,7 @@ on:
       - 'functions/phase1159TwoDeviceReadiness.test.js'
       - 'functions/phase1160SinglePhoneRecoveryAudit.test.js'
       - 'functions/phase1161RecoveryDiagnostics.test.js'
+      - 'functions/phase1162WebsiteFeedClarity.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/phase1155TestReliability.test.js'
       - 'scripts/validateFirebaseDebugConfig.js'
@@ -85,6 +86,8 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.62 website/shared feed separation safety checks
+        run: node --test functions/phase1162WebsiteFeedClarity.test.js
       - name: Phase 11.61 read-only recovery diagnostics regression
         run: node --test functions/phase1161RecoveryDiagnostics.test.js
       - name: Phase 11.60 single-phone recovery audit regression
