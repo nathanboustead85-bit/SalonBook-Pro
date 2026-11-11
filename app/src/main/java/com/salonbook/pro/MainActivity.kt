@@ -236,7 +236,7 @@ class MainActivity : Activity() {
         navigationBar.removeAllViews()
         val active = when (mode) {
             "calendar" -> "calendar"
-            "clients" -> "clients"
+            "clients", "client_profile" -> "clients"
             "settings" -> "settings"
             else -> "dashboard"
         }
@@ -257,7 +257,6 @@ class MainActivity : Activity() {
                         "dashboard" -> showDashboard()
                         "calendar" -> showCalendar()
                         "clients" -> showClients()
-                "client_profile" -> showClients()
                         "settings" -> showSettings()
                     }
                 }
@@ -274,7 +273,12 @@ class MainActivity : Activity() {
     }
 
     private fun showSettings() {
-        screen("Settings", "Your business account and tools.", "settings")
+        screen("Business settings", "Make Boustio work beautifully for your business.", "settings")
+        val settingsIntro = panel()
+        settingsIntro.addView(label("YOUR BUSINESS • BOUSTIO", 12f, orange, true))
+        settingsIntro.addView(label("Everything in its place", 21f, dark, true))
+        settingsIntro.addView(label("Manage your services, team, booking link and account from one place.", 13f, muted))
+        addPanel(settingsIntro)
         section("Business management")
         actionCard("Services & Prices", "Manage your service catalogue", "£") {
             startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
@@ -300,7 +304,7 @@ class MainActivity : Activity() {
             showAppointments()
         }
         button("Back to Dashboard") { showDashboard() }
-        text("BOUSTIO  •  Phase 9D.3", 12f)
+        container.addView(label("BOUSTIO  •  A BOOKING PLATFORM WITH A DIFFERENCE", 12f, muted))
     }
 
     private fun text(value: String, size: Float = 16f) {
@@ -319,8 +323,8 @@ class MainActivity : Activity() {
     private fun section(value: String) {
         container.addView(label(value.uppercase(Locale.UK), 12f, muted, true),
             LinearLayout.LayoutParams(-1, -2).apply {
-                topMargin = dp(22)
-                bottomMargin = dp(12)
+                topMargin = dp(16)
+                bottomMargin = dp(10)
             })
     }
     private fun panel(): LinearLayout = LinearLayout(this).apply {
@@ -382,7 +386,10 @@ class MainActivity : Activity() {
         screen("Good to see you", "Your business, beautifully organised.", "dashboard")
 
         val todayCount = bookings.count { it.date == today() }
-        val upcoming = bookings.count { it.date >= today() }
+        val currentClock = SimpleDateFormat("HH:mm", Locale.UK).format(Date())
+        val upcomingBookings = bookings.filter { it.date > today() ||
+            (it.date == today() && it.time >= currentClock) }
+        val upcoming = upcomingBookings.size
         val summary = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(22), dp(22), dp(22), dp(22))
@@ -422,7 +429,7 @@ class MainActivity : Activity() {
         // Phase 12.2: next appointments are read from existing local bookings only.
         // This is a presentation-only preview; no booking or cloud data is modified.
         section("Coming up")
-        val nextBookings = bookings.filter { it.date >= today() }
+        val nextBookings = upcomingBookings
             .sortedWith(compareBy<Booking> { it.date }.thenBy { it.time })
             .take(3)
         if (nextBookings.isEmpty()) {
@@ -2345,7 +2352,7 @@ class MainActivity : Activity() {
                 })
                 identity.addView(label(name, 18f, dark, true))
                 card.addView(identity)
-                card.addView(label("${history.size} booking(s)", 14f, muted))
+                card.addView(label("${history.size} booking${if (history.size == 1) "" else "s"}", 14f, muted))
                 card.addView(Button(this).apply {
                     text = "View Profile & History"
                     styleButton(this, false)
