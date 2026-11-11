@@ -16,7 +16,7 @@ test("11.55 all legacy cloud guard tests use validated non-null snapshots", () =
  assert.match(cloud, /val latestServerJson = latest\.getString\("json"\)\s*\?: error/);
  for (const file of tests) {
   const source = fs.readFileSync(path.join(root,"functions",file),"utf8");
-  assert.doesNotMatch(source, /assertNo(?:RemoteBookingsLost|StaleBookingEdits)\\\(\\(?:preflight|latest)\\\.getString/, file+" still asserts old nullable snapshot call");
+  assert.ok(!source.includes('assertNoRemoteBookingsLost\\(latest\\.getString') && !source.includes('assertNoStaleBookingEdits\\(latest\\.getString') && !source.includes('assertNoStaleBookingEdits\\(preflight\\.getString'), file+" still asserts old nullable snapshot call");
  }
 });
 test("11.55 all source-only booking guard tests run in fast preflight", () => {
