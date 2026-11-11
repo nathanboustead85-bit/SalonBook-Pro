@@ -26,6 +26,7 @@ on:
       - 'functions/phase1144OfflineReconnectRehearsal.test.js'
       - 'functions/phase1145PendingSyncReview.test.js'
       - 'functions/phase1146StaleBookingEditGuard.test.js'
+      - 'functions/phase1147TwoDeviceConflictEmulator.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
@@ -67,6 +68,10 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.47 isolated two-device conflict Firestore integration
+        run: |
+          npm --prefix functions install --no-audit --no-fund
+          GCLOUD_PROJECT=demo-boustio-phase-1147 GOOGLE_CLOUD_PROJECT=demo-boustio-phase-1147 npx --yes firebase-tools@14 emulators:exec --project demo-boustio-phase-1147 --only firestore 'GCLOUD_PROJECT=demo-boustio-phase-1147 node --test functions/phase1147TwoDeviceConflictEmulator.test.js'
       - name: Phase 11.46 stale cloud booking edit guard checks
         run: node --test functions/phase1146StaleBookingEditGuard.test.js
       - name: Phase 11.45 pending cloud sync review safety checks
