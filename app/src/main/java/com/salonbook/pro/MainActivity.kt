@@ -1119,6 +1119,41 @@ class MainActivity : Activity() {
             }
     }
 
+    // Phase 11.53: UI rehearsal is deliberately isolated from bookings and Firebase.
+    private fun showIsolatedAppointmentEditRehearsal() {
+        if (!BuildConfig.DEBUG) return
+        val original = "09:00"
+        val candidate = EditText(this).apply {
+            setSingleLine(true)
+            setText("09:30")
+            hint = "HH:mm"
+        }
+        val form = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(22), dp(12), dp(22), dp(12))
+            addView(label("TEST APPOINTMENT ONLY · not saved to your calendar", 14f, dark, true))
+            addView(label("Original: 09:00. Enter a new time to rehearse editing. " +
+                "This screen does not access Firebase or your real appointments.", 13f, muted))
+            addView(candidate)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Isolated appointment edit rehearsal")
+            .setView(form)
+            .setPositiveButton("Validate test edit") { _, _ ->
+                val proposed = candidate.text.toString().trim()
+                val valid = Regex("([01][0-9]|2[0-3]):[0-5][0-9]").matches(proposed)
+                AlertDialog.Builder(this)
+                    .setTitle(if (valid) "Test edit validated" else "Invalid test time")
+                    .setMessage(if (valid)
+                        "Demo appointment: $original → $proposed. " +
+                            "Validation only: no phone booking or cloud record was changed. " +
+                            "Cloud acknowledgement was NOT tested in this rehearsal."
+                    else "Use 24-hour HH:mm format, for example 09:30. " +
+                        "No appointments were changed.")
+                    .setPositiveButton("OK", null).show()
+            }.setNegativeButton("Close", null).show()
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -1217,6 +1252,9 @@ class MainActivity : Activity() {
         if (BuildConfig.DEBUG) {
             button("Demo recovery rehearsal · no real changes") {
                 showIsolatedRecoveryRehearsal(selectedDate)
+            }
+            button("Demo appointment edit · no real changes") {
+                showIsolatedAppointmentEditRehearsal()
             }
             button("Demo offline reconnect · no real changes") {
                 showOfflineReconnectRehearsal(selectedDate)
