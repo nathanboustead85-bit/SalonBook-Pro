@@ -27,6 +27,7 @@ on:
       - 'functions/phase1145PendingSyncReview.test.js'
       - 'functions/phase1146StaleBookingEditGuard.test.js'
       - 'functions/phase1147TwoDeviceConflictEmulator.test.js'
+      - 'functions/phase1146StaleBookingEditGuard.test.js'
       - 'functions/phase1148ConflictRecoveryReview.test.js'
       - 'functions/phase1149VerifiedCloudBaseline.test.js'
       - 'functions/phase1150VerifiedBookingEditEmulator.test.js'
