@@ -29,6 +29,7 @@ on:
       - 'functions/phase1147TwoDeviceConflictEmulator.test.js'
       - 'functions/phase1148ConflictRecoveryReview.test.js'
       - 'functions/phase1149VerifiedCloudBaseline.test.js'
+      - 'functions/phase1150VerifiedBookingEditEmulator.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
@@ -70,6 +71,10 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.50 isolated verified booking edit and conflict integration
+        run: |
+          npm --prefix functions install --no-audit --no-fund
+          GCLOUD_PROJECT=demo-boustio-phase-1150 GOOGLE_CLOUD_PROJECT=demo-boustio-phase-1150 npx --yes firebase-tools@14 emulators:exec --project demo-boustio-phase-1150 --only firestore 'GCLOUD_PROJECT=demo-boustio-phase-1150 node --test functions/phase1150VerifiedBookingEditEmulator.test.js'
       - name: Phase 11.49 verified cloud baseline safety checks
         run: node --test functions/phase1149VerifiedCloudBaseline.test.js
       - name: Phase 11.48 read-only conflict recovery Android safety checks
