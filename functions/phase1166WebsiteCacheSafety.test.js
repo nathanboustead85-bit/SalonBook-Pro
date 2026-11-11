@@ -1,0 +1,12 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
+const start=src.indexOf("private fun showSharedCloudAppointments(");
+const end=src.indexOf("private fun ",start+20);
+const feed=src.slice(start,end);
+test("11.66 website feed explicitly distinguishes Firestore cache",()=>{assert.match(feed,/snapshot\.metadata\.isFromCache/);assert.match(feed,/cached\/offline · may be outdated/);});
+test("11.66 server-backed feed explicitly identifies server confirmation",()=>{assert.match(feed,/server-confirmed/);assert.match(feed,/Website feed: \$\{websiteSource\}/);});
+test("11.66 count includes freshness and remains separate",()=>{assert.match(feed,/\$\{items\.size\} website\/shared appointment/);assert.match(feed,/not added to phone count/);});
+test("11.66 stale date, owner and screen callbacks remain ignored",()=>{assert.match(feed,/currentScreen != "calendar"/);assert.match(feed,/selectedDate != date/);assert.match(feed,/currentUser\?\.uid != user\.uid/);});
+test("11.66 website listener remains read-only",()=>{assert.doesNotMatch(feed,/\.set\(|\.update\(|\.delete\(|runTransaction|saveBookings\(/);});
+test("11.66 error cannot be displayed as server-confirmed",()=>{const failure=feed.indexOf("if (error != null || snapshot == null)");const freshness=feed.indexOf("val websiteSource");assert.ok(failure>=0&&freshness>failure);assert.match(feed,/Website bookings: unavailable/);});
