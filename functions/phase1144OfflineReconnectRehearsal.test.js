@@ -4,7 +4,8 @@ const root=path.resolve(__dirname,"..");
 const src=fs.readFileSync(path.join(root,"app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
 const wf=fs.readFileSync(path.join(root,".github/workflows/boustio-phase-1130-android-persistence.yml"),"utf8");
 const start=src.indexOf("private fun showOfflineReconnectRehearsal(date: String)");
-const end=src.indexOf("private fun showCalendar()",start);
+const nextMethod=src.indexOf("private fun reviewPendingBookingSync(date: String)",start);
+const end=nextMethod>start?nextMethod:src.indexOf("private fun showCalendar()",start);
 const body=src.slice(start,end);
 test("11.44 demo is debug-only and reachable via labelled calendar control",()=>{
  assert.ok(start>0&&end>start);
