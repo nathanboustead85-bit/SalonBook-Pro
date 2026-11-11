@@ -43,6 +43,7 @@ on:
       - 'functions/phase1162WebsiteFeedClarity.test.js'
       - 'functions/phase1163WebsiteCollisionPreview.test.js'
       - 'functions/phase1164WebsiteBookingIntegrationEmulator.test.js'
+      - 'functions/phase1165UnifiedDailyOverview.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/phase1155TestReliability.test.js'
       - 'scripts/validateFirebaseDebugConfig.js'
@@ -88,6 +89,8 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.65 website count overview and safety checks
+        run: node --test functions/phase1165UnifiedDailyOverview.test.js
       - name: Phase 11.64 isolated website booking integration emulator
         run: |
           npm --prefix functions install --no-audit --no-fund
