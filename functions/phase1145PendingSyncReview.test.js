@@ -3,7 +3,9 @@ const test=require("node:test"),assert=require("node:assert/strict"),fs=require(
 const root=path.resolve(__dirname,"..");
 const src=fs.readFileSync(path.join(root,"app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
 const start=src.indexOf("private fun reviewPendingBookingSync(date: String)");
-const end=src.indexOf("private fun showCalendar()",start);
+const end=src.indexOf("private fun previewConflictRecovery(date: String)",start)>start
+ ? src.indexOf("private fun previewConflictRecovery(date: String)",start)
+ : src.indexOf("private fun showCalendar()",start);
 const body=src.slice(start,end);
 test("11.45 pending review is explicitly user-triggered and server-only",()=>{
  assert.ok(start>0&&end>start);
