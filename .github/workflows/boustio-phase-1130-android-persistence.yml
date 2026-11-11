@@ -25,6 +25,7 @@ on:
       - 'functions/phase1143OfflineReconnectEmulator.test.js'
       - 'functions/phase1144OfflineReconnectRehearsal.test.js'
       - 'functions/phase1145PendingSyncReview.test.js'
+      - 'functions/phase1146StaleBookingEditGuard.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
@@ -66,6 +67,8 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.46 stale cloud booking edit guard checks
+        run: node --test functions/phase1146StaleBookingEditGuard.test.js
       - name: Phase 11.45 pending cloud sync review safety checks
         run: node --test functions/phase1145PendingSyncReview.test.js
       - name: Phase 11.44 Android offline reconnect demo safety checks
