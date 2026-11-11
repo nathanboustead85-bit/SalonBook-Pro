@@ -1,0 +1,13 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const s=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
+const part=(a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)+a.length));
+const nav=part("private fun updateNavigation(","private fun showSettings(");
+const settings=part("private fun showSettings(","private fun text(");
+const dashboard=part("private fun showDashboard(","private fun shiftDate(");
+test("12.6 client profiles select Clients navigation",()=>assert.match(nav,/"clients", "client_profile" -> "clients"/));
+test("12.6 settings uses premium light theme intro",()=>{for(const x of ["Business settings","Everything in its place","YOUR BUSINESS • BOUSTIO","settingsIntro"])assert.ok(settings.includes(x));});
+test("12.6 settings actions retain existing destinations",()=>{for(const x of ["ManagementActivity::class.java","BusinessProfileActivity::class.java","ChatInboxActivity::class.java","CloudActivity::class.java","showAppointments()"])assert.ok(settings.includes(x));});
+test("12.6 upcoming cards exclude earlier appointments today",()=>{assert.match(dashboard,/SimpleDateFormat\("HH:mm", Locale.UK\)\.format\(Date\(\)\)/);assert.match(dashboard,/it\.date > today\(\)/);assert.match(dashboard,/it\.time >= currentClock/);assert.match(dashboard,/val nextBookings = upcomingBookings/);});
+test("12.6 does not alter booking persistence or cloud data",()=>{assert.doesNotMatch(dashboard,/saveBookings\(|prefs\.edit\(|CloudSyncManager\(\)\.upload\(/);assert.doesNotMatch(settings,/prefs\.edit\(|saveBookings\(/);});
+test("12.6 client directory has singular/plural booking labels",()=>assert.match(s,/history\.size\} booking\$\{if \(history\.size == 1\)/));
