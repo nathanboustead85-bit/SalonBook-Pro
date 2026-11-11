@@ -23,6 +23,7 @@ on:
       - 'functions/phase1141AndroidRecoveryRehearsal.test.js'
       - 'functions/phase1142OfflineSyncPending.test.js'
       - 'functions/phase1143OfflineReconnectEmulator.test.js'
+      - 'functions/phase1133CloudConflictGuard.test.js'
       - 'functions/phase1144OfflineReconnectRehearsal.test.js'
       - 'functions/phase1145PendingSyncReview.test.js'
       - 'functions/phase1146StaleBookingEditGuard.test.js'
