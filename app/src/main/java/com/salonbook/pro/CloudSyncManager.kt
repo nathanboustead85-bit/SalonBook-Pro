@@ -103,6 +103,41 @@ class CloudSyncManager {
         }
     }
 
+    /** Phase 11.46: a cloud booking may only be changed if it still matches
+     * the last server-acknowledged snapshot held by this phone. Without a
+     * baseline, existing cloud bookings must remain unchanged. */
+    private fun assertNoStaleBookingEdits(
+        remoteJson: String?, localJson: String, acknowledgedJson: String?
+    ) {
+        if (remoteJson == null) return
+        val local = JSONArray(localJson)
+        val remote = JSONArray(remoteJson)
+        val baseline = acknowledgedJson?.let { JSONArray(it) }
+        fun byId(items: JSONArray): Map<String, org.json.JSONObject> {
+            val entries = mutableMapOf<String, org.json.JSONObject>()
+            for (i in 0 until items.length()) {
+                val item = items.getJSONObject(i)
+                val id = item.optString("id")
+                require(id.isNotBlank() && entries.put(id, item) == null) {
+                    "Invalid or duplicate booking ID; upload blocked"
+                }
+            }
+            return entries
+        }
+        val phone = byId(local)
+        val cloud = byId(remote)
+        val trusted = baseline?.let { byId(it) }
+        for ((id, serverBooking) in cloud) {
+            val proposed = phone[id] ?: error("Cloud booking missing from phone")
+            if (!proposed.similar(serverBooking)) {
+                check(trusted != null && trusted[id]?.similar(serverBooking) == true) {
+                    "Booking changed on another device or has no verified baseline. " +
+                        "Upload blocked; review cloud differences."
+                }
+            }
+        }
+    }
+
     /**
      * Upload services, staff or bookings.
      *
@@ -117,7 +152,8 @@ class CloudSyncManager {
     fun upload(
         key: String,
         json: String,
-        callback: (Result<Unit>) -> Unit
+        callback: (Result<Unit>) -> Unit,
+        acknowledgedBookingsJson: String? = null
     ) {
         val completed = AtomicBoolean(false)
 
@@ -165,6 +201,7 @@ class CloudSyncManager {
                                 "Unsupported cloud booking schema; upload blocked"
                             }
                             assertNoRemoteBookingsLost(preflight.getString("json"), json)
+                            assertNoStaleBookingEdits(preflight.getString("json"), json, acknowledgedBookingsJson)
                         }
                         db.runTransaction { transaction ->
                             check(userId() == ownerAtStart) {
@@ -185,6 +222,7 @@ class CloudSyncManager {
                                     "Unsupported cloud booking schema; upload blocked"
                                 }
                                 assertNoRemoteBookingsLost(latest.getString("json"), json)
+                                assertNoStaleBookingEdits(latest.getString("json"), json, acknowledgedBookingsJson)
                             }
                             transaction.set(reference, data)
                             Unit
