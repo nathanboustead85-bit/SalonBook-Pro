@@ -1755,6 +1755,18 @@ class MainActivity : Activity() {
                 backgroundTintList = ColorStateList.valueOf(orange)
                 parent.addView(this, LinearLayout.LayoutParams(-1, -2))
             }
+        // Phase 12.9: visual-only introduction; existing form validation and persistence remain intact.
+        val formIntro = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(18), dp(18), dp(18))
+            background = rounded(paleOrange, 20)
+        }
+        formIntro.addView(label("BOUSTIO  •  APPOINTMENTS", 11f, orange, true))
+        formIntro.addView(label(if (existing == null) "Create an appointment" else "Update appointment details",
+            21f, dark, true), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(7) })
+        formIntro.addView(label("Four simple steps to organise your client's visit.",
+            13f, muted), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5) })
+        form.addView(formIntro, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
         val clientCard = section("01  Client details", "Who is this appointment for?")
         val client = field(clientCard, "Client name", existing?.client ?: "")
         val knownClients = (bookings.map { it.client.trim() } + registeredClients()).filter { it.isNotBlank() }
