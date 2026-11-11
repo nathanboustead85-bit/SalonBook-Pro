@@ -999,6 +999,72 @@ class MainActivity : Activity() {
             }
     }
 
+    // Phase 11.49: establish an acknowledged baseline ONLY after verifying
+    // identical full phone/cloud JSON from the server. No booking writes.
+    private fun establishVerifiedBookingBaseline(date: String) {
+        val owner = FirebaseAuth.getInstance().currentUser
+        if (owner == null || !owner.isEmailVerified) {
+            message("Sign in with a verified account first")
+            return
+        }
+        val phoneJson = prefs.getString("bookings", "[]") ?: "[]"
+        if (prefs.getString("bookingSyncPendingOwner", null) == owner.uid) {
+            message("Pending cloud sync must be reviewed first; baseline not changed")
+            return
+        }
+        FirebaseFirestore.getInstance().collection("users").document(owner.uid)
+            .collection("liveData").document("bookings").get(Source.SERVER)
+            .addOnSuccessListener { snapshot ->
+                if (isFinishing || isDestroyed || currentScreen != "calendar" ||
+                    selectedDate != date ||
+                    FirebaseAuth.getInstance().currentUser?.uid != owner.uid ||
+                    prefs.getString("bookings", "[]") != phoneJson ||
+                    prefs.getString("bookingSyncPendingOwner", null) == owner.uid
+                ) return@addOnSuccessListener
+                val result = try {
+                    check(snapshot.exists() && snapshot.getLong("schemaVersion") == 1L) {
+                        "Cloud snapshot unavailable or unsupported"
+                    }
+                    val serverJson = snapshot.getString("json")
+                        ?: error("Missing cloud booking JSON")
+                    val phone = JSONArray(phoneJson)
+                    val cloud = JSONArray(serverJson)
+                    fun validate(items: JSONArray) {
+                        val seen = mutableSetOf<String>()
+                        for (i in 0 until items.length()) {
+                            val id = items.getJSONObject(i).optString("id")
+                            check(id.isNotBlank() && seen.add(id)) {
+                                "Invalid or duplicate booking ID"
+                            }
+                        }
+                    }
+                    validate(phone)
+                    validate(cloud)
+                    check(serverJson == phoneJson) {
+                        "Phone and cloud snapshots differ. Review conflicts first."
+                    }
+                    // Commit only the verified exact server snapshot to the
+                    // current account; never modify appointments or pending state.
+                    prefs.edit()
+                        .putString("bookingSyncAcknowledgedOwner", owner.uid)
+                        .putString("bookingSyncAcknowledgedJson", serverJson).apply()
+                    "Verified baseline saved for ${cloud.length()} appointments. " +
+                        "No bookings were uploaded, imported, changed or deleted."
+                } catch (_: Exception) {
+                    "Baseline not saved. Cloud data was unavailable, invalid or " +
+                        "different from the phone. Review cloud differences first."
+                }
+                AlertDialog.Builder(this).setTitle("Verified cloud baseline")
+                    .setMessage(result).setPositiveButton("Close", null).show()
+            }.addOnFailureListener {
+                if (!isFinishing && !isDestroyed && currentScreen == "calendar" &&
+                    selectedDate == date &&
+                    FirebaseAuth.getInstance().currentUser?.uid == owner.uid) {
+                    message("Server unavailable; baseline not saved")
+                }
+            }
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -1088,6 +1154,9 @@ class MainActivity : Activity() {
         showCloudBookingDifferences(selectedDate)
         button("Review conflict recovery · read only") {
             previewConflictRecovery(selectedDate)
+        }
+        button("Verify matching cloud baseline · no booking changes") {
+            establishVerifiedBookingBaseline(selectedDate)
         }
         button("Review cloud-only appointment import") { previewCloudOnlyImport(selectedDate) }
         if (BuildConfig.DEBUG) {
