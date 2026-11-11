@@ -31,6 +31,7 @@ on:
       - 'functions/phase1149VerifiedCloudBaseline.test.js'
       - 'functions/phase1150VerifiedBookingEditEmulator.test.js'
       - 'functions/phase1151BookingSaveAcknowledgementEmulator.test.js'
+      - 'functions/phase1152BookingSyncStatus.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
@@ -72,6 +73,8 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.52 Android booking sync status safety checks
+        run: node --test functions/phase1152BookingSyncStatus.test.js
       - name: Phase 11.51 isolated phone save and server acknowledgement integration
         run: |
           npm --prefix functions install --no-audit --no-fund
