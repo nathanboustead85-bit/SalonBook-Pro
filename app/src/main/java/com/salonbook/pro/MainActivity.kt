@@ -503,7 +503,17 @@ class MainActivity : Activity() {
                         (doc.getString("serviceName") ?: "Service") + " · " +
                         (doc.getString("staffName") ?: "Staff"))
                 }.sortedBy { it.first }
-                overviewWebsiteStatus?.text = "${items.size} website/shared appointment(s) · separate read-only feed; not added to phone count"
+                // Phase 11.66: cached Firestore results are not confirmed server data.
+                // Keep the website feed read-only and clearly distinguish offline/stale data.
+                val websiteSource = if (snapshot.metadata.isFromCache) {
+                    "cached/offline · may be outdated"
+                } else {
+                    "server-confirmed"
+                }
+                overviewWebsiteStatus?.text = "${items.size} website/shared appointment(s) · ${websiteSource} · separate read-only feed; not added to phone count"
+                target.addView(label(
+                    "Website feed: ${websiteSource}. Phone appointments remain separate and unchanged.",
+                    13f, if (snapshot.metadata.isFromCache) orange else muted))
                 if (items.isEmpty()) {
                     target.addView(label("No website/shared appointments on this date. This is a separate feed from your phone bookings; it does not mean your phone appointments are missing.", 13f, muted))
                 }
