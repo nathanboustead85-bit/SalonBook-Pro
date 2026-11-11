@@ -35,6 +35,7 @@ on:
       - 'functions/phase1153IsolatedAndroidEditRehearsal.test.js'
       - 'functions/phase1154SafeCloudEditRecoveryEmulator.test.js'
       - 'functions/phase1156BookingSyncReliabilityEmulator.test.js'
+      - 'functions/phase1157DeviceCloudReadOnly.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/phase1155TestReliability.test.js'
       - 'scripts/validateFirebaseDebugConfig.js'
@@ -80,6 +81,8 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.57 read-only device verification safety checks
+        run: node --test functions/phase1157DeviceCloudReadOnly.test.js
       - name: Phase 11.56 multi-device booking sync reliability emulator integration
         run: |
           npm --prefix functions install --no-audit --no-fund
