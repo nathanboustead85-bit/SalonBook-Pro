@@ -1198,13 +1198,13 @@ class MainActivity : Activity() {
                     val phoneIds = ids(phoneItems)
                     val cloudIds = ids(cloudItems)
                     val equal = server == localAtStart
-                    "Phone appointments: ${phoneItems.length()}\\n" +
-                        "Cloud appointments: ${cloudItems.length()}\\n" +
-                        "Cloud-only IDs: ${(cloudIds - phoneIds).size}\\n" +
-                        "Phone-only IDs: ${(phoneIds - cloudIds).size}\\n" +
-                        "Exact snapshot match: ${if (equal) "YES" else "NO"}\\n\\n" +
-                        if (equal) "Read-only server verification passed. No bookings changed."
-                        else "Differences detected. Do not force sync or overwrite; review conflict recovery."
+                    "Phone appointments: ${phoneItems.length()}\n" +
+                        "Cloud appointments: ${cloudItems.length()}\n" +
+                        "Cloud-only IDs: ${(cloudIds - phoneIds).size}\n" +
+                        "Phone-only IDs: ${(phoneIds - cloudIds).size}\n" +
+                        "Exact snapshot match: ${if (equal) "YES" else "NO"}\n\n" +
+                        (if (equal) "Read-only server verification passed. No bookings changed."
+                        else "Differences detected. Do not force sync or overwrite; review conflict recovery.")
                 } catch (e: Exception) {
                     "Verification could not complete: ${e.message}. No changes made."
                 }
