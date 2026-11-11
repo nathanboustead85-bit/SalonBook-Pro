@@ -647,6 +647,122 @@ class MainActivity : Activity() {
             }
     }
 
+    // Phase 11.36: explicit, additive import of cloud-only appointments.
+    // Never replace existing IDs, delete phone bookings, or upload on import.
+    private fun previewCloudOnlyImport(date: String) {
+        val owner = FirebaseAuth.getInstance().currentUser
+        if (owner == null || !owner.isEmailVerified) {
+            message("Sign in with a verified account first")
+            return
+        }
+        val originalIds = bookings.map { it.id }.toSet()
+        val originalJson = prefs.getString("bookings", "[]") ?: "[]"
+        val reference = FirebaseFirestore.getInstance().collection("users")
+            .document(owner.uid).collection("liveData").document("bookings")
+        reference.get(Source.SERVER).addOnSuccessListener { snapshot ->
+            if (currentScreen != "calendar" || selectedDate != date ||
+                isFinishing || isDestroyed ||
+                FirebaseAuth.getInstance().currentUser?.uid != owner.uid) return@addOnSuccessListener
+            try {
+                check(snapshot.exists() && snapshot.getLong("schemaVersion") == 1L) {
+                    "Cloud booking snapshot unavailable"
+                }
+                val snapshotJson = snapshot.getString("json")
+                    ?: error("Missing cloud bookings")
+                val remote = JSONArray(snapshotJson)
+                val seen = mutableSetOf<String>()
+                val candidates = mutableListOf<Booking>()
+                for (i in 0 until remote.length()) {
+                    val entry = remote.getJSONObject(i)
+                    val id = entry.optString("id")
+                    check(id.isNotBlank() && seen.add(id)) {
+                        "Invalid or duplicate cloud booking ID"
+                    }
+                    if (entry.optString("date") != date || id in originalIds) continue
+                    val candidate = Booking(
+                        id, entry.optString("client"), entry.optString("service"),
+                        entry.optString("date"), entry.optString("time"),
+                        entry.optString("notes"), entry.optString("serviceId"),
+                        entry.optString("staffId"), entry.optInt("duration"),
+                        entry.optString("price")
+                    )
+                    check(candidate.time.matches(Regex("[0-2][0-9]:[0-5][0-9]")) &&
+                        candidate.duration > 0 && candidate.staffId.isNotBlank() &&
+                        candidate.client.isNotBlank()) {
+                        "Incomplete cloud appointment; import blocked"
+                    }
+                    candidates.add(candidate)
+                }
+                if (candidates.isEmpty()) {
+                    message("No cloud-only appointments to import on this date")
+                    return@addOnSuccessListener
+                }
+                AlertDialog.Builder(this)
+                    .setTitle("Import ${candidates.size} cloud appointment(s)?")
+                    .setMessage("Add cloud-only appointments for ${displayDate(date)} to this phone? " +
+                        "Existing appointments will not be replaced. " +
+                        "The server will be checked again before importing.")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Check and import") { _, _ ->
+                        reference.get(Source.SERVER).addOnSuccessListener { fresh ->
+                            try {
+                                check(FirebaseAuth.getInstance().currentUser?.uid == owner.uid &&
+                                    currentScreen == "calendar" && selectedDate == date) {
+                                    "Account or screen changed"
+                                }
+                                check(fresh.exists() && fresh.getLong("schemaVersion") == 1L &&
+                                    fresh.getString("json") == snapshotJson) {
+                                    "Cloud bookings changed. Review again before importing."
+                                }
+                                check(prefs.getString("bookings", "[]") == originalJson &&
+                                    bookings.map { it.id }.toSet() == originalIds) {
+                                    "Phone bookings changed. Review again before importing."
+                                }
+                                val combined = bookings.toMutableList()
+                                for (candidate in candidates) {
+                                    check(combined.none { existing ->
+                                        existing.id == candidate.id ||
+                                        (existing.date == candidate.date &&
+                                            existing.staffId == candidate.staffId &&
+                                            existing.time.toMinutes() < candidate.time.toMinutes() + candidate.duration &&
+                                            candidate.time.toMinutes() < existing.time.toMinutes() + existing.duration)
+                                    }) { "Appointment overlap or duplicate. Import blocked." }
+                                    combined.add(candidate)
+                                }
+                                val array = JSONArray()
+                                combined.forEach { booking ->
+                                    array.put(JSONObject().apply {
+                                        put("id", booking.id)
+                                        put("client", booking.client)
+                                        put("service", booking.service)
+                                        put("date", booking.date)
+                                        put("time", booking.time)
+                                        put("notes", booking.notes)
+                                        put("serviceId", booking.serviceId)
+                                        put("staffId", booking.staffId)
+                                        put("duration", booking.duration)
+                                        put("price", booking.price)
+                                    })
+                                }
+                                check(prefs.edit().putString("bookings", array.toString()).commit()) {
+                                    "Could not save imported bookings"
+                                }
+                                loadBookings()
+                                showCalendar()
+                                message("Cloud-only appointments imported to this phone")
+                            } catch (error: Exception) {
+                                message(error.localizedMessage ?: "Import blocked safely")
+                            }
+                        }.addOnFailureListener {
+                            message("Cloud unavailable. Import cancelled.")
+                        }
+                    }.show()
+            } catch (error: Exception) {
+                message(error.localizedMessage ?: "Cloud import preview unavailable")
+            }
+        }.addOnFailureListener { message("Cloud unavailable. Import cancelled.") }
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -719,6 +835,7 @@ class MainActivity : Activity() {
         showSharedCloudAppointments(selectedDate)
         showLegacyMultiDeviceReadiness(selectedDate)
         showCloudBookingDifferences(selectedDate)
+        button("Review cloud-only appointment import") { previewCloudOnlyImport(selectedDate) }
         section("Daily schedule · local appointments")
         if (daily.isEmpty()) {
             val empty = panel()
