@@ -16,7 +16,7 @@ test("11.33 server preflight and atomic transaction guard legacy bookings",()=>{
 test("11.33 rejects remote booking IDs missing locally and duplicate IDs",()=>{
  assert.match(source,/id\.isNotBlank\(\) && localIds\.add\(id\)/);
  assert.match(source,/id\.isNotBlank\(\) && id in localIds/);
- assert.match(source,/assertNoRemoteBookingsLost\(latest\.getString\("json"\), json\)/);
+ assert.match(source,/assertNoRemoteBookingsLost\(latestServerJson, json\)/);
  assert.match(source,/Unsupported cloud booking schema; upload blocked/);
 });
 test("11.33 tests run before Android compilation",()=>{
