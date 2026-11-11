@@ -63,6 +63,6 @@ test("11.43 Android guards pending status, server read and no automatic reconnec
  assert.match(main,/Nothing will be uploaded automatically on reconnect/);
  assert.match(sync,/reference\.get\(Source\.SERVER\)/);
  assert.match(sync,/db\.runTransaction/);
- assert.match(sync,/assertNoRemoteBookingsLost\(latest\.getString\("json"\), json\)/);
+ assert.match(sync,/assertNoRemoteBookingsLost\(latestServerJson, json\)/);
 });
 test.after(async()=>{try{await ref.delete();}finally{await Promise.all([appA.delete(),appB.delete()]);}});
