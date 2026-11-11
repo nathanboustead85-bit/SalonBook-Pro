@@ -471,7 +471,7 @@ class MainActivity : Activity() {
     private fun showSharedCloudAppointments(date: String) {
         cloudCalendarListener?.remove()
         cloudCalendarListener = null
-        section("Shared cloud appointments · read only")
+        section("Website/shared appointments · separate cloud feed")
         val target = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         container.addView(target)
         val user = FirebaseAuth.getInstance().currentUser
@@ -479,7 +479,7 @@ class MainActivity : Activity() {
             target.addView(label("Verified sign-in required for cloud calendar.", 13f, muted))
             return
         }
-        target.addView(label("Loading shared appointments…", 13f, muted))
+        target.addView(label("Checking website/shared appointment feed…", 13f, muted))
         cloudCalendarListener = FirebaseFirestore.getInstance()
             .collection("businesses").document(user.uid)
             .collection("appointments").whereEqualTo("date", date)
@@ -489,7 +489,7 @@ class MainActivity : Activity() {
                 }
                 target.removeAllViews()
                 if (error != null || snapshot == null) {
-                    target.addView(label("Cloud calendar unavailable. Local appointments are unchanged.", 13f, muted))
+                    target.addView(label("Website/shared feed unavailable. Your phone appointments and their cloud backup are separate and unchanged.", 13f, muted))
                     return@addSnapshotListener
                 }
                 val items = snapshot.documents.mapNotNull { doc ->
@@ -501,13 +501,13 @@ class MainActivity : Activity() {
                         (doc.getString("staffName") ?: "Staff"))
                 }.sortedBy { it.first }
                 if (items.isEmpty()) {
-                    target.addView(label("No cloud appointments on this date.", 13f, muted))
+                    target.addView(label("No website/shared appointments on this date. This is a separate feed from your phone bookings; it does not mean your phone appointments are missing.", 13f, muted))
                 }
                 items.forEach { (start, client, details) ->
                     val item = panel()
                     item.addView(label("$start  $client", 16f, dark, true))
                     item.addView(label(details, 13f, muted))
-                    item.addView(label("Cloud · read only", 12f, orange))
+                    item.addView(label("Website/shared feed · read only · not imported", 12f, orange))
                     target.addView(item)
                 }
             }
