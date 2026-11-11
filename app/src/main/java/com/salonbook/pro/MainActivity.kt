@@ -1065,6 +1065,60 @@ class MainActivity : Activity() {
             }
     }
 
+    // Phase 11.52: conservative status display, never an upload or retry.
+    private fun showBookingSyncStatus(date: String) {
+        section("BOOKING SYNC STATUS · READ ONLY")
+        val status = label("Checking cloud confirmation…", 13f, muted)
+        container.addView(status)
+        val owner = FirebaseAuth.getInstance().currentUser
+        if (owner == null || !owner.isEmailVerified) {
+            status.text = "Saved on this phone. Sign in with a verified account to check cloud status."
+            return
+        }
+        val localJson = prefs.getString("bookings", "[]") ?: "[]"
+        val pending = prefs.getString("bookingSyncPendingOwner", null) == owner.uid
+        if (pending) {
+            status.text = "Saved on phone · cloud confirmation pending review. " +
+                "No automatic retry. Use Review pending cloud sync."
+            return
+        }
+        FirebaseFirestore.getInstance().collection("users").document(owner.uid)
+            .collection("liveData").document("bookings").get(Source.SERVER)
+            .addOnSuccessListener { snapshot ->
+                if (currentScreen != "calendar" || selectedDate != date ||
+                    isFinishing || isDestroyed ||
+                    FirebaseAuth.getInstance().currentUser?.uid != owner.uid ||
+                    prefs.getString("bookings", "[]") != localJson ||
+                    prefs.getString("bookingSyncPendingOwner", null) == owner.uid
+                ) return@addOnSuccessListener
+                status.text = try {
+                    if (!snapshot.exists() || snapshot.getLong("schemaVersion") != 1L) {
+                        "Saved on phone · no verified cloud booking snapshot."
+                    } else {
+                        val serverJson = snapshot.getString("json")
+                            ?: error("Missing cloud booking data")
+                        JSONArray(serverJson)
+                        JSONArray(localJson)
+                        if (serverJson == localJson) {
+                            "Phone and cloud match · verified from server just now. " +
+                                "No changes made."
+                        } else {
+                            "Saved on phone · cloud differs. Review cloud booking " +
+                                "differences before editing. No changes made."
+                        }
+                    }
+                } catch (_: Exception) {
+                    "Saved on phone · cloud status could not be verified."
+                }
+            }.addOnFailureListener {
+                if (currentScreen == "calendar" && selectedDate == date &&
+                    !isFinishing && !isDestroyed &&
+                    FirebaseAuth.getInstance().currentUser?.uid == owner.uid) {
+                    status.text = "Saved on phone · cloud unavailable. Confirmation unknown."
+                }
+            }
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -1117,6 +1171,7 @@ class MainActivity : Activity() {
             pickDate(selectedDate) { selectedDate = it; showCalendar() }
         }
         button("+ Add Appointment") { bookingDialog(defaultDate = selectedDate) }
+        showBookingSyncStatus(selectedDate)
         // Phase 11.42: never mistake a locally saved booking for a cloud-confirmed one.
         val pendingOwner = FirebaseAuth.getInstance().currentUser?.uid
         if (pendingOwner != null &&
