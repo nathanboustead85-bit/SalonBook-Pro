@@ -23,7 +23,7 @@ test("11.35 validates schema, identity, booking IDs, and navigation",()=>{
 });
 test("11.35 does not import server snapshot in preview",()=>{
  const begin=source.indexOf("private fun showCloudBookingDifferences");
- const end=source.indexOf("private fun showCalendar()",begin);
+ const end=source.indexOf("private fun previewCloudOnlyImport(",begin);
  assert.ok(begin>=0&&end>begin);
  const preview=source.slice(begin,end);
  assert.doesNotMatch(preview,/prefs\.edit\(|saveBookings\(|bookings\.add\(|\.set\(/);
