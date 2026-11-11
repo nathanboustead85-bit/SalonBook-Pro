@@ -379,7 +379,7 @@ class MainActivity : Activity() {
     }
 
     private fun showDashboard() {
-        screen("Your Dashboard", "Your business. Beautifully organised.", "dashboard")
+        screen("Good to see you", "Your business, beautifully organised.", "dashboard")
 
         val todayCount = bookings.count { it.date == today() }
         val upcoming = bookings.count { it.date >= today() }
@@ -388,7 +388,7 @@ class MainActivity : Activity() {
             setPadding(dp(22), dp(22), dp(22), dp(22))
             background = rounded(orange, 24)
         }
-        summary.addView(label("TODAY AT A GLANCE", 13f, Color.WHITE, true))
+        summary.addView(label("YOUR DAY  •  BOUSTIO", 12f, Color.WHITE, true))
         summary.addView(label("$todayCount appointment${if (todayCount == 1) "" else "s"}",
             30f, Color.WHITE, true), LinearLayout.LayoutParams(-1, -2).apply {
             topMargin = dp(10)
@@ -419,6 +419,41 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dp(6) })
         container.addView(stats)
 
+        // Phase 12.2: next appointments are read from existing local bookings only.
+        // This is a presentation-only preview; no booking or cloud data is modified.
+        section("Coming up")
+        val nextBookings = bookings.filter { it.date >= today() }
+            .sortedWith(compareBy<Booking> { it.date }.thenBy { it.time })
+            .take(3)
+        if (nextBookings.isEmpty()) {
+            val emptyUpcoming = panel()
+            emptyUpcoming.addView(label("Your schedule is clear", 18f, dark, true))
+            emptyUpcoming.addView(label("New appointments will appear here as they're booked.", 13f, muted))
+            addPanel(emptyUpcoming)
+        } else {
+            nextBookings.forEach { appointment ->
+                val upcomingCard = panel()
+                val appointmentRow = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+                val timeColumn = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(0, 0, dp(16), 0)
+                }
+                timeColumn.addView(label(appointment.time, 18f, orange, true))
+                timeColumn.addView(label(dayPart(appointment.date, "EEE d MMM"), 12f, muted))
+                appointmentRow.addView(timeColumn, LinearLayout.LayoutParams(dp(106), -2))
+                val details = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+                details.addView(label(appointment.client, 16f, dark, true))
+                details.addView(label(appointment.service, 13f, muted))
+                appointmentRow.addView(details, LinearLayout.LayoutParams(0, -2, 1f))
+                upcomingCard.addView(appointmentRow)
+                addPanel(upcomingCard)
+            }
+            button("View full calendar") { selectedDate = today(); showCalendar() }
+        }
+
         section("Quick actions")
         button("+ New Appointment") { bookingDialog(defaultDate = today()) }
         actionCard("Appointment Calendar", "View your daily schedule", "▦") { showCalendar() }
@@ -447,7 +482,7 @@ class MainActivity : Activity() {
         actionCard("Test Appointment Availability", "Check available booking slots", "✓") {
             showAvailabilityTester()
         }
-        container.addView(label("BOUSTIO  •  Phase 9D.3", 12f, muted),
+        container.addView(label("BOUSTIO  •  PREMIUM BUSINESS EXPERIENCE", 12f, muted),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
     }
 
