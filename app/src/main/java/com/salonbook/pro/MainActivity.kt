@@ -1236,16 +1236,16 @@ class MainActivity : Activity() {
             pending -> "NOT READY: a booking upload is pending review. Do not force sync."
             else -> "PREPARATION ONLY: check the cloud using the read-only verification button."
         }
-        val instructions = "Current phone appointments: $phoneCount\\n" +
-            "Verified account: ${if (signedIn) "YES" else "NO"}\\n" +
-            "Pending cloud confirmation: ${if (pending) "YES" else "NO"}\\n\\n" +
-            "$status\\n\\n" +
-            "Before a two-phone test:\\n" +
-            "1. Keep this phone's installed app and its data intact.\\n" +
-            "2. Verify phone/cloud appointments on this phone.\\n" +
-            "3. Use a separate disposable test account and appointments for any write tests.\\n" +
-            "4. Do not edit, import, delete or force-sync existing appointments on either phone.\\n" +
-            "5. A matching read-only report on this phone does not prove the second phone is safe.\\n\\n" +
+        val instructions = "Current phone appointments: $phoneCount\n" +
+            "Verified account: ${if (signedIn) "YES" else "NO"}\n" +
+            "Pending cloud confirmation: ${if (pending) "YES" else "NO"}\n\n" +
+            "$status\n\n" +
+            "Before a two-phone test:\n" +
+            "1. Keep this phone's installed app and its data intact.\n" +
+            "2. Verify phone/cloud appointments on this phone.\n" +
+            "3. Use a separate disposable test account and appointments for any write tests.\n" +
+            "4. Do not edit, import, delete or force-sync existing appointments on either phone.\n" +
+            "5. A matching read-only report on this phone does not prove the second phone is safe.\n\n" +
             "This checklist performs no cloud writes, retries or sign-ins."
         AlertDialog.Builder(this).setTitle("Phase 11.59 · Two-device preparation")
             .setMessage(instructions).setPositiveButton("OK", null).show()
