@@ -1251,6 +1251,36 @@ class MainActivity : Activity() {
             .setMessage(instructions).setPositiveButton("OK", null).show()
     }
 
+    /** Phase 11.60: one-phone, read-only local recovery audit. */
+    private fun showSinglePhoneRecoveryAudit() {
+        if (!BuildConfig.DEBUG) return
+        val owner = FirebaseAuth.getInstance().currentUser
+        val verified = owner != null && owner.isEmailVerified
+        val pending = owner != null &&
+            prefs.getString("bookingSyncPendingOwner", null) == owner.uid
+        val raw = prefs.getString("bookings", "[]") ?: "[]"
+        val result = try {
+            val bookings = JSONArray(raw)
+            val ids = mutableSetOf<String>()
+            for (index in 0 until bookings.length()) {
+                val id = bookings.getJSONObject(index).optString("id")
+                require(id.isNotBlank() && ids.add(id)) { "Missing or duplicate appointment ID" }
+            }
+            "Local appointment count: ${bookings.length()}\n" +
+                "Local IDs valid: YES\n" +
+                "Verified account: ${if (verified) "YES" else "NO"}\n" +
+                "Cloud upload pending: ${if (pending) "YES" else "NO"}\n\n" +
+                (if (!verified || pending)
+                    "NOT READY: do not attempt cloud recovery or force sync."
+                else "Local snapshot is readable. Use the separate read-only server verification button to check cloud agreement.") +
+                "\n\nNo bookings were modified or uploaded."
+        } catch (_: Exception) {
+            "Local appointment snapshot is invalid. Do not force sync or overwrite cloud data.\n\nNo changes made."
+        }
+        AlertDialog.Builder(this).setTitle("Phase 11.60 · Single-phone recovery audit")
+            .setMessage(result).setPositiveButton("OK", null).show()
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -1349,6 +1379,9 @@ class MainActivity : Activity() {
         if (BuildConfig.DEBUG) {
             button("Demo recovery rehearsal · no real changes") {
                 showIsolatedRecoveryRehearsal(selectedDate)
+            }
+            button("Single-phone recovery audit · read only") {
+                showSinglePhoneRecoveryAudit()
             }
             button("Two-device test readiness · no changes") {
                 showTwoDeviceTestReadiness()
