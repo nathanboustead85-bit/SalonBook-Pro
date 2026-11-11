@@ -20,11 +20,11 @@ import java.util.UUID
 
 class ManagementActivity : Activity() {
 
-    private val orange = Color.rgb(242, 110, 36)
-    private val dark = Color.rgb(32, 36, 43)
-    private val muted = Color.rgb(111, 116, 124)
-    private val backgroundColor = Color.rgb(250, 249, 247)
-    private val panelColor = Color.rgb(245, 241, 237)
+    private val orange = Color.rgb(17, 107, 104) // Option C signature teal
+    private val dark = Color.rgb(23, 51, 50)
+    private val muted = Color.rgb(101, 113, 111)
+    private val backgroundColor = Color.rgb(247, 248, 246)
+    private val panelColor = Color.rgb(231, 243, 239)
     private val white = Color.WHITE
 
     private val prefs by lazy {
@@ -68,7 +68,9 @@ class ManagementActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = orange
+        window.statusBarColor = backgroundColor
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
         window.navigationBarColor = backgroundColor
         load()
         render()
@@ -79,7 +81,7 @@ class ManagementActivity : Activity() {
 
     private fun rounded(
         colour: Int,
-        radius: Int = 18,
+        radius: Int = 20,
         border: Int? = null
     ): GradientDrawable {
         return GradientDrawable().apply {
@@ -106,6 +108,9 @@ class ManagementActivity : Activity() {
 
     private fun styleButton(button: Button) {
         button.isAllCaps = false
+        button.textSize = 15f
+        button.minHeight = dp(48)
+        button.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
         button.setTextColor(white)
         button.backgroundTintList =
             ColorStateList.valueOf(orange)
@@ -122,7 +127,7 @@ class ManagementActivity : Activity() {
             textSize = size
             setTextColor(colour)
             if (bold) {
-                typeface = Typeface.DEFAULT_BOLD
+                typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
             }
         }
     }
@@ -324,7 +329,7 @@ class ManagementActivity : Activity() {
         layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(
-                dp(18), dp(24), dp(18), dp(30)
+                dp(20), dp(24), dp(20), dp(30)
             )
         }
 
