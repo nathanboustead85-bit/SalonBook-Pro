@@ -19,6 +19,7 @@ on:
       - 'functions/phase1137TwoDeviceImportSimulation.test.js'
       - 'functions/phase1138FirestoreEmulatorDevices.test.js'
       - 'functions/phase1139AndroidRecoverySafety.test.js'
+      - 'functions/phase1140CloudRecoveryEmulator.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
@@ -60,6 +61,10 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.40 isolated real Firestore cloud recovery integration
+        run: |
+          npm --prefix functions install --no-audit --no-fund
+          GCLOUD_PROJECT=demo-boustio-phase-1140 GOOGLE_CLOUD_PROJECT=demo-boustio-phase-1140 npx --yes firebase-tools@14 emulators:exec --project demo-boustio-phase-1140 --only firestore 'GCLOUD_PROJECT=demo-boustio-phase-1140 node --test functions/phase1140CloudRecoveryEmulator.test.js'
       - name: Phase 11.39 Android cloud recovery safety checks
         run: node --test functions/phase1139AndroidRecoverySafety.test.js
       - name: Phase 11.38 isolated Firestore two-client integration
