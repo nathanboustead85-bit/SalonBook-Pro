@@ -1,0 +1,11 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
+const a=src.indexOf("private fun showSharedCloudAppointments("),b=src.indexOf("// Phase 11.32:",a),feed=src.slice(a,b);
+const c=src.indexOf("private fun showCalendar()"),d=src.indexOf("private fun showDebugWebsiteBookingPreview(",c),calendar=src.slice(c,d);
+test("11.65 daily overview displays separate website status",()=>{assert.match(calendar,/websiteOverviewStatus/);assert.match(calendar,/summary\.addView\(websiteOverviewStatus\)/);assert.match(calendar,/showSharedCloudAppointments\(selectedDate, websiteOverviewStatus\)/);});
+test("11.65 local count stays based only on phone appointments",()=>{assert.match(calendar,/val daily = bookings\.filter/);assert.match(calendar,/daily\.size/);assert.match(feed,/not added to phone count/);});
+test("11.65 website count only from filtered read-only snapshot",()=>{assert.match(feed,/whereEqualTo\("date", date\)/);assert.match(feed,/items\.size/);assert.match(feed,/overviewWebsiteStatus\?\.text/);});
+test("11.65 stale callback and sign-out do not update overview",()=>{assert.match(feed,/currentScreen != "calendar"/);assert.match(feed,/selectedDate != date/);assert.match(feed,/currentUser\?\.uid != user\.uid/);});
+test("11.65 failure and missing sign-in remain explicit",()=>{assert.match(feed,/sign-in required/);assert.match(feed,/Website bookings: unavailable/);});
+test("11.65 feed never imports or writes appointments",()=>{assert.doesNotMatch(feed,/\.set\(|\.update\(|\.delete\(|runTransaction|saveBookings\(|prefs\.edit\(|CloudSyncManager\.upload/);});
