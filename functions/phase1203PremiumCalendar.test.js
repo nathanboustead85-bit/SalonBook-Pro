@@ -1,0 +1,11 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
+const a=src.indexOf("private fun showCalendar()"),b=src.indexOf("/** Development-only website calendar feed.",a),calendar=src.slice(a,b);
+const c=src.indexOf("private fun bookingCard(booking: Booking)"),d=src.indexOf("private fun bookingOptions(",c),card=src.slice(c,d);
+test("12.3 calendar has premium date navigation card and selectable week",()=>{assert.match(calendar,/dateNavigationCard/);assert.match(calendar,/SELECTED DATE/);assert.match(calendar,/for \(offset in -3\.\.3\)/);});
+test("12.3 calendar still supports day changes and date picker",()=>{assert.match(calendar,/shiftDate\(selectedDate, -1\)/);assert.match(calendar,/shiftDate\(selectedDate, 1\)/);assert.match(calendar,/pickDate\(selectedDate\)/);});
+test("12.3 daily overview counts phone appointments only",()=>{assert.match(calendar,/bookings\.filter \{ it\.date == selectedDate \}/);assert.match(calendar,/daily\.size/);assert.match(calendar,/Website bookings: checking separate feed/);});
+test("12.3 read-only website and cloud safety checks remain",()=>{for(const name of ["showBookingSyncStatus","showSharedCloudAppointments","showLegacyMultiDeviceReadiness","showCloudBookingDifferences","previewConflictRecovery"])assert.ok(calendar.includes(name));});
+test("12.3 premium booking cards retain details and edit controls",()=>{for(const name of ["timeHeader","accent","booking.client","booking.service","booking.duration","booking.price","bookingOptions(booking)"])assert.ok(card.includes(name));});
+test("12.3 calendar doesn't silently mutate or delete appointments",()=>{assert.doesNotMatch(calendar,/saveBookings\(|bookings\.remove|bookings\.clear\(/);});
