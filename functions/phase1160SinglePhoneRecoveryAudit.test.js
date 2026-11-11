@@ -1,7 +1,7 @@
 "use strict";
 const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
-const a=src.indexOf("private fun showSinglePhoneRecoveryAudit()"),b=src.indexOf("private fun showCalendar()",a);
+const a=src.indexOf("private fun showSinglePhoneRecoveryAudit()"),next=src.indexOf("private fun diagnoseBookingRecoveryReadOnly(",a),b=next>a?next:src.indexOf("private fun showCalendar()",a);
 const body=src.slice(a,b);
 test("11.60 audit is debug-only and available from calendar",()=>{assert.ok(a>0&&b>a);assert.match(body,/if \(!BuildConfig\.DEBUG\) return/);assert.match(src,/button\("Single-phone recovery audit · read only"\)/)});
 test("11.60 validates local snapshot and duplicate IDs",()=>{assert.match(body,/JSONArray\(raw\)/);assert.match(body,/ids\.add\(id\)/);assert.match(body,/Missing or duplicate appointment ID/);});
