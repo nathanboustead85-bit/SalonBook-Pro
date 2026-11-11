@@ -52,6 +52,7 @@ on:
       - 'functions/phase1204ModernFriendlyClientsServices.test.js'
       - 'functions/phase1205PremiumClientProfile.test.js'
       - 'functions/phase1206PremiumNavigationSettings.test.js'
+      - 'functions/phase1207PremiumAppointments.test.js'
       - 'functions/phase1165UnifiedDailyOverview.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/phase1155TestReliability.test.js'
@@ -100,6 +101,8 @@ jobs:
           node scripts/validateFirebaseDebugConfig.js
       - name: Phase 11.65 website count overview and safety checks
         run: node --test functions/phase1165UnifiedDailyOverview.test.js
+      - name: Phase 12.7 premium appointments regression checks
+        run: node --test functions/phase1207PremiumAppointments.test.js
       - name: Phase 12.6 premium navigation and settings regression checks
         run: node --test functions/phase1206PremiumNavigationSettings.test.js
       - name: Phase 12.5 premium client profile regression checks
