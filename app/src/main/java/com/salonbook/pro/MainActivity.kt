@@ -468,7 +468,7 @@ class MainActivity : Activity() {
         super.onDestroy()
     }
 
-    private fun showSharedCloudAppointments(date: String) {
+    private fun showSharedCloudAppointments(date: String, overviewWebsiteStatus: TextView? = null) {
         cloudCalendarListener?.remove()
         cloudCalendarListener = null
         section("Website/shared appointments · separate cloud feed")
@@ -476,6 +476,7 @@ class MainActivity : Activity() {
         container.addView(target)
         val user = FirebaseAuth.getInstance().currentUser
         if (user == null || !user.isEmailVerified) {
+            overviewWebsiteStatus?.text = "Website bookings: sign-in required · not included in phone count"
             target.addView(label("Verified sign-in required for cloud calendar.", 13f, muted))
             return
         }
@@ -484,11 +485,13 @@ class MainActivity : Activity() {
             .collection("businesses").document(user.uid)
             .collection("appointments").whereEqualTo("date", date)
             .addSnapshotListener { snapshot, error ->
-                if (currentScreen != "calendar" || selectedDate != date || isFinishing || isDestroyed) {
+                if (currentScreen != "calendar" || selectedDate != date || isFinishing || isDestroyed ||
+                    FirebaseAuth.getInstance().currentUser?.uid != user.uid) {
                     return@addSnapshotListener
                 }
                 target.removeAllViews()
                 if (error != null || snapshot == null) {
+                    overviewWebsiteStatus?.text = "Website bookings: unavailable · phone count unchanged"
                     target.addView(label("Website/shared feed unavailable. Your phone appointments and their cloud backup are separate and unchanged.", 13f, muted))
                     return@addSnapshotListener
                 }
@@ -500,6 +503,7 @@ class MainActivity : Activity() {
                         (doc.getString("serviceName") ?: "Service") + " · " +
                         (doc.getString("staffName") ?: "Staff"))
                 }.sortedBy { it.first }
+                overviewWebsiteStatus?.text = "${items.size} website/shared appointment(s) · separate read-only feed; not added to phone count"
                 if (items.isEmpty()) {
                     target.addView(label("No website/shared appointments on this date. This is a separate feed from your phone bookings; it does not mean your phone appointments are missing.", 13f, muted))
                 }
@@ -1450,6 +1454,9 @@ class MainActivity : Activity() {
         summary.addView(label("${daily.size} appointment${if (daily.size == 1) "" else "s"}",
             26f, Color.WHITE, true))
         summary.addView(label(displayDate(selectedDate), 14f, Color.WHITE))
+        // Phase 11.65: display both source counts, never combine or import them.
+        val websiteOverviewStatus = label("Website bookings: checking separate feed…", 13f, Color.WHITE)
+        summary.addView(websiteOverviewStatus)
         container.addView(summary, LinearLayout.LayoutParams(-1, -2).apply {
             topMargin = dp(6)
             bottomMargin = dp(12)
@@ -1457,7 +1464,7 @@ class MainActivity : Activity() {
         if (BuildConfig.DEBUG) {
             showDebugWebsiteBookingPreview(selectedDate)
         }
-        showSharedCloudAppointments(selectedDate)
+        showSharedCloudAppointments(selectedDate, websiteOverviewStatus)
         showLegacyMultiDeviceReadiness(selectedDate)
         showCloudBookingDifferences(selectedDate)
         button("Review conflict recovery · read only") {
