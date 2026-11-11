@@ -129,8 +129,8 @@ class CloudSyncManager {
         val trusted = baseline?.let { byId(it) }
         for ((id, serverBooking) in cloud) {
             val proposed = phone[id] ?: error("Cloud booking missing from phone")
-            if (!proposed.similar(serverBooking)) {
-                check(trusted != null && trusted[id]?.similar(serverBooking) == true) {
+            if (proposed.toString() != serverBooking.toString()) {
+                check(trusted != null && trusted[id]?.toString() == serverBooking.toString()) {
                     "Booking changed on another device or has no verified baseline. " +
                         "Upload blocked; review cloud differences."
                 }
@@ -152,8 +152,8 @@ class CloudSyncManager {
     fun upload(
         key: String,
         json: String,
-        callback: (Result<Unit>) -> Unit,
-        acknowledgedBookingsJson: String? = null
+        acknowledgedBookingsJson: String? = null,
+        callback: (Result<Unit>) -> Unit
     ) {
         val completed = AtomicBoolean(false)
 
