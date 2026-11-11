@@ -236,7 +236,7 @@ class MainActivity : Activity() {
         if (!::navigationBar.isInitialized) return
         navigationBar.removeAllViews()
         val active = when (mode) {
-            "calendar" -> "calendar"
+            "calendar", "appointments" -> "calendar"
             "clients", "client_profile" -> "clients"
             "settings" -> "settings"
             else -> "dashboard"
@@ -1604,11 +1604,37 @@ class MainActivity : Activity() {
     }
 
     private fun showAppointments() {
-        screen("All Appointments", "Every booking, in date and time order.", "appointments")
+        screen("All appointments", "Your complete booking history, beautifully organised.", "appointments")
         val sorted = bookings.sortedWith(compareBy<Booking> { it.date }.thenBy { it.time })
-        if (sorted.isEmpty()) text("No appointments saved yet.")
-        sorted.forEach { bookingCard(it) }
-        button("Create New Booking") { bookingDialog() }
+        val overview = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(22), dp(20), dp(22), dp(20))
+            background = rounded(orange, 24)
+        }
+        overview.addView(label("APPOINTMENT OVERVIEW  •  BOUSTIO", 12f, Color.WHITE, true))
+        overview.addView(label("${sorted.size} booking${if (sorted.size == 1) "" else "s"}",
+            29f, Color.WHITE, true), LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(8)
+        })
+        overview.addView(label("Your saved appointments, in date and time order.",
+            13f, Color.WHITE), LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(5)
+        })
+        container.addView(overview, LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(8)
+            bottomMargin = dp(12)
+        })
+        button("+ Create New Booking") { bookingDialog() }
+        if (sorted.isEmpty()) {
+            val emptyCard = panel()
+            emptyCard.addView(label("No appointments yet", 18f, dark, true))
+            emptyCard.addView(label("Your saved bookings will appear here when you add them.",
+                13f, muted))
+            addPanel(emptyCard)
+        } else {
+            section("Your bookings")
+            sorted.forEach { bookingCard(it) }
+        }
         button("Back to Dashboard") { showDashboard() }
     }
 
