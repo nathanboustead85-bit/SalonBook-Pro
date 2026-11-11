@@ -632,8 +632,8 @@ class MainActivity : Activity() {
                         "No cloud-only or changed bookings found for this date. " +
                             "Read-only review; no data transferred."
                     } else {
-                        differences.joinToString("\\n") +
-                            "\\nNo bookings were imported or overwritten."
+                        differences.joinToString("\n") +
+                            "\nNo bookings were imported or overwritten."
                     }
                 } catch (_: Exception) {
                     status.text = "Cloud differences could not be checked safely. No changes made."
