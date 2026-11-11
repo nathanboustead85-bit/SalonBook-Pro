@@ -1427,7 +1427,7 @@ class MainActivity : Activity() {
     }
 
     private fun showCalendar() {
-        screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
+        screen("Calendar", "A clear view of your working day.", "calendar")
         val navigation = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -1449,7 +1449,12 @@ class MainActivity : Activity() {
         navigation.addView(previous, LinearLayout.LayoutParams(dp(56), -2))
         navigation.addView(dateTitle, LinearLayout.LayoutParams(0, -2, 1f))
         navigation.addView(next, LinearLayout.LayoutParams(dp(56), -2))
-        container.addView(navigation)
+        val dateNavigationCard = panel()
+        dateNavigationCard.addView(label("SELECTED DATE", 11f, muted, true))
+        dateNavigationCard.addView(navigation, LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(8)
+        })
+        addPanel(dateNavigationCard)
         val week = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         for (offset in -3..3) {
             val date = shiftDate(selectedDate, offset)
@@ -1458,7 +1463,9 @@ class MainActivity : Activity() {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
                 setPadding(dp(2), dp(10), dp(2), dp(10))
-                background = rounded(if (selected) orange else Color.WHITE, 12)
+                background = rounded(if (selected) orange else Color.WHITE, 16)
+                isClickable = true
+                isFocusable = true
                 setOnClickListener { selectedDate = date; showCalendar() }
             }
             cell.addView(label(dayPart(date, "EEE"), 11f,
@@ -1474,10 +1481,10 @@ class MainActivity : Activity() {
             topMargin = dp(14)
             bottomMargin = dp(16)
         })
-        button("Choose Another Date") {
+        button("Jump to date") {
             pickDate(selectedDate) { selectedDate = it; showCalendar() }
         }
-        button("+ Add Appointment") { bookingDialog(defaultDate = selectedDate) }
+        button("+ New appointment") { bookingDialog(defaultDate = selectedDate) }
         showBookingSyncStatus(selectedDate)
         // Phase 11.42: never mistake a locally saved booking for a cloud-confirmed one.
         val pendingOwner = FirebaseAuth.getInstance().currentUser?.uid
@@ -1498,9 +1505,9 @@ class MainActivity : Activity() {
         val summary = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(18), dp(20), dp(18))
-            background = rounded(orange)
+            background = rounded(orange, 24)
         }
-        summary.addView(label("DAILY OVERVIEW", 13f, Color.WHITE, true))
+        summary.addView(label("YOUR SCHEDULE  •  TODAY AT A GLANCE", 12f, Color.WHITE, true))
         summary.addView(label("${daily.size} appointment${if (daily.size == 1) "" else "s"}",
             26f, Color.WHITE, true))
         summary.addView(label(displayDate(selectedDate), 14f, Color.WHITE))
@@ -1547,13 +1554,15 @@ class MainActivity : Activity() {
                 showOfflineReconnectRehearsal(selectedDate)
             }
         }
-        section("Daily schedule · local appointments")
+        section("Appointments · saved on this phone")
         if (daily.isEmpty()) {
             val empty = panel()
             empty.addView(label("No appointments scheduled", 19f, dark, true))
             empty.addView(label("This date is free. Add an appointment to get started.", 14f, muted))
             addPanel(empty)
-        } else daily.forEach { bookingCard(it) }
+        } else {
+            daily.forEach { bookingCard(it) }
+        }
         button("Today") { selectedDate = today(); showCalendar() }
         button("Back to Dashboard") { showDashboard() }
     }
@@ -1597,13 +1606,23 @@ class MainActivity : Activity() {
 
     private fun bookingCard(booking: Booking) {
         val card = panel()
+        // Phase 12.3: a subtle time rail improves scanability without changing booking data.
+        val accent = View(this).apply { background = rounded(orange, 3) }
         val staff = readRecords("staff").firstOrNull { it.optString("id") == booking.staffId }
         val end = if (booking.duration > 0) {
             runCatching { " – ${formatTime(toMinutes(booking.time) + booking.duration)}" }
                 .getOrDefault("")
         } else ""
-        card.addView(label("${booking.time}$end", 15f, orange, true))
-        card.addView(label(booking.client, 21f, dark, true), LinearLayout.LayoutParams(-1, -2).apply {
+        val timeHeader = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        timeHeader.addView(accent, LinearLayout.LayoutParams(dp(4), dp(25)).apply {
+            marginEnd = dp(12)
+        })
+        timeHeader.addView(label("${booking.time}$end", 15f, orange, true))
+        card.addView(timeHeader)
+        card.addView(label(booking.client, 20f, dark, true), LinearLayout.LayoutParams(-1, -2).apply {
             topMargin = dp(8)
         })
         card.addView(label(booking.service, 16f, dark))
