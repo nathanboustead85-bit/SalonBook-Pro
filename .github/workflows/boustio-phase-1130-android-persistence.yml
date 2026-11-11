@@ -30,6 +30,7 @@ on:
       - 'functions/phase1148ConflictRecoveryReview.test.js'
       - 'functions/phase1149VerifiedCloudBaseline.test.js'
       - 'functions/phase1150VerifiedBookingEditEmulator.test.js'
+      - 'functions/phase1151BookingSaveAcknowledgementEmulator.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
@@ -71,6 +72,10 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.51 isolated phone save and server acknowledgement integration
+        run: |
+          npm --prefix functions install --no-audit --no-fund
+          GCLOUD_PROJECT=demo-boustio-phase-1151 GOOGLE_CLOUD_PROJECT=demo-boustio-phase-1151 npx --yes firebase-tools@14 emulators:exec --project demo-boustio-phase-1151 --only firestore 'GCLOUD_PROJECT=demo-boustio-phase-1151 node --test functions/phase1151BookingSaveAcknowledgementEmulator.test.js'
       - name: Phase 11.50 isolated verified booking edit and conflict integration
         run: |
           npm --prefix functions install --no-audit --no-fund
