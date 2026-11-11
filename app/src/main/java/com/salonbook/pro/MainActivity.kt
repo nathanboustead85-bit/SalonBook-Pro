@@ -776,6 +776,45 @@ class MainActivity : Activity() {
         }.addOnFailureListener { message("Cloud unavailable. Import cancelled.") }
     }
 
+    // Phase 11.41: local, debug-only recovery rehearsal. Never touches Firestore,
+    // SharedPreferences, or the real bookings list. All sample data is in memory.
+    private fun showIsolatedRecoveryRehearsal(date: String) {
+        if (!BuildConfig.DEBUG) return
+        val sampleExisting = Booking("demo-local", "Demo existing client", "Demo haircut",
+            date, "09:00", "", "demo-service", "demo-staff", 30, "20")
+        val sampleRemote = Booking("demo-cloud", "Demo cloud client", "Demo haircut",
+            date, "10:00", "", "demo-service", "demo-staff", 30, "20")
+        val samplePhone = listOf(sampleExisting)
+        val sampleCloud = listOf(sampleExisting, sampleRemote)
+        val pending = sampleCloud.filter { cloud -> samplePhone.none { it.id == cloud.id } }
+        AlertDialog.Builder(this)
+            .setTitle("Isolated recovery rehearsal · demo only")
+            .setMessage("Simulated phone: ${samplePhone.size} appointment. " +
+                "Simulated cloud: ${sampleCloud.size} appointments. " +
+                "Cloud-only: ${pending.size} at ${sampleRemote.time}. " +
+                "No real appointments or Firebase data will change.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Rehearse import") { _, _ ->
+                val combined = samplePhone.toMutableList()
+                val safe = pending.all { candidate ->
+                    combined.none { existing ->
+                        existing.id == candidate.id ||
+                            (existing.date == candidate.date &&
+                                existing.staffId == candidate.staffId &&
+                                toMinutes(existing.time) < toMinutes(candidate.time) + candidate.duration &&
+                                toMinutes(candidate.time) < toMinutes(existing.time) + existing.duration)
+                    }.also { accepted -> if (accepted) combined.add(candidate) }
+                }
+                AlertDialog.Builder(this)
+                    .setTitle(if (safe) "Demo recovery passed" else "Demo recovery blocked")
+                    .setMessage(if (safe) "Demo phone now has ${combined.size} simulated appointments. " +
+                        "Your real calendar and cloud data were not modified." else
+                        "Simulated booking conflict detected. Real data unchanged.")
+                    .setPositiveButton("Close", null)
+                    .show()
+            }.show()
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -849,6 +888,11 @@ class MainActivity : Activity() {
         showLegacyMultiDeviceReadiness(selectedDate)
         showCloudBookingDifferences(selectedDate)
         button("Review cloud-only appointment import") { previewCloudOnlyImport(selectedDate) }
+        if (BuildConfig.DEBUG) {
+            button("Demo recovery rehearsal · no real changes") {
+                showIsolatedRecoveryRehearsal(selectedDate)
+            }
+        }
         section("Daily schedule · local appointments")
         if (daily.isEmpty()) {
             val empty = panel()
