@@ -503,10 +503,32 @@ class MainActivity : Activity() {
                 if (items.isEmpty()) {
                     target.addView(label("No website/shared appointments on this date. This is a separate feed from your phone bookings; it does not mean your phone appointments are missing.", 13f, muted))
                 }
+                // Phase 11.63: compare visible start times only. This is a warning,
+                // not a definitive overlap check (durations and staff may differ).
+                // Never merge website documents into the legacy phone snapshot.
+                val localAtDisplay = bookings.filter { it.date == date }
+                val localStarts = localAtDisplay.map { it.time }.toSet()
+                val websiteStarts = items.groupingBy { it.first }.eachCount()
+                val possibleCollisions = items.count { (start, _, _) ->
+                    start in localStarts || (websiteStarts[start] ?: 0) > 1
+                }
+                if (items.isNotEmpty()) {
+                    target.addView(label(
+                        "${items.size} website/shared appointment(s) shown separately. " +
+                            "${possibleCollisions} possible same-start-time collision(s). " +
+                            "These are warnings only; staff and duration must be reviewed manually. " +
+                            "No website bookings have been imported.",
+                        13f, muted))
+                }
                 items.forEach { (start, client, details) ->
                     val item = panel()
                     item.addView(label("$start  $client", 16f, dark, true))
                     item.addView(label(details, 13f, muted))
+                    if (start in localStarts || (websiteStarts[start] ?: 0) > 1) {
+                        item.addView(label(
+                            "POSSIBLE TIME COLLISION · review staff and duration manually",
+                            12f, orange))
+                    }
                     item.addView(label("Website/shared feed · read only · not imported", 12f, orange))
                     target.addView(item)
                 }
