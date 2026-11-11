@@ -724,8 +724,8 @@ class MainActivity : Activity() {
                                         existing.id == candidate.id ||
                                         (existing.date == candidate.date &&
                                             existing.staffId == candidate.staffId &&
-                                            existing.time.toMinutes() < candidate.time.toMinutes() + candidate.duration &&
-                                            candidate.time.toMinutes() < existing.time.toMinutes() + existing.duration)
+                                            toMinutes(existing.time) < toMinutes(candidate.time) + candidate.duration &&
+                                            toMinutes(candidate.time) < toMinutes(existing.time) + existing.duration)
                                     }) { "Appointment overlap or duplicate. Import blocked." }
                                     combined.add(candidate)
                                 }
