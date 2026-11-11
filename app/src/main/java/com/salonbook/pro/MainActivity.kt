@@ -569,6 +569,84 @@ class MainActivity : Activity() {
             }
     }
 
+    // Phase 11.35: display server-only bookings without importing or
+    // overwriting the phone. A safe preview is required before any merge UI.
+    private fun showCloudBookingDifferences(date: String) {
+        section("Cloud booking differences · read only")
+        val status = label("Checking cloud bookings from other devices…", 13f, muted)
+        container.addView(status)
+        val owner = FirebaseAuth.getInstance().currentUser
+        if (owner == null || !owner.isEmailVerified) {
+            status.text = "Sign in with a verified account to review cloud bookings."
+            return
+        }
+        FirebaseFirestore.getInstance().collection("users").document(owner.uid)
+            .collection("liveData").document("bookings").get(Source.SERVER)
+            .addOnSuccessListener { document ->
+                if (currentScreen != "calendar" || selectedDate != date ||
+                    isFinishing || isDestroyed ||
+                    FirebaseAuth.getInstance().currentUser?.uid != owner.uid) {
+                    return@addOnSuccessListener
+                }
+                try {
+                    if (!document.exists()) {
+                        status.text = "No cloud snapshot available. Phone appointments unchanged."
+                        return@addOnSuccessListener
+                    }
+                    check(document.getLong("schemaVersion") == 1L) {
+                        "Unsupported cloud booking schema"
+                    }
+                    val remote = JSONArray(document.getString("json")
+                        ?: throw IllegalStateException("Missing cloud booking data"))
+                    val localById = bookings.associateBy { it.id }
+                    val seen = mutableSetOf<String>()
+                    val differences = mutableListOf<String>()
+                    for (i in 0 until remote.length()) {
+                        val entry = remote.getJSONObject(i)
+                        val id = entry.optString("id")
+                        check(id.isNotBlank() && seen.add(id)) {
+                            "Invalid or duplicate cloud booking ID"
+                        }
+                        if (entry.optString("date") != date) continue
+                        val local = localById[id]
+                        if (local == null) {
+                            differences.add("Cloud only: ${entry.optString("time")} · " +
+                                entry.optString("client", "Client") + " · " +
+                                entry.optString("service", "Service"))
+                        } else if (local.date != entry.optString("date") ||
+                            local.time != entry.optString("time") ||
+                            local.client != entry.optString("client") ||
+                            local.service != entry.optString("service") ||
+                            local.staffId != entry.optString("staffId") ||
+                            local.duration != entry.optInt("duration") ||
+                            local.notes != entry.optString("notes")) {
+                            differences.add("Changed on cloud: ${entry.optString("time")} · " +
+                                entry.optString("client", "Client"))
+                        }
+                    }
+                    val remoteIds = seen
+                    bookings.filter { it.date == date && it.id !in remoteIds }.forEach {
+                        differences.add("Phone only: ${it.time} · ${it.client}")
+                    }
+                    status.text = if (differences.isEmpty()) {
+                        "No cloud-only or changed bookings found for this date. " +
+                            "Read-only review; no data transferred."
+                    } else {
+                        differences.joinToString("\\n") +
+                            "\\nNo bookings were imported or overwritten."
+                    }
+                } catch (_: Exception) {
+                    status.text = "Cloud differences could not be checked safely. No changes made."
+                }
+            }
+            .addOnFailureListener {
+                if (currentScreen == "calendar" && selectedDate == date &&
+                    !isFinishing && !isDestroyed) {
+                    status.text = "Server unavailable. Phone bookings remain unchanged."
+                }
+            }
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -640,6 +718,7 @@ class MainActivity : Activity() {
         }
         showSharedCloudAppointments(selectedDate)
         showLegacyMultiDeviceReadiness(selectedDate)
+        showCloudBookingDifferences(selectedDate)
         section("Daily schedule · local appointments")
         if (daily.isEmpty()) {
             val empty = panel()
