@@ -857,6 +857,71 @@ class MainActivity : Activity() {
             }.show()
     }
 
+    // Phase 11.45: read-only, server-verified pending upload review.
+    // Never clears the pending marker or retries an upload automatically.
+    private fun reviewPendingBookingSync(date: String) {
+        val owner = FirebaseAuth.getInstance().currentUser
+        if (owner == null || !owner.isEmailVerified ||
+            prefs.getString("bookingSyncPendingOwner", null) != owner.uid) {
+            message("No pending cloud booking review for this account")
+            return
+        }
+        val pendingJson = prefs.getString("bookingSyncPendingJson", null)
+        val localJson = prefs.getString("bookings", "[]") ?: "[]"
+        if (pendingJson == null || pendingJson != localJson) {
+            AlertDialog.Builder(this).setTitle("Sync review · phone changed")
+                .setMessage("The phone bookings changed since the pending upload. " +
+                    "No upload was attempted. Review cloud differences before editing further.")
+                .setPositiveButton("Close", null).show()
+            return
+        }
+        FirebaseFirestore.getInstance().collection("users").document(owner.uid)
+            .collection("liveData").document("bookings").get(Source.SERVER)
+            .addOnSuccessListener { snapshot ->
+                if (isFinishing || isDestroyed || currentScreen != "calendar" ||
+                    selectedDate != date ||
+                    FirebaseAuth.getInstance().currentUser?.uid != owner.uid ||
+                    prefs.getString("bookingSyncPendingJson", null) != pendingJson ||
+                    prefs.getString("bookings", null) != localJson) return@addOnSuccessListener
+                val summary = try {
+                    if (!snapshot.exists()) {
+                        "No cloud booking snapshot exists. Your phone bookings remain saved. " +
+                            "Do not assume they were uploaded."
+                    } else {
+                        check(snapshot.getLong("schemaVersion") == 1L) {
+                            "Unsupported cloud booking schema"
+                        }
+                        val cloudJson = snapshot.getString("json")
+                            ?: error("Missing cloud booking JSON")
+                        val cloudItems = JSONArray(cloudJson)
+                        val phoneItems = JSONArray(localJson)
+                        if (cloudJson == localJson) {
+                            "Cloud and phone booking snapshots match exactly " +
+                                "(${phoneItems.length()} appointments). " +
+                                "The previous upload acknowledgement remains unconfirmed."
+                        } else {
+                            "Cloud has ${cloudItems.length()} appointments; phone has " +
+                                "${phoneItems.length()}. Their snapshots differ. " +
+                                "Do not overwrite cloud data. Review differences first."
+                        }
+                    }
+                } catch (_: Exception) {
+                    "Cloud booking data could not be verified. No upload attempted."
+                }
+                AlertDialog.Builder(this).setTitle("Pending cloud sync · read only")
+                    .setMessage(summary + " No upload, import or pending-status reset was performed.")
+                    .setPositiveButton("Close", null).show()
+            }.addOnFailureListener {
+                if (!isFinishing && !isDestroyed && currentScreen == "calendar" &&
+                    FirebaseAuth.getInstance().currentUser?.uid == owner.uid) {
+                    AlertDialog.Builder(this).setTitle("Cloud unavailable")
+                        .setMessage("Could not verify server bookings. Phone bookings remain " +
+                            "saved; pending sync remains flagged. No upload attempted.")
+                        .setPositiveButton("Close", null).show()
+                }
+            }
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -919,6 +984,9 @@ class MainActivity : Activity() {
                     "on this phone. Review cloud booking differences before taking action. " +
                     "Nothing will be uploaded automatically on reconnect.",
                 13f, muted))
+            button("Review pending cloud sync · read only") {
+                reviewPendingBookingSync(selectedDate)
+            }
         }
 
         val daily = bookings.filter { it.date == selectedDate }.sortedBy { it.time }
