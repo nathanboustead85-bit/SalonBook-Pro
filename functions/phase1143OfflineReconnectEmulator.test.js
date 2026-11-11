@@ -18,7 +18,7 @@ const payload=items=>({json:JSON.stringify(items),schemaVersion:1,updatedAt:admi
 const parse=s=>JSON.parse(s.get("json"));
 async function conservativeUpload(local,expectedServerJson){
  const preflight=await ref.get();
- if(!preflight.exists()||preflight.get("schemaVersion")!==1)throw Error("unverified server");
+ if(!preflight.exists||preflight.get("schemaVersion")!==1)throw Error("unverified server");
  if(preflight.get("json")!==expectedServerJson)throw Error("stale server snapshot");
  const localIds=new Set(local.map(x=>x.id));
  if(localIds.size!==local.length||parse(preflight).some(x=>!localIds.has(x.id)))
