@@ -1,0 +1,11 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const root=path.join(__dirname,"../app/src/main/java/com/salonbook/pro");
+const main=fs.readFileSync(path.join(root,"MainActivity.kt"),"utf8"),manage=fs.readFileSync(path.join(root,"ManagementActivity.kt"),"utf8");
+const a=main.indexOf("private fun showClients("),b=main.indexOf("private fun showAvailabilityTester(",a),clients=main.slice(a,b);
+test("12.4 client directory has premium overview and search panel",()=>{for(const x of ["YOUR CLIENT DIRECTORY","SEARCH DIRECTORY","Every relationship, beautifully organised.","searchCard"])assert.ok(clients.includes(x));});
+test("12.4 client cards show initials and history without changing source",()=>{for(const x of ["val initial = name.trim().take(1)","val avatar = label(initial","bookings.filter","showClientProfile(name)"])assert.ok(clients.includes(x));});
+test("12.4 client directory remains read-only except existing explicit add action",()=>{assert.doesNotMatch(clients,/prefs\.edit\(|saveBookings\(|\.collection\(|\.delete\(/);assert.match(clients,/registerClientDialog\(\)/);});
+test("12.4 services and staff share Option C colour palette",()=>{for(const x of ["Color.rgb(17, 107, 104)","Color.rgb(23, 51, 50)","Color.rgb(247, 248, 246)","Color.rgb(231, 243, 239)"])assert.ok(manage.includes(x));});
+test("12.4 management keeps existing storage keys and cloud sync",()=>{for(const x of ['if (staffMode) "staff" else "services"',"CloudSyncManager().upload(","private fun save()","private fun render()"])assert.ok(manage.includes(x));});
+test("12.4 management uses accessible light theme and touch targets",()=>{assert.match(manage,/SYSTEM_UI_FLAG_LIGHT_STATUS_BAR/);assert.match(manage,/button\.minHeight = dp\(48\)/);});
