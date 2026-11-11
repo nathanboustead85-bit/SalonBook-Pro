@@ -815,6 +815,48 @@ class MainActivity : Activity() {
             }.show()
     }
 
+    // Phase 11.44: deterministic, in-memory offline/reconnect demonstration.
+    // No actual network changes, Firestore writes or local booking persistence.
+    private fun showOfflineReconnectRehearsal(date: String) {
+        if (!BuildConfig.DEBUG) return
+        val baseline = Booking("demo-base", "Demo original", "Cut", date,
+            "09:00", "", "demo-service", "demo-staff", 30, "20")
+        val offlineEdit = Booking("demo-offline", "Demo offline booking", "Cut", date,
+            "11:00", "", "demo-service", "demo-staff", 30, "20")
+        val otherDevice = Booking("demo-other", "Demo second device", "Cut", date,
+            "10:00", "", "demo-service", "demo-staff", 30, "20")
+        val originalServer = listOf(baseline)
+        val offlinePhone = listOf(baseline, offlineEdit)
+        val changedServer = listOf(baseline, otherDevice)
+        AlertDialog.Builder(this)
+            .setTitle("Offline reconnect rehearsal · demo only")
+            .setMessage("Simulated phone goes offline and saves an 11:00 booking. " +
+                "A second simulated device adds a 10:00 cloud booking. " +
+                "On reconnect, the old phone snapshot must not overwrite the cloud. " +
+                "No real appointments, internet settings or Firebase data will change.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Rehearse reconnect") { _, _ ->
+                val cloudChanged = changedServer != originalServer
+                val cloudOnlyIds = changedServer.map { it.id }.toSet() -
+                    offlinePhone.map { it.id }.toSet()
+                val blocked = cloudChanged && cloudOnlyIds.isNotEmpty()
+                AlertDialog.Builder(this)
+                    .setTitle(if (blocked) "Demo conflict safely blocked" else
+                        "Demo conflict protection failed")
+                    .setMessage(if (blocked) {
+                        "Stale upload rejected. Simulated phone keeps ${offlinePhone.size} " +
+                            "appointments; simulated cloud keeps ${changedServer.size}. " +
+                            "The cloud-only booking was preserved. " +
+                            "Review required before any real sync. " +
+                            "Your real appointments and Firebase data were not modified."
+                    } else {
+                        "Expected conflict was not detected. Real data unchanged."
+                    })
+                    .setPositiveButton("Close", null)
+                    .show()
+            }.show()
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -903,6 +945,9 @@ class MainActivity : Activity() {
         if (BuildConfig.DEBUG) {
             button("Demo recovery rehearsal · no real changes") {
                 showIsolatedRecoveryRehearsal(selectedDate)
+            }
+            button("Demo offline reconnect · no real changes") {
+                showOfflineReconnectRehearsal(selectedDate)
             }
         }
         section("Daily schedule · local appointments")
