@@ -1640,38 +1640,59 @@ class MainActivity : Activity() {
 
     private fun bookingCard(booking: Booking) {
         val card = panel()
-        // Phase 12.3: a subtle time rail improves scanability without changing booking data.
-        val accent = View(this).apply { background = rounded(orange, 3) }
+        // Phase 12.8: read-only premium appointment card; booking records are unchanged.
         val staff = readRecords("staff").firstOrNull { it.optString("id") == booking.staffId }
         val end = if (booking.duration > 0) {
             runCatching { " – ${formatTime(toMinutes(booking.time) + booking.duration)}" }
                 .getOrDefault("")
         } else ""
-        val timeHeader = LinearLayout(this).apply {
+        val top = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
-        timeHeader.addView(accent, LinearLayout.LayoutParams(dp(4), dp(25)).apply {
+        val accent = View(this).apply { background = rounded(orange, 3) }
+        top.addView(accent, LinearLayout.LayoutParams(dp(4), dp(46)).apply {
             marginEnd = dp(12)
         })
-        timeHeader.addView(label("${booking.time}$end", 15f, orange, true))
-        card.addView(timeHeader)
-        card.addView(label(booking.client, 20f, dark, true), LinearLayout.LayoutParams(-1, -2).apply {
-            topMargin = dp(8)
+        val schedule = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        schedule.addView(label("APPOINTMENT TIME", 11f, muted, true))
+        schedule.addView(label("${booking.time}$end", 18f, orange, true),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(3) })
+        top.addView(schedule, LinearLayout.LayoutParams(0, -2, 1f))
+        card.addView(top)
+        val divider = View(this).apply { setBackgroundColor(lightBorder) }
+        card.addView(divider, LinearLayout.LayoutParams(-1, dp(1)).apply {
+            topMargin = dp(14)
+            bottomMargin = dp(14)
         })
-        card.addView(label(booking.service, 16f, dark))
+        card.addView(label(booking.client, 22f, dark, true))
+        card.addView(label(booking.service, 15f, muted),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
         card.addView(label(displayDate(booking.date), 13f, muted),
-            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
-        if (staff != null) card.addView(label("Staff: ${staff.optString("name")}", 14f, muted))
-        if (booking.duration > 0) card.addView(label("Duration: ${booking.duration} minutes", 14f, muted))
-        if (booking.price.isNotBlank()) card.addView(label("£${booking.price}", 20f, orange, true),
-            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
-        if (booking.notes.isNotBlank()) card.addView(label("Notes: ${booking.notes}", 14f, muted))
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(9) })
+        if (staff != null) card.addView(label("With ${staff.optString("name")}", 13f, muted))
+        if (booking.duration > 0) card.addView(label("${booking.duration} minute appointment", 13f, muted))
+        if (booking.price.isNotBlank()) {
+            val priceRow = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(14), dp(10), dp(14), dp(10))
+                background = rounded(paleOrange, 14)
+            }
+            priceRow.addView(label("SERVICE PRICE", 11f, orange, true),
+                LinearLayout.LayoutParams(0, -2, 1f))
+            priceRow.addView(label("£${booking.price}", 20f, orange, true))
+            card.addView(priceRow, LinearLayout.LayoutParams(-1, -2).apply {
+                topMargin = dp(14)
+            })
+        }
+        if (booking.notes.isNotBlank()) card.addView(label("Notes: ${booking.notes}", 13f, muted),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
         card.addView(Button(this).apply {
             text = "Edit / Cancel"
             styleButton(this)
             setOnClickListener { bookingOptions(booking) }
-        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
         addPanel(card)
     }
 
