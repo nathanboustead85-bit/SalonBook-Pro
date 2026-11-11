@@ -6,8 +6,8 @@ const app=fs.readFileSync(path.join(root,"app/src/main/java/com/salonbook/pro/Ma
 test("11.46 cloud edits require last acknowledged identical server booking",()=>{
  assert.match(cloud,/private fun assertNoStaleBookingEdits/);
  assert.match(cloud,/trusted != null && trusted\[id\]\?\.toString\(\) == serverBooking\.toString\(\)/);
- assert.match(cloud,/assertNoStaleBookingEdits\(preflight\.getString\("json"\), json, acknowledgedBookingsJson\)/);
- assert.match(cloud,/assertNoStaleBookingEdits\(latest\.getString\("json"\), json, acknowledgedBookingsJson\)/);
+ assert.match(cloud,/assertNoStaleBookingEdits\(verifiedServerJson, json, acknowledgedBookingsJson\)/);
+ assert.match(cloud,/assertNoStaleBookingEdits\(latestServerJson, json, acknowledgedBookingsJson\)/);
  assert.match(cloud,/transaction\.set\(reference, data\)/);
 });
 test("11.46 owner-scoped baseline stored only on acknowledged same-snapshot upload",()=>{
