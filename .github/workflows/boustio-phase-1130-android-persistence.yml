@@ -21,6 +21,7 @@ on:
       - 'functions/phase1139AndroidRecoverySafety.test.js'
       - 'functions/phase1140CloudRecoveryEmulator.test.js'
       - 'functions/phase1141AndroidRecoveryRehearsal.test.js'
+      - 'functions/phase1142OfflineSyncPending.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
@@ -62,6 +63,8 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.42 offline cloud sync acknowledgement safety checks
+        run: node --test functions/phase1142OfflineSyncPending.test.js
       - name: Phase 11.41 isolated Android recovery rehearsal checks
         run: node --test functions/phase1141AndroidRecoveryRehearsal.test.js
       - name: Phase 11.40 isolated real Firestore cloud recovery integration
