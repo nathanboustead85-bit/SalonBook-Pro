@@ -2,7 +2,9 @@
 const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
 const start=src.indexOf("private fun previewConflictRecovery(date: String)");
-const end=src.indexOf("private fun showCalendar()",start);
+const end=src.indexOf("private fun establishVerifiedBookingBaseline(date: String)",start)>start
+ ? src.indexOf("private fun establishVerifiedBookingBaseline(date: String)",start)
+ : src.indexOf("private fun showCalendar()",start);
 const review=src.slice(start,end);
 test("11.48 exposes read-only recovery review on calendar",()=>{
  assert.ok(start>0&&end>start);
