@@ -102,6 +102,8 @@ jobs:
           node scripts/validateFirebaseDebugConfig.js
       - name: Phase 11.65 website count overview and safety checks
         run: node --test functions/phase1165UnifiedDailyOverview.test.js
+      - name: Phase 12.9 premium booking form regression checks
+        run: node --test functions/phase1209PremiumBookingForm.test.js
       - name: Phase 12.8 premium appointment card regression checks
         run: node --test functions/phase1208PremiumAppointmentCards.test.js
       - name: Phase 12.7 premium appointments regression checks
