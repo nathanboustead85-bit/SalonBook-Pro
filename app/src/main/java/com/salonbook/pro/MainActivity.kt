@@ -922,6 +922,83 @@ class MainActivity : Activity() {
             }
     }
 
+    // Phase 11.48: manual conflict recovery guidance. Never writes or clears sync state.
+    private fun previewConflictRecovery(date: String) {
+        val owner = FirebaseAuth.getInstance().currentUser
+        if (owner == null || !owner.isEmailVerified) {
+            message("Sign in with a verified account to review recovery options")
+            return
+        }
+        val phoneJson = prefs.getString("bookings", "[]") ?: "[]"
+        val pendingOwner = prefs.getString("bookingSyncPendingOwner", null)
+        val pending = pendingOwner == owner.uid
+        FirebaseFirestore.getInstance().collection("users").document(owner.uid)
+            .collection("liveData").document("bookings").get(Source.SERVER)
+            .addOnSuccessListener { snapshot ->
+                if (isFinishing || isDestroyed || currentScreen != "calendar" ||
+                    selectedDate != date ||
+                    FirebaseAuth.getInstance().currentUser?.uid != owner.uid ||
+                    prefs.getString("bookings", "[]") != phoneJson ||
+                    (prefs.getString("bookingSyncPendingOwner", null) == owner.uid) != pending
+                ) return@addOnSuccessListener
+                val summary = try {
+                    check(snapshot.exists() && snapshot.getLong("schemaVersion") == 1L) {
+                        "Missing or unsupported cloud snapshot"
+                    }
+                    val cloud = JSONArray(snapshot.getString("json")
+                        ?: error("Missing cloud JSON"))
+                    val phone = JSONArray(phoneJson)
+                    fun indexed(items: JSONArray): Map<String, JSONObject> {
+                        val found = mutableMapOf<String, JSONObject>()
+                        for (i in 0 until items.length()) {
+                            val item = items.getJSONObject(i)
+                            val id = item.optString("id")
+                            check(id.isNotBlank() && found.put(id, item) == null) {
+                                "Duplicate or invalid booking ID"
+                            }
+                        }
+                        return found
+                    }
+                    val remote = indexed(cloud)
+                    val local = indexed(phone)
+                    val cloudOnly = remote.keys.count { it !in local }
+                    val phoneOnly = local.keys.count { it !in remote }
+                    val changed = remote.keys.intersect(local.keys).count {
+                        remote[it].toString() != local[it].toString()
+                    }
+                    val baselineOwner = prefs.getString("bookingSyncAcknowledgedOwner", null)
+                    val baseline = if (baselineOwner == owner.uid)
+                        prefs.getString("bookingSyncAcknowledgedJson", null) else null
+                    val baselineVerified = baseline != null
+                    "Cloud-only: $cloudOnly; phone-only: $phoneOnly; " +
+                        "same-ID differences: $changed. " +
+                        "Pending cloud confirmation: ${if (pending) "yes" else "no"}. " +
+                        "Previous acknowledged phone snapshot: " +
+                        "${if (baselineVerified) "available" else "unavailable"}.\n\n" +
+                        "Recovery guidance: review cloud differences first. " +
+                        "Cloud-only appointments may be eligible for the separate " +
+                        "confirmed additive import. Same-ID conflicts need manual " +
+                        "review; no automatic overwrite or merge is offered. " +
+                        "Phone-only appointments remain saved locally."
+                } catch (_: Exception) {
+                    "Cloud or phone data could not be verified. No recovery action is safe."
+                }
+                AlertDialog.Builder(this).setTitle("Conflict recovery · read only")
+                    .setMessage(summary + "\n\nNo booking was changed, uploaded, " +
+                        "imported or deleted. No pending marker was cleared.")
+                    .setPositiveButton("Close", null).show()
+            }.addOnFailureListener {
+                if (!isFinishing && !isDestroyed && currentScreen == "calendar" &&
+                    selectedDate == date &&
+                    FirebaseAuth.getInstance().currentUser?.uid == owner.uid) {
+                    AlertDialog.Builder(this).setTitle("Recovery unavailable")
+                        .setMessage("Server verification failed. Your phone bookings " +
+                            "are unchanged. No recovery action was attempted.")
+                        .setPositiveButton("Close", null).show()
+                }
+            }
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -1009,6 +1086,9 @@ class MainActivity : Activity() {
         showSharedCloudAppointments(selectedDate)
         showLegacyMultiDeviceReadiness(selectedDate)
         showCloudBookingDifferences(selectedDate)
+        button("Review conflict recovery · read only") {
+            previewConflictRecovery(selectedDate)
+        }
         button("Review cloud-only appointment import") { previewCloudOnlyImport(selectedDate) }
         if (BuildConfig.DEBUG) {
             button("Demo recovery rehearsal · no real changes") {
