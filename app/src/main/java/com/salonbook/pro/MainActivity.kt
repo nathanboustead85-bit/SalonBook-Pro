@@ -1281,6 +1281,75 @@ class MainActivity : Activity() {
             .setMessage(result).setPositiveButton("OK", null).show()
     }
 
+    /** Phase 11.61: on-demand diagnostics only; never changes appointments. */
+    private fun diagnoseBookingRecoveryReadOnly(date: String) {
+        if (!BuildConfig.DEBUG) return
+        val owner = FirebaseAuth.getInstance().currentUser
+        if (owner == null || !owner.isEmailVerified) {
+            AlertDialog.Builder(this).setTitle("Phase 11.61 · Recovery diagnostics")
+                .setMessage("Sign in with a verified account. No changes made.")
+                .setPositiveButton("OK", null).show()
+            return
+        }
+        val localAtStart = prefs.getString("bookings", "[]") ?: "[]"
+        if (prefs.getString("bookingSyncPendingOwner", null) == owner.uid) {
+            AlertDialog.Builder(this).setTitle("Phase 11.61 · Recovery diagnostics")
+                .setMessage("ACTION NEEDED: cloud confirmation is pending. Do not force sync. No changes made.")
+                .setPositiveButton("OK", null).show()
+            return
+        }
+        FirebaseFirestore.getInstance().collection("users").document(owner.uid)
+            .collection("liveData").document("bookings").get(Source.SERVER)
+            .addOnSuccessListener { snapshot ->
+                if (isFinishing || isDestroyed || currentScreen != "calendar" ||
+                    selectedDate != date ||
+                    FirebaseAuth.getInstance().currentUser?.uid != owner.uid ||
+                    prefs.getString("bookings", "[]") != localAtStart ||
+                    prefs.getString("bookingSyncPendingOwner", null) == owner.uid
+                ) return@addOnSuccessListener
+                val report = try {
+                    fun readIds(raw: String): Set<String> {
+                        val array = JSONArray(raw)
+                        val ids = mutableSetOf<String>()
+                        for (index in 0 until array.length()) {
+                            val id = array.getJSONObject(index).optString("id")
+                            require(id.isNotBlank() && ids.add(id)) { "Missing or duplicate appointment ID" }
+                        }
+                        return ids
+                    }
+                    check(snapshot.exists() && snapshot.getLong("schemaVersion") == 1L) {
+                        "Cloud snapshot missing or unsupported"
+                    }
+                    val cloud = snapshot.getString("json") ?: error("Cloud booking JSON missing")
+                    val localIds = readIds(localAtStart)
+                    val cloudIds = readIds(cloud)
+                    when {
+                        cloud == localAtStart ->
+                            "HEALTHY: phone and cloud snapshots match exactly.\nAppointments: ${localIds.size}"
+                        else ->
+                            "ACTION NEEDED: phone and cloud differ.\n" +
+                            "Phone-only IDs: ${(localIds - cloudIds).size}\n" +
+                            "Cloud-only IDs: ${(cloudIds - localIds).size}\n" +
+                            "Matching IDs with possible changes: ${localIds.intersect(cloudIds).size}\n" +
+                            "Review conflicts before any further editing. Do not force sync."
+                    }
+                } catch (_: Exception) {
+                    "ACTION NEEDED: booking snapshot could not be verified. Do not force sync."
+                }
+                AlertDialog.Builder(this).setTitle("Phase 11.61 · Recovery diagnostics")
+                    .setMessage(report + "\n\nRead-only server check. No bookings changed.")
+                    .setPositiveButton("OK", null).show()
+            }
+            .addOnFailureListener {
+                if (!isFinishing && !isDestroyed && currentScreen == "calendar" &&
+                    selectedDate == date && FirebaseAuth.getInstance().currentUser?.uid == owner.uid) {
+                    AlertDialog.Builder(this).setTitle("Phase 11.61 · Recovery diagnostics")
+                        .setMessage("CLOUD UNAVAILABLE: cannot verify server. No retries or changes made.")
+                        .setPositiveButton("OK", null).show()
+                }
+            }
+    }
+
     private fun showCalendar() {
         screen("Appointment Calendar", "Your daily schedule at a glance.", "calendar")
         val navigation = LinearLayout(this).apply {
@@ -1379,6 +1448,9 @@ class MainActivity : Activity() {
         if (BuildConfig.DEBUG) {
             button("Demo recovery rehearsal · no real changes") {
                 showIsolatedRecoveryRehearsal(selectedDate)
+            }
+            button("Recovery diagnostics · read only") {
+                diagnoseBookingRecoveryReadOnly(selectedDate)
             }
             button("Single-phone recovery audit · read only") {
                 showSinglePhoneRecoveryAudit()
