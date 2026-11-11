@@ -16,6 +16,7 @@ on:
       - 'functions/phase1134ConcurrentBookingConflict.test.js'
       - 'functions/phase1135CloudDifferencePreview.test.js'
       - 'functions/phase1136ConfirmedCloudImport.test.js'
+      - 'functions/phase1137TwoDeviceImportSimulation.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
@@ -57,6 +58,8 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.37 two-device cloud-only import simulation
+        run: node --test functions/phase1137TwoDeviceImportSimulation.test.js
       - name: Phase 11.36 confirmed cloud import safety checks
         run: node --test functions/phase1136ConfirmedCloudImport.test.js
       - name: Phase 11.35 read-only cloud differences checks
