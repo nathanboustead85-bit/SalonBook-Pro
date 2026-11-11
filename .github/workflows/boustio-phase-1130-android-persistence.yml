@@ -112,7 +112,7 @@ jobs:
         run: node --test functions/phase1205PremiumClientProfile.test.js
       - name: Phase 12.4 modern friendly clients and services regression checks
         run: node --test functions/phase1204ModernFriendlyClientsServices.test.js
-      - name: Phase 12.3 premium calendar regression checks
+      - name: Phase 12.3 premium calendar regression checks (12.8 compatible)
         run: node --test functions/phase1203PremiumCalendar.test.js
       - name: Phase 12.2 premium dashboard regression checks (corrected time-aware assertion)
         run: node --test functions/phase1202PremiumDashboard.test.js
