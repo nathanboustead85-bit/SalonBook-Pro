@@ -34,6 +34,7 @@ on:
       - 'functions/phase1152BookingSyncStatus.test.js'
       - 'functions/phase1153IsolatedAndroidEditRehearsal.test.js'
       - 'functions/phase1154SafeCloudEditRecoveryEmulator.test.js'
+      - 'functions/phase1147TwoDeviceConflictEmulator.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
