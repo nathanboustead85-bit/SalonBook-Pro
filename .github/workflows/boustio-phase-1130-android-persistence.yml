@@ -17,6 +17,7 @@ on:
       - 'functions/phase1135CloudDifferencePreview.test.js'
       - 'functions/phase1136ConfirmedCloudImport.test.js'
       - 'functions/phase1137TwoDeviceImportSimulation.test.js'
+      - 'functions/phase1138FirestoreEmulatorDevices.test.js'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'scripts/validateFirebaseDebugConfig.js'
       - 'scripts/validateFirebaseDebugConfig.test.js'
@@ -58,6 +59,10 @@ jobs:
           mkdir -p app/src/debug
           printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
           node scripts/validateFirebaseDebugConfig.js
+      - name: Phase 11.38 isolated Firestore two-client integration
+        run: |
+          npm --prefix functions install --no-audit --no-fund
+          GCLOUD_PROJECT=demo-boustio-phase-1138 GOOGLE_CLOUD_PROJECT=demo-boustio-phase-1138 npx --yes firebase-tools@14 emulators:exec --project demo-boustio-phase-1138 --only firestore 'GCLOUD_PROJECT=demo-boustio-phase-1138 node --test functions/phase1138FirestoreEmulatorDevices.test.js'
       - name: Phase 11.37 two-device cloud-only import simulation
         run: node --test functions/phase1137TwoDeviceImportSimulation.test.js
       - name: Phase 11.36 confirmed cloud import safety checks
