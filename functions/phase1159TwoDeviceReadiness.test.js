@@ -2,7 +2,8 @@
 const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
 const start=src.indexOf("private fun showTwoDeviceTestReadiness()");
-const end=src.indexOf("private fun showCalendar()",start);
+const next=src.indexOf("private fun showSinglePhoneRecoveryAudit()",start);
+const end=next>start?next:src.indexOf("private fun showCalendar()",start);
 const body=src.slice(start,end);
 test("11.59 preparation control is present and debug-only",()=>{
  assert.ok(start>0&&end>start);
