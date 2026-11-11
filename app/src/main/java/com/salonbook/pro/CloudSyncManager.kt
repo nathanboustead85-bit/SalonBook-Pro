@@ -200,8 +200,10 @@ class CloudSyncManager {
                             check(preflight.getLong("schemaVersion") == 1L) {
                                 "Unsupported cloud booking schema; upload blocked"
                             }
-                            assertNoRemoteBookingsLost(preflight.getString("json"), json)
-                            assertNoStaleBookingEdits(preflight.getString("json"), json, acknowledgedBookingsJson)
+                            val verifiedServerJson = preflight.getString("json")
+                                ?: error("Cloud booking snapshot missing JSON; upload blocked")
+                            assertNoRemoteBookingsLost(verifiedServerJson, json)
+                            assertNoStaleBookingEdits(verifiedServerJson, json, acknowledgedBookingsJson)
                         }
                         db.runTransaction { transaction ->
                             check(userId() == ownerAtStart) {
@@ -221,8 +223,10 @@ class CloudSyncManager {
                                 check(latest.getLong("schemaVersion") == 1L) {
                                     "Unsupported cloud booking schema; upload blocked"
                                 }
-                                assertNoRemoteBookingsLost(latest.getString("json"), json)
-                                assertNoStaleBookingEdits(latest.getString("json"), json, acknowledgedBookingsJson)
+                                val latestServerJson = latest.getString("json")
+                                    ?: error("Cloud booking snapshot missing JSON; upload blocked")
+                                assertNoRemoteBookingsLost(latestServerJson, json)
+                                assertNoStaleBookingEdits(latestServerJson, json, acknowledgedBookingsJson)
                             }
                             transaction.set(reference, data)
                             Unit
