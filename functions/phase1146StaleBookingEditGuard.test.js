@@ -5,7 +5,7 @@ const cloud=fs.readFileSync(path.join(root,"app/src/main/java/com/salonbook/pro/
 const app=fs.readFileSync(path.join(root,"app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
 test("11.46 cloud edits require last acknowledged identical server booking",()=>{
  assert.match(cloud,/private fun assertNoStaleBookingEdits/);
- assert.match(cloud,/trusted != null && trusted\[id\]\?\.similar\(serverBooking\) == true/);
+ assert.match(cloud,/trusted != null && trusted\[id\]\?\.toString\(\) == serverBooking\.toString\(\)/);
  assert.match(cloud,/assertNoStaleBookingEdits\(preflight\.getString\("json"\), json, acknowledgedBookingsJson\)/);
  assert.match(cloud,/assertNoStaleBookingEdits\(latest\.getString\("json"\), json, acknowledgedBookingsJson\)/);
  assert.match(cloud,/transaction\.set\(reference, data\)/);
