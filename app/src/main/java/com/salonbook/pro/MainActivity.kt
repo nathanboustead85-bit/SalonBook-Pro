@@ -33,12 +33,14 @@ import java.util.Locale
 import java.util.UUID
 
 class MainActivity : Activity() {
-    private val orange = Color.rgb(0, 140, 149)
-    private val dark = Color.rgb(32, 36, 43)
-    private val background = Color.rgb(250, 249, 247)
-    private val muted = Color.rgb(110, 114, 120)
-    private val paleOrange = Color.rgb(225, 246, 247)
-    private val lightBorder = Color.rgb(236, 232, 227)
+    // Phase 12.1 premium Boustio design tokens. Retain legacy field names for compatibility.
+    private val orange = Color.rgb(17, 107, 104) // signature teal
+    private val dark = Color.rgb(23, 51, 50) // deep forest
+    private val background = Color.rgb(247, 248, 246) // soft ivory
+    private val muted = Color.rgb(101, 113, 111)
+    private val paleOrange = Color.rgb(231, 243, 239)
+    private val lightBorder = Color.rgb(223, 230, 225)
+    private val premiumGold = Color.rgb(217, 173, 116)
     private val prefs by lazy { getSharedPreferences("salonbook_data", MODE_PRIVATE) }
     private val bookings = mutableListOf<Booking>()
     private var selectedDate = today()
@@ -86,7 +88,7 @@ class MainActivity : Activity() {
     private fun today(): String = SimpleDateFormat("yyyy-MM-dd", Locale.UK)
         .format(System.currentTimeMillis())
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
-    private fun rounded(colour: Int, radius: Int = 18) = GradientDrawable().apply {
+    private fun rounded(colour: Int, radius: Int = 20) = GradientDrawable().apply {
         setColor(colour)
         cornerRadius = dp(radius).toFloat()
     }
@@ -95,11 +97,14 @@ class MainActivity : Activity() {
             text = value
             textSize = size
             setTextColor(colour)
-            if (bold) typeface = Typeface.DEFAULT_BOLD
+            if (bold) typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            includeFontPadding = true
         }
     private fun styleButton(button: Button, filled: Boolean = true) {
         button.isAllCaps = false
         button.textSize = 15f
+        button.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        button.minHeight = dp(48)
         button.setTextColor(if (filled) Color.WHITE else orange)
         button.backgroundTintList = ColorStateList.valueOf(if (filled) orange else paleOrange)
     }
@@ -131,7 +136,7 @@ class MainActivity : Activity() {
         }
         container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(24), dp(18), dp(24))
+            setPadding(dp(20), dp(24), dp(20), dp(28))
         }
         scroll.addView(container)
         root.addView(scroll, LinearLayout.LayoutParams(
@@ -140,11 +145,11 @@ class MainActivity : Activity() {
         navigationBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(8), dp(6), dp(8), dp(6))
+            setPadding(dp(12), dp(8), dp(12), dp(8))
             setBackgroundColor(Color.WHITE)
             elevation = dp(8).toFloat()
         }
-        root.addView(navigationBar, LinearLayout.LayoutParams(-1, dp(70)))
+        root.addView(navigationBar, LinearLayout.LayoutParams(-1, dp(74)))
         if (Build.VERSION.SDK_INT >= 30) {
             window.setDecorFitsSystemWindows(false)
         }
