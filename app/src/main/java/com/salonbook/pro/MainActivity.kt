@@ -2282,9 +2282,14 @@ class MainActivity : Activity() {
     }
 
     private fun showClients(query: String = "") {
-        screen("Clients", "Search your clients and view appointment history.", "clients")
+        screen("Your clients", "Every relationship, beautifully organised.", "clients")
         val names = (bookings.map { it.client.trim() } + registeredClients()).filter { it.isNotBlank() }
             .distinctBy { it.lowercase(Locale.UK) }.sortedBy { it.lowercase(Locale.UK) }
+        val clientOverview = panel()
+        clientOverview.addView(label("YOUR CLIENT DIRECTORY", 12f, orange, true))
+        clientOverview.addView(label("${names.size} client${if (names.size == 1) "" else "s"}", 29f, dark, true))
+        clientOverview.addView(label("Find people quickly and keep their history close.", 13f, muted))
+        addPanel(clientOverview)
         button("+ Add New Client") { registerClientDialog() }
         val search = EditText(this).apply {
             hint = "Search clients"
@@ -2294,19 +2299,35 @@ class MainActivity : Activity() {
             setTextColor(dark)
             backgroundTintList = ColorStateList.valueOf(orange)
         }
-        container.addView(search, LinearLayout.LayoutParams(-1, dp(54)))
+        val searchCard = panel()
+        searchCard.addView(label("SEARCH DIRECTORY", 12f, muted, true))
+        searchCard.addView(search, LinearLayout.LayoutParams(-1, dp(54)))
+        addPanel(searchCard)
         val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         container.addView(results)
         fun updateResults(filter: String) {
             results.removeAllViews()
             val matching = names.filter { it.contains(filter.trim(), ignoreCase = true) }
-            results.addView(label("${matching.size} of ${names.size} clients", 15f, muted))
+            results.addView(label("SHOWING ${matching.size} OF ${names.size} CLIENTS", 12f, muted, true))
             if (names.isEmpty()) results.addView(label("No clients yet. Tap Add New Client to register one.", 14f, muted))
             else if (matching.isEmpty()) results.addView(label("No matching clients.", 14f, muted))
             matching.forEach { name ->
                 val history = bookings.filter { it.client.trim().equals(name, ignoreCase = true) }
                 val card = panel()
-                card.addView(label(name, 18f, dark, true))
+                val identity = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+                val initial = name.trim().take(1).uppercase(Locale.UK)
+                val avatar = label(initial, 19f, orange, true).apply {
+                    gravity = Gravity.CENTER
+                    background = rounded(paleOrange, 18)
+                }
+                identity.addView(avatar, LinearLayout.LayoutParams(dp(44), dp(44)).apply {
+                    marginEnd = dp(12)
+                })
+                identity.addView(label(name, 18f, dark, true))
+                card.addView(identity)
                 card.addView(label("${history.size} booking(s)", 14f, muted))
                 card.addView(Button(this).apply {
                     text = "View Profile & History"
