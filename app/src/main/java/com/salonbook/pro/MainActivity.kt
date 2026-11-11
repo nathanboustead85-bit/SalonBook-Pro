@@ -1859,7 +1859,10 @@ class MainActivity : Activity() {
         }
         editor.apply()
         if (ownerAtSave != null && ownerAtSave.isEmailVerified) {
-            CloudSyncManager().upload("bookings", json, { result ->
+            CloudSyncManager().upload("bookings", json,
+                prefs.getString("bookingSyncAcknowledgedOwner", null)
+                    ?.takeIf { it == ownerAtSave.uid }
+                    ?.let { prefs.getString("bookingSyncAcknowledgedJson", null) }) { result ->
                 runOnUiThread {
                     if (FirebaseAuth.getInstance().currentUser?.uid != ownerAtSave.uid) return@runOnUiThread
                     if (result.isSuccess) {
@@ -1876,9 +1879,7 @@ class MainActivity : Activity() {
                         message("Saved on phone; cloud sync not confirmed. Review Calendar.")
                     }
                 }
-            }, prefs.getString("bookingSyncAcknowledgedOwner", null)
-                ?.takeIf { it == ownerAtSave.uid }
-                ?.let { prefs.getString("bookingSyncAcknowledgedJson", null) })
+            }
         }
     }
 
