@@ -56,8 +56,9 @@ test("11.47 valid baseline permits an edit when cloud remains unchanged",async()
 });
 test("11.47 Android source includes same-ID baseline and transactional guard",()=>{
  const source=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/CloudSyncManager.kt"),"utf8");
- assert.match(source,/assertNoStaleBookingEdits\(latest\.getString\("json"\), json, acknowledgedBookingsJson\)/);
- assert.match(source,/assertNoRemoteBookingsLost\(latest\.getString\("json"\), json\)/);
+ assert.match(source,/assertNoStaleBookingEdits\(latestServerJson, json, acknowledgedBookingsJson\)/);
+ assert.match(source,/val latestServerJson = latest\.getString\("json"\)\s*\?: error\("Cloud booking snapshot missing JSON; upload blocked"\)/);
+ assert.match(source,/assertNoRemoteBookingsLost\(latestServerJson, json\)/);
  assert.match(source,/db\.runTransaction/);
 });
 test.after(async()=>{try{await ref.delete()}finally{await Promise.all([a.delete(),b.delete()])}});
