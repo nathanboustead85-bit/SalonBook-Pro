@@ -1,0 +1,13 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
+const part=(a,b)=>src.slice(src.indexOf(a),src.indexOf(b,src.indexOf(a)+a.length));
+const appointments=part("private fun showAppointments()","private fun bookingCard(");
+const card=part("private fun bookingCard(","private fun bookingOptions(");
+const nav=part("private fun updateNavigation(","private fun showSettings(");
+test("12.7 appointments use premium branded overview",()=>{for(const x of ["APPOINTMENT OVERVIEW  •  BOUSTIO","Your complete booking history","rounded(orange, 24)","Your bookings"])assert.ok(appointments.includes(x));});
+test("12.7 total count derives from existing bookings",()=>{assert.match(appointments,/val sorted = bookings.sortedWith/);assert.match(appointments,/sorted.size/);assert.match(appointments,/sorted.forEach \{ bookingCard\(it\) \}/);});
+test("12.7 appointment empty state is helpful",()=>{assert.match(appointments,/No appointments yet/);assert.match(appointments,/sorted.isEmpty\(\)/);});
+test("12.7 calendar tab highlights on appointment listing",()=>assert.match(nav,/"calendar", "appointments" -> "calendar"/));
+test("12.7 booking edit and cancel controls retained",()=>{assert.match(card,/bookingOptions\(booking\)/);assert.match(card,/Edit \/ Cancel/);assert.match(appointments,/bookingDialog\(\)/);});
+test("12.7 presentation never changes stored bookings",()=>{assert.doesNotMatch(appointments,/saveBookings\(|prefs.edit\(|\.delete\(|\.clear\(/);assert.doesNotMatch(card,/saveBookings\(|prefs.edit\(/);});
