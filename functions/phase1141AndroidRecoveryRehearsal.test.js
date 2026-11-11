@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,"..");
 const source=fs.readFileSync(path.join(root,"app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
 const workflow=fs.readFileSync(path.join(root,".github/workflows/boustio-phase-1130-android-persistence.yml"),"utf8");
 const start=source.indexOf("private fun showIsolatedRecoveryRehearsal(date: String)");
-const end=source.indexOf("private fun showCalendar()",start);
+const end=source.indexOf("private fun showOfflineReconnectRehearsal(date: String)",start);
 const body=source.slice(start,end);
 test("11.41 isolated rehearsal is only exposed in debug Android builds",()=>{
  assert.ok(start>0&&end>start);
