@@ -656,6 +656,10 @@ class MainActivity : Activity() {
             return
         }
         val originalIds = bookings.map { it.id }.toSet()
+        if (originalIds.size != bookings.size || originalIds.any { it.isBlank() }) {
+            message("Local appointment IDs need review before cloud recovery")
+            return
+        }
         val originalJson = prefs.getString("bookings", "[]") ?: "[]"
         val reference = FirebaseFirestore.getInstance().collection("users")
             .document(owner.uid).collection("liveData").document("bookings")
@@ -686,11 +690,17 @@ class MainActivity : Activity() {
                         entry.optString("staffId"), entry.optInt("duration"),
                         entry.optString("price")
                     )
-                    check(candidate.time.matches(Regex("[0-2][0-9]:[0-5][0-9]")) &&
+                    check(candidate.time.matches(Regex("(?:[01][0-9]|2[0-3]):[0-5][0-9]")) &&
+                        toMinutes(candidate.time) + candidate.duration <= 24 * 60 &&
                         candidate.duration > 0 && candidate.staffId.isNotBlank() &&
                         candidate.client.isNotBlank()) {
                         "Incomplete cloud appointment; import blocked"
                     }
+                    check(candidates.none { earlier ->
+                        earlier.staffId == candidate.staffId &&
+                            toMinutes(earlier.time) < toMinutes(candidate.time) + candidate.duration &&
+                            toMinutes(candidate.time) < toMinutes(earlier.time) + earlier.duration
+                    }) { "Cloud appointments overlap; import blocked" }
                     candidates.add(candidate)
                 }
                 if (candidates.isEmpty()) {
@@ -717,6 +727,9 @@ class MainActivity : Activity() {
                                 check(prefs.getString("bookings", "[]") == originalJson &&
                                     bookings.map { it.id }.toSet() == originalIds) {
                                     "Phone bookings changed. Review again before importing."
+                                }
+                                check(originalIds.size == bookings.size) {
+                                    "Duplicate local appointment IDs. Import blocked."
                                 }
                                 val combined = bookings.toMutableList()
                                 for (candidate in candidates) {
