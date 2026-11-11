@@ -9,7 +9,7 @@ test("11.42 saves phone data and persistent unconfirmed marker before upload",()
  assert.match(save,/putString\("bookings", json\)/);
  assert.match(save,/putString\("bookingSyncPendingOwner", ownerAtSave.uid\)/);
  assert.match(save,/putString\("bookingSyncPendingJson", json\)/);
- assert.ok(save.indexOf("editor.apply()")<save.indexOf('CloudSyncManager().upload("bookings", json)'));
+ assert.ok(save.indexOf("editor.apply()")<save.indexOf('CloudSyncManager().upload("bookings", json,'));
 });
 test("11.42 only clears pending status after same owner and same snapshot acknowledgement",()=>{
  assert.match(save,/if \(result.isSuccess\)/);
