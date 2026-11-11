@@ -1,0 +1,10 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
+const a=src.indexOf("private fun showSharedCloudAppointments("),b=src.indexOf("// Phase 11.32:",a),feed=src.slice(a,b);
+const c=src.indexOf("private fun showCalendar()"),d=src.indexOf("private fun showDebugWebsiteBookingPreview(",c),calendar=src.slice(c,d);
+test("11.65 overview displays separate phone and website booking counts",()=>{assert.match(calendar,/daily\.size/);assert.match(calendar,/val websiteOverviewStatus = label/);assert.match(calendar,/summary\.addView\(websiteOverviewStatus\)/);assert.match(calendar,/showSharedCloudAppointments\(selectedDate, websiteOverviewStatus\)/);});
+test("11.65 cloud count never inflates phone appointment total",()=>{assert.match(feed,/overviewWebsiteStatus\?\.text = "\$\{items\.size\} website\/shared appointment\(s\)/);assert.match(feed,/not added to phone count/);assert.doesNotMatch(calendar,/daily\.size\s*\+\s*website/);});
+test("11.65 stale screen or account callback cannot update overview",()=>{assert.match(feed,/selectedDate != date/);assert.match(feed,/currentUser\?\.uid != user\.uid/);assert.match(feed,/isFinishing \|\| isDestroyed/);});
+test("11.65 unavailable and unauthenticated feed is clearly distinguished",()=>{assert.match(feed,/Website bookings: unavailable/);assert.match(feed,/Website bookings: sign-in required/);});
+test("11.65 website feed remains read-only and never imported",()=>{assert.match(feed,/read only · not imported/);assert.doesNotMatch(feed,/\.set\(|\.update\(|\.delete\(|runTransaction|saveBookings\(|CloudSyncManager\.upload/);});
