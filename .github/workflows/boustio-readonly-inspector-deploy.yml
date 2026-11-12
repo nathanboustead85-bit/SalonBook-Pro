@@ -41,7 +41,7 @@ jobs:
       - name: Install Firebase CLI and backend dependencies
         run: |
           npm install --no-save firebase-tools@14
-          npm --prefix functions ci
+          npm --prefix functions install --no-audit --no-fund
       - name: Deploy only read-only inspector
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
