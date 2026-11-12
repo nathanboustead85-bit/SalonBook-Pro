@@ -1,8 +1,6 @@
 name: Boustio Phase 12.21 Test APK
 on:
   workflow_dispatch:
-  push:
-    branches: [phase-12-21-test-build-identity]
 jobs:
   verify-and-build:
     runs-on: ubuntu-latest
