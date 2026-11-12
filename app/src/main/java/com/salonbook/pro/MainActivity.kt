@@ -2015,7 +2015,12 @@ class MainActivity : Activity() {
                 val member = staff[staffSpinner.selectedItemPosition]
                 val duration = service.optInt("duration", 0)
                 if (duration <= 0) { message("Service duration must be positive"); return@setOnClickListener }
-                val start = toMinutes(time)
+                // Phase 12.22: fail safely if a recovered draft contains an invalid clock value.
+                val start = runCatching { toMinutes(time) }.getOrNull()
+                if (start == null || start !in 0..1439) {
+                    message("Choose a valid appointment start time (00:00–23:59)")
+                    return@setOnClickListener
+                }
                 if (start + duration > 1440) {
                     message("Appointment cannot finish after midnight")
                     return@setOnClickListener
