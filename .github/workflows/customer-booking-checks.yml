@@ -1,0 +1,40 @@
+name: Boustio Customer Booking Integration Checks
+on:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+  pull_request:
+    paths:
+      - 'functions/**'
+      - 'tests/**'
+      - 'website/book/**'
+      - '.github/workflows/customer-booking-checks.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check backend modules
+        run: |
+          node --check functions/index.js
+          node --check functions/legacyBookingAudit.js
+          node --check functions/bookingReadiness.js
+          node --check functions/bookingEngine.js
+          node --check functions/trustedBooking.js
+      - name: Run booking release and migration checks
+        run: npm --prefix functions run test:booking-integration
+      - name: Verify live booking stays disabled
+        run: |
+          node - <<'JS'
+          const fs = require('node:fs');
+          const fn = fs.readFileSync('functions/index.js','utf8');
+          const page = fs.readFileSync('website/book/index.html','utf8');
+          if (!fn.includes('acceptingBookings: false')) throw Error('Booking release gate changed');
+          if (!page.includes('Booking unavailable — preview only')) throw Error('Preview booking guard missing');
+          console.log('Public booking remains disabled');
+          JS
