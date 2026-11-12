@@ -31,6 +31,13 @@ jobs:
           sandbox['client_info']['android_client_info']['package_name'] = 'com.salonbook.pro.phase1219sandbox'
           data['client'].append(sandbox)
           path.write_text(json.dumps(data))
+          debug_path = Path('app/src/debug/google-services.json')
+          if debug_path.exists():
+              debug_data = json.loads(debug_path.read_text())
+              debug_sandbox = json.loads(json.dumps(debug_data['client'][0]))
+              debug_sandbox['client_info']['android_client_info']['package_name'] = 'com.salonbook.pro.phase1219sandbox'
+              debug_data['client'].append(debug_sandbox)
+              debug_path.write_text(json.dumps(debug_data))
           PY
       - name: Build isolated debug APK
         run: gradle --no-daemon :app:assembleDebug
