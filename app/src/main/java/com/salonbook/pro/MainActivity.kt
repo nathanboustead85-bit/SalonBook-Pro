@@ -2021,11 +2021,17 @@ class MainActivity : Activity() {
                     return@setOnClickListener
                 }
                 val staffId = member.optString("id")
+                // Phase 12.19: fail closed on malformed existing appointment times.
+                // Editing excludes only the exact booking ID; other appointments remain protected.
                 val conflict = bookings.any { other ->
-                    other.id != existing?.id && other.date == date &&
-                        other.staffId == staffId && other.duration > 0 &&
-                        start < toMinutes(other.time) + other.duration &&
-                        toMinutes(other.time) < start + duration
+                    if (other.id == existing?.id || other.date != date || other.staffId != staffId) {
+                        false
+                    } else {
+                        val otherStart = runCatching { toMinutes(other.time) }.getOrNull()
+                        otherStart == null || otherStart !in 0..1439 ||
+                            other.duration <= 0 || otherStart + other.duration > 1440 ||
+                            (start < otherStart + other.duration && otherStart < start + duration)
+                    }
                 }
                 if (conflict) {
                     message("This staff member already has an overlapping booking")
