@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - phase-9d4-teal-clients
+      - phase-12-11a-client-edit-fix
     paths:
       - 'app/src/debug/java/com/salonbook/pro/debug/DebugCalendarDiskCache.kt'
       - 'app/src/debug/java/com/salonbook/pro/debug/DebugCalendarSource.kt'
@@ -51,6 +52,8 @@ on:
       - 'functions/phase1203PremiumCalendar.test.js'
       - 'functions/phase1204ModernFriendlyClientsServices.test.js'
       - 'functions/phase1205PremiumClientProfile.test.js'
+      - 'functions/phase1211aClientEditSafety.test.js'
+      - 'firestore.rules'
       - 'functions/phase1206PremiumNavigationSettings.test.js'
       - 'functions/phase1207PremiumAppointments.test.js'
       - 'functions/phase1208PremiumAppointmentCards.test.js'
@@ -102,6 +105,8 @@ jobs:
           node scripts/validateFirebaseDebugConfig.js
       - name: Phase 11.65 website count overview and safety checks
         run: node --test functions/phase1165UnifiedDailyOverview.test.js
+      - name: Phase 12.11A client edit safety regression
+        run: node --test functions/phase1211aClientEditSafety.test.js
       - name: Phase 12.11 premium client directory regression checks (plural-safe)
         run: node --test functions/phase1211PremiumClientDirectory.test.js
       - name: Phase 12.10 premium client profile regression checks
