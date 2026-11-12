@@ -7,6 +7,7 @@
  */
 const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const SAFE_ID = /^[A-Za-z0-9_-]{1,100}$/;
 function minute(value) {
   if (typeof value !== "string" || !CLOCK.test(value)) return null;
   const [h, m] = value.split(":").map(Number);
@@ -29,7 +30,7 @@ function auditLegacyBookings(json) {
       errors.push("Booking " + index + ": invalid object"); continue;
     }
     const id = item.id;
-    if (typeof id !== "string" || !id || seenIds.has(id)) {
+    if (typeof id !== "string" || !SAFE_ID.test(id) || seenIds.has(id)) {
       errors.push("Booking " + index + ": missing or duplicate ID");
     } else seenIds.add(id);
     // MainActivity.Booking serialises time and duration (not startTime /
@@ -42,7 +43,7 @@ function auditLegacyBookings(json) {
       !Number.isNaN(Date.parse(date + "T12:00:00Z")) &&
       new Date(date + "T12:00:00Z").toISOString().slice(0,10) === date;
     if (!validDate || start === null || start % 15 !== 0 ||
-        typeof staffId !== "string" || !staffId ||
+        typeof staffId !== "string" || !SAFE_ID.test(staffId) ||
         !Number.isInteger(duration) || duration <= 0 ||
         start + duration > 1440) {
       errors.push("Booking " + index + ": cannot safely map to shared booking locks");
