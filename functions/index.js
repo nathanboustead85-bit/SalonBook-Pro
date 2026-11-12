@@ -606,54 +606,15 @@ exports.inspectLegacyBookingMigration = onCall(
   { region: "europe-west2", maxInstances: 5, enforceAppCheck: false },
   async (request) => {
     const uid = verifiedUser(request);
-    const { auditLegacyBookings } = require("./legacyBookingAudit");
-    const ref = db.collection("users").doc(uid)
-      .collection("liveData").doc("bookings");
-    const snapshot = await ref.get();
-    if (!snapshot.exists) {
-      return { safe: false, count: 0, lockCount: 0,
-        issues: ["No cloud booking snapshot exists"], migrationPerformed: false };
-    }
-    const json = snapshot.get("json");
-    if (typeof json !== "string" || json.length > 500000) {
-      throw new HttpsError("failed-precondition", "Invalid legacy cloud booking snapshot.");
-    }
-    const result = auditLegacyBookings(json);
-    // Read-only comparison against any existing online booking locks.
-    // Never return lock IDs, customer details, or booking identifiers.
-    let existingLockConflicts = 0;
-    let existingLocksChecked = false;
-    if (result.safe && result.lockPlan.length <= 500) {
-      const businessRef = db.collection("businesses").doc(uid);
-      const refs = result.lockPlan.map(item =>
-        businessRef.collection("bookingLocks").doc(item.lockId));
-      if (refs.length > 0) {
-        const snapshots = await db.getAll(...refs);
-        existingLockConflicts = snapshots.filter(item => item.exists).length;
+    const { inspectMigration } = require("./inspectMigration");
+    try {
+      return await inspectMigration(db, uid);
+    } catch (error) {
+      // Do not expose underlying Firestore details or customer data.
+      if (error.message === "Invalid legacy cloud booking snapshot.") {
+        throw new HttpsError("failed-precondition", error.message);
       }
-      existingLocksChecked = true;
+      throw new HttpsError("internal", "Unable to inspect cloud bookings safely.");
     }
-    // Existing shared appointments may predate lock creation. Until a
-    // reconciliation path is implemented, refuse migration readiness whenever
-    // any shared appointment already exists (even if no lock is present).
-    const sharedAppointments = await db.collection("businesses").doc(uid)
-      .collection("appointments").limit(1).get();
-    const existingSharedAppointments = !sharedAppointments.empty;
-    return {
-      safe: result.safe && existingLocksChecked &&
-        existingLockConflicts === 0 && !existingSharedAppointments,
-      existingSharedAppointments,
-      legacySnapshotValid: result.safe,
-      existingLocksChecked,
-      existingLockConflicts,
-      count: result.count,
-      lockCount: result.lockCount || 0,
-      issueCount: result.errors.length,
-      collisionCount: result.collisions.length,
-      issues: result.errors.slice(0, 20).map(message =>
-        message.replace(/Booking \d+/g, "Appointment")),
-      migrationPerformed: false,
-      liveBookingsEnabled: false
-    };
   }
 );
