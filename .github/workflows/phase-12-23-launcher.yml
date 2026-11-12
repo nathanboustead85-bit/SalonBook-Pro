@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: phase-12-23-safe-booking-time
+          ref: phase-12-23-stale-edit-guard
       - name: Verify safe recovered booking-time handling
         run: |
           python3 - <<'PY'
