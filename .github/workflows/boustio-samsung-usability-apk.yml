@@ -1,0 +1,62 @@
+name: Boustio Samsung Usability APK
+on:
+  push:
+    branches:
+      - phase-12-15-next-visit-verification
+    paths:
+      - '.github/workflows/boustio-samsung-usability-apk.yml'
+      - 'app/**'
+      - 'tests/boustio-usability.test.cjs'
+  workflow_dispatch:
+jobs:
+  build-samsung-apk:
+    runs-on: ubuntu-latest
+    env:
+      BOUSTIO_DEBUG_GOOGLE_SERVICES_B64: ${{ secrets.BOUSTIO_DEBUG_GOOGLE_SERVICES_B64 }}
+      SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+      SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+      SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+      SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      BOUSTIO_DEV_APP_CHECK: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Verify navigation and client visit regression
+        run: |
+          node tests/boustio-usability.test.cjs
+          node tests/phase-12-15-next-visit.test.cjs
+      - name: Restore Firebase debug configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" || { echo "::error::Missing Firebase debug configuration secret"; exit 1; }
+          mkdir -p app/src/debug
+          printf '%s' "$BOUSTIO_DEBUG_GOOGLE_SERVICES_B64" | base64 --decode > app/src/debug/google-services.json
+          node scripts/validateFirebaseDebugConfig.js
+      - name: Restore stable signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          for value in SIGNING_KEYSTORE_BASE64 SIGNING_STORE_PASSWORD SIGNING_KEY_ALIAS SIGNING_KEY_PASSWORD; do
+            test -n "${!value}" || { echo "::error::Missing stable signing secret $value"; exit 1; }
+          done
+          printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/boustio-stable.jks"
+          chmod 600 "$RUNNER_TEMP/boustio-stable.jks"
+          echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/boustio-stable.jks" >> "$GITHUB_ENV"
+      - name: Build signed debug APK
+        run: gradle --no-daemon :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: boustio-samsung-usability-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
