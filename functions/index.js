@@ -595,3 +595,40 @@ exports.getCustomerChatMessages = onCall(
     };
   }
 );
+
+
+/**
+ * Owner-only, read-only legacy booking migration preflight.
+ * No migration writes, booking lock creation or public booking activation.
+ * Returns counts and issue categories only, never customer details.
+ */
+exports.inspectLegacyBookingMigration = onCall(
+  { region: "europe-west2", maxInstances: 5, enforceAppCheck: false },
+  async (request) => {
+    const uid = verifiedUser(request);
+    const { auditLegacyBookings } = require("./legacyBookingAudit");
+    const ref = db.collection("users").doc(uid)
+      .collection("liveData").doc("bookings");
+    const snapshot = await ref.get();
+    if (!snapshot.exists) {
+      return { safe: false, count: 0, lockCount: 0,
+        issues: ["No cloud booking snapshot exists"], migrationPerformed: false };
+    }
+    const json = snapshot.get("json");
+    if (typeof json !== "string" || json.length > 500000) {
+      throw new HttpsError("failed-precondition", "Invalid legacy cloud booking snapshot.");
+    }
+    const result = auditLegacyBookings(json);
+    return {
+      safe: result.safe,
+      count: result.count,
+      lockCount: result.lockCount || 0,
+      issueCount: result.errors.length,
+      collisionCount: result.collisions.length,
+      issues: result.errors.slice(0, 20).map(message =>
+        message.replace(/Booking \\d+/g, "Appointment")),
+      migrationPerformed: false,
+      liveBookingsEnabled: false
+    };
+  }
+);
