@@ -17,6 +17,7 @@
     .steps { display:flex; gap:8px; margin:0 0 16px; flex-wrap:wrap; }
     .step { background:#e4f5f3; color:#075d60; border:1px solid #bce6df; border-radius:999px; padding:9px 12px; font-size:13px; font-weight:700; }
     select:focus-visible,input:focus-visible,button:focus-visible { outline:3px solid #008c95; outline-offset:2px; }
+    .service-details { border-left:4px solid #087f80; background:#f0faf8; padding:12px 14px; margin:12px 0 4px; border-radius:8px; color:#135b5d; font-size:14px; line-height:1.5; }
     .preview-tag { display:inline-block; background:#e4f5f3; color:#075d60; border-radius:999px; padding:6px 11px; font-weight:700; font-size:12px; margin-bottom:12px; }
     .card { background:white; border-radius:18px; padding:22px; margin-bottom:16px; box-shadow:0 5px 22px #0000000a; }
     h1 { font-size:26px; margin:0 0 8px; }
@@ -56,6 +57,7 @@
       <h2>Find your appointment</h2>
       <label for="service">Service</label>
       <select id="service" disabled><option value="">Loading services...</option></select>
+      <div id="serviceDetails" class="service-details hidden" aria-live="polite"></div>
       <label for="staff">Professional</label>
       <select id="staff" disabled><option value="">Select a service first</option></select>
       <label for="date">Preferred date</label>
@@ -99,7 +101,7 @@ const ui = {
   businessName: $("businessName"), businessDescription: $("businessDescription"),
   bookingContent: $("bookingContent"), service: $("service"), staff: $("staff"),
   date: $("date"), time: $("time"), timeStatus: $("timeStatus"),
-  summary: $("summary"), error: $("error")
+  summary: $("summary"), serviceDetails: $("serviceDetails"), error: $("error")
 };
 let catalogue = null;
 
@@ -166,6 +168,8 @@ function selectedStaff() {
 function updateStaff() {
   resetSelect(ui.staff,"Select a professional");
   const service = selectedService();
+  ui.serviceDetails.classList.toggle("hidden", !service);
+  ui.serviceDetails.textContent = service ? [service.description || service.name, formatPrice(service.price) + " · " + service.durationMinutes + " minutes"].join(" — ") : "";
   if (service) {
     const eligible = catalogue.staff.filter(s => s.active === true && Array.isArray(s.serviceIds) && s.serviceIds.includes(service.id));
     for (const member of eligible) addOption(ui.staff,member.id,member.name);
@@ -206,7 +210,7 @@ function updateTimes() {
   const dateValue = ui.date.value;
   if (!service || !member || !dateValue) { updateSummary(); return; }
   const date = parseDate(dateValue);
-  if (!date || dateValue < ui.date.min) {
+  if (!date || dateValue < ui.date.min || dateValue > ui.date.max) {
     ui.timeStatus.textContent = "Choose a valid future date.";
     updateSummary(); return;
   }
@@ -244,7 +248,7 @@ function updateTimes() {
 function updateSummary() {
   const service = selectedService();
   const member = selectedStaff();
-  if (!service || !member || !ui.date.value || !ui.time.value) {
+  if (!service || !member || !ui.date.value || !ui.time.value || !Array.from(ui.time.options).some(o => o.value === ui.time.value && o.value !== "")) {
     ui.summary.textContent = "Choose a service, professional, date and time to see your appointment summary.";
     return;
   }
@@ -276,6 +280,9 @@ async function loadCatalogue() {
     ui.service.disabled = ui.service.options.length <= 1;
     ui.date.disabled = false;
     ui.date.min = localDateString(new Date());
+    const lastDate = new Date();
+    lastDate.setDate(lastDate.getDate() + 90);
+    ui.date.max = localDateString(lastDate);
     updateStaff();
   } catch (error) {
     showError("Booking preview unavailable","We couldn't load this business. Please try again later.");
