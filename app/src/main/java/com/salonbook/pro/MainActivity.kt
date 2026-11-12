@@ -2182,14 +2182,20 @@ class MainActivity : Activity() {
         contact.addView(label("PRIVATE CLIENT INFORMATION", 11f, orange, true))
         contact.addView(label("Only save details your business needs to provide its services.",
             12f, muted), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5); bottomMargin = dp(8) })
-        fun input(hint: String, value: String): EditText = EditText(this).apply {
-            this.hint = hint
-            setText(value)
-            setSingleLine(true)
-            textSize = 15f
-            setTextColor(dark)
-            backgroundTintList = ColorStateList.valueOf(orange)
-            contact.addView(this, LinearLayout.LayoutParams(-1, -2))
+        // Phase 12.12: persistent labels stay visible even when fields contain values.
+        fun input(hint: String, value: String): EditText {
+            contact.addView(label(hint.uppercase(Locale.UK), 12f, muted, true),
+                LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+            return EditText(this).apply {
+                this.hint = hint
+                contentDescription = hint
+                setText(value)
+                setSingleLine(true)
+                textSize = 15f
+                setTextColor(dark)
+                backgroundTintList = ColorStateList.valueOf(orange)
+                contact.addView(this, LinearLayout.LayoutParams(-1, -2))
+            }
         }
         val editableName = input("Client name", name)
         editableName.isEnabled = history.isEmpty() && registeredClients().any {
