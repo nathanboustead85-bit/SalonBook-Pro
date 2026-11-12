@@ -1,0 +1,20 @@
+name: Boustio Phase 12.15 Next Visit Verification
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - phase-12-15-next-visit-verification
+    paths:
+      - 'tests/phase-12-15-next-visit.test.cjs'
+      - 'app/src/main/java/com/salonbook/pro/MainActivity.kt'
+      - '.github/workflows/phase-12-15-next-visit.yml'
+jobs:
+  next-visit-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify next scheduled visit is read-only and preserves existing bookings
+        run: node tests/phase-12-15-next-visit.test.cjs
