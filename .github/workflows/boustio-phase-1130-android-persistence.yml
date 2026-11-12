@@ -102,7 +102,7 @@ jobs:
           node scripts/validateFirebaseDebugConfig.js
       - name: Phase 11.65 website count overview and safety checks
         run: node --test functions/phase1165UnifiedDailyOverview.test.js
-      - name: Phase 12.11 premium client directory regression checks
+      - name: Phase 12.11 premium client directory regression checks (plural-safe)
         run: node --test functions/phase1211PremiumClientDirectory.test.js
       - name: Phase 12.10 premium client profile regression checks
         run: node --test functions/phase1210PremiumClientProfile.test.js
