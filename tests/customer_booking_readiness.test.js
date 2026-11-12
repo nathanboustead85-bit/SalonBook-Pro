@@ -14,4 +14,12 @@ for (const key of REQUIRED) {
 }
 const allVerified = Object.fromEntries(REQUIRED.map(k => [k, true]));
 assert.equal(requireBookingReadiness(allVerified), true);
+// The release gate must not accidentally depend on a single migration audit.
+const fs = require("node:fs");
+const backend = fs.readFileSync(require("node:path").join(__dirname, "../functions/index.js"), "utf8");
+assert.match(backend, /existingLocksChecked/);
+assert.match(backend, /existingLockConflicts/);
+assert.match(backend, /bookingLocks/);
+assert.match(backend, /migrationPerformed: false/);
+assert.match(backend, /liveBookingsEnabled: false/);
 console.log("Customer booking release gate: fail-closed checks passed");
