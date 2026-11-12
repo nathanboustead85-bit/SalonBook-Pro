@@ -32,10 +32,11 @@ function auditLegacyBookings(json) {
     if (typeof id !== "string" || !id || seenIds.has(id)) {
       errors.push("Booking " + index + ": missing or duplicate ID");
     } else seenIds.add(id);
-    // Legacy Android fields may differ from trusted online schema. Reject
-    // unknown shapes rather than guessing which time or staff to lock.
-    const date = item.date, startTime = item.startTime, staffId = item.staffId;
-    const duration = item.durationMinutes;
+    // MainActivity.Booking serialises time and duration (not startTime /
+    // durationMinutes). Require explicit valid staff IDs and duration.
+    // Old appointments with missing metadata must be resolved manually.
+    const date = item.date, startTime = item.time, staffId = item.staffId;
+    const duration = item.duration;
     const start = minute(startTime);
     const validDate = typeof date === "string" && DATE.test(date) &&
       !Number.isNaN(Date.parse(date + "T12:00:00Z")) &&
