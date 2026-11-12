@@ -40,8 +40,8 @@ android {
 
     buildTypes {
         getByName("debug") {
-            applicationIdSuffix = ".devcalendar1110"
-            versionNameSuffix = "-calendar-dev-11.13"
+            applicationIdSuffix = ".phase1219sandbox"
+            versionNameSuffix = "-phase-12.19-sandbox"
             // Use the existing stable signing identity only when CI supplies it.
             if (!System.getenv("SIGNING_KEYSTORE_PATH").isNullOrBlank()) {
                 signingConfig = signingConfigs.getByName("salonbookRelease")
