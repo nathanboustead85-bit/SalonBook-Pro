@@ -10,7 +10,7 @@ function fakeDb(items, options={}) {
         return {collection(child) {
           return {
             doc(id) {
-              if (child==="bookings") return {async get() {
+              if (child==="liveData" && id==="bookings") return {async get() {
                 reads.push("legacy");
                 return {exists: items !== null, get:()=>JSON.stringify(items)};
               }};
