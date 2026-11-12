@@ -1,0 +1,63 @@
+name: Boustio Read-Only Migration Inspector Deployment
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type DEPLOY_READ_ONLY to deploy only the inspection function'
+        required: true
+        type: string
+      firebase_project:
+        description: 'Firebase project ID (verify in Firebase Console)'
+        required: true
+        type: string
+jobs:
+  deploy-inspector:
+    if: ${{ inputs.confirmation == 'DEPLOY_READ_ONLY' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    concurrency:
+      group: boustio-readonly-inspector-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Check out reviewed customer booking branch
+        uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify tests and fail-closed booking gate
+        run: |
+          node --check functions/index.js
+          node --check functions/inspectMigration.js
+          npm --prefix functions run test:booking-integration
+          node - <<'JS'
+          const fs = require('node:fs');
+          const source = fs.readFileSync('functions/index.js','utf8');
+          if (!source.includes('acceptingBookings: false')) throw Error('Public booking guard missing');
+          if (!source.includes('exports.inspectLegacyBookingMigration = onCall(')) throw Error('Inspector export missing');
+          JS
+      - name: Install Firebase CLI and backend dependencies
+        run: |
+          npm install --no-save firebase-tools@14
+          npm --prefix functions ci
+      - name: Deploy only read-only inspector
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BOUSTIO }}
+          PROJECT_ID: ${{ inputs.firebase_project }}
+        run: |
+          if [ -z "$FIREBASE_SA" ]; then
+            echo "::error::Missing FIREBASE_SERVICE_ACCOUNT_BOUSTIO repository secret; no deployment attempted."
+            exit 1
+          fi
+          if ! [[ "$PROJECT_ID" =~ ^[a-z][a-z0-9-]{4,29}$ ]]; then
+            echo "::error::Invalid Firebase project ID"
+            exit 1
+          fi
+          credential_file="$RUNNER_TEMP/boustio-firebase-credentials.json"
+          umask 077
+          printf '%s' "$FIREBASE_SA" > "$credential_file"
+          export GOOGLE_APPLICATION_CREDENTIALS="$credential_file"
+          trap 'rm -f "$credential_file"' EXIT
+          npx firebase-tools deploy --only functions:inspectLegacyBookingMigration --project "$PROJECT_ID" --non-interactive
