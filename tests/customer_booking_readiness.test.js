@@ -16,7 +16,7 @@ const allVerified = Object.fromEntries(REQUIRED.map(k => [k, true]));
 assert.equal(requireBookingReadiness(allVerified), true);
 // The release gate must not accidentally depend on a single migration audit.
 const fs = require("node:fs");
-const backend = fs.readFileSync(require("node:path").join(__dirname, "../functions/index.js"), "utf8");
+const backend = fs.readFileSync(require("node:path").join(__dirname, "../functions/inspectMigration.js"), "utf8");
 assert.match(backend, /existingLocksChecked/);
 assert.match(backend, /existingLockConflicts/);
 assert.match(backend, /existingSharedAppointments/);
