@@ -1,0 +1,29 @@
+name: Boustio Deployment Identity Check (No Deploy)
+on:
+  workflow_dispatch:
+jobs:
+  identify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Identify deployment service account without exposing credentials
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          node - <<'JS'
+          const raw=process.env.FIREBASE_SA;
+          if (!raw) throw Error('Firebase deployment secret is missing');
+          const key=JSON.parse(raw);
+          if (key.type!=='service_account' || key.project_id!=='salonbook-pro-ad5ff')
+            throw Error('Firebase service account project mismatch');
+          const expected='boustio-github-deploy@salonbook-pro-ad5ff.iam.gserviceaccount.com';
+          if (key.client_email===expected) {
+            console.log('MATCH: GitHub uses Boustio GitHub Deployment service account');
+          } else {
+            console.log('NOT MATCHED: GitHub uses a different service account');
+            console.log('Review the GitHub secret and IAM identity before granting any access');
+            process.exitCode=1;
+          }
+          console.log('No credentials displayed, no Google Cloud changes made');
+          JS
