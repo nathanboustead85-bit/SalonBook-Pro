@@ -14,14 +14,15 @@ function minute(value) {
 }
 function auditLegacyBookings(json) {
   const errors = [], collisions = [], seenIds = new Set(), occupied = new Map();
+  const lockPlan = [];
   let items;
   try {
     items = typeof json === "string" ? JSON.parse(json) : json;
   } catch (_) {
-    return { safe: false, count: 0, errors: ["Invalid booking JSON"], collisions };
+    return { safe: false, count: 0, errors: ["Invalid booking JSON"], collisions, lockPlan };
   }
   if (!Array.isArray(items)) {
-    return { safe: false, count: 0, errors: ["Expected a booking array"], collisions };
+    return { safe: false, count: 0, errors: ["Expected a booking array"], collisions, lockPlan };
   }
   for (const [index, item] of items.entries()) {
     if (!item || typeof item !== "object" || Array.isArray(item)) {
@@ -49,10 +50,17 @@ function auditLegacyBookings(json) {
     for (let m = start; m < start + duration; m += 15) {
       const key = JSON.stringify([staffId,date,Math.floor(m/15)]);
       if (occupied.has(key)) collisions.push([occupied.get(key), id || index]);
-      else occupied.set(key, id || index);
+      else {
+        occupied.set(key, id || index);
+        lockPlan.push({ bookingId: id, staffId, date, minute: m,
+          lockId: staffId + "_" + date + "_" +
+            String(Math.floor(m/60)).padStart(2,"0") +
+            String(m%60).padStart(2,"0") });
+      }
     }
   }
   return { safe: errors.length === 0 && collisions.length === 0,
-    count: items.length, errors, collisions, lockCount: occupied.size };
+    count: items.length, errors, collisions, lockCount: occupied.size,
+    lockPlan: errors.length === 0 && collisions.length === 0 ? lockPlan : [] };
 }
 module.exports = { auditLegacyBookings };
