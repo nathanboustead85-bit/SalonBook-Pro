@@ -17,12 +17,17 @@ jobs:
           const key=JSON.parse(raw);
           if (key.type!=='service_account' || key.project_id!=='salonbook-pro-ad5ff')
             throw Error('Firebase service account project mismatch');
-          const expected='boustio-github-deploy@salonbook-pro-ad5ff.iam.gserviceaccount.com';
-          if (key.client_email===expected) {
-            console.log('MATCH: GitHub uses Boustio GitHub Deployment service account');
+          const known = {
+            'boustio-readonly-verifier@salonbook-pro-ad5ff.iam.gserviceaccount.com': 'Boustio Read-Only Verifier',
+            'firebase-adminsdk-fbsvc@salonbook-pro-ad5ff.iam.gserviceaccount.com': 'Firebase Admin SDK',
+            'salonbook-hosting-deploy@salonbook-pro-ad5ff.iam.gserviceaccount.com': 'SalonBook Hosting Deployment',
+            'salonbook-pro-ad5ff@appspot.gserviceaccount.com': 'App Engine Default',
+            'boustio-github-deploy@salonbook-pro-ad5ff.iam.gserviceaccount.com': 'Boustio GitHub Deployment'
+          };
+          if (Object.hasOwn(known,key.client_email)) {
+            console.log('MATCH: GitHub credential is for '+known[key.client_email]);
           } else {
-            console.log('NOT MATCHED: GitHub uses a different service account');
-            console.log('Review the GitHub secret and IAM identity before granting any access');
+            console.log('NOT MATCHED: GitHub credential is not one of the five known accounts');
             process.exitCode=1;
           }
           console.log('No credentials displayed, no Google Cloud changes made');
