@@ -2062,7 +2062,12 @@ class MainActivity : Activity() {
         dialog.show()
     }
 
+    // Phase 12.21: reject malformed clock values instead of silently normalising them.
+    // 24:00 is permitted as an end-of-working-day boundary only.
     private fun toMinutes(time: String): Int {
+        require(Regex("^(?:[01][0-9]|2[0-3]):[0-5][0-9]$").matches(time) || time == "24:00") {
+            "Invalid appointment time"
+        }
         val parts = time.split(":")
         return parts[0].toInt() * 60 + parts[1].toInt()
     }
