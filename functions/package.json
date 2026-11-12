@@ -11,7 +11,8 @@
     "lint": "node --check index.js",
     "serve": "firebase emulators:start --only functions,firestore",
     "deploy": "firebase deploy --only functions",
-    "test:booking-readiness": "node ../tests/customer_booking_readiness.test.js"
+    "test:booking-readiness": "node ../tests/customer_booking_readiness.test.js",
+    "test:booking-integration": "node ../tests/customer_booking_readiness.test.js && node ../tests/legacy_booking_audit.test.js"
   },
   "dependencies": {
     "firebase-admin": "^13.0.0",
