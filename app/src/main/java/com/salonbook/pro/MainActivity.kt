@@ -48,6 +48,9 @@ class MainActivity : Activity() {
     private lateinit var container: LinearLayout
     private lateinit var navigationBar: LinearLayout
     private var currentScreen = "dashboard"
+    private var activeClientName: String? = null
+    // Navigation state is separate from appointment storage.
+    private val navigationPrefs by lazy { getSharedPreferences("boustio_navigation", MODE_PRIVATE) }
     private var cloudCalendarListener: ListenerRegistration? = null
     private var debugCalendarSource: DevelopmentCalendarSource? = null
 
@@ -60,30 +63,39 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        selectedDate = savedInstanceState?.getString("selectedDate") ?: today()
+        selectedDate = savedInstanceState?.getString("selectedDate")
+            ?: navigationPrefs.getString("selectedDate", null) ?: today()
+        activeClientName = savedInstanceState?.getString("activeClientName")
+            ?: navigationPrefs.getString("activeClientName", null)
         loadBookings()
-        showDashboard()
+        val restoredScreen = savedInstanceState?.getString("currentScreen")
+            ?: navigationPrefs.getString("currentScreen", "dashboard")
+        when (restoredScreen) {
+            "calendar" -> showCalendar()
+            "appointments" -> showAppointments()
+            "clients" -> showClients()
+            "client_profile" -> activeClientName?.let { showClientProfile(it) } ?: showClients()
+            "settings" -> showSettings()
+            "availability" -> showAvailabilityTester()
+            else -> showDashboard()
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString("selectedDate", selectedDate)
+        outState.putString("currentScreen", currentScreen)
+        outState.putString("activeClientName", activeClientName)
         super.onSaveInstanceState(outState)
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (::container.isInitialized) {
-            loadBookings()
-            when (currentScreen) {
-                "calendar" -> showCalendar()
-                "appointments" -> showAppointments()
-                "clients" -> showClients()
-                "client_profile" -> showClients()
-                "settings" -> showSettings()
-                "availability" -> showAvailabilityTester()
-                else -> showDashboard()
-            }
-        }
+    override fun onPause() {
+        // Do not rebuild the screen on resume: rebuilding discards in-progress form input.
+        navigationPrefs.edit()
+            .putString("currentScreen", currentScreen)
+            .putString("selectedDate", selectedDate)
+            .putString("activeClientName", activeClientName)
+            .apply()
+        super.onPause()
     }
 
     private fun today(): String = SimpleDateFormat("yyyy-MM-dd", Locale.UK)
@@ -281,10 +293,10 @@ class MainActivity : Activity() {
         settingsIntro.addView(label("Manage your services, team, booking link and account from one place.", 13f, muted))
         addPanel(settingsIntro)
         section("Business management")
-        actionCard("Services & Prices", "Manage your service catalogue", "£") {
+        actionCard("Services & Prices", "Manage your service catalogue", "≡") {
             startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
         }
-        actionCard("Staff & Working Hours", "Manage your team and availability", "♧") {
+        actionCard("Staff & Working Hours", "Manage your team and availability", "♙") {
             startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
         }
         actionCard("My Boustio Booking Link", "Manage your public booking profile", "↗") {
@@ -2135,6 +2147,7 @@ class MainActivity : Activity() {
     }
 
     private fun showClientProfile(name: String) {
+        activeClientName = name
         screen("Client profile", "Everything about your client, in one place.", "client_profile")
         val key = clientProfileKey(name)
         val saved = runCatching {
