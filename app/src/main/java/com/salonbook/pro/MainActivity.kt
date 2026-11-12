@@ -2191,6 +2191,13 @@ class MainActivity : Activity() {
             backgroundTintList = ColorStateList.valueOf(orange)
             contact.addView(this, LinearLayout.LayoutParams(-1, -2))
         }
+        val editableName = input("Client name", name)
+        editableName.isEnabled = history.isEmpty() && registeredClients().any {
+            it.equals(name, ignoreCase = true)
+        }
+        if (!editableName.isEnabled) {
+            contact.addView(label("Name changes are disabled for clients with appointment history or without a manual client record, to protect existing bookings.", 12f, muted))
+        }
         val phone = input("Phone number", saved.optString("phone"))
         phone.inputType = android.text.InputType.TYPE_CLASS_PHONE
         val email = input("Email address", saved.optString("email"))
@@ -2203,13 +2210,68 @@ class MainActivity : Activity() {
         val cloudStatus = label("Changes sync when you save. Cloud conflicts require manual review.", 13f, muted)
         container.addView(cloudStatus)
         button("Save Client Details") {
-            val data = JSONObject().apply {
-                put("phone", phone.text.toString().trim())
-                put("email", email.text.toString().trim())
-                put("notes", notes.text.toString().trim())
+            val updatedName = editableName.text.toString().trim()
+            val phoneValue = phone.text.toString().trim()
+            val emailValue = email.text.toString().trim()
+            val notesValue = notes.text.toString().trim()
+            if (updatedName.isBlank() || updatedName.length > 150 ||
+                phoneValue.length > 50 || emailValue.length > 254 || notesValue.length > 5000) {
+                message("Check client name and contact detail lengths")
+                return@button
             }
-            prefs.edit().putString(key, data.toString()).apply()
-            autoSyncClient(name, data, cloudStatus)
+            val data = JSONObject().apply {
+                put("phone", phoneValue)
+                put("email", emailValue)
+                put("notes", notesValue)
+            }
+            if (!updatedName.equals(name, ignoreCase = true)) {
+                if (!editableName.isEnabled || history.isNotEmpty() ||
+                    bookings.any { it.client.equals(name, ignoreCase = true) }) {
+                    message("Cannot rename a client linked to appointments")
+                    return@button
+                }
+                if ((registeredClients() + bookings.map { it.client }).any {
+                        it.equals(updatedName, ignoreCase = true) }) {
+                    message("Another client already uses that name")
+                    return@button
+                }
+                val records = JSONArray(prefs.getString("manual_clients", "[]") ?: "[]")
+                var found = false
+                for (i in 0 until records.length()) {
+                    val record = records.optJSONObject(i) ?: continue
+                    if (record.optString("name").equals(name, ignoreCase = true)) {
+                        record.put("name", updatedName)
+                        found = true
+                    }
+                }
+                if (!found) {
+                    message("Client record missing; rename cancelled")
+                    return@button
+                }
+                val newKey = clientProfileKey(updatedName)
+                if (prefs.contains(newKey)) {
+                    message("A profile already exists under that name")
+                    return@button
+                }
+                val committed = prefs.edit()
+                    .putString("manual_clients", records.toString())
+                    .putString(newKey, data.toString())
+                    .remove(key)
+                    .commit()
+                if (!committed) {
+                    message("Unable to save renamed client")
+                    return@button
+                }
+                cloudStatus.text = "Renamed locally. Previous cloud profile remains unchanged; cloud rename requires separate verification."
+                message("Client renamed locally")
+                showClients()
+            } else {
+                if (!prefs.edit().putString(key, data.toString()).commit()) {
+                    message("Unable to save client details")
+                    return@button
+                }
+                autoSyncClient(name, data, cloudStatus)
+            }
         }
         button("Back Up This Client to Cloud") {
             val ref = clientCloudDocument(name)
