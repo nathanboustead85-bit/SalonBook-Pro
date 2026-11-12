@@ -214,12 +214,25 @@ class MainActivity : Activity() {
             }
         }
         updateNavigation(mode)
-        container.addView(ImageView(this).apply {
-            setImageResource(R.drawable.boustio_logo)
-            scaleType = ImageView.ScaleType.FIT_START
-            adjustViewBounds = true
-            contentDescription = "Boustio"
-        }, LinearLayout.LayoutParams(dp(166), dp(54)))
+        // Phase 12.17: match the in-app header to the new Boustio launcher branding.
+        val brandHeader = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            contentDescription = "Boustio — A booking platform with a difference"
+        }
+        brandHeader.addView(ImageView(this).apply {
+            setImageResource(R.drawable.boustio_launcher)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            contentDescription = "Boustio calendar and scissors logo"
+        }, LinearLayout.LayoutParams(dp(48), dp(48)))
+        val brandWords = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(10), 0, 0, 0)
+        }
+        brandWords.addView(label("Boustio", 25f, dark, true))
+        brandWords.addView(label("A booking platform with a difference", 10f, orange))
+        brandHeader.addView(brandWords, LinearLayout.LayoutParams(-2, -2))
+        container.addView(brandHeader, LinearLayout.LayoutParams(-1, dp(54)))
         container.addView(label(title, 29f, dark, true), LinearLayout.LayoutParams(-1, -2).apply {
             topMargin = dp(12)
         })
