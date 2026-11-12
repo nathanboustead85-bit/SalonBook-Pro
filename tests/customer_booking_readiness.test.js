@@ -19,6 +19,8 @@ const fs = require("node:fs");
 const backend = fs.readFileSync(require("node:path").join(__dirname, "../functions/index.js"), "utf8");
 assert.match(backend, /existingLocksChecked/);
 assert.match(backend, /existingLockConflicts/);
+assert.match(backend, /existingSharedAppointments/);
+assert.match(backend, /collection\("appointments"\)\.limit\(1\)/);
 assert.match(backend, /bookingLocks/);
 assert.match(backend, /migrationPerformed: false/);
 assert.match(backend, /liveBookingsEnabled: false/);
