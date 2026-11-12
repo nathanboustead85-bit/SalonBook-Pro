@@ -1,0 +1,10 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
+const a=src.indexOf("private fun showClientProfile("),b=src.indexOf("private fun ",a+15),profile=src.slice(a,b);
+test("12.14 visit breakdown shown on client profile",()=>{for(const x of ["VISIT BREAKDOWN","pastVisitCount","upcomingVisitCount","visitBreakdown"])assert.ok(profile.includes(x));});
+test("12.14 past visits based only on dates earlier than today",()=>assert.ok(profile.includes("history.count { it.date < today() }")));
+test("12.14 today and future visits not counted as past",()=>assert.ok(profile.includes("history.size - pastVisitCount")));
+test("12.14 no false completion claim for today's bookings",()=>assert.ok(profile.includes("Today's appointments are not marked as completed.")));
+test("12.14 original history and calendar navigation retained",()=>{for(const x of ["CLIENT VISIT OVERVIEW","history.forEach { bookingCard(it) }","View Calendar","Back to Clients"])assert.ok(profile.includes(x));});
+test("12.14 breakdown block does not change booking or cloud data",()=>{const start=profile.indexOf("// Phase 12.14:"),end=profile.indexOf("// Phase 12.13:",start),part=profile.slice(start,end);assert.ok(start>=0&&end>start);assert.doesNotMatch(part,/prefs\.edit\(|saveBookings\(|CloudSyncManager\(|\.set\(|\.delete\(|\.remove\(/);});
