@@ -10,4 +10,4 @@ test("12.6 settings uses premium light theme intro",()=>{for(const x of ["Busine
 test("12.6 settings actions retain existing destinations",()=>{for(const x of ["ManagementActivity::class.java","BusinessProfileActivity::class.java","ChatInboxActivity::class.java","CloudActivity::class.java","showAppointments()"])assert.ok(settings.includes(x));});
 test("12.6 upcoming cards exclude earlier appointments today",()=>{assert.match(dashboard,/SimpleDateFormat\("HH:mm", Locale.UK\)\.format\(Date\(\)\)/);assert.match(dashboard,/it\.date > today\(\)/);assert.match(dashboard,/it\.time >= currentClock/);assert.match(dashboard,/val nextBookings = upcomingBookings/);});
 test("12.6 does not alter booking persistence or cloud data",()=>{assert.doesNotMatch(dashboard,/saveBookings\(|prefs\.edit\(|CloudSyncManager\(\)\.upload\(/);assert.doesNotMatch(settings,/prefs\.edit\(|saveBookings\(/);});
-test("12.6 client directory has singular/plural booking labels",()=>assert.match(s,/history\.size\} booking\$\{if \(history\.size == 1\)/));
+test("12.6 client directory retains singular/plural visit counts",()=>assert.match(s,/history\.size\} visit\$\{if \(history\.size == 1\)/));
