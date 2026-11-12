@@ -2046,6 +2046,11 @@ class MainActivity : Activity() {
                     message("Outside staff working hours. Use e.g. Mon-Fri 09:00-17:00")
                     return@setOnClickListener
                 }
+                // Phase 12.23: a stale edit dialog must never resurrect or overwrite a deleted booking.
+                if (existing != null && bookings.none { it === existing && it.id == existing.id }) {
+                    message("This appointment has changed or was removed. Reopen the calendar before editing.")
+                    return@setOnClickListener
+                }
                 val booking = existing ?: Booking(UUID.randomUUID().toString(), "", "", "", "", "")
                 booking.client = name
                 booking.service = service.optString("name")
