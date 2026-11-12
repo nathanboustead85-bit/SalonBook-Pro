@@ -111,6 +111,33 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // PHASE 12.11A: private, verified-owner client profiles.
+    // Names are immutable on updates: renames require explicit migration.
+    match /users/{userId}/clientProfiles/{profileId} {
+      allow get: if isVerifiedOwner(userId);
+      allow list, delete: if false;
+      allow create, update: if isVerifiedOwner(userId)
+        && profileId.matches('[0-9a-f]{64}')
+        && request.resource.data.keys().hasOnly([
+          'name', 'phone', 'email', 'notes', 'schemaVersion', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'name', 'phone', 'email', 'notes', 'schemaVersion', 'updatedAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 150
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() <= 50
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 5000
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.updatedAt == request.time
+        && (resource == null || request.resource.data.name == resource.data.name);
+    }
+
     // ===================================
     // PHASE 7A: PRIVATE BUSINESS PROFILE
     // ===================================
