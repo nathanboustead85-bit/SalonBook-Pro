@@ -1,0 +1,10 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
+const a=src.indexOf("private fun showClients("),b=src.indexOf("private fun showAvailabilityTester(",a),directory=src.slice(a,b);
+test("12.11 premium client directory introduction",()=>{for(const v of ["BOUSTIO  •  CLIENT DIRECTORY","Your clients, beautifully organised","directoryIntro"])assert.ok(directory.includes(v));});
+test("12.11 search remains case insensitive and live",()=>{for(const v of ["Search clients by name","ignoreCase = true","addTextChangedListener","updateResults(query)"])assert.ok(directory.includes(v));});
+test("12.11 directory retains client deduplication",()=>assert.ok(directory.includes("distinctBy { it.lowercase(Locale.UK) }")));
+test("12.11 directory cards show visit counts and profile navigation",()=>{for(const v of ["visits","View Profile & History","showClientProfile(name)"])assert.ok(directory.includes(v));});
+test("12.11 adding clients and empty states remain",()=>{for(const v of ["registerClientDialog()","No clients yet.","No matching clients."])assert.ok(directory.includes(v));});
+test("12.11 directory does not modify bookings or cloud data",()=>assert.doesNotMatch(directory,/saveBookings\(|bookings\.clear\(|bookings\.remove\(|CloudSyncManager\(|ref\.set\(/));
