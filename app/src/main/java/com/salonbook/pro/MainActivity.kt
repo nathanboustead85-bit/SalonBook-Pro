@@ -2390,6 +2390,19 @@ class MainActivity : Activity() {
         screen("Your clients", "Every relationship, beautifully organised.", "clients")
         val names = (bookings.map { it.client.trim() } + registeredClients()).filter { it.isNotBlank() }
             .distinctBy { it.lowercase(Locale.UK) }.sortedBy { it.lowercase(Locale.UK) }
+        val directoryIntro = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(18), dp(20), dp(18))
+            background = rounded(paleOrange, 20)
+        }
+        directoryIntro.addView(label("BOUSTIO  •  CLIENT DIRECTORY", 11f, orange, true))
+        directoryIntro.addView(label("Your clients, beautifully organised", 20f, dark, true),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(7) })
+        directoryIntro.addView(label("Search, open profiles and review visit history in seconds.",
+            13f, muted), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5) })
+        container.addView(directoryIntro, LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(8); bottomMargin = dp(12)
+        })
         val clientOverview = panel()
         clientOverview.addView(label("YOUR CLIENT DIRECTORY", 12f, orange, true))
         clientOverview.addView(label("${names.size} client${if (names.size == 1) "" else "s"}", 29f, dark, true))
@@ -2397,7 +2410,7 @@ class MainActivity : Activity() {
         addPanel(clientOverview)
         button("+ Add New Client") { registerClientDialog() }
         val search = EditText(this).apply {
-            hint = "Search clients"
+            hint = "Search clients by name"
             setSingleLine(true)
             setText(query)
             textSize = 16f
@@ -2431,9 +2444,12 @@ class MainActivity : Activity() {
                 identity.addView(avatar, LinearLayout.LayoutParams(dp(44), dp(44)).apply {
                     marginEnd = dp(12)
                 })
-                identity.addView(label(name, 18f, dark, true))
+                val clientSummary = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+                clientSummary.addView(label(name, 18f, dark, true))
+                clientSummary.addView(label("${history.size} visit${if (history.size == 1) "" else "s"} recorded",
+                    12f, muted))
+                identity.addView(clientSummary, LinearLayout.LayoutParams(0, -2, 1f))
                 card.addView(identity)
-                card.addView(label("${history.size} booking${if (history.size == 1) "" else "s"}", 14f, muted))
                 card.addView(Button(this).apply {
                     text = "View Profile & History"
                     styleButton(this, false)
