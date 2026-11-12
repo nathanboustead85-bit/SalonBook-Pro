@@ -2387,6 +2387,26 @@ class MainActivity : Activity() {
             12f, muted
         ), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5) })
         addPanel(visitBreakdown)
+        // Phase 12.15: read-only next scheduled visit. No booking status is inferred.
+        val nextScheduledVisit = history.filter { it.date >= today() }
+            .sortedWith(compareBy<Booking> { it.date }.thenBy { it.time })
+            .firstOrNull()
+        val nextVisitPanel = panel()
+        nextVisitPanel.addView(label("NEXT SCHEDULED VISIT", 11f, orange, true))
+        if (nextScheduledVisit == null) {
+            nextVisitPanel.addView(label("No appointments scheduled for today or later.",
+                14f, muted))
+        } else {
+            nextVisitPanel.addView(label(
+                "${nextScheduledVisit.date}  •  ${nextScheduledVisit.time}",
+                17f, dark, true
+            ), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
+            nextVisitPanel.addView(label(
+                "${nextScheduledVisit.service}  •  View the calendar for full details.",
+                13f, muted
+            ), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5) })
+        }
+        addPanel(nextVisitPanel)
         // Phase 12.13: read-only history overview. No booking changes or cloud writes.
         section("Appointment history")
         val historyOverview = panel()
