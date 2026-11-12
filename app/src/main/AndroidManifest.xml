@@ -10,7 +10,9 @@
     <application
         android:name=".BoustioApplication"
         android:allowBackup="true"
-        android:label="SalonBook Pro"
+        android:label="Boustio"
+        android:icon="@drawable/boustio_launcher"
+        android:roundIcon="@drawable/boustio_launcher"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
