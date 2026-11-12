@@ -48,6 +48,9 @@ class MainActivity : Activity() {
     private lateinit var container: LinearLayout
     private lateinit var navigationBar: LinearLayout
     private var currentScreen = "dashboard"
+    // Unsaved form state is separate from saved bookings and cloud sync.
+    private var activeDraftSnapshot: (() -> Bundle)? = null
+    private var restoredDraft: Bundle? = null
     private var activeClientName: String? = null
     // Navigation state is separate from appointment storage.
     private val navigationPrefs by lazy { getSharedPreferences("boustio_navigation", MODE_PRIVATE) }
@@ -68,6 +71,7 @@ class MainActivity : Activity() {
         activeClientName = savedInstanceState?.getString("activeClientName")
             ?: navigationPrefs.getString("activeClientName", null)
         loadBookings()
+        restoredDraft = savedInstanceState?.getBundle("appointmentDraft")
         val restoredScreen = savedInstanceState?.getString("currentScreen")
             ?: navigationPrefs.getString("currentScreen", "dashboard")
         when (restoredScreen) {
@@ -79,12 +83,25 @@ class MainActivity : Activity() {
             "availability" -> showAvailabilityTester()
             else -> showDashboard()
         }
+        restoredDraft?.let { draft ->
+            // Reopen the form only after Android recreates this activity.
+            window.decorView.post {
+                if (!isFinishing && !isDestroyed) {
+                    val bookingId = draft.getString("existingId")
+                    val existing = bookingId?.let { id -> bookings.firstOrNull { it.id == id } }
+                    if (bookingId == null || existing != null) {
+                        bookingDialog(existing, draft.getString("date") ?: selectedDate, draft)
+                    }
+                }
+            }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString("selectedDate", selectedDate)
         outState.putString("currentScreen", currentScreen)
         outState.putString("activeClientName", activeClientName)
+        activeDraftSnapshot?.invoke()?.let { outState.putBundle("appointmentDraft", it) }
         super.onSaveInstanceState(outState)
     }
 
@@ -1726,7 +1743,7 @@ class MainActivity : Activity() {
             }.setNegativeButton("Keep Booking", null).show()
     }
 
-    private fun bookingDialog(existing: Booking? = null, defaultDate: String = selectedDate) {
+    private fun bookingDialog(existing: Booking? = null, defaultDate: String = selectedDate, recovered: Bundle? = null) {
         val services = readRecords("services")
         val staff = readRecords("staff")
         if (services.isEmpty() || staff.isEmpty()) {
@@ -1780,7 +1797,7 @@ class MainActivity : Activity() {
             13f, muted), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5) })
         form.addView(formIntro, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
         val clientCard = section("01  Client details", "Who is this appointment for?")
-        val client = field(clientCard, "Client name", existing?.client ?: "")
+        val client = field(clientCard, "Client name", recovered?.getString("client") ?: existing?.client ?: "")
         val knownClients = (bookings.map { it.client.trim() } + registeredClients()).filter { it.isNotBlank() }
             .distinct().sorted()
         if (knownClients.isNotEmpty()) {
@@ -1796,12 +1813,12 @@ class MainActivity : Activity() {
                     }.show()
             }
         }
-        val notes = field(clientCard, "Notes (optional)", existing?.notes ?: "")
+        val notes = field(clientCard, "Notes (optional)", recovered?.getString("notes") ?: existing?.notes ?: "")
         val serviceCard = section("02  Service & professional", "Choose the treatment and team member")
         val serviceSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item,
                 services.map { "${it.optString("name")} · £${it.optString("price")} · ${it.optInt("duration")} min" })
-            val index = services.indexOfFirst { it.optString("id") == existing?.serviceId }
+            val index = services.indexOfFirst { it.optString("id") == (recovered?.getString("serviceId") ?: existing?.serviceId) }
             if (index >= 0) setSelection(index)
             else if (existing != null) {
                 val old = services.indexOfFirst { it.optString("name") == existing.service }
@@ -1813,14 +1830,14 @@ class MainActivity : Activity() {
         val staffSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item,
                 staff.map { "${it.optString("name")} · ${it.optString("role")}" })
-            val index = staff.indexOfFirst { it.optString("id") == existing?.staffId }
+            val index = staff.indexOfFirst { it.optString("id") == (recovered?.getString("staffId") ?: existing?.staffId) }
             if (index >= 0) setSelection(index)
         }
         serviceCard.addView(label("Staff member", 13f, muted, true))
         serviceCard.addView(staffSpinner, LinearLayout.LayoutParams(-1, dp(48)))
         val whenCard = section("03  Date & time", "Select when the client will visit")
-        var date = existing?.date ?: defaultDate
-        var time = existing?.time ?: "09:00"
+        var date = recovered?.getString("date") ?: existing?.date ?: defaultDate
+        var time = recovered?.getString("time") ?: existing?.time ?: "09:00"
         fun displayBookingDate(iso: String): String = try {
             val parser = SimpleDateFormat("yyyy-MM-dd", Locale.UK).apply { isLenient = false }
             val formatter = SimpleDateFormat("EEEE d MMMM yyyy", Locale.UK)
@@ -1938,7 +1955,19 @@ class MainActivity : Activity() {
             .setPositiveButton("Save", null)
             .setNegativeButton("Cancel", null)
             .create()
+        dialog.setOnDismissListener { activeDraftSnapshot = null }
         dialog.setOnShowListener {
+            activeDraftSnapshot = {
+                Bundle().apply {
+                    putString("existingId", existing?.id)
+                    putString("client", client.text.toString())
+                    putString("notes", notes.text.toString())
+                    putString("serviceId", services[serviceSpinner.selectedItemPosition.coerceIn(0, services.lastIndex)].optString("id"))
+                    putString("staffId", staff[staffSpinner.selectedItemPosition.coerceIn(0, staff.lastIndex)].optString("id"))
+                    putString("date", date)
+                    putString("time", time)
+                }
+            }
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(orange)
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(muted)
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
