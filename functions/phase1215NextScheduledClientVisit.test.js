@@ -1,0 +1,11 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
+const a=src.indexOf("private fun showClientProfile("),b=src.indexOf("private fun ",a+15),profile=src.slice(a,b);
+const start=profile.indexOf("// Phase 12.15:"),end=profile.indexOf("// Phase 12.13:",start),preview=profile.slice(start,end);
+test("12.15 next scheduled visit panel is present",()=>{for(const x of ["NEXT SCHEDULED VISIT","nextVisitPanel","nextScheduledVisit"])assert.ok(preview.includes(x));});
+test("12.15 excludes past dates",()=>assert.ok(preview.includes("history.filter { it.date >= today() }")));
+test("12.15 chooses earliest scheduled date and time",()=>{for(const x of ["compareBy<Booking> { it.date }","thenBy { it.time }","firstOrNull()"])assert.ok(preview.includes(x));});
+test("12.15 empty upcoming list is handled safely",()=>{for(const x of ["nextScheduledVisit == null","No appointments scheduled for today or later."])assert.ok(preview.includes(x));});
+test("12.15 history, breakdown and calendar retained",()=>{for(const x of ["VISIT BREAKDOWN","CLIENT VISIT OVERVIEW","history.forEach { bookingCard(it) }","View Calendar"])assert.ok(profile.includes(x));});
+test("12.15 preview is read only and never writes bookings or cloud data",()=>assert.doesNotMatch(preview,/saveBookings\(|prefs\.edit\(|CloudSyncManager\(|\.set\(|\.delete\(|\.remove\(/));
