@@ -4,6 +4,7 @@ on:
     branches:
       - phase-12-15-next-visit-verification
       - phase-12-16-activity-draft-recovery
+      - phase-12-17-persistent-draft-recovery
     paths:
       - '.github/workflows/boustio-samsung-usability-apk.yml'
       - 'app/**'
