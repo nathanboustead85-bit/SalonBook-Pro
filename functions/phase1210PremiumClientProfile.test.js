@@ -1,0 +1,10 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"../app/src/main/java/com/salonbook/pro/MainActivity.kt"),"utf8");
+const a=src.indexOf("private fun showClientProfile("),b=src.indexOf("private fun ",a+20),profile=src.slice(a,b);
+test("12.10 premium client care introduction is present",()=>{for(const v of ["BOUSTIO  •  CLIENT CARE","A clearer view of every client","profile overview"])assert.ok(profile.includes(v));});
+test("12.10 identity and appointment count are preserved",()=>{for(const v of ["CLIENT PROFILE","history.size","name.trim().take(1)"])assert.ok(profile.includes(v));});
+test("12.10 private contact inputs remain",()=>{for(const v of ["PRIVATE CLIENT INFORMATION","Phone number","Email address","Client notes"])assert.ok(profile.includes(v));});
+test("12.10 save and automatic sync remain",()=>{for(const v of ["Save Client Details","autoSyncClient(name, data, cloudStatus)"])assert.ok(profile.includes(v));});
+test("12.10 cloud backup and restore retain confirmation",()=>{for(const v of ["Back Up This Client to Cloud","Restore This Client from Cloud","Replace cloud client profile?","Restore cloud client?"])assert.ok(profile.includes(v));});
+test("12.10 visit history remains read-only and sorted",()=>{for(const v of ["VISIT HISTORY","compareByDescending<Booking>","history.forEach { bookingCard(it) }"])assert.ok(profile.includes(v));assert.doesNotMatch(profile,/bookings\.clear\(|bookings\.remove\(|saveBookings\(/);});
