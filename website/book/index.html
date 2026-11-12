@@ -3,17 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#111827">
-  <meta name="description" content="Preview appointment booking with Boustio.">
+  <meta name="theme-color" content="#087f80">
+  <meta name="description" content="Explore services and preview appointment availability with Boustio.">
   <title>Book an Appointment | Boustio</title>
   <style>
     :root { font-family: system-ui,-apple-system,Arial,sans-serif; color:#182033; background:#f5f6fa; }
     * { box-sizing:border-box; }
     body { margin:0; }
-    header { background:#111827; color:white; padding:20px 16px; text-align:center; }
+    header { background:#087f80; color:white; padding:20px 16px; text-align:center; }
     .brand { color:white; text-decoration:none; font-size:30px; font-weight:800; letter-spacing:-1px; }
     .subtitle { color:#cbd5e1; font-size:13px; margin-top:4px; }
     main { max-width:680px; margin:24px auto; padding:0 16px 48px; }
+    .steps { display:flex; gap:8px; margin:0 0 16px; flex-wrap:wrap; }
+    .step { background:#e4f5f3; color:#075d60; border:1px solid #bce6df; border-radius:999px; padding:9px 12px; font-size:13px; font-weight:700; }
+    select:focus-visible,input:focus-visible,button:focus-visible { outline:3px solid #008c95; outline-offset:2px; }
+    .preview-tag { display:inline-block; background:#e4f5f3; color:#075d60; border-radius:999px; padding:6px 11px; font-weight:700; font-size:12px; margin-bottom:12px; }
     .card { background:white; border-radius:18px; padding:22px; margin-bottom:16px; box-shadow:0 5px 22px #0000000a; }
     h1 { font-size:26px; margin:0 0 8px; }
     h2 { font-size:19px; margin:0 0 16px; }
@@ -43,11 +47,13 @@
   <section class="card">
     <h1 id="businessName">Loading salon...</h1>
     <p id="businessDescription">Please wait while we load the salon information.</p>
-    <div class="notice"><strong>Preview only.</strong> Appointment times are demonstrations. They are not live reservations and cannot be booked yet.</div>
+    <div class="preview-tag">Booking experience preview</div>
+    <div class="notice" role="status"><strong>Bookings are not open yet.</strong> You can explore services, professionals and sample times. No appointment will be created or reserved.</div>
   </section>
+  <nav class="steps" aria-label="Booking steps"><span class="step">1 · Service & staff</span><span class="step">2 · Date & time</span><span class="step">3 · Confirmation (coming soon)</span></nav>
   <div id="bookingContent">
     <section class="card">
-      <h2>1. Choose your appointment</h2>
+      <h2>Find your appointment</h2>
       <label for="service">Service</label>
       <select id="service" disabled><option value="">Loading services...</option></select>
       <label for="staff">Professional</label>
@@ -60,8 +66,8 @@
       <div id="summary" class="summary" aria-live="polite">Choose a service, professional, date and time to see your appointment summary.</div>
     </section>
     <section class="card">
-      <h2>2. Confirm your appointment</h2>
-      <p>Customer details and confirmation will become available after secure live booking is implemented.</p>
+      <h2>Confirmation — coming soon</h2>
+      <p>Once secure bookings launch, this step will collect the details needed to confirm your appointment. For now, nothing is submitted and no customer information is collected.</p>
       <button class="disabled-action" type="button" disabled>Booking unavailable — preview only</button>
     </section>
   </div>
