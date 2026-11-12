@@ -1,0 +1,20 @@
+name: Boustio Usability Regression
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - phase-12-15-next-visit-verification
+    paths:
+      - 'app/src/main/java/com/salonbook/pro/MainActivity.kt'
+      - 'tests/boustio-usability.test.cjs'
+      - '.github/workflows/boustio-usability.yml'
+jobs:
+  navigation-and-icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/boustio-usability.test.cjs
+      - run: node tests/phase-12-15-next-visit.test.cjs
