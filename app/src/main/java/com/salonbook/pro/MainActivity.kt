@@ -2142,6 +2142,21 @@ class MainActivity : Activity() {
         }.getOrDefault(JSONObject())
         val history = bookings.filter { it.client.trim().equals(name.trim(), ignoreCase = true) }
             .sortedWith(compareByDescending<Booking> { it.date }.thenByDescending { it.time })
+        // Phase 12.10: presentation-only profile overview, no client or booking mutations.
+        val overview = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(18), dp(20), dp(18))
+            background = rounded(paleOrange, 20)
+        }
+        overview.addView(label("BOUSTIO  •  CLIENT CARE", 11f, orange, true))
+        overview.addView(label("A clearer view of every client", 20f, dark, true),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(7) })
+        overview.addView(label("Contact details, secure profile tools and visit history in one place.",
+            13f, muted), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5) })
+        container.addView(overview, LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(8)
+            bottomMargin = dp(12)
+        })
         val card = panel()
         val identity = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -2164,6 +2179,9 @@ class MainActivity : Activity() {
         section("Contact details")
         container.addView(label("Private information, available when you need it.", 13f, muted))
         val contact = panel()
+        contact.addView(label("PRIVATE CLIENT INFORMATION", 11f, orange, true))
+        contact.addView(label("Only save details your business needs to provide its services.",
+            12f, muted), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5); bottomMargin = dp(8) })
         fun input(hint: String, value: String): EditText = EditText(this).apply {
             this.hint = hint
             setText(value)
@@ -2181,6 +2199,7 @@ class MainActivity : Activity() {
         val notes = input("Client notes", saved.optString("notes"))
         addPanel(contact)
         section("Secure cloud profile")
+        container.addView(label("CLOUD ACTIONS  •  REVIEW BEFORE RESTORING", 11f, orange, true))
         val cloudStatus = label("Changes sync when you save. Cloud conflicts require manual review.", 13f, muted)
         container.addView(cloudStatus)
         button("Save Client Details") {
@@ -2286,6 +2305,8 @@ class MainActivity : Activity() {
             }
         }
         section("Appointment history")
+        container.addView(label("VISIT HISTORY  •  ${history.size} APPOINTMENT${if (history.size == 1) "" else "S"}",
+            11f, orange, true))
         container.addView(label("Previous visits, shown newest first.", 13f, muted))
         if (history.isEmpty()) text("No appointments recorded.")
         history.forEach { bookingCard(it) }
