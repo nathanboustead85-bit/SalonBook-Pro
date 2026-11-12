@@ -2372,12 +2372,26 @@ class MainActivity : Activity() {
                 }
             }
         }
+        // Phase 12.13: read-only history overview. No booking changes or cloud writes.
         section("Appointment history")
+        val historyOverview = panel()
+        historyOverview.addView(label("CLIENT VISIT OVERVIEW", 11f, orange, true))
+        historyOverview.addView(label("${history.size} appointment${if (history.size == 1) "" else "s"} recorded",
+            19f, dark, true), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
+        historyOverview.addView(label(
+            if (history.isEmpty()) "This client has no appointments yet."
+            else "Appointment history is listed newest first. Open the calendar to review the schedule.",
+            13f, muted
+        ), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5) })
+        addPanel(historyOverview)
         container.addView(label("VISIT HISTORY  •  ${history.size} APPOINTMENT${if (history.size == 1) "" else "S"}",
             11f, orange, true))
-        container.addView(label("Previous visits, shown newest first.", 13f, muted))
-        if (history.isEmpty()) text("No appointments recorded.")
-        history.forEach { bookingCard(it) }
+        if (history.isEmpty()) {
+            text("No appointments recorded.")
+        } else {
+            history.forEach { bookingCard(it) }
+        }
+        button("View Calendar") { showCalendar() }
         button("Back to Clients") { showClients() }
     }
 
