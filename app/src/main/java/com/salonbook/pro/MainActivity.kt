@@ -2372,6 +2372,21 @@ class MainActivity : Activity() {
                 }
             }
         }
+        // Phase 12.14: read-only visit breakdown; today is counted as upcoming
+        // to avoid incorrectly treating today's appointments as completed.
+        val pastVisitCount = history.count { it.date < today() }
+        val upcomingVisitCount = history.size - pastVisitCount
+        val visitBreakdown = panel()
+        visitBreakdown.addView(label("VISIT BREAKDOWN", 11f, orange, true))
+        visitBreakdown.addView(label(
+            "$pastVisitCount past  •  $upcomingVisitCount today or upcoming",
+            17f, dark, true
+        ), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
+        visitBreakdown.addView(label(
+            "For reference only. Today's appointments are not marked as completed.",
+            12f, muted
+        ), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5) })
+        addPanel(visitBreakdown)
         // Phase 12.13: read-only history overview. No booking changes or cloud writes.
         section("Appointment history")
         val historyOverview = panel()
