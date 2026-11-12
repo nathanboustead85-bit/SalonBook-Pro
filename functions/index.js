@@ -619,14 +619,31 @@ exports.inspectLegacyBookingMigration = onCall(
       throw new HttpsError("failed-precondition", "Invalid legacy cloud booking snapshot.");
     }
     const result = auditLegacyBookings(json);
+    // Read-only comparison against any existing online booking locks.
+    // Never return lock IDs, customer details, or booking identifiers.
+    let existingLockConflicts = 0;
+    let existingLocksChecked = false;
+    if (result.safe && result.lockPlan.length <= 500) {
+      const businessRef = db.collection("businesses").doc(uid);
+      const refs = result.lockPlan.map(item =>
+        businessRef.collection("bookingLocks").doc(item.lockId));
+      if (refs.length > 0) {
+        const snapshots = await db.getAll(...refs);
+        existingLockConflicts = snapshots.filter(item => item.exists).length;
+      }
+      existingLocksChecked = true;
+    }
     return {
-      safe: result.safe,
+      safe: result.safe && existingLocksChecked && existingLockConflicts === 0,
+      legacySnapshotValid: result.safe,
+      existingLocksChecked,
+      existingLockConflicts,
       count: result.count,
       lockCount: result.lockCount || 0,
       issueCount: result.errors.length,
       collisionCount: result.collisions.length,
       issues: result.errors.slice(0, 20).map(message =>
-        message.replace(/Booking \\d+/g, "Appointment")),
+        message.replace(/Booking \d+/g, "Appointment")),
       migrationPerformed: false,
       liveBookingsEnabled: false
     };
