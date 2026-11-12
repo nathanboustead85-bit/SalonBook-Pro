@@ -13,7 +13,7 @@ assert.match(source,/outState\.putString\("activeClientName", activeClientName\)
 assert.match(source,/navigationPrefs\.edit\(\)/);
 assert.match(source,/private val navigationPrefs by lazy \{ getSharedPreferences\("boustio_navigation", MODE_PRIVATE\) \}/);
 assert.match(source,/private fun showClientProfile\(name: String\) \{\s*activeClientName = name/);
-assert.match(source,/actionCard\("Cloud Account & Backup"[^\n]*"☁"\)/);
-assert.match(source,/actionCard\("Services & Prices"[^\n]*"≡"\)/);
-assert.match(source,/actionCard\("Staff & Working Hours"[^\n]*"♙"\)/);
+assert.match(source,/actionCard\("Cloud Account & Backup"[^\n]*"☁️"\)/);
+assert.match(source,/actionCard\("Services & Prices"[^\n]*"🧾"\)/);
+assert.match(source,/actionCard\("Staff & Working Hours"[^\n]*"👥"\)/);
 console.log('Boustio usability source regression checks passed.');
