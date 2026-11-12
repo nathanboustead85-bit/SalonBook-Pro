@@ -1,0 +1,35 @@
+name: Boustio Customer Booking Backend Checks
+on:
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out customer booking development
+        uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check backend syntax
+        run: |
+          node --check functions/index.js
+          node --check functions/legacyBookingAudit.js
+          node --check functions/bookingReadiness.js
+          node --check functions/bookingEngine.js
+          node --check functions/trustedBooking.js
+      - name: Run customer booking integration regression tests
+        run: npm --prefix functions run test:booking-integration
+      - name: Confirm live bookings remain disabled
+        run: |
+          node - <<'JS'
+          const fs = require('node:fs');
+          const backend = fs.readFileSync('functions/index.js','utf8');
+          const page = fs.readFileSync('website/book/index.html','utf8');
+          if (!backend.includes('acceptingBookings: false')) throw Error('Backend live-booking gate changed');
+          if (!page.includes('Booking unavailable — preview only')) throw Error('Customer preview gate changed');
+          console.log('Customer booking remains safely disabled');
+          JS
