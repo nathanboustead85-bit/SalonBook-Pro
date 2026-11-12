@@ -25,6 +25,10 @@ function auditLegacyBookings(json) {
   if (!Array.isArray(items)) {
     return { safe: false, count: 0, errors: ["Expected a booking array"], collisions, lockPlan };
   }
+  if (items.length > 20000) {
+    return { safe: false, count: items.length,
+      errors: ["Booking snapshot exceeds migration audit limit"], collisions, lockPlan };
+  }
   for (const [index, item] of items.entries()) {
     if (!item || typeof item !== "object" || Array.isArray(item)) {
       errors.push("Booking " + index + ": invalid object"); continue;
