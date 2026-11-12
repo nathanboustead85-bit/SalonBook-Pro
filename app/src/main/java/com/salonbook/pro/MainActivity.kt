@@ -51,6 +51,26 @@ class MainActivity : Activity() {
     // Unsaved form state is separate from saved bookings and cloud sync.
     private var activeDraftSnapshot: (() -> Bundle)? = null
     private var restoredDraft: Bundle? = null
+    private val draftPrefs by lazy { getSharedPreferences("boustio_appointment_draft", MODE_PRIVATE) }
+    private fun persistDraft(snapshot: Bundle) {
+        val json = JSONObject()
+        listOf("existingId", "client", "notes", "serviceId", "staffId", "date", "time").forEach { key ->
+            snapshot.getString(key)?.let { json.put(key, it) }
+        }
+        draftPrefs.edit().putString("pendingDraft", json.toString()).commit()
+    }
+    private fun readPersistedDraft(): Bundle? {
+        return try {
+            val raw = draftPrefs.getString("pendingDraft", null) ?: return null
+            val json = JSONObject(raw)
+            Bundle().apply {
+                listOf("existingId", "client", "notes", "serviceId", "staffId", "date", "time").forEach { key ->
+                    if (json.has(key)) putString(key, json.getString(key))
+                }
+            }
+        } catch (_: Exception) { null }
+    }
+    private fun clearPersistedDraft() { draftPrefs.edit().remove("pendingDraft").commit() }
     private var activeClientName: String? = null
     // Navigation state is separate from appointment storage.
     private val navigationPrefs by lazy { getSharedPreferences("boustio_navigation", MODE_PRIVATE) }
@@ -71,7 +91,7 @@ class MainActivity : Activity() {
         activeClientName = savedInstanceState?.getString("activeClientName")
             ?: navigationPrefs.getString("activeClientName", null)
         loadBookings()
-        restoredDraft = savedInstanceState?.getBundle("appointmentDraft")
+        restoredDraft = savedInstanceState?.getBundle("appointmentDraft") ?: readPersistedDraft()
         val restoredScreen = savedInstanceState?.getString("currentScreen")
             ?: navigationPrefs.getString("currentScreen", "dashboard")
         when (restoredScreen) {
@@ -101,11 +121,12 @@ class MainActivity : Activity() {
         outState.putString("selectedDate", selectedDate)
         outState.putString("currentScreen", currentScreen)
         outState.putString("activeClientName", activeClientName)
-        activeDraftSnapshot?.invoke()?.let { outState.putBundle("appointmentDraft", it) }
+        activeDraftSnapshot?.invoke()?.let { outState.putBundle("appointmentDraft", it); persistDraft(it) }
         super.onSaveInstanceState(outState)
     }
 
     override fun onPause() {
+        activeDraftSnapshot?.invoke()?.let { persistDraft(it) }
         // Do not rebuild the screen on resume: rebuilding discards in-progress form input.
         navigationPrefs.edit()
             .putString("currentScreen", currentScreen)
@@ -1955,7 +1976,10 @@ class MainActivity : Activity() {
             .setPositiveButton("Save", null)
             .setNegativeButton("Cancel", null)
             .create()
-        dialog.setOnDismissListener { activeDraftSnapshot = null }
+        dialog.setOnDismissListener {
+            activeDraftSnapshot = null
+            if (!isChangingConfigurations) clearPersistedDraft()
+        }
         dialog.setOnShowListener {
             activeDraftSnapshot = {
                 Bundle().apply {
@@ -1968,6 +1992,7 @@ class MainActivity : Activity() {
                     putString("time", time)
                 }
             }
+            activeDraftSnapshot?.invoke()?.let { persistDraft(it) }
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(orange)
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(muted)
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
