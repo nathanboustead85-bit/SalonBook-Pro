@@ -44,11 +44,11 @@ jobs:
           npm --prefix functions ci
       - name: Deploy only read-only inspector
         env:
-          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BOUSTIO }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           PROJECT_ID: ${{ inputs.firebase_project }}
         run: |
           if [ -z "$FIREBASE_SA" ]; then
-            echo "::error::Missing FIREBASE_SERVICE_ACCOUNT_BOUSTIO repository secret; no deployment attempted."
+            echo "::error::Missing FIREBASE_SERVICE_ACCOUNT repository secret; no deployment attempted."
             exit 1
           fi
           if ! [[ "$PROJECT_ID" =~ ^[a-z][a-z0-9-]{4,29}$ ]]; then
