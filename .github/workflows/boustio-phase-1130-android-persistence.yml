@@ -109,6 +109,8 @@ jobs:
           node scripts/validateFirebaseDebugConfig.js
       - name: Phase 11.65 website count overview and safety checks
         run: node --test functions/phase1165UnifiedDailyOverview.test.js
+      - name: Phase 12.15 next scheduled client visit regression checks
+        run: node --test functions/phase1215NextScheduledClientVisit.test.js
       - name: Phase 12.14 client visit breakdown regression checks
         run: node --test functions/phase1214ClientVisitBreakdown.test.js
       - name: Phase 12.13 client visit history regression
