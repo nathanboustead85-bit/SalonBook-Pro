@@ -293,27 +293,27 @@ class MainActivity : Activity() {
         settingsIntro.addView(label("Manage your services, team, booking link and account from one place.", 13f, muted))
         addPanel(settingsIntro)
         section("Business management")
-        actionCard("Services & Prices", "Manage your service catalogue", "≡") {
+        actionCard("Services & Prices", "Manage your service catalogue", "🧾") {
             startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
         }
-        actionCard("Staff & Working Hours", "Manage your team and availability", "♙") {
+        actionCard("Staff & Working Hours", "Manage your team and availability", "👥") {
             startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
         }
-        actionCard("My Boustio Booking Link", "Manage your public booking profile", "↗") {
+        actionCard("My Boustio Booking Link", "Manage your public booking profile", "🔗") {
             startActivity(Intent(this, BusinessProfileActivity::class.java))
         }
-        actionCard("Customer Messages", "Private chat inbox (preview)", "✉") {
+        actionCard("Customer Messages", "Private chat inbox (preview)", "💬") {
             startActivity(Intent(this, ChatInboxActivity::class.java))
         }
         section("Account and tools")
-        actionCard("Cloud Account & Backup", "Cloud account, backup and restore", "☁") {
+        actionCard("Cloud Account & Backup", "Cloud account, backup and restore", "☁️") {
             startActivity(Intent(this, CloudActivity::class.java))
         }
-        actionCard("Test Appointment Availability", "Check booking slots", "✓") {
+        actionCard("Test Appointment Availability", "Check booking slots", "📅") {
             showAvailabilityTester()
         }
         section("Appointments")
-        actionCard("All Appointments", "Browse and manage every booking", "◷") {
+        actionCard("All Appointments", "Browse and manage every booking", "🗓️") {
             showAppointments()
         }
         button("Back to Dashboard") { showDashboard() }
