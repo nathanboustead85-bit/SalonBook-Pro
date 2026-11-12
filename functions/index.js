@@ -633,8 +633,16 @@ exports.inspectLegacyBookingMigration = onCall(
       }
       existingLocksChecked = true;
     }
+    // Existing shared appointments may predate lock creation. Until a
+    // reconciliation path is implemented, refuse migration readiness whenever
+    // any shared appointment already exists (even if no lock is present).
+    const sharedAppointments = await db.collection("businesses").doc(uid)
+      .collection("appointments").limit(1).get();
+    const existingSharedAppointments = !sharedAppointments.empty;
     return {
-      safe: result.safe && existingLocksChecked && existingLockConflicts === 0,
+      safe: result.safe && existingLocksChecked &&
+        existingLockConflicts === 0 && !existingSharedAppointments,
+      existingSharedAppointments,
       legacySnapshotValid: result.safe,
       existingLocksChecked,
       existingLockConflicts,
