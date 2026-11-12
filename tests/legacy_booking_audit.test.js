@@ -15,6 +15,7 @@ assert.equal(auditLegacyBookings([{...booking,time:"bad"}]).safe,false);
 assert.equal(auditLegacyBookings([{...booking,date:"2026-02-30"}]).safe,false);
 assert.equal(auditLegacyBookings([{...booking,duration:0}]).safe,false);
 assert.equal(auditLegacyBookings("not json").safe,false);
+assert.equal(auditLegacyBookings(Array.from({length:20001},()=>booking)).safe,false);
 assert.equal(auditLegacyBookings([{...booking,staffId:"staff/other"}]).safe,false);
 assert.equal(auditLegacyBookings([{...booking,id:"bad/id"}]).safe,false);
 assert.equal(auditLegacyBookings([{id:"legacy",date:"2026-11-20",time:"09:00"}]).safe,false);
