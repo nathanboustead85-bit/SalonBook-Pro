@@ -12,7 +12,7 @@
     "serve": "firebase emulators:start --only functions,firestore",
     "deploy": "firebase deploy --only functions",
     "test:booking-readiness": "node ../tests/customer_booking_readiness.test.js",
-    "test:booking-integration": "node ../tests/customer_booking_readiness.test.js && node ../tests/legacy_booking_audit.test.js"
+    "test:booking-integration": "node ../tests/customer_booking_readiness.test.js && node ../tests/legacy_booking_audit.test.js && node ../tests/migration_inspection_integration.test.js"
   },
   "dependencies": {
     "firebase-admin": "^13.0.0",
