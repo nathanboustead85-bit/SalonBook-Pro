@@ -55,6 +55,17 @@ jobs:
             echo "::error::Invalid Firebase project ID"
             exit 1
           fi
+          # Verify the credential belongs to the exact requested Firebase project.
+          # Never print or expose the credential itself.
+          node - <<'JS'
+          const key = JSON.parse(process.env.FIREBASE_SA);
+          if (key.type !== 'service_account' ||
+              key.project_id !== process.env.PROJECT_ID ||
+              process.env.PROJECT_ID !== 'salonbook-pro-ad5ff') {
+            throw Error('Firebase credential and project mismatch; deployment blocked');
+          }
+          console.log('Firebase project and credential match');
+          JS
           credential_file="$RUNNER_TEMP/boustio-firebase-credentials.json"
           umask 077
           printf '%s' "$FIREBASE_SA" > "$credential_file"
