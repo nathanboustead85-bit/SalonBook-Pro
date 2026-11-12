@@ -6,6 +6,7 @@ on:
       - phase-9d4-teal-clients
       - phase-12-11a-client-edit-fix
       - phase-12-12-client-profile-clarity
+      - phase-12-13-client-history
     paths:
       - 'app/src/debug/java/com/salonbook/pro/debug/DebugCalendarDiskCache.kt'
       - 'app/src/debug/java/com/salonbook/pro/debug/DebugCalendarSource.kt'
@@ -55,6 +56,7 @@ on:
       - 'functions/phase1205PremiumClientProfile.test.js'
       - 'functions/phase1211aClientEditSafety.test.js'
       - 'functions/phase1212ClientProfileClarity.test.js'
+      - 'functions/phase1213ClientHistory.test.js'
       - 'firestore.rules'
       - 'functions/phase1206PremiumNavigationSettings.test.js'
       - 'functions/phase1207PremiumAppointments.test.js'
@@ -107,6 +109,8 @@ jobs:
           node scripts/validateFirebaseDebugConfig.js
       - name: Phase 11.65 website count overview and safety checks
         run: node --test functions/phase1165UnifiedDailyOverview.test.js
+      - name: Phase 12.13 client visit history regression
+        run: node --test functions/phase1213ClientHistory.test.js
       - name: Phase 12.12 client profile clarity regression
         run: node --test functions/phase1212ClientProfileClarity.test.js
       - name: Phase 12.11A client edit safety regression
