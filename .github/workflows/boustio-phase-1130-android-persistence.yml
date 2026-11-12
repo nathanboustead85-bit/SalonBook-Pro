@@ -112,7 +112,7 @@ jobs:
         run: node --test functions/phase1208PremiumAppointmentCards.test.js
       - name: Phase 12.7 premium appointments regression checks
         run: node --test functions/phase1207PremiumAppointments.test.js
-      - name: Phase 12.6 premium navigation and settings regression checks
+      - name: Phase 12.6 premium navigation and settings regression checks (12.11 compatible)
         run: node --test functions/phase1206PremiumNavigationSettings.test.js
       - name: Phase 12.5 premium client profile regression checks
         run: node --test functions/phase1205PremiumClientProfile.test.js
