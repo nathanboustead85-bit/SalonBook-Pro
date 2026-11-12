@@ -1,0 +1,28 @@
+name: Boustio Phase 12.19 Booking Reliability
+on:
+  workflow_dispatch:
+  push:
+    branches: [phase-12-19-booking-reliability]
+jobs:
+  verify-and-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run booking guard regression checks
+        run: python3 tests/phase_12_19_booking_guard.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build isolated debug APK
+        run: gradle --no-daemon :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase-12-19-debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
