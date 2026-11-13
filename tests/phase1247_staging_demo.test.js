@@ -18,3 +18,9 @@ check("review action does not book",()=>assert.match(html,/NOT BOOKED/));
 check("privacy-sensitive site not indexed",()=>assert.match(html,/noindex,nofollow/));
 check("page contains no production Firebase project ID",()=>assert.doesNotMatch(html,/salonbook-pro-ad5ff/));
 check("no custom domain configuration",()=>assert.doesNotMatch(html,/boustio\.co\.uk/));
+
+check("stylist selection is available",()=>assert.match(html,/id="stylist"/));
+check("any available stylist option included",()=>assert.match(html,/Any available stylist/));
+check("stylist options match services",()=>assert.match(html,/stylists\.filter\(x=>x\.services\.includes\(service\.value\)\)/));
+check("changing stylist refreshes availability",()=>assert.match(html,/stylist\.addEventListener\("change",render\)/));
+check("review includes chosen stylist",()=>assert.match(html,/Stylist: /));
