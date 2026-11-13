@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  // Phase 12.45 emulator-only security rules. Never deploy to production.
+  match /phase1245PublicAvailability/{businessId} {
+   allow get: if resource.data.status == 'PUBLIC_PREVIEW'
+     && resource.data.bookingEnabled == false
+     && resource.data.schemaVersion == 1
+     && resource.data.businessId == businessId
+     && resource.data.expiresAt is timestamp
+     && request.time < resource.data.expiresAt;
+   allow list, create, update, delete: if false;
+  }
+  match /phase1245Owners/{document=**} { allow read, write: if false; }
+  match /{document=**} { allow read, write: if false; }
+ }
+}
