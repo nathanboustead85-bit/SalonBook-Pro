@@ -1,0 +1,31 @@
+name: Boustio Phase 12.26 Migration Safety (Read Only)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'tests/phase1226_migration_safety.test.js'
+      - 'functions/inspectMigration.js'
+      - 'functions/legacyBookingAudit.js'
+      - '.github/workflows/boustio-phase-1226-migration-safety.yml'
+jobs:
+  migration-safety:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate read-only inspector syntax
+        run: node --check functions/inspectMigration.js
+      - name: Run Phase 12.26 offline safety tests
+        run: node tests/phase1226_migration_safety.test.js
+      - name: Run legacy booking audit regression tests
+        run: node tests/legacy_booking_audit.test.js
+      - name: Run migration inspection integration tests
+        run: node tests/migration_inspection_integration.test.js
