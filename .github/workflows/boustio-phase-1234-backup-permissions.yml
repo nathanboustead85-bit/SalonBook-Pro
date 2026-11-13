@@ -1,0 +1,25 @@
+name: Boustio Phase 12.34 Backup Permission Simulation
+on:
+  workflow_dispatch:
+jobs:
+  permissions-policy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate simulated access policy
+        run: |
+          node --check functions/backupAccessPolicy.js
+          node --check tests/phase1234_backup_permissions.test.js
+      - name: Test backup role and deletion authorization
+        run: node tests/phase1234_backup_permissions.test.js
+      - name: Re-run architecture policy
+        run: node tests/phase1233_backup_architecture.test.js
+      - name: Re-run readiness gate
+        run: node tests/phase1230_readiness_gate.test.js
