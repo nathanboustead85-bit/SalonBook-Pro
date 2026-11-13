@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  // Emulator-only. Production firestore.rules remains unchanged.
+  match /phase1243PublicAvailability/{businessId} {
+   allow get: if resource.data.status == 'PUBLIC_PREVIEW'
+     && resource.data.bookingEnabled == false
+     && resource.data.schemaVersion == 1
+     && resource.data.businessId == businessId
+     && resource.data.expiresAt is timestamp
+     && request.time < resource.data.expiresAt;
+   allow list, create, update, delete: if false;
+  }
+  match /phase1243Private/{document=**} {
+   allow read, write: if false;
+  }
+  match /{document=**} { allow read, write: if false; }
+ }
+}
