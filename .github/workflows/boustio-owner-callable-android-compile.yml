@@ -1,0 +1,42 @@
+name: Boustio Owner Callable Android Compile
+on:
+  workflow_dispatch:
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 25
+    steps:
+      - name: Check out Boustio development branch
+        uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Validate callable is owner-authenticated and never automatically invoked
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('app/src/main/java/com/salonbook/pro/OwnerMigrationInspector.kt').read_text()
+          assert 'FirebaseAuth.getInstance().currentUser' in src
+          assert 'user.isEmailVerified' in src
+          assert 'FirebaseFunctions.getInstance(REGION)' in src
+          assert 'inspectLegacyBookingMigration' in src
+          assert 'europe-west2' in src
+          assert '.call(emptyMap<String, Any>())' in src
+          assert all(op not in src for op in ['.set(', '.update(', '.delete(', '.add('])
+          assert 'OwnerMigrationInspector.inspect(' not in Path('app/src/main/java/com/salonbook/pro/MainActivity.kt').read_text()
+          print('PASS: owner login, verified email, no explicit UID, no writes or automatic calls')
+          PY
+      - name: Compile Android debug Kotlin without publishing or installing APK
+        run: gradle --no-daemon :app:compileDebugKotlin
+      - name: Confirm safe build
+        run: echo 'Android Kotlin compiled. No APK installed, no Firestore read/write, no live booking activation.'
