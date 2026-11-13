@@ -1,0 +1,25 @@
+name: Boustio Phase 12.38 Published Services and Availability
+on:
+  workflow_dispatch:
+jobs:
+  isolated-availability:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate availability model syntax
+        run: |
+          node --check web/phase1238/availabilityPreview.js
+          node --check tests/phase1238_availability_preview.test.js
+      - name: Test published services and available slots
+        run: node tests/phase1238_availability_preview.test.js
+      - name: Re-run customer preview safeguards
+        run: node tests/phase1237_customer_booking_preview.test.js
+      - name: Re-run readiness safeguards
+        run: node tests/phase1230_readiness_gate.test.js
