@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  // PHASE 12.41 ISOLATED EMULATOR RULES — NOT DEPLOYED.
+  match /phase1241PublicAvailability/{businessId} {
+   allow get: if resource.data.status == 'PUBLIC_PREVIEW'
+     && resource.data.bookingEnabled == false
+     && resource.data.schemaVersion == 1
+     && resource.data.businessId == businessId;
+   allow list, create, update, delete: if false;
+  }
+  match /phase1241Private/{document=**} {
+   allow read, write: if false;
+  }
+  match /{document=**} {
+   allow read, write: if false;
+  }
+ }
+}
