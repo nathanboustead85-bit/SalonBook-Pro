@@ -24,4 +24,6 @@ function confirmationPreview(details){
   durationMinutes:v.service.durationMinutes,time:v.time,
   customerName:details.customerName.trim(),message:"Demo only — no appointment has been booked."});
 }
-module.exports={SERVICES,TIMES,validatePreview,confirmationPreview};
+const API={SERVICES,TIMES,validatePreview,confirmationPreview};
+if(typeof module!=="undefined"&&module.exports)module.exports=API;
+if(typeof window!=="undefined")window.BoustioBookingPreview=API;
