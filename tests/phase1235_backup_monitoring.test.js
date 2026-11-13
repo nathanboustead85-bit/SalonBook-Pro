@@ -1,0 +1,42 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {evaluateBackupHealth,deduplicateAlerts,fingerprintAlert}=require("../functions/backupMonitoringPolicy");
+const now="2026-11-13T12:00:00.000Z";
+const good={lastSuccessfulBackupAt:"2026-11-13T11:00:00.000Z",
+ checksumVerified:true,unauthorizedDeletionAttempt:false,lastRestoreStatus:"passed"};
+const check=(data,type)=>{
+ const result=evaluateBackupHealth(data,now);
+ assert.equal(result.status,"ALERT");
+ assert(result.alerts.some(a=>a.type===type));
+ assert.equal(result.productionNotificationSent,false);
+ assert.equal(result.productionWritesPerformed,false);
+};
+const healthy=evaluateBackupHealth(good,now);
+assert.equal(healthy.status,"HEALTHY");assert.deepEqual(healthy.alerts,[]);
+console.log("PASS healthy backup generates no false alert");
+check({...good,lastSuccessfulBackupAt:"2026-11-12T10:00:00.000Z"},"MISSED_BACKUP");
+console.log("PASS overdue backup generates critical alert");
+check({...good,lastSuccessfulBackupAt:"not-a-date"},"MISSED_BACKUP");
+check({...good,lastSuccessfulBackupAt:"2026-11-14T10:00:00.000Z"},"MISSED_BACKUP");
+console.log("PASS missing or future backup timestamp fails closed");
+check({...good,checksumVerified:false},"CHECKSUM_FAILURE");
+console.log("PASS corrupted backup checksum triggers alert");
+check({...good,unauthorizedDeletionAttempt:true},"UNAUTHORIZED_DELETE");
+console.log("PASS unauthorised deletion attempt triggers alert");
+check({...good,lastRestoreStatus:"failed"},"RESTORE_FAILURE");
+console.log("PASS restore failure triggers alert");
+check({...good,lastRestoreStatus:"unknown"},"RESTORE_FAILURE");
+console.log("PASS unrecognised restore status fails closed");
+const empty=evaluateBackupHealth({},now);
+assert.equal(empty.status,"ALERT");
+assert(empty.alerts.some(a=>a.type==="MISSED_BACKUP"));
+assert(empty.alerts.some(a=>a.type==="CHECKSUM_FAILURE"));
+console.log("PASS missing monitoring evidence fails closed");
+const multi=evaluateBackupHealth({...good,lastSuccessfulBackupAt:"2026-11-11T11:00:00.000Z",checksumVerified:false,
+ unauthorizedDeletionAttempt:true,lastRestoreStatus:"failed"},now);
+assert.equal(multi.alerts.length,4);
+assert.equal(deduplicateAlerts([...multi.alerts,...multi.alerts]).length,4);
+assert.equal(fingerprintAlert(multi.alerts[0]),fingerprintAlert(multi.alerts[0]));
+console.log("PASS multiple alerts classified and duplicate notifications suppressed");
+assert.throws(()=>evaluateBackupHealth(good,"invalid"),/Invalid evaluation time/);
+console.log("PASS invalid evaluation time rejected");
