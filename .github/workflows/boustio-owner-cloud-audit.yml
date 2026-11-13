@@ -82,6 +82,10 @@ jobs:
             if (!result.safe) process.exitCode=2;
           })().catch(e => {
             console.error('Read-only audit failed:',e.code || e.name || 'unknown');
+            if (e.code === 7 || e.code === 'permission-denied') {
+              console.error('Firestore access denied for the GitHub deployment service account.');
+              console.error('Do not grant broad Firestore permissions or rerun until an owner-authenticated path is reviewed.');
+            }
             process.exitCode=1;
           });
           JS
