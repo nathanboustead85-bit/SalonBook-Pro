@@ -1,7 +1,7 @@
 "use strict";
 // Emulator-only transaction rehearsal. NEVER invoke against production.
 const assert = require("node:assert/strict");
-const admin = require("firebase-admin");
+const admin = require("../functions/node_modules/firebase-admin");
 const {sealSnapshot,verifySnapshot} = require("../functions/migrationRecoveryRehearsal");
 const {auditLegacyBookings} = require("../functions/legacyBookingAudit");
 
