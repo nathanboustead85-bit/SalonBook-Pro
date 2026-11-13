@@ -1,0 +1,69 @@
+name: Boustio Inspector Security Verification
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type VERIFY_READ_ONLY'
+        required: true
+        type: string
+jobs:
+  verify:
+    if: ${{ inputs.confirmation == 'VERIFY_READ_ONLY' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check Cloud Run service and invoker policy (read-only)
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_SA" ]; then echo "::error::Missing Firebase credential"; exit 1; fi
+          printf '%s' "$FIREBASE_SA" > "$RUNNER_TEMP/firebase-sa.json"
+          chmod 600 "$RUNNER_TEMP/firebase-sa.json"
+          trap 'rm -f "$RUNNER_TEMP/firebase-sa.json"' EXIT
+          python3 - <<'PY'
+          import json, os, subprocess, sys, urllib.request, urllib.error
+          key=json.loads(os.environ['FIREBASE_SA'])
+          if key.get('project_id')!='salonbook-pro-ad5ff':
+              sys.exit('ERROR: Firebase project mismatch')
+          print('Verified expected Firebase project')
+          PY
+          python3 -m pip -q install google-auth
+          python3 - <<'PY'
+          import json, os, sys, urllib.request, urllib.error
+          from google.oauth2 import service_account
+          from google.auth.transport.requests import Request
+          key=json.loads(os.environ['FIREBASE_SA'])
+          creds=service_account.Credentials.from_service_account_info(key,scopes=['https://www.googleapis.com/auth/cloud-platform'])
+          creds.refresh(Request())
+          root='https://run.googleapis.com/v2/projects/salonbook-pro-ad5ff/locations/europe-west2/services/inspectlegacybookingmigration'
+          def get(url, method='GET', payload=None):
+              data=None if payload is None else json.dumps(payload).encode()
+              headers={'Authorization':'Bearer '+creds.token}
+              if data is not None: headers['Content-Type']='application/json'
+              req=urllib.request.Request(url,headers=headers,data=data,method=method)
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as resp: return json.load(resp)
+              except urllib.error.HTTPError as exc:
+                  print(f'ERROR: {method} {url.split("?")[0]} returned HTTP {exc.code}; no permissions changed')
+                  sys.exit(1)
+          service=get(root)
+          if service.get('name')!='projects/salonbook-pro-ad5ff/locations/europe-west2/services/inspectlegacybookingmigration':
+              sys.exit('ERROR: Unexpected service identity')
+          if not service.get('uri'):
+              sys.exit('ERROR: No deployed service URI')
+          print('PASS: Expected Cloud Run service exists in europe-west2')
+          ingress=service.get('ingress','')
+          print('INFO: ingress:',ingress or '(default)')
+          policy=get(root+':getIamPolicy')
+          bindings=policy.get('bindings',[])
+          public=[(b.get('role'),m) for b in bindings for m in b.get('members',[]) if m in ('allUsers','allAuthenticatedUsers')]
+          if public:
+              print('FAIL: Public IAM binding detected:',public)
+              sys.exit(1)
+          print('PASS: No allUsers or allAuthenticatedUsers IAM binding')
+          invokers=[b for b in bindings if b.get('role') in ('roles/run.invoker','roles/cloudfunctions.invoker')]
+          print('INFO: Invoker role bindings:',len(invokers))
+          print('PASS: Read-only IAM verification completed; no function invoked, no booking data accessed')
+          PY
