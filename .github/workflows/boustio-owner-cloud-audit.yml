@@ -1,0 +1,85 @@
+name: Boustio Owner-Scoped Read-Only Cloud Booking Audit
+on:
+  workflow_dispatch:
+    inputs:
+      firebase_uid:
+        description: 'Paste Firebase UID from Boustio Cloud > Copy Firebase UID (never paste private debug token)'
+        required: true
+        type: string
+      confirmation:
+        description: 'Type AUDIT_READ_ONLY'
+        required: true
+        type: string
+jobs:
+  audit:
+    if: ${{ inputs.confirmation == 'AUDIT_READ_ONLY' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - name: Check out reviewed inspector implementation
+        uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run existing offline migration safety tests
+        run: |
+          node --check functions/inspectMigration.js
+          npm --prefix functions run test:booking-integration
+      - name: Inspect only the requested owner's cloud booking snapshot
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          TARGET_UID: ${{ inputs.firebase_uid }}
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_SA" ]; then echo "::error::Missing FIREBASE_SERVICE_ACCOUNT secret"; exit 1; fi
+          umask 077
+          printf '%s' "$FIREBASE_SA" > "$RUNNER_TEMP/firebase-sa.json"
+          trap 'rm -f "$RUNNER_TEMP/firebase-sa.json"' EXIT
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+          npm --prefix functions install --no-audit --no-fund --ignore-scripts
+          node - <<'JS'
+          'use strict';
+          const fs = require('node:fs');
+          const uid = process.env.TARGET_UID;
+          if (!uid || !/^[A-Za-z0-9_-]{10,128}$/.test(uid)) {
+            throw Error('Invalid Firebase UID; use the Copy Firebase UID button in Boustio');
+          }
+          const key = JSON.parse(process.env.FIREBASE_SA);
+          if (key.type !== 'service_account' || key.project_id !== 'salonbook-pro-ad5ff') {
+            throw Error('Unexpected Firebase credential/project; audit blocked');
+          }
+          // Require explicit reviewed read-only implementation. Do not deploy or migrate.
+          const source = fs.readFileSync('functions/inspectMigration.js','utf8');
+          if (/\.(set|create|update|delete|add|commit|batch|runTransaction)\s*\(/.test(source)) {
+            throw Error('Inspector source contains a possible write operation; audit blocked');
+          }
+          const { initializeApp, cert } = require('./functions/node_modules/firebase-admin/app');
+          const { getFirestore } = require('./functions/node_modules/firebase-admin/firestore');
+          const { inspectMigration } = require('./functions/inspectMigration');
+          initializeApp({ credential: cert(key), projectId: 'salonbook-pro-ad5ff' });
+          (async () => {
+            const result = await inspectMigration(getFirestore(),uid);
+            // Never log UID, client names, dates, booking JSON, or IDs.
+            console.log('Owner-scoped read-only inspection completed');
+            for (const field of ['safe','count','lockCount','existingLocksChecked','existingLockConflicts','existingSharedAppointments','issueCount','collisionCount','migrationPerformed','liveBookingsEnabled']) {
+              if (Object.prototype.hasOwnProperty.call(result,field)) {
+                console.log(field+': '+JSON.stringify(result[field]));
+              }
+            }
+            if (Array.isArray(result.issues) && result.issues.length) {
+              console.log('Issue categories present: '+result.issues.length+' (details withheld from CI logs)');
+            }
+            if (result.migrationPerformed !== false || result.liveBookingsEnabled !== false) {
+              throw Error('Unexpected migration or booking state');
+            }
+            console.log('No writes or booking activation attempted');
+            if (!result.safe) process.exitCode=2;
+          })().catch(e => {
+            console.error('Read-only audit failed:',e.code || e.name || 'unknown');
+            process.exitCode=1;
+          });
+          JS
