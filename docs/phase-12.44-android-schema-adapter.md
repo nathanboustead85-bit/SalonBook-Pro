@@ -1,0 +1,7 @@
+# Phase 12.44 — Android cloud schema adapter (synthetic test copies)
+
+Grounded in Android `CloudSyncManager.kt`: `users/{uid}/liveData/{bookings|services|staff}` stores `json` (JSON array string), `schemaVersion:1`, and `updatedAt`. Grounded in `ManagementActivity.kt`: services have `id,name,price,duration,publicVisible`; staff have `id,name,serviceIds,publicVisible,weeklySchedule,weeklyBreaks,timeOff`. Grounded in `MainActivity.kt`: bookings have `id,client,notes,serviceId,staffId,date,time,duration,price`.
+
+The new pure adapter converts synthetic copies of these shapes to Phase 12.40's public availability preview. Only explicitly public services/staff are included. Prices are parsed from decimal pounds to integer pence. Weekly schedules, weekly breaks and date-specific time off affect availability. Every legacy booking with a valid duration is treated as occupied, regardless of missing status. Invalid/incomplete records fail closed, never guess availability.
+
+This is **not** an integration with real Firebase documents or a deployed publisher. No original Android appointments are accessed. In particular, legacy staff without structured `weeklySchedule` are rejected instead of assuming opening hours. Before live integration, confirm exact persisted data samples, cancellation semantics, timezone/DST, cross-device consistency, data freshness, privacy review, and explicit owner approval. Production migration remains NOT READY; customer booking creation disabled.
