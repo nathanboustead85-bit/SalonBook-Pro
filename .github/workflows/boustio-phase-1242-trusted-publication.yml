@@ -1,0 +1,38 @@
+name: Boustio Phase 12.42 Trusted Availability Publication
+on:
+  workflow_dispatch:
+jobs:
+  trusted-publisher-emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated test dependencies
+        run: |
+          npm install --global firebase-tools@14
+          npm install --prefix functions --no-save --ignore-scripts @firebase/rules-unit-testing@4
+      - name: Check trusted publisher syntax
+        run: |
+          node --check functions/phase1242TrustedPublisher.js
+          node --check tests/phase1242_trusted_publication.test.js
+      - name: Execute private-to-public emulator publication tests
+        env:
+          GCLOUD_PROJECT: demo-boustio-phase1242
+        run: |
+          firebase emulators:exec --config tests/phase1242.firebase.json --only firestore --project demo-boustio-phase1242 \
+            "node tests/phase1242_trusted_publication.test.js"
+      - name: Re-run public projection checks
+        run: node tests/phase1240_public_availability_projection.test.js
+      - name: Re-run release readiness safeguards
+        run: node tests/phase1230_readiness_gate.test.js
