@@ -1,0 +1,55 @@
+name: Boustio Inspector Authorised Transport Probe
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type PROBE_TRANSPORT_ONLY'
+        required: true
+        type: string
+jobs:
+  probe:
+    if: ${{ inputs.confirmation == 'PROBE_TRANSPORT_ONLY' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Probe Google-signed identity without Firebase owner credentials
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          python3 -m pip -q install google-auth requests
+          python3 - <<'PY'
+          import json,os,sys,requests
+          from google.oauth2 import service_account
+          from google.auth.transport.requests import Request
+          raw=os.environ.get('FIREBASE_SA')
+          if not raw: sys.exit('Missing FIREBASE_SERVICE_ACCOUNT')
+          key=json.loads(raw)
+          if key.get('project_id')!='salonbook-pro-ad5ff': sys.exit('Project mismatch')
+          creds=service_account.Credentials.from_service_account_info(key,scopes=['https://www.googleapis.com/auth/cloud-platform'])
+          creds.refresh(Request())
+          root='https://run.googleapis.com/v2/projects/salonbook-pro-ad5ff/locations/europe-west2/services/inspectlegacybookingmigration'
+          response=requests.get(root,headers={'Authorization':'Bearer '+creds.token},timeout=30)
+          response.raise_for_status()
+          uri=response.json().get('uri')
+          if not uri or not uri.startswith('https://'): sys.exit('Missing service URI')
+          print('PASS: Deployed inspector identified')
+          # Cloud Run IAM authenticates Google-issued identity tokens.
+          # This request deliberately supplies NO Firebase Auth token, UID, or owner data.
+          # If it reaches the Firebase callable, verifiedUser must reject it before any Firestore reads.
+          identity=service_account.IDTokenCredentials.from_service_account_info(key,target_audience=uri)
+          identity.refresh(Request())
+          response=requests.post(uri,headers={'Authorization':'Bearer '+identity.token,'Content-Type':'application/json'},json={'data':{}},timeout=30)
+          print('INFO: HTTP status:',response.status_code)
+          try: payload=response.json()
+          except ValueError: payload={}
+          if response.status_code in (401,403) and not isinstance(payload.get('error'),dict):
+              sys.exit('BLOCKED: Cloud Run IAM rejected the Google identity; invoker permission must be configured before owner testing')
+          error=payload.get('error')
+          if isinstance(error,dict) and error.get('status')=='UNAUTHENTICATED':
+              print('PASS: Reached callable; Firebase owner authentication rejected absent Firebase token')
+              print('PASS: No booking records inspected or modified')
+          else:
+              sys.exit('UNEXPECTED: Callable did not return Firebase UNAUTHENTICATED; stop and inspect configuration')
+          PY
