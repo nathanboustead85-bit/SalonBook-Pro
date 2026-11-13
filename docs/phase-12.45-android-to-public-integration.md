@@ -1,0 +1,5 @@
+# Phase 12.45 — Android JSON to public preview end-to-end
+
+Isolated Firestore emulator, synthetic owner records under `phase1245Owners/{owner}/liveData/{services|staff|bookings}` using Android v1 `json` and `schemaVersion` fields. Transaction reads profile and all three Android data documents, calls the Phase 12.44 adapter, and atomically publishes or withdraws the customer-safe availability snapshot. Private generation watermark blocks stale replay after withdrawal. Public read-only Firestore rules reject expired documents; all private reads, public listing and client writes denied.
+
+No live Firebase connections, production rule deployment, Android APK changes or customer booking creation. The workflow checks synthetic records only; this does not establish live sync, real-time automatic triggers, multi-device freshness, date/timezone correctness, cancellation policy or production readiness. Reconciliation must be invoked by a trusted worker; it is not a deployed trigger. The original two Android appointments are untouched.
