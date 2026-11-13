@@ -1,22 +1,47 @@
 {
   "project_info": {
-    "project_number": "123456789012",
-    "project_id": "demo-boustio-legacy-init",
-    "storage_bucket": "demo-boustio-legacy-init.appspot.com"
+    "project_number": "107806967630",
+    "project_id": "salonbook-pro-ad5ff",
+    "storage_bucket": "salonbook-pro-ad5ff.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789012:android:0000000000000000000000",
+        "mobilesdk_app_id": "1:107806967630:android:8759cc0a06866651ad401f",
         "android_client_info": {
-          "package_name": "com.salonbook.pro.devcalendar1110"
+          "package_name": "com.salonbook.pro"
         }
       },
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "DEMO_EMULATOR_ONLY_NOT_A_REAL_API_KEY"
+          "current_key": "AIzaSyC9Zwj3nJq_OP77oEhQIaDGUuvVFFom3eU"
         }
-      ]
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:107806967630:android:06302affbec3e183ad401f",
+        "android_client_info": {
+          "package_name": "com.salonbook.pro.phase1223sandbox"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9Zwj3nJq_OP77oEhQIaDGUuvVFFom3eU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"
