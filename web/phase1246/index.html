@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Boustio | Read-only availability</title>
+<style>
+:root{font-family:system-ui,sans-serif;background:#f5f9f8;color:#16443c}*{box-sizing:border-box}
+body{margin:0}.wrap{max-width:600px;margin:auto;padding:25px 18px 60px}
+header{display:flex;justify-content:space-between;align-items:center}.brand{font-size:30px;font-weight:850;letter-spacing:-1px}
+.pill{border-radius:30px;background:#d9f2ed;padding:8px 12px;font-size:12px;font-weight:750}
+h1{font-size:30px;margin-bottom:8px}p{color:#53766e}.panel{background:#fff;border:1px solid #dce9e5;border-radius:20px;padding:22px;margin-top:20px;box-shadow:0 8px 25px #16443c0a}
+label{display:block;font-weight:700;margin:15px 0 8px}select{width:100%;border:1px solid #bfd7d1;background:#fff;color:#16443c;border-radius:12px;padding:14px;font:inherit}
+.times{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.time{border:1px solid #b8d7d0;border-radius:12px;padding:11px 13px;background:#f0f8f5;color:#16443c}
+.notice{padding:14px;border-radius:12px;background:#e8f4f1;margin-top:18px}footer{font-size:13px;margin-top:25px;color:#54766d}
+</style></head><body><main class="wrap">
+<header><div class="brand">boustio<span style="color:#12a48c">.</span></div><span class="pill">READ-ONLY DEMO</span></header>
+<h1 id="business">Salon availability</h1><p>See available appointment times. This preview cannot create bookings.</p>
+<section class="panel"><h2 id="date">Availability preview</h2><div id="state" role="status" aria-live="polite">Loading isolated emulator data…</div>
+<div id="controls" hidden><label for="service">Choose a service</label><select id="service"></select>
+<div id="times" class="times" aria-live="polite"></div></div>
+<div class="notice">Preview only — selecting a time does not reserve it. No payments or customer details are collected.</div></section>
+<footer>Emulator-only Phase 12.46 · Not connected to a live salon · No appointments are changed.</footer>
+</main><script src="./publicAvailabilityReader.js"></script><script>
+(async()=>{
+const api=window.BoustioPhase1246,params=new URLSearchParams(location.search);
+const slug=params.get("slug")||"demo-salon",status=document.getElementById("state");
+const data=await api.load({slug,now:Date.now(),origin:"http://127.0.0.1:8080",fetcher:(...args)=>fetch(...args)});
+if(data.status!=="READ_ONLY"){status.textContent="Availability is unavailable or expired. No bookings can be made.";return}
+document.getElementById("business").textContent=data.businessName;
+document.getElementById("date").textContent="Available on "+data.date;
+status.textContent="These are example times from an isolated Firebase emulator.";
+const controls=document.getElementById("controls"),select=document.getElementById("service"),times=document.getElementById("times");
+for(const s of data.services){const opt=document.createElement("option");opt.value=s.id;
+opt.textContent=s.name+" · £"+(s.pricePence/100).toFixed(2)+" · "+s.durationMinutes+" min";select.append(opt)}
+function update(){times.replaceChildren();const all=[...new Set(data.availability.filter(a=>a.serviceId===select.value).flatMap(a=>a.times))].sort();
+if(!all.length){times.textContent="No available times for this service.";return}
+for(const t of all){const span=document.createElement("span");span.className="time";span.textContent=t;times.append(span)}}
+select.addEventListener("change",update);controls.hidden=false;update();
+})();
+</script></body></html>
