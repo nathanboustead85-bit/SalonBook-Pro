@@ -45,7 +45,7 @@ jobs:
           'use strict';
           const fs = require('node:fs');
           const uid = process.env.TARGET_UID;
-          if (!uid || !/^[A-Za-z0-9_-]{10,128}$/.test(uid)) {
+          if (!uid || !/^[A-Za-z0-9_-]{10,128}$/.test(uid) || uid === 'AUDIT_READ_ONLY') {
             throw Error('Invalid Firebase UID; use the Copy Firebase UID button in Boustio');
           }
           const key = JSON.parse(process.env.FIREBASE_SA);
@@ -57,8 +57,10 @@ jobs:
           if (/\.(set|create|update|delete|add|commit|batch|runTransaction)\s*\(/.test(source)) {
             throw Error('Inspector source contains a possible write operation; audit blocked');
           }
-          const { initializeApp, cert } = require('./functions/node_modules/firebase-admin/app');
-          const { getFirestore } = require('./functions/node_modules/firebase-admin/firestore');
+          const { createRequire } = require('node:module');
+          const requireFunctions = createRequire(require('node:path').resolve('functions/package.json'));
+          const { initializeApp, cert } = requireFunctions('firebase-admin/app');
+          const { getFirestore } = requireFunctions('firebase-admin/firestore');
           const { inspectMigration } = require('./functions/inspectMigration');
           initializeApp({ credential: cert(key), projectId: 'salonbook-pro-ad5ff' });
           (async () => {
