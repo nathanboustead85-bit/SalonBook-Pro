@@ -45,3 +45,57 @@ jobs:
           console.log('PASS: no migration writes or booking activation');
           console.log('INFO: This is an offline contract test, NOT live owner authentication');
           JS
+      - name: Prove owner isolation and zero writes with two independent businesses
+        run: |
+          node <<'JS'
+          const assert=require('node:assert/strict');
+          const {inspectMigration}=require('./functions/inspectMigration');
+          const owners=['owner_alpha','owner_beta'];
+          const booking=(id)=>JSON.stringify([{id,staffId:'staff_1',date:'2026-11-20',time:'09:00',duration:30}]);
+          const records={owner_alpha:booking('alpha_appointment'),owner_beta:booking('beta_appointment')};
+          const reads=[];
+          const db={
+            collection(root){
+              assert.ok(['users','businesses'].includes(root));
+              return {doc(uid){
+                assert.ok(owners.includes(uid));
+                return {collection(child){
+                  assert.ok(['liveData','bookingLocks','appointments'].includes(child));
+                  return {
+                    doc(id){
+                      return {
+                        async get(){
+                          reads.push([root,uid,child,id]);
+                          assert.equal(root,'users');
+                          assert.equal(child,'liveData');
+                          assert.equal(id,'bookings');
+                          return {exists:true,get(field){assert.equal(field,'json');return records[uid];}};
+                        }
+                      };
+                    },
+                    limit(n){
+                      assert.equal(n,1);
+                      return {async get(){reads.push([root,uid,child,'query']);return {empty:true};}};
+                    }
+                  };
+                }};
+              }};
+            },
+            async getAll(...refs){return refs.map(()=>({exists:false}));}
+          };
+          (async()=>{
+            for(const owner of owners){
+              reads.length=0;
+              const result=await inspectMigration(db,owner);
+              assert.equal(result.safe,true);
+              assert.equal(result.count,1);
+              assert.equal(result.lockCount,2);
+              assert.equal(result.migrationPerformed,false);
+              assert.equal(result.liveBookingsEnabled,false);
+              assert.ok(reads.length>=2);
+              assert.ok(reads.every(path=>path[1]===owner),'cross-owner Firestore read');
+              assert.equal(JSON.stringify(result).includes('appointment'),false,'booking details leaked');
+              console.log('PASS: isolated read-only inspection for a simulated owner');
+            }
+          })().catch(e=>{console.error(e);process.exitCode=1;});
+          JS
