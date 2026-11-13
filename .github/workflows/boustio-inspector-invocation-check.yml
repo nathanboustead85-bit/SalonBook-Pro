@@ -1,0 +1,56 @@
+name: Boustio Inspector Invocation Gate Check
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type CHECK_DENIED_ACCESS'
+        required: true
+        type: string
+jobs:
+  check:
+    if: ${{ inputs.confirmation == 'CHECK_DENIED_ACCESS' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Verify unauthenticated access is denied (no booking reads)
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          python3 -m pip -q install google-auth
+          python3 - <<'PY'
+          import json,os,sys,urllib.request,urllib.error
+          from google.oauth2 import service_account
+          from google.auth.transport.requests import Request
+          if not os.environ.get('FIREBASE_SA'):
+              sys.exit('Missing Firebase credential')
+          key=json.loads(os.environ['FIREBASE_SA'])
+          if key.get('project_id')!='salonbook-pro-ad5ff':
+              sys.exit('Firebase project mismatch')
+          creds=service_account.Credentials.from_service_account_info(key,scopes=['https://www.googleapis.com/auth/cloud-platform'])
+          creds.refresh(Request())
+          base='https://run.googleapis.com/v2/projects/salonbook-pro-ad5ff/locations/europe-west2/services/inspectlegacybookingmigration'
+          req=urllib.request.Request(base,headers={'Authorization':'Bearer '+creds.token})
+          try:
+              with urllib.request.urlopen(req,timeout=30) as r: svc=json.load(r)
+          except urllib.error.HTTPError as e:
+              sys.exit(f'Unable to read service metadata: HTTP {e.code}')
+          uri=svc.get('uri')
+          if not uri or not uri.startswith('https://'):
+              sys.exit('Missing HTTPS service URI')
+          print('PASS: Expected service metadata loaded')
+          # Unauthenticated request only. No bearer token, Firebase ID token, or App Check token.
+          # The empty JSON envelope contains no customer or business identifiers.
+          req=urllib.request.Request(uri,method='POST',data=b'{}',headers={'Content-Type':'application/json'})
+          try:
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  print('FAIL: Unauthenticated request returned HTTP',r.status)
+                  sys.exit(1)
+          except urllib.error.HTTPError as e:
+              print('INFO: Unauthenticated HTTP status:',e.code)
+              if e.code not in (401,403):
+                  sys.exit('FAIL: Unexpected response; investigate before proceeding')
+              print('PASS: Unauthenticated requests denied at service boundary')
+          print('PASS: No authorised invocation attempted; no booking records inspected')
+          PY
