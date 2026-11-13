@@ -33,8 +33,9 @@ jobs:
           assert 'europe-west2' in src
           assert '.call(emptyMap<String, Any>())' in src
           assert all(op not in src for op in ['.set(', '.update(', '.delete(', '.add('])
-          assert 'OwnerMigrationInspector.inspect(' not in Path('app/src/main/java/com/salonbook/pro/MainActivity.kt').read_text()
-          print('PASS: owner login, verified email, no explicit UID, no writes or automatic calls')
+          assert 'OwnerMigrationInspector.inspect()' in Path('app/src/main/java/com/salonbook/pro/MainActivity.kt').read_text()
+          assert 'setPositiveButton("Inspect")' in Path('app/src/main/java/com/salonbook/pro/MainActivity.kt').read_text()
+          print('PASS: owner login, verified email, no explicit UID, no writes; inspection requires confirmation')
           PY
       # Release compilation uses the existing com.salonbook.pro Firebase client.
       # Debug has a separate sandbox ID without a matching JSON.
