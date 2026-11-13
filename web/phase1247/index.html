@@ -24,6 +24,7 @@ footer{font-size:12px;color:#6b857e;margin-top:26px}
 <p>Beautifully simple booking for hair, barbering and beauty. Explore how your customers could choose a service and appointment time.</p></div>
 <section class="panel"><h2>Find your appointment</h2>
 <label for="service">Choose a service</label><select id="service"></select>
+<label for="stylist">Choose a stylist</label><select id="stylist"></select>
 <label for="day">Choose a day</label><select id="day"></select>
 <label>Available times</label><div id="times" class="times" aria-label="Example appointment times"></div>
 <p id="empty" class="empty" hidden>No example appointments available for this day.</p>
@@ -40,29 +41,37 @@ const services=Object.freeze([
  {id:"beard",name:"Beard trim",pricePence:1200,duration:20},
  {id:"colour",name:"Cut & colour",pricePence:5500,duration:90}
 ]);
+const stylists=Object.freeze([
+ {id:"any",name:"Any available stylist",services:["cut","beard","colour"]},
+ {id:"alex",name:"Alex · Senior stylist",services:["cut","colour"]},
+ {id:"jordan",name:"Jordan · Barber",services:["cut","beard"]},
+ {id:"sam",name:"Sam · Colour specialist",services:["colour"]}
+]);
 const days=Object.freeze(["Friday 20 November 2026","Saturday 21 November 2026","Monday 23 November 2026"]);
 const slots=Object.freeze({
  cut:[["09:00","09:30","10:30","11:30","14:00"],["09:00","10:00","12:30"],["09:30","11:00","15:00"]],
  beard:[["09:20","10:40","13:00"],["10:00","11:40"],["09:00","12:20","16:00"]],
  colour:[["09:00","13:30"],["09:30"],["10:00","14:00"]]
 });
-const service=document.getElementById("service"),day=document.getElementById("day"),times=document.getElementById("times");
+const service=document.getElementById("service"),stylist=document.getElementById("stylist"),day=document.getElementById("day"),times=document.getElementById("times");
 const review=document.getElementById("review"),result=document.getElementById("result"),empty=document.getElementById("empty");
 for(const s of services){const o=document.createElement("option");o.value=s.id;o.textContent=s.name+" · £"+(s.pricePence/100).toFixed(2)+" · "+s.duration+" min";service.append(o)}
 for(let i=0;i<days.length;i++){const o=document.createElement("option");o.value=String(i);o.textContent=days[i];day.append(o)}
 let selected=null;
+function updateStylists(){const previous=stylist.value;stylist.replaceChildren();for(const person of stylists.filter(x=>x.services.includes(service.value))){const o=document.createElement("option");o.value=person.id;o.textContent=person.name;stylist.append(o)}if([...stylist.options].some(x=>x.value===previous))stylist.value=previous}
+function stylistSlots(){const list=slots[service.value][Number(day.value)];if(stylist.value==="any")return list;const offset={alex:0,jordan:1,sam:2}[stylist.value];return list.filter((_,i)=>i%3===offset||list.length<=2&&i===offset%list.length)}
 function render(){selected=null;review.disabled=true;result.replaceChildren();times.replaceChildren();
- const list=slots[service.value][Number(day.value)];empty.hidden=list.length>0;
+ const list=stylistSlots();empty.hidden=list.length>0;
  for(const time of list){const button=document.createElement("button");button.type="button";button.className="time";button.textContent=time;button.setAttribute("aria-pressed","false");
  button.addEventListener("click",()=>{selected=time;review.disabled=false;result.replaceChildren();
   for(const other of times.children)other.setAttribute("aria-pressed",String(other===button))});
  times.append(button)}}
-service.addEventListener("change",render);day.addEventListener("change",render);
+service.addEventListener("change",()=>{updateStylists();render()});stylist.addEventListener("change",render);day.addEventListener("change",render);
 review.addEventListener("click",()=>{if(!selected)return;
  const s=services.find(x=>x.id===service.value),box=document.createElement("div");box.className="result";
  const heading=document.createElement("strong");heading.textContent="Your demo selection — NOT BOOKED";box.append(heading);
- for(const line of [s.name,days[Number(day.value)]+" at "+selected,"£"+(s.pricePence/100).toFixed(2),"No appointment has been created."]){
+ for(const line of [s.name,"Stylist: "+stylists.find(x=>x.id===stylist.value).name,days[Number(day.value)]+" at "+selected,"£"+(s.pricePence/100).toFixed(2),"No appointment has been created."]){
  const p=document.createElement("p");p.textContent=line;box.append(p)}
  result.replaceChildren(box)});
-render();
+updateStylists();render();
 </script></body></html>
