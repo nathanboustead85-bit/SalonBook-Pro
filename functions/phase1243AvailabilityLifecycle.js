@@ -14,10 +14,11 @@ async function reconcile(db,{projectId,emulatorHost,businessId,date,generatedAt}
  const keys=["profile","services","staff","appointments"];
  const refs=keys.map(k=>root.collection("source").doc(k));
  const pub=db.collection("phase1243PublicAvailability").doc(businessId);
+ const watermark=root.collection("control").doc("publication");
  return db.runTransaction(async tx=>{
   // Read all inputs and existing output inside the same transaction.
-  const [existing,...docs]=await Promise.all([tx.get(pub),...refs.map(ref=>tx.get(ref))]);
-  const last=existing.exists?existing.get("generatedAt"):undefined;
+  const [existing,control,...docs]=await Promise.all([tx.get(pub),tx.get(watermark),...refs.map(ref=>tx.get(ref))]);
+  const last=control.exists?control.get("generatedAt"):undefined;
   if(Number.isSafeInteger(last)&&last>=generatedAt)
    return {status:"SKIPPED_STALE"};
   let projection=null,reason="MISSING_SOURCE";
@@ -35,6 +36,7 @@ async function reconcile(db,{projectId,emulatorHost,businessId,date,generatedAt}
     }catch(_){reason="INVALID_SOURCE";}
    }
   }
+  tx.set(watermark,{generatedAt});
   if(!projection){
    if(existing.exists)tx.delete(pub);
    return {status:existing.exists?"WITHDRAWN":"NOT_PUBLISHED",reason};
