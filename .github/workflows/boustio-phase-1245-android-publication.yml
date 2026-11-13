@@ -1,0 +1,38 @@
+name: Boustio Phase 12.45 Android to Public Emulator
+on:
+  workflow_dispatch:
+jobs:
+  android-publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated emulator dependencies
+        run: |
+          npm install --global firebase-tools@14
+          npm install --prefix functions --no-save --ignore-scripts @firebase/rules-unit-testing@4
+      - name: Check publisher and test syntax
+        run: |
+          node --check functions/phase1245AndroidPublisher.js
+          node --check tests/phase1245_android_publication.test.js
+      - name: Run Android-to-public Firestore emulator tests
+        env:
+          GCLOUD_PROJECT: demo-boustio-phase1245
+        run: |
+          firebase emulators:exec --config tests/phase1245.firebase.json --only firestore --project demo-boustio-phase1245 \
+            "node tests/phase1245_android_publication.test.js"
+      - name: Re-run Android schema adapter tests
+        run: node tests/phase1244_android_schema_adapter.test.js
+      - name: Re-run production readiness safeguards
+        run: node tests/phase1230_readiness_gate.test.js
