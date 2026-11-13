@@ -1,0 +1,25 @@
+name: Boustio Phase 12.27 Backup and Recovery Simulation
+on:
+  workflow_dispatch:
+jobs:
+  recovery-rehearsal:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate offline rehearsal code
+        run: |
+          node --check functions/migrationRecoveryRehearsal.js
+          node --check tests/phase1227_migration_recovery.test.js
+      - name: Run Phase 12.27 backup and rollback tests
+        run: node tests/phase1227_migration_recovery.test.js
+      - name: Re-run Phase 12.26 migration safety tests
+        run: node tests/phase1226_migration_safety.test.js
+      - name: Re-run existing inspection integration tests
+        run: node tests/migration_inspection_integration.test.js
