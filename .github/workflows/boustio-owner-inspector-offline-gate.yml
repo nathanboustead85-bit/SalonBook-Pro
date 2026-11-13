@@ -1,0 +1,47 @@
+name: Boustio Owner Inspector Offline Safety Gate
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/boustio-owner-inspector-offline-gate.yml'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out inspected backend branch
+        uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify existing booking audit tests
+        run: npm --prefix functions run test:booking-integration
+      - name: Verify owner authentication and no-write inspector contract
+        run: |
+          node <<'JS'
+          const fs=require('node:fs');
+          const assert=require('node:assert/strict');
+          const entry=fs.readFileSync('functions/index.js','utf8');
+          const inspector=fs.readFileSync('functions/inspectMigration.js','utf8');
+          const audit=fs.readFileSync('functions/legacyBookingAudit.js','utf8');
+          const handler=entry.slice(entry.lastIndexOf('exports.inspectLegacyBookingMigration = onCall('));
+          assert.match(handler,/const uid = verifiedUser\(request\)/);
+          assert.match(handler,/inspectMigration\(db, uid\)/);
+          assert.match(entry,/auth\.token\.email_verified !== true/);
+          assert.match(entry,/!auth\.uid/);
+          assert.match(handler,/maxInstances: 5/);
+          for(const [name,source] of [['inspector',inspector],['audit',audit]]){
+            assert.doesNotMatch(source,/\.(set|create|update|delete|add|commit|batch|runTransaction)\s*\(/,
+              name+' must not perform writes');
+          }
+          assert.match(inspector,/migrationPerformed: false/);
+          assert.match(inspector,/liveBookingsEnabled: false/);
+          assert.match(entry,/acceptingBookings: false/);
+          console.log('PASS: verified owner identity is required before inspection');
+          console.log('PASS: owner UID scopes all inspector reads');
+          console.log('PASS: no migration writes or booking activation');
+          console.log('INFO: This is an offline contract test, NOT live owner authentication');
+          JS
