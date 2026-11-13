@@ -35,9 +35,9 @@ jobs:
           assert any(c['client_info']['android_client_info']['package_name']=='com.salonbook.pro.phase1223sandbox' for c in config['client'])
           src=Path('app/src/main/java/com/salonbook/pro/MainActivity.kt').read_text()
           assert 'setPositiveButton("Inspect")' in src
-          assert 'append("\\nLegacy cloud bookings: ")' in src
-          assert 'append("\\nInspection issues: ")' in src
-          assert 'append("\\n\\nRead-only inspection. No bookings were changed.")' in src
+          assert r'append("\\nLegacy cloud bookings: ")' in src
+          assert r'append("\\nInspection issues: ")' in src
+          assert r'append("\\n\\nRead-only inspection. No bookings were changed.")' in src
           assert '.setMessage(summary)' in src
           assert 'OwnerMigrationInspector.inspect()' in src
           print('PASS: separate package, matching Firebase client, opt-in inspector')
