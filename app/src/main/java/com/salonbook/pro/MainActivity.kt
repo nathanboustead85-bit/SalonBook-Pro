@@ -405,15 +405,21 @@ class MainActivity : Activity() {
                         val issues = (data?.get("issueCount") as? Number)?.toInt()
                         val migrated = data?.get("migrationPerformed") == true
                         val live = data?.get("liveBookingsEnabled") == true
-                        val summary = "Inspection completed: " + if (safe) "Ready for further review" else "Needs review"
+                        val summary = buildString {
+                            append(if (safe) "Inspection completed: Ready for further review" else "Inspection completed: Needs review")
+                            append("\\nLegacy cloud bookings: ")
+                            append(count?.toString() ?: "Not reported")
+                            append("\\nInspection issues: ")
+                            append(issues?.toString() ?: "Not reported")
+                            append("\\nMigration performed: ")
+                            append(if (migrated) "Yes" else "No")
+                            append("\\nLive bookings enabled: ")
+                            append(if (live) "Yes" else "No")
+                            append("\\n\\nRead-only inspection. No bookings were changed.")
+                        }
                         AlertDialog.Builder(this)
                             .setTitle("Cloud booking inspection · Read only")
-                            .setMessage(summary +
-                                "\\nLegacy bookings: " + (count?.toString() ?: "Not reported") +
-                                "\\nIssues: " + (issues?.toString() ?: "Not reported") +
-                                "\\nMigration performed: " + if (migrated) "Yes" else "No" +
-                                "\\nLive bookings enabled: " + if (live) "Yes" else "No" +
-                                "\\nNo changes requested by this inspection.")
+                            .setMessage(summary)
                             .setPositiveButton("OK", null)
                             .show()
                     }
