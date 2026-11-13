@@ -21,7 +21,7 @@ async function publishFromTrustedFixtures(db,{projectId,emulatorHost,businessId,
  const p=profile.data();
  if(p.businessId!==businessId)return {status:"NOT_PUBLISHED",reason:"OWNER_MISMATCH"};
  const result=buildPublicSnapshot({profile:p,slug:p.slug,
-  services:services.get("items"),staff:staff.get("items"),
+  services:services.get("items"),staff:staff.get("items").map(s=>({...s,workingHours:JSON.parse(s.workingHoursJson)})),
   appointments:appointments.get("items"),date,generatedAt});
  if(result.status!=="PUBLIC_PREVIEW")return {status:"NOT_PUBLISHED",reason:result.reason};
  // Prevent a stale worker from overwriting a newer publication.
