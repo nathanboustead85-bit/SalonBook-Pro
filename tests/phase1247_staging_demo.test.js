@@ -1,0 +1,20 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const html=fs.readFileSync("web/phase1247/index.html","utf8");
+function check(name,fn){fn();console.log("PASS "+name)}
+check("standalone responsive mobile document",()=>{assert.match(html,/name="viewport"/);assert.match(html,/max-width:640px/)});
+check("Boustio branding and premium teal styling",()=>{assert.match(html,/boustio/);assert.match(html,/#087c70/)});
+check("fictional salon clearly labelled",()=>assert.match(html,/EXAMPLE SALON/));
+check("explicit demo banner",()=>assert.match(html,/INTERACTIVE DEMO/));
+check("no real bookings promise",()=>assert.match(html,/No appointment has been created/));
+check("no customer information inputs",()=>assert.doesNotMatch(html,/<input\b/i));
+check("no Firebase SDK or network requests",()=>assert.doesNotMatch(html,/firebase(app|store)|https?:\/\/|fetch\s*\(|XMLHttpRequest|WebSocket/i));
+check("no payment processing",()=>assert.doesNotMatch(html,/stripe\.com|checkout\.sessions|paymentIntent/i));
+check("no external script dependencies",()=>assert.doesNotMatch(html,/<script[^>]+src=/i));
+check("static service and price choices",()=>{assert.match(html,/Haircut/);assert.match(html,/pricePence:2000/)});
+check("static appointment choices",()=>assert.match(html,/Friday 20 November 2026/));
+check("slot selection state",()=>assert.match(html,/aria-pressed/));
+check("review action does not book",()=>assert.match(html,/NOT BOOKED/));
+check("privacy-sensitive site not indexed",()=>assert.match(html,/noindex,nofollow/));
+check("page contains no production Firebase project ID",()=>assert.doesNotMatch(html,/salonbook-pro-ad5ff/));
+check("no custom domain configuration",()=>assert.doesNotMatch(html,/boustio\.co\.uk/));
