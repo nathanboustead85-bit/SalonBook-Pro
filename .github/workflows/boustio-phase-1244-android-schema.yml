@@ -1,0 +1,26 @@
+name: Boustio Phase 12.44 Android Data Compatibility
+on:
+  workflow_dispatch:
+jobs:
+  android-schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check adapter syntax
+        run: |
+          node --check functions/phase1244AndroidSchemaAdapter.js
+          node --check tests/phase1244_android_schema_adapter.test.js
+      - name: Test real Android JSON schema with synthetic data
+        run: node tests/phase1244_android_schema_adapter.test.js
+      - name: Re-run public privacy projection checks
+        run: node tests/phase1240_public_availability_projection.test.js
+      - name: Re-run production readiness safeguards
+        run: node tests/phase1230_readiness_gate.test.js
