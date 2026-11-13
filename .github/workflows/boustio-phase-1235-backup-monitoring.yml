@@ -1,0 +1,27 @@
+name: Boustio Phase 12.35 Backup Monitoring Simulation
+on:
+  workflow_dispatch:
+jobs:
+  monitoring-policy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate monitoring policy syntax
+        run: |
+          node --check functions/backupMonitoringPolicy.js
+          node --check tests/phase1235_backup_monitoring.test.js
+      - name: Test backup failure alerts and deduplication
+        run: node tests/phase1235_backup_monitoring.test.js
+      - name: Re-run backup permission safeguards
+        run: node tests/phase1234_backup_permissions.test.js
+      - name: Re-run architecture safeguards
+        run: node tests/phase1233_backup_architecture.test.js
+      - name: Re-run readiness gate
+        run: node tests/phase1230_readiness_gate.test.js
