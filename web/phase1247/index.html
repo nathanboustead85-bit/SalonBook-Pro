@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#087c70">
+<title>Boustio — Customer booking experience demo</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#153f39;background:#f4f8f7}*{box-sizing:border-box}body{margin:0}
+.wrap{max-width:640px;margin:auto;padding:22px 18px 70px}header{display:flex;justify-content:space-between;align-items:center;padding-bottom:24px}
+.brand{font-size:30px;font-weight:850;letter-spacing:-1.2px}.brand span{color:#12a58f}
+.pill{font-size:11px;font-weight:800;letter-spacing:.05em;background:#d7f1e9;padding:9px 12px;border-radius:30px}
+.hero{padding:25px 0 8px}h1{font-size:35px;line-height:1.1;letter-spacing:-1px;margin:0 0 10px}h2{font-size:22px;margin:0 0 16px}p{color:#57756e;line-height:1.5}
+.panel{background:white;border:1px solid #dce9e5;border-radius:22px;padding:23px;margin:20px 0;box-shadow:0 9px 30px #174c4010}
+label{font-weight:750;display:block;margin:16px 0 8px}select,input{width:100%;border:1px solid #bdd6cf;border-radius:12px;padding:14px;font:inherit;background:white;color:#153f39}
+.times{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+button{font:inherit;cursor:pointer}.time{background:#f0f8f5;border:1px solid #b8d8ce;color:#155b50;border-radius:12px;padding:13px 4px;font-weight:700}
+.time[aria-pressed="true"]{background:#087c70;color:white;border-color:#087c70}
+button:focus-visible,select:focus-visible{outline:3px solid #53b4a6;outline-offset:2px}
+.primary{width:100%;border:0;border-radius:13px;background:#087c70;color:white;font-weight:800;padding:16px;margin-top:18px}
+.primary:disabled{background:#a8c5be;cursor:not-allowed}.notice{background:#e5f3ef;border-radius:14px;padding:15px;margin:16px 0;color:#315b51}
+.small{font-size:13px;color:#648078}.empty{color:#7b6252}.result{border-radius:14px;padding:16px;background:#eef7f3;margin-top:18px}
+footer{font-size:12px;color:#6b857e;margin-top:26px}
+</style></head><body><main class="wrap">
+<header><div class="brand">boustio<span>.</span></div><div class="pill">INTERACTIVE DEMO</div></header>
+<div class="hero"><p class="small">EXAMPLE SALON · NOT A REAL BUSINESS</p><h1>Welcome to Demo Salon</h1>
+<p>Beautifully simple booking for hair, barbering and beauty. Explore how your customers could choose a service and appointment time.</p></div>
+<section class="panel"><h2>Find your appointment</h2>
+<label for="service">Choose a service</label><select id="service"></select>
+<label for="day">Choose a day</label><select id="day"></select>
+<label>Available times</label><div id="times" class="times" aria-label="Example appointment times"></div>
+<p id="empty" class="empty" hidden>No example appointments available for this day.</p>
+<button class="primary" id="review" disabled>Review demo appointment</button>
+<div id="result" aria-live="polite"></div>
+</section>
+<div class="notice"><strong>Demonstration only.</strong> All services, prices and times are fictional. This page does not connect to Firebase, collect customer details, reserve appointments or accept payments.</div>
+<footer>Boustio · A booking platform with a difference · Staging demonstration · Not live booking</footer>
+</main><script>
+"use strict";
+// Standalone synthetic fixture; no SDK, backend URL, credentials or network calls.
+const services=Object.freeze([
+ {id:"cut",name:"Haircut",pricePence:2000,duration:30},
+ {id:"beard",name:"Beard trim",pricePence:1200,duration:20},
+ {id:"colour",name:"Cut & colour",pricePence:5500,duration:90}
+]);
+const days=Object.freeze(["Friday 20 November 2026","Saturday 21 November 2026","Monday 23 November 2026"]);
+const slots=Object.freeze({
+ cut:[["09:00","09:30","10:30","11:30","14:00"],["09:00","10:00","12:30"],["09:30","11:00","15:00"]],
+ beard:[["09:20","10:40","13:00"],["10:00","11:40"],["09:00","12:20","16:00"]],
+ colour:[["09:00","13:30"],["09:30"],["10:00","14:00"]]
+});
+const service=document.getElementById("service"),day=document.getElementById("day"),times=document.getElementById("times");
+const review=document.getElementById("review"),result=document.getElementById("result"),empty=document.getElementById("empty");
+for(const s of services){const o=document.createElement("option");o.value=s.id;o.textContent=s.name+" · £"+(s.pricePence/100).toFixed(2)+" · "+s.duration+" min";service.append(o)}
+for(let i=0;i<days.length;i++){const o=document.createElement("option");o.value=String(i);o.textContent=days[i];day.append(o)}
+let selected=null;
+function render(){selected=null;review.disabled=true;result.replaceChildren();times.replaceChildren();
+ const list=slots[service.value][Number(day.value)];empty.hidden=list.length>0;
+ for(const time of list){const button=document.createElement("button");button.type="button";button.className="time";button.textContent=time;button.setAttribute("aria-pressed","false");
+ button.addEventListener("click",()=>{selected=time;review.disabled=false;result.replaceChildren();
+  for(const other of times.children)other.setAttribute("aria-pressed",String(other===button))});
+ times.append(button)}}
+service.addEventListener("change",render);day.addEventListener("change",render);
+review.addEventListener("click",()=>{if(!selected)return;
+ const s=services.find(x=>x.id===service.value),box=document.createElement("div");box.className="result";
+ const heading=document.createElement("strong");heading.textContent="Your demo selection — NOT BOOKED";box.append(heading);
+ for(const line of [s.name,days[Number(day.value)]+" at "+selected,"£"+(s.pricePence/100).toFixed(2),"No appointment has been created."]){
+ const p=document.createElement("p");p.textContent=line;box.append(p)}
+ result.replaceChildren(box)});
+render();
+</script></body></html>
