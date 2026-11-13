@@ -1,0 +1,38 @@
+name: Boustio Phase 12.46 Customer Availability Preview
+on:
+  workflow_dispatch:
+jobs:
+  customer-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated emulator dependencies
+        run: |
+          npm install --global firebase-tools@14
+          npm install --prefix functions --no-save --ignore-scripts @firebase/rules-unit-testing@4
+      - name: Check customer preview syntax
+        run: |
+          node --check web/phase1246/publicAvailabilityReader.js
+          node --check tests/phase1246_customer_preview.test.js
+      - name: Test customer page against Firestore emulator
+        env:
+          GCLOUD_PROJECT: demo-boustio-phase1245
+        run: |
+          firebase emulators:exec --config tests/phase1245.firebase.json --only firestore --project demo-boustio-phase1245 \
+            "node tests/phase1246_customer_preview.test.js"
+      - name: Re-run Android-to-public schema adapter checks
+        run: node tests/phase1244_android_schema_adapter.test.js
+      - name: Re-run production readiness safeguards
+        run: node tests/phase1230_readiness_gate.test.js
