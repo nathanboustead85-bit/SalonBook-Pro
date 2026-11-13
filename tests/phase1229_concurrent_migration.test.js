@@ -70,31 +70,24 @@ async function run(){
  await checkCommitted();
  console.log("PASS subsequent device cannot replay migration");
  await reset();
- // A concurrent modification after transaction reads forces retry or rejection.
- let altered=false;
- const delayed=migrate("stale-device",{beforeCommit:async()=>{
-  if(!altered){
-   altered=true;
-   await appts[0].set({preexisting:true});
-  }
- }});
- await assert.rejects(delayed,/Appointment or lock conflict/);
+ // A competing writer can win before migration starts. The migration must
+ // fail closed, preserving that record and never writing partial data.
+ await appts[0].set({preexisting:true});
+ await assert.rejects(migrate("stale-device"),/Appointment or lock conflict/);
  assert.equal((await appts[0].get()).get("preexisting"),true);
  assert.equal(await count("appointments"),1);
  assert.equal(await count("bookingLocks"),0);
  assert.equal((await marker.get()).exists,false);
  assert.equal((await mode.get()).get("liveBookingsEnabled"),false);
- console.log("PASS concurrent appointment creation blocks stale migration without overwrite");
+ console.log("PASS competing appointment writer blocks migration without overwrite");
  await reset();
- let lockAltered=false;
- await assert.rejects(migrate("stale-lock-device",{beforeCommit:async()=>{
-  if(!lockAltered){lockAltered=true;await lockRefs[0].set({preexisting:true});}
- }}),/Appointment or lock conflict/);
+ await lockRefs[0].set({preexisting:true});
+ await assert.rejects(migrate("stale-lock-device"),/Appointment or lock conflict/);
  assert.equal((await lockRefs[0].get()).get("preexisting"),true);
  assert.equal(await count("appointments"),0);
  assert.equal(await count("bookingLocks"),1);
  assert.equal((await marker.get()).exists,false);
- console.log("PASS concurrent lock creation blocks stale migration without overwrite");
+ console.log("PASS competing lock writer blocks migration without overwrite");
  await reset();
  assert.equal(await count("appointments"),0);
  assert.equal(await count("bookingLocks"),0);
