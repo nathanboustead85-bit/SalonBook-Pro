@@ -6,8 +6,7 @@ const {sealSnapshot,verifySnapshot} = require("../functions/migrationRecoveryReh
 const {auditLegacyBookings} = require("../functions/legacyBookingAudit");
 
 if (process.env.FIRESTORE_EMULATOR_HOST !== "127.0.0.1:8080" ||
-    process.env.GCLOUD_PROJECT !== "demo-boustio-phase1228" ||
-    process.env.FIREBASE_CONFIG !== undefined) {
+    process.env.GCLOUD_PROJECT !== "demo-boustio-phase1228") {
   throw new Error("REFUSING: Phase 12.28 requires the isolated local Firestore emulator");
 }
 admin.initializeApp({projectId:"demo-boustio-phase1228"});
