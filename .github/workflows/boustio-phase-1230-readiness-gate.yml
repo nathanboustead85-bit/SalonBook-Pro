@@ -1,0 +1,25 @@
+name: Boustio Phase 12.30 Migration Readiness Gate
+on:
+  workflow_dispatch:
+jobs:
+  readiness-gate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate gate syntax
+        run: |
+          node --check functions/migrationReadinessGate.js
+          node --check tests/phase1230_readiness_gate.test.js
+      - name: Run fail-closed readiness policy tests
+        run: node tests/phase1230_readiness_gate.test.js
+      - name: Re-run offline recovery safeguards
+        run: node tests/phase1227_migration_recovery.test.js
+      - name: Re-run migration inspection safeguards
+        run: node tests/phase1226_migration_safety.test.js
