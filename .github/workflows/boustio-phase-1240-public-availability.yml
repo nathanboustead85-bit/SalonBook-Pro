@@ -1,0 +1,27 @@
+name: Boustio Phase 12.40 Public Availability Projection
+on:
+  workflow_dispatch:
+jobs:
+  public-projection:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check public projection syntax
+        run: |
+          node --check functions/publicAvailabilityProjection.js
+          node --check tests/phase1240_public_availability_projection.test.js
+      - name: Test privacy-safe public availability projection
+        run: node tests/phase1240_public_availability_projection.test.js
+      - name: Re-run catalogue compatibility safeguards
+        run: node tests/phase1239_catalogue_adapter.test.js
+      - name: Re-run availability safeguards
+        run: node tests/phase1238_availability_preview.test.js
+      - name: Re-run readiness safeguards
+        run: node tests/phase1230_readiness_gate.test.js
