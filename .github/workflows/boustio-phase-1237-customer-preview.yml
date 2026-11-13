@@ -1,0 +1,23 @@
+name: Boustio Phase 12.37 Customer Booking Preview
+on:
+  workflow_dispatch:
+jobs:
+  customer-preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate booking preview model
+        run: node --check web/phase1237/bookingPreview.js
+      - name: Test isolated customer booking journey
+        run: node tests/phase1237_customer_booking_preview.test.js
+      - name: Re-run backup monitoring safeguards
+        run: node tests/phase1235_backup_monitoring.test.js
+      - name: Re-run production readiness safeguards
+        run: node tests/phase1230_readiness_gate.test.js
