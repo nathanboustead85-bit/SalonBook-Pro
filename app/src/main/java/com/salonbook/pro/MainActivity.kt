@@ -360,6 +360,14 @@ class MainActivity : Activity() {
         actionCard("Cloud Account & Backup", "Cloud account, backup and restore", "☁️") {
             startActivity(Intent(this, CloudActivity::class.java))
         }
+        actionCard("Inspect Cloud Booking Readiness", "Verified-owner, read-only Firebase check", "🔒") {
+            AlertDialog.Builder(this)
+                .setTitle("Inspect cloud bookings · Read only")
+                .setMessage("This checks your signed-in business's cloud booking readiness. It will not migrate, overwrite, delete or activate any appointments.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Inspect") { _, _ -> inspectOwnerCloudReadiness() }
+                .show()
+        }
         actionCard("Test Appointment Availability", "Check booking slots", "📅") {
             showAvailabilityTester()
         }
@@ -369,6 +377,55 @@ class MainActivity : Activity() {
         }
         button("Back to Dashboard") { showDashboard() }
         container.addView(label("BOUSTIO  •  A BOOKING PLATFORM WITH A DIFFERENCE", 12f, muted))
+    }
+
+    private fun inspectOwnerCloudReadiness() {
+        val progress = AlertDialog.Builder(this)
+            .setTitle("Cloud booking readiness")
+            .setMessage("Checking verified-owner Firebase access…")
+            .setCancelable(false)
+            .create()
+        try {
+            val task = OwnerMigrationInspector.inspect()
+            progress.show()
+            task.addOnCompleteListener(this) { completed ->
+                if (!isFinishing && !isDestroyed) {
+                    progress.dismiss()
+                    if (!completed.isSuccessful) {
+                        AlertDialog.Builder(this)
+                            .setTitle("Inspection unavailable")
+                            .setMessage("The secure cloud inspection could not complete. No appointments were changed. Check your login and Firebase access, then try again. Error: " +
+                                (completed.exception?.javaClass?.simpleName ?: "Unknown"))
+                            .setPositiveButton("OK", null)
+                            .show()
+                    } else {
+                        val data = completed.result?.data as? Map<*, *>
+                        val safe = data?.get("safe") == true
+                        val count = (data?.get("count") as? Number)?.toInt()
+                        val issues = (data?.get("issueCount") as? Number)?.toInt()
+                        val migrated = data?.get("migrationPerformed") == true
+                        val live = data?.get("liveBookingsEnabled") == true
+                        val summary = "Inspection completed: " + if (safe) "Ready for further review" else "Needs review"
+                        AlertDialog.Builder(this)
+                            .setTitle("Cloud booking inspection · Read only")
+                            .setMessage(summary +
+                                "\\nLegacy bookings: " + (count?.toString() ?: "Not reported") +
+                                "\\nIssues: " + (issues?.toString() ?: "Not reported") +
+                                "\\nMigration performed: " + if (migrated) "Yes" else "No" +
+                                "\\nLive bookings enabled: " + if (live) "Yes" else "No" +
+                                "\\nNo changes requested by this inspection.")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                }
+            }
+        } catch (error: IllegalStateException) {
+            AlertDialog.Builder(this)
+                .setTitle("Sign-in required")
+                .setMessage(error.message ?: "Sign in with a verified Firebase account.")
+                .setPositiveButton("OK", null)
+                .show()
+        }
     }
 
     private fun text(value: String, size: Float = 16f) {
