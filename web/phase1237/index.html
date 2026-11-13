@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Boustio | Booking journey preview</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#163d38;background:#f4f8f7}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:540px;margin:auto;padding:24px 18px 60px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.brand{font-size:28px;font-weight:800;letter-spacing:-1px}.pill{background:#d9efeb;padding:7px 11px;border-radius:20px;font-size:12px;font-weight:700}
+h1{font-size:29px;line-height:1.15;margin:0 0 8px}p{color:#52726d}
+.panel{background:#fff;border:1px solid #dce9e6;border-radius:20px;padding:22px;margin:20px 0;box-shadow:0 8px 24px #174d4010}
+label{display:block;font-weight:700;margin:16px 0 8px}
+select,input,button{width:100%;padding:15px;border-radius:12px;font:inherit}
+select,input{border:1px solid #bfd4ce;background:white;color:#173c36}
+button{border:0;background:#087c70;color:white;font-weight:700;margin-top:20px;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #6db9ad}
+small{color:#607d77}.error{color:#b22222}.result{background:#e3f4ef;padding:18px;border-radius:14px;margin-top:18px}
+footer{font-size:13px;color:#607d77;margin-top:25px}
+</style></head><body><main class="wrap"><header><div class="brand">boustio<span style="color:#14a493">.</span></div><span class="pill">DEMO ONLY</span></header>
+<h1>Book your next appointment</h1><p>A preview of the Boustio customer experience. No real appointments can be made here.</p>
+<section class="panel"><h2>Choose your appointment</h2><form id="booking-form" novalidate>
+<label for="service">Service</label><select id="service" required><option value="">Choose a service</option></select>
+<label for="time">Available time (example slots)</label><select id="time" required><option value="">Choose a time</option></select>
+<label for="name">Your name</label><input id="name" maxlength="80" autocomplete="name" placeholder="Your full name" required>
+<button type="submit">Review booking preview</button></form><div id="output" aria-live="polite"></div></section>
+<footer>Prototype only · Sample prices and availability · No payments, customer records, or booking confirmations are created.</footer>
+</main><script src="./bookingPreview.js"></script><script>
+const api=window.BoustioBookingPreview;
+const service=document.getElementById("service"),time=document.getElementById("time"),output=document.getElementById("output");
+for(const s of api.SERVICES){const o=document.createElement("option");o.value=s.id;o.textContent=s.name+" · £"+(s.pricePence/100).toFixed(2)+" · "+s.durationMinutes+" min";service.append(o)}
+for(const t of api.TIMES){const o=document.createElement("option");o.value=t;o.textContent=t;time.append(o)}
+document.getElementById("booking-form").addEventListener("submit",e=>{
+ e.preventDefault();output.replaceChildren();
+ const p=api.confirmationPreview({serviceId:service.value,time:time.value,customerName:document.getElementById("name").value});
+ const box=document.createElement("div");box.className=p.bookingCreated?"error":"result";
+ if(p.status!=="PREVIEW_ONLY"){box.className="error";box.textContent=p.errors.join(". ")}
+ else{const h=document.createElement("strong");h.textContent="Booking preview — NOT CONFIRMED";box.append(h);
+ for(const s of [p.customerName,p.serviceName,"Time: "+p.time,"Duration: "+p.durationMinutes+" minutes","Price: £"+(p.pricePence/100).toFixed(2),p.message]){
+ const line=document.createElement("p");line.textContent=s;box.append(line)}}
+ output.append(box);
+});
+</script></body></html>
