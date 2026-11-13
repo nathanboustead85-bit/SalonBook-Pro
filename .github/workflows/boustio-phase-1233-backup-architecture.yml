@@ -1,0 +1,25 @@
+name: Boustio Phase 12.33 Backup Architecture Review
+on:
+  workflow_dispatch:
+jobs:
+  architecture-policy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate policy syntax
+        run: |
+          node --check functions/backupArchitecturePolicy.js
+          node --check tests/phase1233_backup_architecture.test.js
+      - name: Test proposed architecture controls
+        run: node tests/phase1233_backup_architecture.test.js
+      - name: Re-run migration readiness gate
+        run: node tests/phase1230_readiness_gate.test.js
+      - name: Re-run backup integrity safeguards
+        run: node tests/phase1227_migration_recovery.test.js
