@@ -1,0 +1,5 @@
+# Phase 12.46 — Read-only customer availability preview
+
+New `web/phase1246/index.html` renders Boustio teal branding, public services/prices, and available time chips. `publicAvailabilityReader.js` fetches the Phase 12.45 public snapshot through the **localhost-only Firestore emulator REST endpoint**, validates the slug, generation age, expiry and disabled booking status, then returns a limited view model. Missing, withdrawn, expired, invalid or unauthorized data shows an unavailable state. The page never submits a booking, accepts a customer name, or takes payment.
+
+Workflow tests the reader against the actual isolated Firestore emulator, with synthetic public snapshots. This is not deployed to hosting or connected to a live salon. The page only works when an isolated emulator is accessible on the same device at `127.0.0.1:8080`; GitHub Actions emulator is ephemeral and cannot be opened from a Samsung phone. A future phase must create an appropriate secure staging deployment and test browser/CORS behaviour before the user can open a working remote preview. Production release remains NOT READY. Original appointments untouched.
