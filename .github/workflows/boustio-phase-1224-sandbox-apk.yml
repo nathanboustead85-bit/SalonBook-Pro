@@ -1,4 +1,4 @@
-name: Boustio Phase 12.24 Separate Sandbox APK
+name: Boustio Phase 12.25 Separate Sandbox APK
 on:
   workflow_dispatch:
 jobs:
@@ -8,7 +8,7 @@ jobs:
       contents: read
     timeout-minutes: 30
     steps:
-      - name: Check out Phase 12.24 source
+      - name: Check out Phase 12.25 source
         uses: actions/checkout@v4
         with:
           ref: milestone-customer-booking-experience
@@ -29,11 +29,16 @@ jobs:
           gradle=Path('app/build.gradle.kts').read_text()
           assert 'applicationId = "com.salonbook.pro"' in gradle
           assert 'applicationIdSuffix = ".phase1223sandbox"' in gradle
+          assert 'versionNameSuffix = "-phase-12.25-sandbox"' in gradle
           config=json.loads(Path('app/src/debug/google-services.json').read_text())
           assert config['project_info']['project_id']=='salonbook-pro-ad5ff'
           assert any(c['client_info']['android_client_info']['package_name']=='com.salonbook.pro.phase1223sandbox' for c in config['client'])
           src=Path('app/src/main/java/com/salonbook/pro/MainActivity.kt').read_text()
           assert 'setPositiveButton("Inspect")' in src
+          assert 'append("\\nLegacy cloud bookings: ")' in src
+          assert 'append("\\nInspection issues: ")' in src
+          assert 'append("\\n\\nRead-only inspection. No bookings were changed.")' in src
+          assert '.setMessage(summary)' in src
           assert 'OwnerMigrationInspector.inspect()' in src
           print('PASS: separate package, matching Firebase client, opt-in inspector')
           PY
@@ -61,9 +66,9 @@ jobs:
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: gradle --no-daemon :app:assembleDebug
-      - name: Upload Phase 12.24 sandbox APK
+      - name: Upload Phase 12.25 sandbox APK
         uses: actions/upload-artifact@v4
         with:
-          name: Boustio-Phase-12.24-Sandbox-APK
+          name: Boustio-Phase-12.25-Sandbox-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
