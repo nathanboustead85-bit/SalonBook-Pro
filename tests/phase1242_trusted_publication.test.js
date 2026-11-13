@@ -18,7 +18,7 @@ const profile={businessId:owner,name:"Demo Salon",slug:"demo-salon",published:tr
 const input={projectId,emulatorHost:host,businessId:owner,date:"2026-11-20",generatedAt:1000000};
 async function seed(){
  for(const [key,data] of Object.entries({profile,services:{items:SAMPLE.services},
- staff:{items:SAMPLE.staff.map(s=>({...s,workingHours:undefined,workingHoursJson:JSON.stringify(s.workingHours)}))},appointments:{items:SAMPLE.appointments.map((a,i)=>({
+ staff:{items:SAMPLE.staff.map(({workingHours,...s})=>({...s,workingHoursJson:JSON.stringify(workingHours)}))},appointments:{items:SAMPLE.appointments.map((a,i)=>({
  ...a,customerName:"PRIVATE CUSTOMER "+i,phone:"PRIVATE PHONE",notes:"SECRET NOTES"
  }))}}))await root.collection("source").doc(key).set(data);
 }
