@@ -1,0 +1,40 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {buildPublicSnapshot,readPublicSnapshot}=require("../functions/publicAvailabilityProjection");
+const {SAMPLE}=require("../web/phase1238/availabilityPreview");
+const profile={businessId:"demo-owner",name:"Demo Salon",slug:"demo-salon",published:true,
+ acceptingBookings:false,schemaVersion:1};
+const base={profile,slug:"demo-salon",services:SAMPLE.services,staff:SAMPLE.staff,
+ appointments:SAMPLE.appointments,date:"2026-11-20",generatedAt:1000000};
+const output=buildPublicSnapshot(base);
+assert.equal(output.status,"PUBLIC_PREVIEW");assert.equal(output.bookingEnabled,false);
+console.log("PASS projection keeps customer booking disabled");
+assert.deepEqual(output.services.map(s=>s.id),["cut","colour"]);
+console.log("PASS unpublished services excluded");
+const cut=output.availability.find(x=>x.serviceId==="cut"&&x.staffId==="alex");
+assert.equal(cut.times.includes("09:30"),false);
+assert.equal(cut.times.includes("09:00"),true);
+console.log("PASS public slots respect occupied appointments");
+assert.equal(output.availability.some(x=>x.staffId==="off"),false);
+console.log("PASS inactive staff excluded");
+const serial=JSON.stringify(output);
+for(const field of ["appointments","customerName","phone","address","email","start","end","workingHours"])
+ assert.equal(Object.hasOwn(output,field),false);
+assert.equal(serial.includes("Internal service"),false);
+console.log("PASS private appointments and business contact fields not projected");
+assert.equal(readPublicSnapshot(output,{slug:"demo-salon",now:1000100}).status,"READ_ONLY");
+console.log("PASS fresh snapshot available read-only");
+assert.equal(readPublicSnapshot(output,{slug:"demo-salon",now:1300001}).status,"UNAVAILABLE");
+assert.equal(readPublicSnapshot(output,{slug:"demo-salon",now:999999}).status,"UNAVAILABLE");
+console.log("PASS stale and future-dated snapshots rejected");
+assert.equal(readPublicSnapshot(output,{slug:"wrong-salon",now:1000100}).status,"UNAVAILABLE");
+console.log("PASS cross-business slug mismatch rejected");
+assert.equal(buildPublicSnapshot({...base,profile:{...profile,published:false}}).status,"NOT_PUBLISHABLE");
+assert.equal(buildPublicSnapshot({...base,profile:{...profile,acceptingBookings:true}}).status,"NOT_PUBLISHABLE");
+console.log("PASS unpublished and unexpectedly enabled business rejected");
+assert.equal(buildPublicSnapshot({...base,appointments:[{...SAMPLE.appointments[0],customerName:"Private Client",status:"unknown"}]}).status,"NOT_PUBLISHABLE");
+console.log("PASS invalid booking statuses fail closed");
+assert.equal(buildPublicSnapshot({...base,date:"2026-02-30"}).status,"NOT_PUBLISHABLE");
+console.log("PASS invalid date rejected");
+assert.equal(Object.isFrozen(output),true);
+console.log("PASS projected snapshot immutable");
