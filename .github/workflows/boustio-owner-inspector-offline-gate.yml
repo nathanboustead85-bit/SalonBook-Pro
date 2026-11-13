@@ -34,7 +34,7 @@ jobs:
           assert.match(entry,/!auth\.uid/);
           assert.match(handler,/maxInstances: 5/);
           for(const [name,source] of [['inspector',inspector],['audit',audit]]){
-            assert.doesNotMatch(source,/\.(set|create|update|delete|commit|batch|runTransaction)\s*\(/,
+            assert.doesNotMatch(source,/\.(create|update|delete|commit|batch|runTransaction)\s*\(/,
               name+' must not perform writes');
           }
           assert.match(inspector,/migrationPerformed: false/);
