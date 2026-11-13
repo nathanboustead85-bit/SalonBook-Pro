@@ -36,7 +36,9 @@ jobs:
           assert 'OwnerMigrationInspector.inspect(' not in Path('app/src/main/java/com/salonbook/pro/MainActivity.kt').read_text()
           print('PASS: owner login, verified email, no explicit UID, no writes or automatic calls')
           PY
-      # Release compilation uses the existing com.salonbook.pro Firebase client.\n      # Debug has an intentionally separate sandbox application ID without a matching JSON.\n      - name: Compile Android release Kotlin without publishing or installing APK
+      # Release compilation uses the existing com.salonbook.pro Firebase client.
+      # Debug has a separate sandbox ID without a matching JSON.
+      - name: Compile Android release Kotlin without publishing or installing APK
         run: gradle --no-daemon :app:compileReleaseKotlin
       - name: Confirm safe build
         run: echo 'Android Kotlin compiled. No APK installed, no Firestore read/write, no live booking activation.'
