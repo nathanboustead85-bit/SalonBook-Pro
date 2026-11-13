@@ -1,0 +1,27 @@
+name: Boustio Phase 12.36 Backup Incident Response
+on:
+  workflow_dispatch:
+jobs:
+  incident-policy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate incident policy syntax
+        run: |
+          node --check functions/backupIncidentResponse.js
+          node --check tests/phase1236_incident_response.test.js
+      - name: Test incident escalation and recovery decisions
+        run: node tests/phase1236_incident_response.test.js
+      - name: Re-run monitoring safeguards
+        run: node tests/phase1235_backup_monitoring.test.js
+      - name: Re-run permission safeguards
+        run: node tests/phase1234_backup_permissions.test.js
+      - name: Re-run readiness gate
+        run: node tests/phase1230_readiness_gate.test.js
