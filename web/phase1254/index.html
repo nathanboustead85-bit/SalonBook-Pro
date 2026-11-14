@@ -7,7 +7,7 @@ const today=(()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()
 let year=Number(today.slice(0,4)),monthIndex=Number(today.slice(5,7))-1,date=null,chosen=null;
 function option(target,value,label){const o=document.createElement("option");o.value=value;o.textContent=label;target.append(o)}
 for(const s of profile.services.filter(x=>x.published))option(service,s.id,s.name+" · £"+(s.pricePence/100).toFixed(2)+" · "+s.durationMinutes+" min");
-function updateStaff(){const prior=stylist.value;stylist.replaceChildren();option(stylist,"any","Any available stylist");for(const s of profile.staff.filter(x=>x.active&&x.serviceIds.includes(service.value)))option(stylist,s.id,s.name)if([...stylist.options].some(o=>o.value===prior))stylist.value=prior;date=null;renderCalendar()}
+function updateStaff(){const prior=stylist.value;stylist.replaceChildren();option(stylist,"any","Any available stylist");for(const s of profile.staff.filter(x=>x.active&&x.serviceIds.includes(service.value)))option(stylist,s.id,s.name);if([...stylist.options].some(o=>o.value===prior))stylist.value=prior;date=null;renderCalendar()}
 function renderCalendar(){cal.replaceChildren();chosen=null;review.disabled=true;result.replaceChildren();times.replaceChildren();const first=new Date(Date.UTC(year,monthIndex,1)),monthName=first.toLocaleDateString("en-GB",{month:"long",year:"numeric",timeZone:"UTC"});monthTitle.textContent=monthName;
 const todayMonth=Number(today.slice(0,4))*12+Number(today.slice(5,7))-1,current=year*12+monthIndex,last=api.plus(today,api.maxAdvanceDays),lastMonth=Number(last.slice(0,4))*12+Number(last.slice(5,7))-1;
 previous.disabled=current<=todayMonth;next.disabled=current>=lastMonth;
