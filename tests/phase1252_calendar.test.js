@@ -1,0 +1,25 @@
+"use strict";const assert=require("node:assert/strict"),fs=require("node:fs"),api=require("../web/phase1252/calendarModel");const today="2026-11-14";
+function check(name,fn){fn();console.log("PASS "+name)}
+check("November has 30 calendar days",()=>assert.equal(api.month(2026,10,{today}).length,30));
+check("December has 31 days",()=>assert.equal(api.month(2026,11,{today}).length,31));
+check("February 2028 leap year",()=>assert.equal(api.month(2028,1,{today}).length,29));
+check("today can be selected",()=>assert.equal(api.available(today,{today}),true));
+check("past day disabled",()=>assert.equal(api.available("2026-11-13",{today}),false));
+check("Sunday disabled",()=>assert.equal(api.available("2026-11-15",{today}),false));
+check("60 day boundary enabled if open",()=>assert.equal(api.available(api.plus(today,60),{today}),true));
+check("beyond 60 days disabled",()=>assert.equal(api.available(api.plus(today,61),{today}),false));
+check("custom advance limit enforced",()=>assert.equal(api.available("2026-11-20",{today,advanceDays:5}),false));
+check("invalid date denied",()=>assert.equal(api.available("2026-02-30",{today}),false));
+check("invalid service denied",()=>assert.equal(api.available(today,{today,serviceId:"bad"}),false));
+check("unqualified stylist denied",()=>assert.equal(api.available(today,{today,serviceId:"colour",staffId:"alex"}),false));
+check("stylist filtering",()=>assert.ok(api.slots({date:"2026-11-20",today,staffId:"alex"}).every(x=>x.staffId==="alex")));
+check("any stylist offers multiple staff",()=>assert.equal(new Set(api.slots({date:"2026-11-20",today}).map(x=>x.staffId)).size,2));
+check("Saturday hours restricted",()=>assert.ok(api.slots({date:"2026-11-21",today}).every(x=>x.time<"12:00")));
+check("Sunday has no slots",()=>assert.equal(api.slots({date:"2026-11-15",today}).length,0));
+check("valid review never books",()=>assert.equal(api.review({date:"2026-11-20",today,serviceId:"cut",staffId:"alex",time:"09:00"}).status,"NOT_BOOKED"));
+check("invalid review rejected",()=>assert.equal(api.review({date:"2026-11-20",today,serviceId:"cut",staffId:"alex",time:"23:00"}).status,"UNAVAILABLE"));
+check("month rows contain availability flags",()=>assert.ok(api.month(2026,10,{today}).every(d=>typeof d.enabled==="boolean")));
+const html=fs.readFileSync("web/phase1252/index.html","utf8");
+for(const [name,re] of [["responsive layout",/name="viewport"/],["calendar grid",/id="calendar"/],["previous month",/id="previous"/],["next month",/id="next"/],["date availability disabled",/btn.disabled=!d.enabled/],["service selector",/id="service"/],["stylist selector",/id="stylist"/],["time selector",/id="times"/],["read-only review",/NOT BOOKED/],["business limit explanation",/60 days ahead/],["fictional warning",/fictional availability/],["search engine exclusion",/noindex,nofollow/],["safe text rendering",/textContent/]])check(name,()=>assert.match(html,re));
+check("no production Firebase or network requests",()=>assert.doesNotMatch(html,/fetch\s*\(|firebase\.initializeApp|firestore\.googleapis|salonbook-pro-ad5ff/));
+check("no real booking submission",()=>assert.doesNotMatch(html,/<form|method="POST"|type="submit"/));
