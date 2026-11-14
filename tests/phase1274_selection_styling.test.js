@@ -1,0 +1,10 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm");
+const html=fs.readFileSync("web/phase1274/index.html","utf8");
+const check=(name,fn)=>{fn();console.log("PASS "+name)};
+const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+check("inline script parses",()=>{assert.equal(scripts.length,7);for(const s of scripts)if(s[1].trim())new vm.Script(s[1])});
+for(const [name,fragment] of [["service section",'class="selection-section-head"'],["stylist section",'class="selection-section-head stylist-section-head"'],["time section",'class="selection-section-head time-section-head"'],["service heading",'id="serviceCardsTitle"'],["stylist heading",'id="stylistCardsTitle"'],["calendar heading",'id="calendarHeading"'],["service description",'Explore fictional treatments, prices and durations.'],["stylist description",'Pick a favourite or choose any available stylist.'],["step 1",'aria-hidden="true">01'],["step 2",'aria-hidden="true">02'],["step 3",'aria-hidden="true">03'],["responsive heading",'.selection-section-head .calendar-heading{font-size:20px}'],["service cards",'id="serviceCards"'],["stylist cards",'id="stylistCards"'],["calendar",'id="calendar"'],["customer details",'id="customerPreviewHeading"'],["booking summary",'Your booking summary'],["confirmation",'DEMONSTRATION ONLY · NO REAL APPOINTMENT'],["fictional banner",'Fictional preview only · No real booking or payment']])check(name,()=>assert.ok(html.includes(fragment),name));
+check("service heading before stylist heading",()=>assert.ok(html.indexOf('id="serviceCardsTitle"')<html.indexOf('id="stylistCardsTitle"')));
+check("stylist heading before calendar heading",()=>assert.ok(html.indexOf('id="stylistCardsTitle"')<html.indexOf('id="calendarHeading"')));
+check("no network or persistence",()=>{for(const bad of ["fetch(","XMLHttpRequest","localStorage","sessionStorage","firebase.initializeApp","<form","WebSocket(","sendBeacon(","indexedDB","stripe.confirmPayment","paypal.Buttons"])assert.ok(!html.includes(bad),bad)});
