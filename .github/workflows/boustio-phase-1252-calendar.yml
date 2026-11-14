@@ -1,0 +1,45 @@
+name: Boustio Phase 12.52 Full Customer Calendar
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: boustio-pages-deployment
+  cancel-in-progress: false
+jobs:
+  calendar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify calendar, customer safety and release gate
+        run: |
+          node tests/phase1252_calendar.test.js
+          node tests/phase1250_booking_journey.test.js
+          node tests/phase1230_readiness_gate.test.js
+      - name: Prepare synthetic-only static website
+        run: |
+          mkdir -p _site
+          cp web/phase1252/index.html _site/index.html
+          cp web/phase1252/calendarModel.js _site/calendarModel.js
+          printf '%s\n' 'User-agent: *' 'Disallow: /' > _site/robots.txt
+          touch _site/.nojekyll
+          test "$(find _site -type f | wc -l)" -eq 4
+          ! grep -E 'firebase\.initializeApp|https://firestore.googleapis.com|salonbook-pro-ad5ff|fetch\(' _site/index.html _site/calendarModel.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy full calendar demonstration
+        id: deployment
+        uses: actions/deploy-pages@v4
