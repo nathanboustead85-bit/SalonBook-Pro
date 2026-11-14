@@ -26,3 +26,13 @@ check("customer private data absent",()=>assert.ok(!JSON.stringify(get("2026-11-
 for(const [name,pattern] of [["mobile viewport",/name="viewport"/],["month navigation",/id="next"/],["real slot engine",/smart\.calculate\(/],["available date gating",/const enabled=d.enabled&&smart\.calculate/],["occupied slots excluded",/const available=smart\.calculate/],["review rechecks availability",/const valid=smart\.calculate/],["not booked warning",/DEMO ONLY — NOT BOOKED/],["fictional warning",/Fictional salon data only/],["noindex",/noindex,nofollow/],["script inclusion",/src="\.\/smartAvailability.js"/]])check(name,()=>assert.match(html,pattern));
 check("no live firebase calls",()=>assert.doesNotMatch(html,/fetch\s*\(|firebase\.initializeApp|firestore\.googleapis|salonbook-pro-ad5ff/));
 check("no submit forms",()=>assert.doesNotMatch(html,/<form|type="submit"|method="POST"/));
+
+// Compile the actual browser entrypoint: text-only tests previously missed a fatal syntax error.
+check("browser inline JavaScript parses",()=>{
+ const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+ assert.equal(scripts.length,4);
+ for(const script of scripts)if(script[1].trim())new vm.Script(script[1],{filename:"phase1254/index.html"});
+});
+check("browser scripts parse independently",()=>{
+ for(const name of ["availabilityPreview.js","smartAvailability.js"])new vm.Script(fs.readFileSync(root+name,"utf8"),{filename:name});
+});
