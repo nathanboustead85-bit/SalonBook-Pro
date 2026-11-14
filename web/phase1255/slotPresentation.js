@@ -1,6 +1,6 @@
 "use strict";
 (function(root,factory){const api=factory();if(typeof module==="object"&&module.exports)module.exports=api;if(root)root.BoustioPhase1255=api;})(typeof window!=="undefined"?window:null,function(){
- const toMin=s=>typeof s==="string"&&/^(?:[01]\\d|2[0-3]):[0-5]\\d$/.test(s)?Number(s.slice(0,2))*60+Number(s.slice(3)):NaN;
+ const toMin=s=>typeof s==="string"&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(s)?Number(s.slice(0,2))*60+Number(s.slice(3)):NaN;
  const fmt=n=>String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0");
  function classify({date,today,serviceId,staffId="any",profile,smart}={}){
   if(!profile||!smart||!Array.isArray(profile.staff)||!Array.isArray(profile.services)||!Array.isArray(profile.appointments))return [];
@@ -31,7 +31,7 @@
   return candidates;
  }
  function summary({service,slot,date}={}){
-  if(!service||!slot||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date||""))return null;
+  if(!service||!slot||!/^\d{4}-\d{2}-\d{2}$/.test(date||""))return null;
   return {status:"NOT_BOOKED",serviceName:service.name,staffName:slot.staffName,date,time:slot.time,durationMinutes:service.durationMinutes,pricePence:service.pricePence,bookingEnabled:false};
  }
  return {classify,summary};
