@@ -1,0 +1,22 @@
+name: Boustio Phase 12.50 Interactive Customer Journey
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  customer-journey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test interactive customer journey
+        run: node tests/phase1250_booking_journey.test.js
+      - name: Verify previous website safety
+        run: node tests/phase1247_staging_demo.test.js
+      - name: Verify production release remains blocked
+        run: node tests/phase1230_readiness_gate.test.js
