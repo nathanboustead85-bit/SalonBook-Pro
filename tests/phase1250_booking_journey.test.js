@@ -1,0 +1,22 @@
+"use strict";const assert=require("node:assert/strict"),fs=require("node:fs");const api=require("../web/phase1250/bookingJourney");
+function check(name,fn){fn();console.log("PASS "+name)}
+check("two synthetic dates",()=>assert.equal(api.fixtures.length,2));
+check("service availability",()=>assert.equal(api.options({date:"2026-11-20",serviceId:"cut"}).status,"SYNTHETIC_PREVIEW"));
+check("stylist filtering",()=>assert.ok(api.options({date:"2026-11-20",serviceId:"cut",staffId:"alex"}).slots.every(s=>s.staffId==="alex")));
+check("any stylist includes both",()=>assert.equal(new Set(api.options({date:"2026-11-20",serviceId:"cut"}).slots.map(s=>s.staffId)).size,2));
+check("colour specialist only",()=>assert.equal(api.options({date:"2026-11-20",serviceId:"colour"}).staff.length,1));
+check("prices preserved",()=>assert.equal(api.options({date:"2026-11-20",serviceId:"cut"}).service.pricePence,2000));
+check("duration preserved",()=>assert.equal(api.options({date:"2026-11-20",serviceId:"colour"}).service.durationMinutes,90));
+check("date changes slots",()=>assert.notDeepEqual(api.options({date:"2026-11-20",serviceId:"cut"}).slots,api.options({date:"2026-11-21",serviceId:"cut"}).slots));
+check("invalid date fails closed",()=>assert.equal(api.options({date:"2026-11-22",serviceId:"cut"}).status,"UNAVAILABLE"));
+check("invalid service fails closed",()=>assert.equal(api.options({date:"2026-11-20",serviceId:"unknown"}).status,"UNAVAILABLE"));
+check("invalid stylist fails closed",()=>assert.equal(api.options({date:"2026-11-20",serviceId:"cut",staffId:"unknown"}).status,"UNAVAILABLE"));
+check("valid review says not booked",()=>assert.equal(api.review({date:"2026-11-20",serviceId:"cut",staffId:"alex",time:"09:00"}).status,"NOT_BOOKED"));
+check("invalid time cannot review",()=>assert.equal(api.review({date:"2026-11-20",serviceId:"cut",staffId:"alex",time:"23:59"}).status,"UNAVAILABLE"));
+check("other stylist slot cannot review",()=>assert.equal(api.review({date:"2026-11-20",serviceId:"cut",staffId:"alex",time:"14:00"}).status,"UNAVAILABLE"));
+check("no booking enabled",()=>assert.equal(api.review({date:"2026-11-20",serviceId:"cut",staffId:"alex",time:"09:00"}).bookingEnabled,false));
+check("no customer data in model",()=>assert.doesNotMatch(fs.readFileSync("web/phase1250/bookingJourney.js","utf8"),/PRIVATE CLIENT|salonbook-pro-ad5ff|firebase\.initializeApp/));
+const html=fs.readFileSync("web/phase1250/index.html","utf8");
+for(const [name,re] of [["responsive viewport",/name="viewport"/],["Boustio branding",/boustio/],["service selector",/id="service"/],["stylist selector",/id="stylist"/],["date selector",/id="day"/],["time selection",/id="times"/],["review button",/id="review"/],["not booked warning",/NOT BOOKED/],["fictional disclaimer",/Fictional services/],["noindex",/noindex,nofollow/],["safe text rendering",/textContent/]])check(name,()=>assert.match(html,re));
+check("no external network",()=>assert.doesNotMatch(html,/fetch\s*\(|XMLHttpRequest|https:\/\/firestore|firebase\.initializeApp/));
+check("no booking submissions",()=>assert.doesNotMatch(html,/method="POST"|type="submit"|<form/));
