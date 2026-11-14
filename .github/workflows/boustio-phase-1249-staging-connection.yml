@@ -1,0 +1,24 @@
+name: Boustio Phase 12.49 Customer Staging Connection
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-connection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test protected browser staging connection
+        run: node tests/phase1249_staging_connection.test.js
+      - name: Verify mobile demo safety
+        run: node tests/phase1247_staging_demo.test.js
+      - name: Verify Android v1 schema compatibility
+        run: node tests/phase1244_android_schema_adapter.test.js
+      - name: Verify production readiness gate
+        run: node tests/phase1230_readiness_gate.test.js
