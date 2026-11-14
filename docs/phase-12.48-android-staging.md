@@ -1,0 +1,5 @@
+# Phase 12.48 — Android-to-staging integration
+
+The new bridge `functions/phase1248StagingBridge.js` exercises the real Android v1 cloud-document schema via Phase 12.45's isolated Firestore emulator publisher and Phase 12.46's safe customer preview reader. It is restricted to project `demo-boustio-phase1245`, localhost emulator and synthetic `demo-owner`/`demo-salon`. The tests seed fake services, staff, working hours, breaks and appointments; verify public-only service/pricing/slots; verify occupied times are removed and customer information never leaves the server-side boundary; and verify unpublishing and corrupt data withdraw availability.
+
+This is **not** a production integration or public deployment. The existing GitHub Pages demonstration remains fictional and unchanged. The next step requires a dedicated, access-controlled staging backend with test-only Firebase resources, explicit deployment approval, and browser integration. Do not connect the current public Pages demo to real Firebase or export private Android documents. No changes to original bookings.
