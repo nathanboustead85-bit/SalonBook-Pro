@@ -38,8 +38,8 @@ jobs:
           cp web/phase1252/calendarModel.js _site/calendarModel.js
           cp web/phase1254/availabilityPreview.js _site/availabilityPreview.js
           cp web/phase1254/smartAvailability.js _site/smartAvailability.js
-          cp web/phase1256/slotPresentation.js
-          cp web/phase1257/reservationPreview.js _site/reservationPreview.js _site/slotPresentation.js
+          cp web/phase1256/slotPresentation.js _site/slotPresentation.js
+          cp web/phase1257/reservationPreview.js _site/reservationPreview.js
           printf '%s\n' 'User-agent: *' 'Disallow: /' > _site/robots.txt
           touch _site/.nojekyll
           test "$(find _site -type f | wc -l)" -eq 8
