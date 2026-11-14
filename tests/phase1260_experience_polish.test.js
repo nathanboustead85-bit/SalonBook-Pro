@@ -8,7 +8,7 @@ for(const [name,fragment] of [
 ["calendar anchor",'id="bookingFlow"'],["booking progress","Booking progress"],["service step",'id="stepService"'],["time step",'id="stepTime"'],["review step",'id="stepReview"'],
 ["progress live text",'id="progressNote"'],["progress logic","function updateProgress(override)"],["step current semantics",'aria-current="step"'],["step cleanup",'removeAttribute("aria-current")'],
 ["confirmation step","updateProgress(\"complete\")"],["review step","updateProgress(\"review\")"],["slot selection progress","review.disabled=false;updateProgress()"],
-["dashboard navigation","dashboard").scrollIntoView"],["calendar navigation","bookingFlow").scrollIntoView"],["skip link",'href="#bookingFlow"'],
+["dashboard navigation",'dashboard").scrollIntoView'],["calendar navigation",'bookingFlow").scrollIntoView'],["skip link",'href="#bookingFlow"'],
 ["accessible calendar",'aria-label="Fictional booking calendar"'],["status region",'role="status"'],["status announcement","function announce(message)"],
 ["reschedule announcement","Rescheduling preview started"],["cancellation announcement","Fictional appointment removed"],
 ["mobile controls","min-height:48px"],["reduced motion","prefers-reduced-motion:reduce"],["mobile layout","max-width:370px"],
