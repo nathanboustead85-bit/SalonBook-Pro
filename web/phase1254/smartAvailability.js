@@ -1,3 +1,4 @@
+(function(){
 "use strict";
 // Phase 12.53: pure, fictional owner-side availability. No network, production data or booking writes.
 const {availableSlots}=typeof module!=="undefined"&&module.exports?require("./availabilityPreview"):window.BoustioAvailabilityPreview;
@@ -43,3 +44,5 @@ function demoProfile(){
  ],appointments:[{staffId:"alex",date:"2026-11-20",start:"09:30",end:"10:00",status:"confirmed"},{staffId:"sam",date:"2026-11-20",start:"11:00",end:"12:00",status:"confirmed"}]};
 }
 const API={calculate,demoProfile};if(typeof module!=="undefined"&&module.exports)module.exports=API;if(typeof window!=="undefined")window.BoustioPhase1254=API;
+
+})();
