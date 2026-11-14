@@ -1,3 +1,4 @@
+(function(){
 "use strict";
 // Phase 12.38: isolated published-catalogue snapshot adapter; NO live Firestore reads/writes.
 const SAMPLE=Object.freeze({
@@ -55,3 +56,5 @@ function review(b,{serviceId,staffId,date,time,customerName}={}){
 const API={SAMPLE,publishedServices,availableSlots,review};
 if(typeof module!=="undefined"&&module.exports)module.exports=API;
 if(typeof window!=="undefined")window.BoustioAvailabilityPreview=API;
+
+})();
