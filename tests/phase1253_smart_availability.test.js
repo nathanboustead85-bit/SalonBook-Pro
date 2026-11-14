@@ -1,0 +1,30 @@
+"use strict";
+const assert=require("node:assert/strict"),{calculate,demoProfile}=require("../functions/phase1253SmartAvailability");
+const base={today:"2026-11-14",date:"2026-11-20",serviceId:"cut"};
+function get(opts={},profile=demoProfile()){return calculate({...base,...opts,profile})}
+function check(name,fn){fn();console.log("PASS "+name)}
+check("read only status",()=>assert.equal(get().bookingEnabled,false));
+check("Friday slots present",()=>assert.ok(get().slots.length>0));
+check("Alex and Sam offered",()=>assert.deepEqual(new Set(get().slots.map(x=>x.staffId)),new Set(["alex","sam"])));
+check("Alex booking blocks 09:30",()=>assert.ok(!get({staffId:"alex"}).slots.some(x=>x.time==="09:30")));
+check("Alex booking leaves 09:00",()=>assert.ok(get({staffId:"alex"}).slots.some(x=>x.time==="09:00")));
+check("Sam booking blocks 11:00",()=>assert.ok(!get({staffId:"sam"}).slots.some(x=>x.time==="11:00")));
+check("Alex break blocks noon",()=>assert.ok(!get({staffId:"alex"}).slots.some(x=>x.time==="12:00")));
+check("Sam break blocks 13:00",()=>assert.ok(!get({staffId:"sam"}).slots.some(x=>x.time==="13:00")));
+check("Saturday Sam unavailable",()=>assert.equal(get({date:"2026-11-21",staffId:"sam"}).slots.length,0));
+check("Saturday Alex works",()=>assert.ok(get({date:"2026-11-21",staffId:"alex"}).slots.length>0));
+check("Sunday unavailable",()=>assert.equal(get({date:"2026-11-22"}).slots.length,0));
+check("Alex holiday blocks Monday",()=>assert.equal(get({date:"2026-11-23",staffId:"alex"}).slots.length,0));
+check("Sam still available on Alex holiday",()=>assert.ok(get({date:"2026-11-23",staffId:"sam"}).slots.length>0));
+check("Colour only Sam",()=>assert.ok(get({serviceId:"colour"}).slots.every(x=>x.staffId==="sam")));
+check("Colour requires 90 minutes",()=>assert.ok(!get({serviceId:"colour",date:"2026-11-20"}).slots.some(x=>x.time==="10:30")));
+check("Unpublished service unavailable",()=>assert.equal(get({serviceId:"private"}).status,"UNAVAILABLE"));
+check("Unknown stylist unavailable",()=>assert.equal(get({staffId:"other"}).status,"UNAVAILABLE"));
+check("Past dates unavailable",()=>assert.equal(get({date:"2026-11-13"}).status,"UNAVAILABLE"));
+check("Future limit enforced",()=>assert.equal(get({date:"2027-03-20"}).status,"UNAVAILABLE"));
+check("Invalid date rejected",()=>assert.equal(get({date:"2026-02-30"}).status,"UNAVAILABLE"));
+check("Missing appointments fails closed",()=>{const p=demoProfile();delete p.appointments;assert.equal(get({},p).status,"UNAVAILABLE")});
+check("Malformed break fails closed",()=>{const p=demoProfile();p.staff[0].breaks=[{day:"friday",start:"bad",end:"13:00"}];assert.equal(get({},p).status,"UNAVAILABLE")});
+check("Cancelled appointment releases slot",()=>{const p=demoProfile();p.appointments[0].status="cancelled";assert.ok(get({staffId:"alex"},p).slots.some(x=>x.time==="09:30"))});
+check("Private customer fields never exported",()=>{const p=demoProfile();p.appointments[0].customerName="PRIVATE NAME";assert.ok(!JSON.stringify(get({},p)).includes("PRIVATE NAME"))});
+check("No profile is unavailable",()=>assert.equal(get({},null).status,"UNAVAILABLE"));
