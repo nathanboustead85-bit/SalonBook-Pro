@@ -1,0 +1,21 @@
+name: Boustio Phase 12.53 Smart Availability
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smart-availability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test smarter availability, calendar and release safety
+        run: |
+          node tests/phase1253_smart_availability.test.js
+          node tests/phase1252_calendar.test.js
+          node tests/phase1230_readiness_gate.test.js
