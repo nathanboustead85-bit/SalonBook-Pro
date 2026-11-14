@@ -1,0 +1,55 @@
+name: Boustio Phase 12.58 Premium Customer Booking Demo
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: boustio-pages-deployment
+  cancel-in-progress: false
+jobs:
+  management-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test premium booking and release safety
+        run: |
+          node tests/phase1258_management_preview.test.js
+          node tests/phase1257_confirmation_preview.test.js
+          node tests/phase1256_duration_booking.test.js
+          node tests/phase1255_premium_booking.test.js
+          node tests/phase1254_smart_calendar.test.js
+          node tests/phase1253_smart_availability.test.js
+          node tests/phase1252_calendar.test.js
+          node tests/phase1230_readiness_gate.test.js
+      - name: Assemble fictional-only customer website
+        run: |
+          mkdir -p _site
+          cp web/phase1258/index.html _site/index.html
+          cp web/phase1252/calendarModel.js _site/calendarModel.js
+          cp web/phase1254/availabilityPreview.js _site/availabilityPreview.js
+          cp web/phase1254/smartAvailability.js _site/smartAvailability.js
+          cp web/phase1256/slotPresentation.js _site/slotPresentation.js
+          cp web/phase1257/reservationPreview.js _site/reservationPreview.js
+          cp web/phase1258/managementPreview.js _site/managementPreview.js
+          printf '%s\n' 'User-agent: *' 'Disallow: /' > _site/robots.txt
+          touch _site/.nojekyll
+          test "$(find _site -type f | wc -l)" -eq 9
+          ! grep -E 'firebase\.initializeApp|https://firestore.googleapis.com|salonbook-pro-ad5ff|fetch\(' _site/*.js _site/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy premium customer demonstration
+        id: deployment
+        uses: actions/deploy-pages@v4
