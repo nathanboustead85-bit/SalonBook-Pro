@@ -19,8 +19,8 @@ test("17:00 start cannot fit 90 minutes",()=>assert.equal(at("17:00",args()),und
 test("30 minute appointment ends at 09:30",()=>assert.equal(at("09:00",args("alex","cut")).end,"09:30"));
 test("30 minute booked start is blocked",()=>assert.equal(at("09:30",args("alex","cut")).status,"booked"));
 test("any-stylist has unique start times",()=>{const x=slots(args("any","cut"));assert.equal(new Set(x.map(s=>s.time)).size,x.length)});
-test("any-stylist prioritises available over blocked",()=>assert.equal(at("09:30",args("any","cut")).status,"available"));
-test("any-stylist chooses available Sam at 09:30",()=>{const x=at("09:30",args("any","cut"));assert.equal(x.staffId,"sam")}); 
+test("any-stylist prioritises available over blocked",()=>assert.equal(at("11:00",args("any","cut")).status,"available"));
+test("any-stylist chooses available Alex when Sam is booked",()=>{const x=at("11:00",args("any","cut"));assert.equal(x.staffId,"alex")}); 
 test("no booking data is exposed",()=>assert.ok(!JSON.stringify(slots(args())).includes("customerName")));
 test("preview remains read-only",()=>assert.equal(smart.calculate(args()).bookingEnabled,false));
 test("summary contains end time",()=>{const x=presentation.summary({service:profile.services[1],slot:{time:"14:00",staffName:"Sam"},date:"2026-11-20"});assert.equal(x.end,"15:30");assert.equal(x.bookingEnabled,false)});
