@@ -1,0 +1,16 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const html=fs.readFileSync("web/phase1287/index.html","utf8");
+const js=fs.readFileSync("web/phase1287/app.js","utf8");
+const css=fs.readFileSync("web/phase1287/style.css","utf8");
+assert.ok(html.includes('class="skip-link"'));
+assert.ok(html.includes('role="alert" tabindex="-1"'));
+assert.ok(html.includes('aria-labelledby="serviceHeading"'));
+assert.ok(html.includes('aria-labelledby="staffHeading"'));
+assert.ok(css.includes("prefers-reduced-motion"));
+assert.ok(css.includes('input[aria-invalid="true"]'));
+assert.ok(js.includes('setAttribute("aria-invalid","true")'));
+assert.ok(js.includes('"feedback").focus()'));
+assert.ok(!js.includes("innerHTML"));
+console.log("PASS Phase 12.90 accessibility contract");
