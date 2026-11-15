@@ -16,8 +16,15 @@ if(view.status!=="PUBLIC_VIEW_READY"){ $("feedback").textContent="Preview unavai
 function button(label,pressed,disabled,action){const el=document.createElement("button");el.type="button";el.className="choice";el.textContent=label;el.setAttribute("aria-pressed",String(pressed));el.disabled=disabled;el.addEventListener("click",action);return el;}
 function clear(node){node.replaceChildren();}
 function detail(parent,key,value){const row=document.createElement("div");row.className="detail";const k=document.createElement("span");k.textContent=key;const v=document.createElement("strong");v.textContent=value;row.append(k,v);parent.append(row);}
+function updateProgress(){
+ const stage=!state.serviceId?0:!state.staffId?1:!state.date||!state.time?2:3;
+ const ids=["stepService","stepStaff","stepTime","stepDetails"];
+ ids.forEach((id,index)=>{const el=$(id);el.classList.toggle("complete",index<stage);el.classList.toggle("current",index===stage);if(index===stage)el.setAttribute("aria-current","step");else el.removeAttribute("aria-current");});
+ const messages=["Start by choosing a service.","Now choose your professional.","Choose a demonstration date and available time.","Selection complete. Review your appointment and enter fictional details."];
+ $("progressMessage").textContent=messages[stage];
+}
 function render(){
- $("confirmation").hidden=true;$("feedback").textContent="";
+ $("confirmation").hidden=true;$("feedback").textContent="";updateProgress();
  clear($("services"));view.view.services.forEach(s=>$("services").append(button(s.title+" · "+s.priceLabel+" · "+s.durationLabel,state.serviceId===s.id,false,()=>{state.serviceId=s.id;state.staffId="";state.time="";render();})));
  clear($("staff"));
  const eligible=view.view.staff.filter(s=>s.serviceIds.includes(state.serviceId));
