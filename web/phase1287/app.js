@@ -142,7 +142,11 @@ $("journey").addEventListener("submit",event=>{
   if(invalidEmail)$("customerEmail").setAttribute("aria-invalid","true");
   if(invalidPhone)$("customerPhone").setAttribute("aria-invalid","true");
   $("feedback").textContent=missingSelection?"Choose a service, professional, date and time first.":invalidName?"Enter a demonstration name.":invalidEmail?"Enter a valid demonstration email address.":invalidPhone?"Enter a demonstration phone number.":!customer.consent?"Tick the demonstration consent checkbox.":"Check your details and try again.";
-  $("feedback").focus();return;
+  // Guide keyboard and Samsung users to the first item requiring attention.
+  const firstIssue=missingSelection?(!state.serviceId?$("services").querySelector("button"):!state.staffId?$("staff").querySelector("button"):!state.date?$("date"):$("times").querySelector("button:not(:disabled)")):invalidName?$("customerName"):invalidEmail?$("customerEmail"):invalidPhone?$("customerPhone"):!customer.consent?$("consent"):null;
+  $("feedback").focus();
+  if(firstIssue)firstIssue.focus();
+  return;
  }
  $("feedback").className="";$("feedback").textContent="";
  const panel=$("confirmation");clear(panel);
