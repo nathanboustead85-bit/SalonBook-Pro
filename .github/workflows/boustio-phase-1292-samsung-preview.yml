@@ -21,6 +21,7 @@ on:
       - 'tests/phase12104_*'
       - 'tests/phase12105_*'
       - 'tests/phase12106_*'
+      - 'tests/phase1290_accessibility_browser.cjs'
       - '.github/workflows/boustio-phase-1292-samsung-preview.yml'
 permissions:
   contents: read
