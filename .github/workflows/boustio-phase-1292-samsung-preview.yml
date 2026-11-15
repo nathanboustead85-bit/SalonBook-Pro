@@ -31,6 +31,7 @@ on:
       - 'functions/phase1320OwnerCataloguePublish.js'
       - 'tests/phase1320_*'
       - 'tests/phase1321_*'
+      - 'tests/phase1322_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -156,6 +157,7 @@ jobs:
           exit 1
       - name: Test mobile journey and generate screenshots
         run: |
+          node tests/phase1322_public_catalogue_browser.cjs
           node tests/phase1288_mobile_browser.cjs
           node tests/phase1289_mobile_progress.cjs
           node tests/phase1290_accessibility_browser.cjs
