@@ -1,0 +1,10 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const app=fs.readFileSync("web/phase1287/app.js","utf8");
+const css=fs.readFileSync("web/phase1287/style.css","utf8");
+for(const part of ['function serviceCard(service)','document.createElement("span")','service-card-name','service-card-meta','service-card-price','view.view.services.forEach(s=>$("services").append(serviceCard(s)))'])assert.ok(app.includes(part),part);
+for(const part of ['Phase 12.96','#services .service-card','#services .service-card[aria-pressed=true]','@media(max-width:520px)'])assert.ok(css.includes(part),part);
+assert.ok(app.includes('All catalogue records and slots below are invented'));
+assert.ok(!app.includes('fetch('));
+console.log("PASS Phase 12.96 premium service card contracts");
