@@ -9,23 +9,35 @@ function parseDocument(snapshot){
  if(snapshot.get("schemaVersion")!==1||typeof json!=="string"||json.length>500000)return null;
  try{const value=JSON.parse(json);return Array.isArray(value)?value:null;}catch{return null;}
 }
+// Matches ManagementActivity.kt: price is a decimal string, duration is an
+// integer, and publicVisible is the explicit opt-in on BOTH record types.
+function pricePence(value){
+ if(typeof value!=="string"||!/^\\d{1,6}\\.\\d{2}$/.test(value))return null;
+ const [penceMajor,penceMinor]=value.split(".");
+ const amount=Number(penceMajor)*100+Number(penceMinor);
+ return Number.isSafeInteger(amount)&&amount<=10000000?amount:null;
+}
 function project(services,staff){
  if(!Array.isArray(services)||!Array.isArray(staff)||services.length>100||staff.length>50)return null;
- // Only explicit owner-approved public fields are eligible.
- const approvedServices=services.map(s=>({
-  id:s?.id,name:s?.name,pricePence:s?.pricePence,
-  durationMinutes:s?.durationMinutes,published:s?.published===true
- }));
- const approvedStaff=staff.map(s=>({
-  id:s?.id,name:s?.name,active:s?.publiclyListed===true&&s?.active===true,
-  serviceIds:s?.serviceIds
- }));
- const snapshot={get:key=>key==="services"?approvedServices:approvedStaff};
- const output=safeCatalogue(snapshot);
- if(!output)return null;
- // If malformed active entries were silently omitted, refuse publishing.
- if(approvedServices.some(s=>s.published!==true&&s.published!==false))return null;
- return output;
+ const approvedServices=[];
+ for(const s of services){
+  if(!s||typeof s!=="object"||Array.isArray(s))return null;
+  if(s.publicVisible!==true)continue;
+  const price=pricePence(s.price);
+  if(price===null||!Number.isSafeInteger(s.duration))return null;
+  approvedServices.push({id:s.id,name:s.name,pricePence:price,
+   durationMinutes:s.duration,published:true});
+ }
+ const publicIds=new Set(approvedServices.map(s=>s.id));
+ const approvedStaff=[];
+ for(const person of staff){
+  if(!person||typeof person!=="object"||Array.isArray(person))return null;
+  if(person.publicVisible!==true)continue;
+  if(!Array.isArray(person.serviceIds))return null;
+  approvedStaff.push({id:person.id,name:person.name,active:true,
+   serviceIds:person.serviceIds.filter(id=>publicIds.has(id))});
+ }
+ return safeCatalogue({get:key=>key==="services"?approvedServices:approvedStaff});
 }
 async function publishOwnerCatalogue(db,uid){
  if(typeof uid!=="string"||!/^[A-Za-z0-9_-]{1,128}$/.test(uid))throw new Error("INVALID_OWNER");
