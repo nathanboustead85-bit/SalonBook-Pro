@@ -1,0 +1,30 @@
+name: Boustio Phase 12.86 Booking Journey Preview Safety
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase1286/**'
+      - 'tests/phase1286_booking_journey_preview.test.js'
+      - '.github/workflows/boustio-phase-1286-booking-journey.yml'
+permissions:
+  contents: read
+jobs:
+  booking-journey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify booking journey and regression safety
+        run: |
+          node tests/phase1286_booking_journey_preview.test.js
+          node tests/phase1285_customer_confirmation_preview.test.js
+          node tests/phase1284_booking_review.test.js
+          node tests/phase1283_appointment_selection.test.js
+          node tests/phase1282_service_staff_selection.test.js
+          node tests/phase1281_catalogue_presentation.test.js
+          node tests/phase1280_catalogue_contract.test.js
+          node tests/phase1279_published_profile_adapter.test.js
