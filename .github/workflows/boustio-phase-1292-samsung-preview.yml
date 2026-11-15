@@ -26,6 +26,8 @@ on:
       - 'functions/phase1317PublicSlugMapping.js'
       - 'tests/phase1317_*'
       - 'functions/phase1318PublicBusinessProfile.js'
+      - 'functions/phase1319PublicCatalogue.js'
+      - 'tests/phase1319_*'
       - 'tests/phase1318_*'
       - 'website/book/index.html'
       - 'firebase.json'
@@ -85,6 +87,7 @@ jobs:
       - name: Run contracts and regression checks
         run: |
           node --check functions/index.js
+          node tests/phase1319_public_catalogue_integration.test.js
           node tests/phase1318_public_profile_integration.test.js
           node tests/phase1317_existing_publish_integration.test.js
           node tests/phase1316_firebase_publish_factory.test.js
