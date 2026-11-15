@@ -1,0 +1,27 @@
+"use strict";
+const {chromium}=require("playwright"),assert=require("node:assert/strict");
+(async()=>{const browser=await chromium.launch();try{for(const width of [360,390,768,1280]){
+ const page=await browser.newPage({viewport:{width,height:850}}),errors=[];page.on("pageerror",e=>errors.push(e.message));
+ await page.goto("http://127.0.0.1:8765/web/phase1287/index.html");
+ assert.equal(await page.locator("#restartDemo").count(),0);
+ await page.getByRole("button",{name:/Signature Haircut/}).click();
+ await page.getByRole("button",{name:"Kody (demo)"}).click();
+ await page.locator("#date").selectOption("2026-11-20");await page.getByRole("button",{name:"14:00"}).click();
+ await page.locator("#customerName").fill("Fictional Customer");
+ await page.locator("#customerEmail").fill("fictional@example.test");
+ await page.locator("#customerPhone").fill("0000000000");
+ await page.locator("#consent").check();
+ await page.getByRole("button",{name:"Show demonstration confirmation"}).click();
+ assert.equal(await page.locator("#confirmation").isVisible(),true);
+ await page.locator("#restartDemo").click();
+ assert.equal(await page.locator("#confirmation").isHidden(),true);
+ assert.equal(await page.locator("#selectionReadiness").innerText(),"0 of 4 selected");
+ assert.equal(await page.locator("#detailsReadiness").innerText(),"0 of 4 ready");
+ for(const id of ["customerName","customerEmail","customerPhone"])assert.equal(await page.locator("#"+id).inputValue(),"");
+ assert.equal(await page.locator("#consent").isChecked(),false);
+ assert.equal(await page.locator("#date").inputValue(),"");
+ assert.equal(await page.locator("#continueToDetails").isDisabled(),true);
+ assert.equal(await page.evaluate(()=>document.activeElement.closest("#services")!==null),true);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);assert.deepEqual(errors,[]);
+ await page.close();console.log("PASS Phase 12.108 demo restart viewport "+width);
+}}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
