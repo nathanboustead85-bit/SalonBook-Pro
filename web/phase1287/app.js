@@ -165,6 +165,12 @@ $("journey").addEventListener("submit",event=>{
  copy.append(eyebrow,heading,subtitle);banner.append(symbol,copy);panel.append(banner);
  detail(panel,"Customer",result.journey.customerName);detail(panel,"Service",result.journey.service.name);detail(panel,"Professional",result.journey.staffName);detail(panel,"Date",displayDate(result.journey.date));detail(panel,"Time",result.journey.startTime+"–"+result.journey.endTime);detail(panel,"Total",result.journey.totalLabel);
  const note=document.createElement("p");note.textContent=result.journey.notice;panel.append(note);
+ const revise=document.createElement("button");revise.type="button";revise.id="reviseDemoDetails";revise.className="revise-demo";revise.textContent="Review or edit fictional details";
+ revise.addEventListener("click",()=>{
+  panel.hidden=true;
+  $("customerName").focus();
+ });
+ panel.append(revise);
  const restart=document.createElement("button");restart.type="button";restart.id="restartDemo";restart.className="restart-demo";restart.textContent="Explore another demonstration booking";
  restart.addEventListener("click",()=>{
   state.serviceId="";state.staffId="";state.date="";state.time="";
