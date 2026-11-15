@@ -1,0 +1,10 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const app=fs.readFileSync("web/phase1287/app.js","utf8");
+const css=fs.readFileSync("web/phase1287/style.css","utf8");
+for(const marker of ['function professionalCard(person)','el.setAttribute("aria-label",person.name)','professional-avatar','professional-copy','professional-name','professional-caption','professional-check','eligible.forEach(s=>$("staff").append(professionalCard(s)))'])assert.ok(app.includes(marker),marker);
+for(const marker of ['Phase 12.97','#staff .professional-card','#staff .professional-card[aria-pressed=true]','@media(max-width:520px)'])assert.ok(css.includes(marker),marker);
+assert.ok(app.includes('All catalogue records and slots below are invented'));
+assert.ok(!app.includes('fetch('));
+console.log("PASS Phase 12.97 professional card contract");
