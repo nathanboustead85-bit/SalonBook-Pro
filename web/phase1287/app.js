@@ -16,6 +16,16 @@ const state={serviceId:"",staffId:"",date:"",time:""};
 const view=window.BoustioCataloguePresentation.preparePublicView(catalogue,catalogue.slug);
 if(view.status!=="PUBLIC_VIEW_READY"){ $("feedback").textContent="Preview unavailable";return;}
 function button(label,pressed,disabled,action){const el=document.createElement("button");el.type="button";el.className="choice";el.textContent=label;el.setAttribute("aria-pressed",String(pressed));el.disabled=disabled;el.addEventListener("click",action);return el;}
+function serviceCard(service){
+ const el=button(service.title+" · "+service.priceLabel+" · "+service.durationLabel,state.serviceId===service.id,false,()=>{state.serviceId=service.id;state.staffId="";state.time="";render();});
+ el.classList.add("service-card");
+ el.replaceChildren();
+ const name=document.createElement("span");name.className="service-card-name";name.textContent=service.title;
+ const meta=document.createElement("span");meta.className="service-card-meta";meta.textContent=service.durationLabel;
+ const price=document.createElement("strong");price.className="service-card-price";price.textContent=service.priceLabel;
+ el.append(name,meta,price);
+ return el;
+}
 function clear(node){node.replaceChildren();}
 function detail(parent,key,value){const row=document.createElement("div");row.className="detail";const k=document.createElement("span");k.textContent=key;const v=document.createElement("strong");v.textContent=value;row.append(k,v);parent.append(row);}
 function updateProgress(){
@@ -27,7 +37,7 @@ function updateProgress(){
 }
 function render(){
  $("confirmation").hidden=true;$("feedback").textContent="";updateProgress();
- clear($("services"));view.view.services.forEach(s=>$("services").append(button(s.title+" · "+s.priceLabel+" · "+s.durationLabel,state.serviceId===s.id,false,()=>{state.serviceId=s.id;state.staffId="";state.time="";render();})));
+ clear($("services"));view.view.services.forEach(s=>$("services").append(serviceCard(s)));
  clear($("staff"));
  const eligible=view.view.staff.filter(s=>s.serviceIds.includes(state.serviceId));
  eligible.forEach(s=>$("staff").append(button(s.name,state.staffId===s.id,false,()=>{state.staffId=s.id;state.time="";render();})));
