@@ -6,7 +6,7 @@ const app=fs.readFileSync("web/phase1287/app.js","utf8");
 const css=fs.readFileSync("web/phase1287/style.css","utf8");
 const html=fs.readFileSync("web/phase1287/index.html","utf8");
 const begin=app.indexOf("function displayDate(iso)");
-const finish=app.indexOf("\\nconst state=",begin);
+const finish=app.indexOf("const state=",begin);
 assert.ok(begin>=0&&finish>begin,"UK date formatter present");
 const fn=app.slice(begin,finish);
 const context={Intl,Date};
