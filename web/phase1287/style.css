@@ -170,3 +170,15 @@ button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80
 .reset-selection:not(:disabled):hover{background:#e5f6f3;border-color:#087c70}
 .reset-selection:disabled{opacity:.48;cursor:not-allowed}
 .reset-selection:focus-visible{outline:3px solid #d4a331;outline-offset:3px}
+
+
+/* Phase 12.100: premium fictional confirmation presentation */
+.confirmation{border:1px solid #a9dcd1;background:linear-gradient(180deg,#effaf7,#fff 60%);box-shadow:0 14px 36px #0a67551a}
+.confirmation-banner{display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #d5eae3}
+.confirmation-symbol{display:grid;place-items:center;flex:0 0 50px;width:50px;height:50px;border-radius:50%;background:#087c70;color:#fff;font-size:27px;font-weight:850;box-shadow:0 0 0 6px #d9f3eb}
+.confirmation-copy{min-width:0;flex:1}
+.confirmation-eyebrow{margin:0 0 6px;font-size:10px;font-weight:850;letter-spacing:.12em;color:#087c70}
+.confirmation-copy h2{margin:0 0 7px;line-height:1.2;overflow-wrap:anywhere}
+.confirmation-subtitle{margin:0;color:#4b7167;font-size:13px;line-height:1.5}
+.confirmation .detail:last-of-type strong{font-size:19px;color:#075b53}
+@media(max-width:520px){.confirmation-banner{gap:13px}.confirmation-symbol{flex-basis:42px;width:42px;height:42px;font-size:23px}}
