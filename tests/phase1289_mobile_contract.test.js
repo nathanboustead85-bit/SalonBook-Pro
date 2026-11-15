@@ -1,0 +1,14 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const html=fs.readFileSync("web/phase1287/index.html","utf8");
+const js=fs.readFileSync("web/phase1287/app.js","utf8");
+const css=fs.readFileSync("web/phase1287/style.css","utf8");
+for(const id of ["stepService","stepStaff","stepTime","stepDetails","progressMessage"])assert.ok(html.includes('id="'+id+'"'));
+assert.ok(js.includes("updateProgress()"));
+assert.ok(js.includes('setAttribute("aria-current","step")'));
+assert.ok(js.includes('removeAttribute("aria-current")'));
+assert.ok(css.includes(".steps span.current"));
+assert.ok(css.includes(".progress-message"));
+assert.ok(!js.includes("innerHTML"));
+console.log("PASS Phase 12.89 progress contract");
