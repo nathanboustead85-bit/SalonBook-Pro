@@ -1,0 +1,21 @@
+"use strict";
+const {chromium}=require("playwright"),assert=require("node:assert/strict");
+(async()=>{const browser=await chromium.launch();try{for(const width of [360,390,768,1280]){
+ const page=await browser.newPage({viewport:{width,height:850}}),errors=[];page.on("pageerror",e=>errors.push(e.message));
+ await page.goto("http://127.0.0.1:8765/web/phase1287/index.html");
+ const cue=page.locator("#summaryNextStep");
+ assert.equal(await cue.innerText(),"Next: choose a service.");
+ await page.getByRole("button",{name:/Signature Haircut/}).click();
+ assert.equal(await cue.innerText(),"Next: choose a professional.");
+ await page.getByRole("button",{name:"Kody (demo)"}).click();
+ assert.equal(await cue.innerText(),"Next: select a demonstration date.");
+ await page.locator("#date").selectOption("2026-11-20");
+ assert.equal(await cue.innerText(),"Next: choose an available demonstration time.");
+ await page.getByRole("button",{name:"14:00"}).click();
+ assert.equal(await cue.innerText(),"Ready to review. Enter fictional details below.");
+ assert.equal(await cue.evaluate(el=>el.classList.contains("summary-next-step-ready")),true);
+ await page.locator("#resetSelection").click();
+ assert.equal(await cue.innerText(),"Next: choose a service.");
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+ assert.deepEqual(errors,[]);await page.close();console.log("PASS Phase 12.104 summary guidance viewport "+width);
+}}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
