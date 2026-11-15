@@ -14,6 +14,8 @@ on:
       - 'web/phase136/**'
       - 'backend/phase137/**'
       - 'backend/phase138/**'
+      - 'backend/phase139/**'
+      - 'tests/phase139_*'
       - 'tests/phase138_*'
       - 'tests/phase137_*'
       - 'tests/phase136_*'
@@ -61,6 +63,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run contracts and regression checks
         run: |
+          node tests/phase139_slug_provisioning.test.js
           node tests/phase138_firebase_admin_lookup.test.js
           node tests/phase137_public_slug_lookup.test.js
           node tests/phase136_trusted_slug_resolver.test.js
