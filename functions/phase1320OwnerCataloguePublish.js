@@ -12,7 +12,7 @@ function parseDocument(snapshot){
 // Matches ManagementActivity.kt: price is a decimal string, duration is an
 // integer, and publicVisible is the explicit opt-in on BOTH record types.
 function pricePence(value){
- if(typeof value!=="string"||!/^\\d{1,6}\\.\\d{2}$/.test(value))return null;
+ if(typeof value!=="string"||!/^\d{1,6}\.\d{2}$/.test(value))return null;
  const [penceMajor,penceMinor]=value.split(".");
  const amount=Number(penceMajor)*100+Number(penceMinor);
  return Number.isSafeInteger(amount)&&amount<=10000000?amount:null;
