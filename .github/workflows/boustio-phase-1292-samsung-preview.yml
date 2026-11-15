@@ -1,0 +1,76 @@
+name: Boustio Phase 12.92 Samsung Preview Artifacts
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase1287/**'
+      - 'web/phase1292/**'
+      - 'tests/phase1292_*'
+      - '.github/workflows/boustio-phase-1292-samsung-preview.yml'
+permissions:
+  contents: read
+jobs:
+  samsung-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run contracts and regression checks
+        run: |
+          node tests/phase1292_preview_contract.test.js
+          node tests/phase1291_visual_contract.test.js
+          node tests/phase1290_accessibility_contract.test.js
+          node tests/phase1289_mobile_contract.test.js
+          node tests/phase1288_mobile_contract.test.js
+          node tests/phase1287_booking_interface.test.js
+          node tests/phase1286_booking_journey_preview.test.js
+          node tests/phase1285_customer_confirmation_preview.test.js
+          node tests/phase1284_booking_review.test.js
+          node tests/phase1283_appointment_selection.test.js
+          node tests/phase1282_service_staff_selection.test.js
+          node tests/phase1281_catalogue_presentation.test.js
+          node tests/phase1280_catalogue_contract.test.js
+          node tests/phase1279_published_profile_adapter.test.js
+      - name: Start local preview server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/boustio-preview-server.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8765/web/phase1287/index.html > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/boustio-preview-server.log
+          exit 1
+      - name: Test mobile journey and generate screenshots
+        run: |
+          node tests/phase1288_mobile_browser.cjs
+          node tests/phase1289_mobile_progress.cjs
+          node tests/phase1290_accessibility_browser.cjs
+          node tests/phase1291_visual_browser.cjs
+          node tests/phase1292_samsung_capture.cjs
+      - name: Package static demo website
+        run: |
+          mkdir -p artifacts/phase1292-preview-site/web
+          cp -r web/phase1280 web/phase1281 web/phase1282 web/phase1283 web/phase1284 web/phase1285 web/phase1286 web/phase1287 artifacts/phase1292-preview-site/web/
+          cp web/phase1292/SAMSUNG_PREVIEW_README.txt artifacts/phase1292-preview-site/
+      - name: Upload Samsung screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase1292-samsung-preview
+          path: artifacts/phase1292-samsung-preview/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload static demo website
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase1292-preview-site
+          path: artifacts/phase1292-preview-site/
+          if-no-files-found: error
+          retention-days: 14
