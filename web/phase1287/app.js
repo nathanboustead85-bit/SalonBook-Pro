@@ -100,7 +100,14 @@ $("journey").addEventListener("submit",event=>{
   $("feedback").focus();return;
  }
  $("feedback").className="";$("feedback").textContent="";
- const panel=$("confirmation");clear(panel);const heading=document.createElement("h2");heading.textContent=result.journey.heading;panel.append(heading);
+ const panel=$("confirmation");clear(panel);
+ const banner=document.createElement("div");banner.className="confirmation-banner";
+ const symbol=document.createElement("span");symbol.className="confirmation-symbol";symbol.setAttribute("aria-hidden","true");symbol.textContent="✓";
+ const copy=document.createElement("div");copy.className="confirmation-copy";
+ const eyebrow=document.createElement("p");eyebrow.className="confirmation-eyebrow";eyebrow.textContent="DEMONSTRATION PREVIEW";
+ const heading=document.createElement("h2");heading.textContent=result.journey.heading;
+ const subtitle=document.createElement("p");subtitle.className="confirmation-subtitle";subtitle.textContent="This is an example confirmation. No appointment has been booked.";
+ copy.append(eyebrow,heading,subtitle);banner.append(symbol,copy);panel.append(banner);
  detail(panel,"Customer",result.journey.customerName);detail(panel,"Service",result.journey.service.name);detail(panel,"Professional",result.journey.staffName);detail(panel,"Date",displayDate(result.journey.date));detail(panel,"Time",result.journey.startTime+"–"+result.journey.endTime);detail(panel,"Total",result.journey.totalLabel);
  const note=document.createElement("p");note.textContent=result.journey.notice;panel.append(note);panel.hidden=false;panel.focus();
 });
