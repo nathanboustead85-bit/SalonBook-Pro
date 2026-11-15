@@ -163,3 +163,10 @@ button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80
 #times .choice:disabled{background:#f2f5f3;border-style:dashed;color:#82948e;opacity:.7}
 #times .choice[aria-pressed=true]:not(:disabled){box-shadow:0 0 0 2px #b6e6da,0 4px 10px #087c7024}
 @media(max-width:520px){#times .time-period-heading{font-size:11px}}
+
+
+/* Phase 12.99: unobtrusive booking-selection reset */
+.reset-selection{display:inline-flex;align-items:center;justify-content:center;min-height:40px;margin:0 0 12px;padding:8px 14px;border:1px solid #8dbbb2;border-radius:999px;background:#fff;color:#086a66;font:inherit;font-size:12px;font-weight:750;cursor:pointer}
+.reset-selection:not(:disabled):hover{background:#e5f6f3;border-color:#087c70}
+.reset-selection:disabled{opacity:.48;cursor:not-allowed}
+.reset-selection:focus-visible{outline:3px solid #d4a331;outline-offset:3px}
