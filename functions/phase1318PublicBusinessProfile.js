@@ -1,6 +1,7 @@
 "use strict";
 // Phase 13.18: read-only public profile lookup using existing canonical
 // businessSlugs collection. No private reads, no bookings, no service claims.
+const {safeCatalogue}=require("./phase1319PublicCatalogue");
 const slugPattern=/^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const idPattern=/^[A-Za-z0-9_-]{1,128}$/;
 function response(status,body){return {status,headers:{"cache-control":"no-store","x-content-type-options":"nosniff"},body};}
@@ -20,10 +21,11 @@ function createPublicBusinessProfileReader(db){
    const name=profile.get("name");
    if(typeof name!=="string"||name.trim().length<3||name.length>100)return response(404,{status:"NOT_FOUND"});
    const description=profile.get("description");
+   const catalogue=safeCatalogue(profile);
    return response(200,{status:"PUBLIC_PROFILE_READY",business:{
     slug,name,description:typeof description==="string"?description.slice(0,2000):"",
     acceptingBookings:false
-   }});
+   },catalogue});
   }catch{return response(503,{status:"PUBLIC_PROFILE_UNAVAILABLE"});}
  };
 }
