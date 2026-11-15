@@ -231,3 +231,9 @@ button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80
 .restart-demo{display:block;width:100%;min-height:50px;margin:18px 0 0;padding:12px 16px;border:1px solid #087f80;border-radius:999px;background:#fff;color:#075b59;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
 .restart-demo:hover{background:#e5f6f3}
 .restart-demo:focus-visible{outline:3px solid #d4a331;outline-offset:3px}
+
+/* Phase 12.109: revise fictional details without losing appointment choices */
+.revise-demo{display:block;width:100%;min-height:48px;margin:18px 0 0;padding:12px 16px;border:0;border-radius:999px;background:#087f80;color:#fff;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.revise-demo:hover{background:#066866}
+.revise-demo:focus-visible{outline:3px solid #d4a331;outline-offset:3px}
+.revise-demo+.restart-demo{margin-top:10px}
