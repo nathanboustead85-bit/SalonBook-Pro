@@ -6,6 +6,8 @@ on:
     paths:
       - 'web/phase1287/**'
       - 'web/phase1292/**'
+      - 'web/phase131/**'
+      - 'tests/phase131_*'
       - 'tests/phase1292_*'
       - 'tests/phase1293_*'
       - 'tests/phase1294_*'
@@ -44,6 +46,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run contracts and regression checks
         run: |
+          node tests/phase131_public_business_profile.test.js
           node tests/phase12110_final_release_contract.test.js
           node tests/phase12109_revise_details.test.js
           node tests/phase12108_restart_demo.test.js
