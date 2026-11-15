@@ -1,0 +1,46 @@
+"use strict";
+const {chromium}=require("playwright"),assert=require("node:assert/strict");
+(async()=>{const browser=await chromium.launch();try{
+ for(const width of [360,390,412,768,1280]){
+  const page=await browser.newPage({viewport:{width,height:850}}),errors=[],external=[];
+  page.on("pageerror",e=>errors.push(e.message));
+  page.on("request",r=>{if(!r.url().startsWith("http://127.0.0.1:8765/"))external.push(r.url());});
+  await page.goto("http://127.0.0.1:8765/web/phase1287/index.html");
+  assert.equal(await page.locator("#selectionReadiness").innerText(),"0 of 4 selected");
+  assert.equal(await page.locator("#detailsReadiness").innerText(),"0 of 4 ready");
+  await page.getByRole("button",{name:/Signature Haircut/}).click();
+  await page.getByRole("button",{name:"Kody (demo)"}).click();
+  await page.locator("#date").selectOption("2026-11-20");
+  await page.getByRole("button",{name:"14:00"}).click();
+  assert.equal(await page.locator("#selectionReadiness").innerText(),"4 of 4 selected");
+  await page.locator("#editSelection").click();
+  assert.equal(await page.locator("#selectionReadiness").innerText(),"4 of 4 selected");
+  await page.locator("#continueToDetails").click();
+  assert.equal(await page.locator("#customerName").evaluate(el=>document.activeElement===el),true);
+  await page.locator("#customerName").fill("Sample Person");
+  await page.locator("#customerEmail").fill("sample@example.test");
+  await page.locator("#customerPhone").fill("0000000000");
+  await page.locator("#consent").check();
+  assert.equal(await page.locator("#detailsReadiness").innerText(),"4 of 4 ready");
+  await page.getByRole("button",{name:"Show demonstration confirmation"}).click();
+  assert.equal(await page.locator("#confirmation").isVisible(),true);
+  assert.ok((await page.locator("#confirmation").innerText()).includes("No appointment has been booked."));
+  await page.locator("#reviseDemoDetails").click();
+  await page.locator("#customerName").fill("Revised Sample Person");
+  await page.getByRole("button",{name:"Show demonstration confirmation"}).click();
+  assert.ok((await page.locator("#confirmation").innerText()).includes("Revised Sample Person"));
+  await page.locator("#restartDemo").click();
+  assert.equal(await page.locator("#confirmation").isHidden(),true);
+  assert.equal(await page.locator("#selectionReadiness").innerText(),"0 of 4 selected");
+  assert.equal(await page.locator("#detailsReadiness").innerText(),"0 of 4 ready");
+  assert.equal(await page.locator("#customerName").inputValue(),"");
+  assert.equal(await page.locator("#consent").isChecked(),false);
+  await page.reload();
+  assert.equal(await page.locator("#selectionReadiness").innerText(),"0 of 4 selected");
+  assert.equal(await page.locator("#customerName").inputValue(),"");
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+  assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
+  console.log("PASS Phase 12.110 full final journey "+width+"px");
+  await page.close();
+ }
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
