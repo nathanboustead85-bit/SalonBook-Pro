@@ -1,0 +1,16 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const capture=fs.readFileSync("tests/phase1292_samsung_capture.cjs","utf8");
+const workflow=fs.readFileSync(".github/workflows/boustio-phase-1292-samsung-preview.yml","utf8");
+const html=fs.readFileSync("web/phase1287/index.html","utf8");
+for(const width of [360,390,412,768])assert.ok(capture.includes("width:"+width));
+assert.ok(capture.includes("fullPage:true"));
+assert.ok(capture.includes("initial.png"));
+assert.ok(capture.includes("review.png"));
+assert.ok(workflow.includes("actions/upload-artifact@v4"));
+assert.ok(workflow.includes("phase1292-samsung-preview"));
+assert.ok(workflow.includes("phase1292-preview-site"));
+assert.ok(html.includes("DEMONSTRATION ONLY"));
+assert.ok(html.includes("noindex,nofollow"));
+console.log("PASS Phase 12.92 Samsung preview contract");
