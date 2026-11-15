@@ -70,6 +70,14 @@
     body.real-public .public-select:focus-visible { outline:3px solid #087f80; outline-offset:3px; }
     body.real-public .public-selection-summary { background:#eaf7f2; color:#174e49; border:1px solid #c7e7dc; border-radius:14px; padding:18px; margin:18px 0; }
     body.real-public .public-selection-summary p { color:#174e49; margin:6px 0; }
+    body.real-public .public-progress { font-size:13px; font-weight:750; letter-spacing:.02em; color:#087f80; margin-bottom:12px; }
+    body.real-public .public-summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:12px; margin:14px 0; }
+    body.real-public .public-summary-cell { background:#fff; border:1px solid #c7e7dc; border-radius:12px; padding:14px; }
+    body.real-public .public-summary-cell strong { display:block; margin-bottom:5px; }
+    body.real-public .public-summary-cell p { overflow-wrap:anywhere; }
+    body.real-public .public-next { background:#087f80; color:#fff; border:0; font-weight:750; margin-top:12px; cursor:pointer; }
+    body.real-public .public-next:disabled { background:#a5b9b3; cursor:not-allowed; }
+    body.real-public .public-next:focus-visible { outline:3px solid #087f80; outline-offset:3px; }
     .disabled-action { margin-top:18px; background:#9ca3af; color:white; font-weight:700; border:0; cursor:not-allowed; }
     footer { text-align:center; padding:20px; color:#64748b; font-size:12px; }
   </style>
@@ -331,19 +339,47 @@ async function loadCatalogue() {
         selectionSummary.className = "public-selection-summary";
         selectionSummary.setAttribute("role","status");
         selectionSummary.setAttribute("aria-live","polite");
+        const staffHeadingId = "publicStaffHeading";
         function updatePublicSelection() {
           const service = payload.catalogue.services.find(s => s.id === selectedServiceId);
           const member = payload.catalogue.staff.find(p => p.id === selectedStaffId);
           selectionSummary.replaceChildren();
+          const progress = document.createElement("div");
+          progress.className = "public-progress";
+          progress.textContent = service && member ? "2 of 2 · Preview selections complete" : service ? "1 of 2 · Choose your professional" : "Step 1 of 2 · Choose your service";
           const heading = document.createElement("strong");
-          heading.textContent = "Your preview selection";
-          const details = document.createElement("p");
-          details.textContent = service ? service.name + " · " + formatPrice(service.pricePence / 100) + " · " + service.durationMinutes + " minutes" : "Choose a service to explore.";
-          const person = document.createElement("p");
-          person.textContent = member ? "Professional: " + member.name : "Professional: not selected";
+          heading.textContent = "Your appointment preview";
+          const grid = document.createElement("div");
+          grid.className = "public-summary-grid";
+          function summaryCell(title,value) {
+            const cell = document.createElement("div");
+            cell.className = "public-summary-cell";
+            const label = document.createElement("strong");
+            label.textContent = title;
+            const detail = document.createElement("p");
+            detail.textContent = value;
+            cell.append(label,detail);
+            return cell;
+          }
+          grid.append(
+            summaryCell("Service",service ? service.name : "Choose a service to explore."),
+            summaryCell("Price & duration",service ? formatPrice(service.pricePence / 100) + " · " + service.durationMinutes + " minutes" : "Not selected"),
+            summaryCell("Professional",member ? "Professional: " + member.name : "Professional: not selected")
+          );
           const warning = document.createElement("p");
-          warning.textContent = "Preview only — no appointment is held or booked.";
-          selectionSummary.append(heading,details,person,warning);
+          warning.textContent = "Preview only — no appointment is held or booked. Dates and times are not available for real businesses yet.";
+          const next = document.createElement("button");
+          next.type = "button";
+          next.id = "publicNextStep";
+          next.className = "public-next";
+          next.disabled = !service || !!member;
+          next.textContent = member ? "Preview complete — booking coming soon" : "Continue to professionals";
+          next.addEventListener("click",() => {
+            if (!service || member) return;
+            const target = document.getElementById(staffHeadingId);
+            if (target) { target.scrollIntoView({block:"start",behavior:"smooth"}); target.focus({preventScroll:true}); }
+          });
+          selectionSummary.append(progress,heading,grid,warning,next);
           for (const button of section.querySelectorAll(".public-select")) {
             const selected = button.dataset.kind === "service" ? button.dataset.id === selectedServiceId : button.dataset.id === selectedStaffId;
             button.setAttribute("aria-pressed",String(selected));
@@ -400,6 +436,8 @@ async function loadCatalogue() {
         section.append(serviceGrid);
         const staffHeading = document.createElement("h2");
         staffHeading.textContent = "Meet the professionals";
+        staffHeading.id = staffHeadingId;
+        staffHeading.tabIndex = -1;
         section.append(staffHeading);
         const staffGrid = document.createElement("div");
         staffGrid.className = "public-catalogue-grid";
