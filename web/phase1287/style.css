@@ -42,3 +42,49 @@ footer{text-align:center;padding-top:12px}
  .detail strong{overflow-wrap:anywhere}
 }
 @media(prefers-reduced-motion:reduce){.choice{transition:none}}
+
+
+/* Phase 12.93 — approved premium booking visual direction; presentation only */
+:root{--boustio-teal:#087f80;--boustio-deep:#064d4b;--boustio-mint:#e9f7f5;--boustio-ink:#123c3b}
+body{color:var(--boustio-ink);background:linear-gradient(180deg,#edf7f6,#f8fbfa 350px)}
+.wrap{max-width:1180px;padding:22px clamp(14px,3vw,34px) 64px}
+header{padding:10px 2px 16px;border-bottom:1px solid #dcebe8}
+.brand{color:var(--boustio-deep);font-size:clamp(27px,3vw,37px);letter-spacing:-.045em}
+.hero{min-height:235px;margin:18px 0 20px;border-radius:24px;background:radial-gradient(circle at 85% 15%,#38b6a05c,transparent 36%),linear-gradient(110deg,#063f40,#076c68 65%,#168e82);box-shadow:0 18px 42px #073c3924}
+.hero::after{content:"";position:absolute;inset:auto -5% -65% 42%;height:230px;border:24px solid #ffffff12;border-radius:50%;pointer-events:none}
+.hero-mark{border-radius:50%;transform:none;box-shadow:0 0 0 12px #ffffff0e,0 10px 32px #003d3640}
+.steps{background:#fff;border:1px solid #dbe9e6;border-radius:18px;padding:14px;margin:0 0 12px;justify-content:space-between;box-shadow:0 6px 22px #16463d08}
+.steps span{background:transparent;border-radius:10px;color:#476864}
+.steps span.complete{background:#e1f5f1;color:#076a66}
+.steps span.current{background:#087f80;color:#fff;outline:0}
+.progress-message{background:#e8f6f3;border-left-color:#087f80}
+#journey{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(270px,1fr);gap:16px;align-items:start}
+.booking-panel{grid-column:1;grid-row:1 / span 2}
+.review-panel{grid-column:2;grid-row:1;position:sticky;top:12px}
+.details-panel{grid-column:2;grid-row:2}
+.panel{margin:0;border-radius:20px;padding:clamp(18px,2.5vw,30px);box-shadow:0 12px 32px #143f3b0d}
+.panel h2{font-size:clamp(19px,2vw,24px)}
+.choices{gap:10px}
+.choice{background:#fff;border:1px solid #d3e5e1;box-shadow:none;min-height:64px}
+.choice[aria-pressed=true]{background:#e5f6f3;border-color:#087f80;color:#075b59}
+.review-panel{background:linear-gradient(180deg,#f2faf8,#fff 40%);border-top:4px solid #087f80}
+button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80,#086a68);min-height:54px}
+.confirmation{margin-top:18px}
+@media(max-width:760px){
+ .wrap{max-width:680px;padding:14px 13px 48px}
+ #journey{grid-template-columns:minmax(0,1fr);gap:14px}
+ .booking-panel,.review-panel,.details-panel{grid-column:1;grid-row:auto}
+ .review-panel{position:static}
+ .hero{min-height:200px}
+ .steps{justify-content:flex-start}
+ .steps span{font-size:11px;padding:8px}
+}
+@media(max-width:520px){
+ .hero{border-radius:20px;padding:25px 19px}
+ .hero h1{font-size:34px}
+ .hero-mark{display:none}
+ .choices{grid-template-columns:1fr}
+ .panel{padding:19px}
+ .steps{gap:4px;padding:9px}
+ .steps span{font-size:10px;padding:8px 6px}
+}
