@@ -64,6 +64,12 @@
       body.real-public .public-catalogue-card { padding:18px; }
       body.real-public #livePublicCatalogue { padding:20px 16px; }
     }
+    body.real-public .public-catalogue-card.is-selected { border-color:#087f80; box-shadow:0 0 0 2px #087f8033; background:#f0faf7; }
+    body.real-public .public-select { margin-top:14px; padding:11px 14px; background:#fff; border:1px solid #087f80; color:#075d60; font-weight:700; cursor:pointer; }
+    body.real-public .public-select[aria-pressed="true"] { background:#087f80; color:#fff; }
+    body.real-public .public-select:focus-visible { outline:3px solid #087f80; outline-offset:3px; }
+    body.real-public .public-selection-summary { background:#eaf7f2; color:#174e49; border:1px solid #c7e7dc; border-radius:14px; padding:18px; margin:18px 0; }
+    body.real-public .public-selection-summary p { color:#174e49; margin:6px 0; }
     .disabled-action { margin-top:18px; background:#9ca3af; color:white; font-weight:700; border:0; cursor:not-allowed; }
     footer { text-align:center; padding:20px; color:#64748b; font-size:12px; }
   </style>
@@ -316,6 +322,63 @@ async function loadCatalogue() {
         const heading = document.createElement("h2");
         heading.textContent = "Services and professionals";
         section.append(heading);
+        // Read-only selection state exists only in this browser session.
+        // Never submit or persist a selection as a booking.
+        let selectedServiceId = null;
+        let selectedStaffId = null;
+        const selectionSummary = document.createElement("div");
+        selectionSummary.id = "publicSelectionSummary";
+        selectionSummary.className = "public-selection-summary";
+        selectionSummary.setAttribute("role","status");
+        selectionSummary.setAttribute("aria-live","polite");
+        function updatePublicSelection() {
+          const service = payload.catalogue.services.find(s => s.id === selectedServiceId);
+          const member = payload.catalogue.staff.find(p => p.id === selectedStaffId);
+          selectionSummary.replaceChildren();
+          const heading = document.createElement("strong");
+          heading.textContent = "Your preview selection";
+          const details = document.createElement("p");
+          details.textContent = service ? service.name + " · " + formatPrice(service.pricePence / 100) + " · " + service.durationMinutes + " minutes" : "Choose a service to explore.";
+          const person = document.createElement("p");
+          person.textContent = member ? "Professional: " + member.name : "Professional: not selected";
+          const warning = document.createElement("p");
+          warning.textContent = "Preview only — no appointment is held or booked.";
+          selectionSummary.append(heading,details,person,warning);
+          for (const button of section.querySelectorAll(".public-select")) {
+            const selected = button.dataset.kind === "service" ? button.dataset.id === selectedServiceId : button.dataset.id === selectedStaffId;
+            button.setAttribute("aria-pressed",String(selected));
+            button.textContent = selected ? "Selected" : button.dataset.kind === "service" ? "Select service" : "Select professional";
+            button.closest(".public-catalogue-card").classList.toggle("is-selected",selected);
+            if (button.dataset.kind === "staff") {
+              const eligible = !service || payload.catalogue.staff.find(p => p.id === button.dataset.id)?.serviceIds.includes(service.id);
+              button.disabled = !eligible;
+              button.title = eligible ? "" : "This professional does not offer the selected service";
+            }
+          }
+        }
+        function selectionButton(kind,id) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "public-select";
+          button.dataset.kind = kind;
+          button.dataset.id = id;
+          button.setAttribute("aria-pressed","false");
+          button.textContent = kind === "service" ? "Select service" : "Select professional";
+          button.addEventListener("click",() => {
+            if (kind === "service") {
+              selectedServiceId = selectedServiceId === id ? null : id;
+              const selected = payload.catalogue.services.find(s => s.id === selectedServiceId);
+              if (selected && selectedStaffId && !payload.catalogue.staff.find(p => p.id === selectedStaffId)?.serviceIds.includes(selected.id)) selectedStaffId = null;
+            } else {
+              const selected = payload.catalogue.services.find(s => s.id === selectedServiceId);
+              const person = payload.catalogue.staff.find(p => p.id === id);
+              if (!person || (selected && !person.serviceIds.includes(selected.id))) return;
+              selectedStaffId = selectedStaffId === id ? null : id;
+            }
+            updatePublicSelection();
+          });
+          return button;
+        }
         const serviceGrid = document.createElement("div");
         serviceGrid.className = "public-catalogue-grid";
         if (!payload.catalogue.services.length) {
@@ -331,7 +394,7 @@ async function loadCatalogue() {
           const details = document.createElement("p");
           details.className = "public-catalogue-price";
           details.textContent = formatPrice(service.pricePence / 100) + " · " + service.durationMinutes + " minutes";
-          card.append(title,details);
+          card.append(title,details,selectionButton("service",service.id));
           serviceGrid.append(card);
         }
         section.append(serviceGrid);
@@ -353,10 +416,12 @@ async function loadCatalogue() {
           const eligible = payload.catalogue.services.filter(service => member.serviceIds.includes(service.id));
           const details = document.createElement("p");
           details.textContent = eligible.length ? eligible.map(service => service.name).join(" · ") : "Services to be confirmed";
-          card.append(title,details);
+          card.append(title,details,selectionButton("staff",member.id));
           staffGrid.append(card);
         }
         section.append(staffGrid);
+        section.append(selectionSummary);
+        updatePublicSelection();
         const notice = document.createElement("p");
         notice.textContent = "Information only — appointments cannot yet be booked online.";
         section.append(notice);
