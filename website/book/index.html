@@ -34,6 +34,11 @@
     .status { color:#475569; font-size:14px; margin-top:10px; }
     .error { background:#fee2e2; color:#991b1b; padding:14px; border-radius:10px; margin-bottom:16px; }
     .hidden { display:none; }
+    .public-catalogue-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin:14px 0 22px; }
+    .public-catalogue-card { border:1px solid #dcebe8; background:#f8fcfb; border-radius:14px; padding:16px; }
+    .public-catalogue-card h3 { margin:0 0 8px; font-size:17px; color:#164b4c; }
+    .public-catalogue-card p { margin:0; font-size:14px; }
+    .public-catalogue-price { color:#087f80; font-weight:750; }
     .disabled-action { margin-top:18px; background:#9ca3af; color:white; font-weight:700; border:0; cursor:not-allowed; }
     footer { text-align:center; padding:20px; color:#64748b; font-size:12px; }
   </style>
@@ -285,23 +290,47 @@ async function loadCatalogue() {
         const heading = document.createElement("h2");
         heading.textContent = "Services and professionals";
         section.append(heading);
-        const list = document.createElement("ul");
+        const serviceGrid = document.createElement("div");
+        serviceGrid.className = "public-catalogue-grid";
+        if (!payload.catalogue.services.length) {
+          const empty = document.createElement("p");
+          empty.textContent = "No services are currently listed online.";
+          serviceGrid.append(empty);
+        }
         for (const service of payload.catalogue.services) {
-          const item = document.createElement("li");
-          item.textContent = service.name + " — " + formatPrice(service.pricePence / 100) + " · " + service.durationMinutes + " minutes";
-          list.append(item);
+          const card = document.createElement("article");
+          card.className = "public-catalogue-card";
+          const title = document.createElement("h3");
+          title.textContent = service.name;
+          const details = document.createElement("p");
+          details.className = "public-catalogue-price";
+          details.textContent = formatPrice(service.pricePence / 100) + " · " + service.durationMinutes + " minutes";
+          card.append(title,details);
+          serviceGrid.append(card);
         }
-        section.append(list);
+        section.append(serviceGrid);
         const staffHeading = document.createElement("h2");
-        staffHeading.textContent = "Professionals";
+        staffHeading.textContent = "Meet the professionals";
         section.append(staffHeading);
-        const people = document.createElement("ul");
-        for (const member of payload.catalogue.staff) {
-          const item = document.createElement("li");
-          item.textContent = member.name;
-          people.append(item);
+        const staffGrid = document.createElement("div");
+        staffGrid.className = "public-catalogue-grid";
+        if (!payload.catalogue.staff.length) {
+          const empty = document.createElement("p");
+          empty.textContent = "No professionals are currently listed online.";
+          staffGrid.append(empty);
         }
-        section.append(people);
+        for (const member of payload.catalogue.staff) {
+          const card = document.createElement("article");
+          card.className = "public-catalogue-card";
+          const title = document.createElement("h3");
+          title.textContent = member.name;
+          const eligible = payload.catalogue.services.filter(service => member.serviceIds.includes(service.id));
+          const details = document.createElement("p");
+          details.textContent = eligible.length ? eligible.map(service => service.name).join(" · ") : "Services to be confirmed";
+          card.append(title,details);
+          staffGrid.append(card);
+        }
+        section.append(staffGrid);
         const notice = document.createElement("p");
         notice.textContent = "Information only — appointments cannot yet be booked online.";
         section.append(notice);
