@@ -1,0 +1,23 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const {prepareDisplay,render}=require("../web/phase132/publicCatalogueDisplay");
+const sample=()=>({schemaVersion:1,slug:"kody-blends",published:true,businessName:"Kody Blends",services:[{id:"cut",name:"Signature Haircut",pricePence:2000,durationMinutes:30,published:true},{id:"private",name:"Unpublished",pricePence:100,durationMinutes:30,published:false}],staff:[{id:"kody",name:"Kody",active:true,serviceIds:["cut"]},{id:"off",name:"Private Staff",active:false,serviceIds:["cut"]}],clients:[{email:"private@example.test"}],ownerUid:"private-owner"});
+const result=prepareDisplay(sample(),"kody-blends");
+assert.equal(result.status,"PUBLIC_DISPLAY_READY");assert.equal(result.bookingEnabled,false);
+assert.equal(result.display.heading,"Kody Blends");assert.equal(result.display.services[0].price,"£20.00");
+assert.equal(result.display.services[0].duration,"30 min");assert.equal(result.display.professionals[0].name,"Kody");
+assert.equal(result.display.services.length,1);assert.equal(result.display.professionals.length,1);
+assert.ok(!JSON.stringify(result).includes("private@example.test"));assert.ok(!JSON.stringify(result).includes("private-owner"));
+assert.equal(Object.isFrozen(result.display),true);
+for(const [p,slug] of [[null,"kody-blends"],[sample(),"wrong"],[{...sample(),published:false},"kody-blends"],[{...sample(),services:[]},"kody-blends"]]){const v=prepareDisplay(p,slug);assert.equal(v.status,"DISPLAY_UNAVAILABLE");assert.equal(v.bookingEnabled,false);}
+const children=[],doc={createElement(tag){return {tag,textContent:"",children:[],append(...items){this.children.push(...items)}}}};
+const container={ownerDocument:doc,replaceChildren(){children.length=0},append(...nodes){children.push(...nodes)}};
+render(container,sample(),"kody-blends");
+assert.equal(children[0].textContent,"Kody Blends");
+assert.ok(JSON.stringify(children).includes("Signature Haircut"));
+assert.ok(!JSON.stringify(children).includes("Unpublished"));
+render(container,null,"kody-blends");
+assert.equal(children.length,1);assert.equal(children[0].textContent,"Published business profile unavailable.");
+const source=fs.readFileSync("web/phase132/publicCatalogueDisplay.js","utf8");
+for(const bad of ["innerHTML","fetch(","localStorage","sessionStorage","XMLHttpRequest","firebase.","WebSocket("])assert.ok(!source.includes(bad),bad);
+console.log("PASS Phase 13.2 public catalogue safe display tests");
