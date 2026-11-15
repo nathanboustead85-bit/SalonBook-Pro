@@ -114,3 +114,15 @@ button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80
 @media(max-width:760px){.hero{min-height:220px}.hero-mark{flex-basis:115px;height:115px}.hero-mark span{font-size:37px}}
 @media(max-width:520px){.brand small{font-size:8px;margin-left:31px}.hero{min-height:205px}.hero-mark{display:none}#times{grid-template-columns:repeat(3,minmax(0,1fr))}#times .choice{min-height:48px;padding:10px 3px;font-size:13px}.review-panel .detail{gap:8px}}
 @media(max-width:350px){#times{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* Phase 12.95: clearer date picker and booking review readability */
+#date{appearance:none;-webkit-appearance:none;min-height:52px;padding:13px 44px 13px 15px;font-weight:650;cursor:pointer;background-color:#fff;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23087c70' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='4' width='16' height='14' rx='2'/%3E%3Cpath d='M6 2v4m8-4v4M2 9h16'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+#date:focus-visible{outline:3px solid #d4a331;outline-offset:3px}
+#times{margin-top:12px}
+#times .choice:not(:disabled):hover,#services .choice:not(:disabled):hover,#staff .choice:not(:disabled):hover{border-color:#087c70;background:#eaf8f3}
+#times .choice[aria-pressed=true]:not(:disabled){background:#087c70;color:#fff;border-color:#087c70}
+#review{font-variant-numeric:tabular-nums}
+#review .detail{line-height:1.4}
+#review .detail:last-child strong{font-size:1.18em;color:#075b53}
+@media(hover:none){#times .choice:not(:disabled):hover,#services .choice:not(:disabled):hover,#staff .choice:not(:disabled):hover{background:#f4faf7}#times .choice[aria-pressed=true]:not(:disabled){background:#087c70;color:#fff}}
