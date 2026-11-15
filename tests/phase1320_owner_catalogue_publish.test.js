@@ -2,8 +2,8 @@
 const assert=require("node:assert/strict"),fs=require("node:fs");
 const {parseDocument,project,publishOwnerCatalogue}=require("../functions/phase1320OwnerCataloguePublish");
 const snapshot=(data)=>({exists:!!data,get:key=>data?.[key]});
-const services=[{id:"cut",name:"Haircut",pricePence:2000,durationMinutes:30,published:true,privateNotes:"SECRET"}];
-const staff=[{id:"kody",name:"Kody",active:true,publiclyListed:true,serviceIds:["cut"],email:"PRIVATE"}];
+const services=[{id:"cut",name:"Haircut",price:"20.00",duration:30,publicVisible:true,privateNotes:"SECRET"}];
+const staff=[{id:"kody",name:"Kody",publicVisible:true,serviceIds:["cut"],email:"PRIVATE"}];
 function fixture(publicData={published:true,businessId:"owner"},serviceData=services,staffData=staff){
  const writes=[],reads=[];
  const docs={
@@ -20,8 +20,8 @@ function fixture(publicData={published:true,businessId:"owner"},serviceData=serv
 (async()=>{
  assert.equal(parseDocument(snapshot({schemaVersion:1,json:"{}"})),null);
  assert.equal(parseDocument(snapshot({schemaVersion:1,json:"not json"})),null);
- assert.equal(project([{...services[0],published:false}],staff),null);
- assert.equal(project(services,[{...staff[0],publiclyListed:false}]).staff.length,0);
+ assert.equal(project([{...services[0],publicVisible:false}],staff),null);
+ assert.equal(project(services,[{...staff[0],publicVisible:false}]).staff.length,0);
  let f=fixture(),result=await publishOwnerCatalogue(f.db,"owner");
  assert.equal(result.status,"CATALOGUE_PUBLISHED");
  assert.equal(f.writes.length,1);
