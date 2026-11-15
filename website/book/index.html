@@ -259,8 +259,26 @@ function updateSummary() {
 }
 async function loadCatalogue() {
   const slug = slugFromPath();
-  if (!slug || !Object.prototype.hasOwnProperty.call(catalogueFiles,slug)) {
+  if (!slug) {
     showError("Business not found","This booking link is not available."); return;
+  }
+  // Phase 13.18: real published business names come from a read-only server
+  // endpoint. Service, staff and availability are NOT yet published there.
+  // Never substitute a demonstration catalogue for a real business.
+  if (!Object.prototype.hasOwnProperty.call(catalogueFiles,slug)) {
+    try {
+      const response = await fetch("/api/public-business?business="+encodeURIComponent(slug),{cache:"no-store"});
+      if (!response.ok) throw new Error("Public profile unavailable");
+      const payload = await response.json();
+      if (payload.status !== "PUBLIC_PROFILE_READY" || !payload.business || payload.business.slug !== slug || typeof payload.business.name !== "string") throw new Error("Invalid public profile");
+      ui.businessName.textContent = payload.business.name;
+      ui.businessDescription.textContent = payload.business.description || "";
+      ui.bookingContent.classList.add("hidden");
+      document.title = payload.business.name + " | Boustio";
+    } catch {
+      showError("Business unavailable","This published business could not be loaded.");
+    }
+    return;
   }
   try {
     const response = await fetch(catalogueFiles[slug],{cache:"no-store"});
