@@ -1,0 +1,24 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm");
+const {preparePublishedProfile:prepare}=require("../web/phase1279/publishedProfileAdapter");
+const html=fs.readFileSync("web/phase1279/index.html","utf8");
+function check(name,fn){fn();console.log("PASS "+name)}
+const sample=()=>({published:true,businessName:"Kody Blends",services:[{id:"cut",name:"Haircut",pricePence:2000,durationMinutes:30,published:true}],staff:[{id:"kody",name:"Kody",active:true,serviceIds:["cut"]}]});
+check("valid published profile",()=>assert.equal(prepare(sample()).status,"VALIDATED_DISPLAY_ONLY"));
+check("never enables booking",()=>assert.equal(prepare(sample()).bookingEnabled,false));
+check("rejects unpublished",()=>assert.equal(prepare({...sample(),published:false}).profile,null));
+check("rejects absent profile",()=>assert.equal(prepare(null).profile,null));
+check("rejects invalid name",()=>assert.equal(prepare({...sample(),businessName:""}).profile,null));
+check("rejects missing staff",()=>assert.equal(prepare({...sample(),staff:null}).profile,null));
+check("rejects invalid price",()=>{const p=sample();p.services[0].pricePence=-1;assert.equal(prepare(p).profile,null)});
+check("rejects invalid duration",()=>{const p=sample();p.services[0].durationMinutes=0;assert.equal(prepare(p).profile,null)});
+check("rejects duplicate services",()=>{const p=sample();p.services.push({...p.services[0]});assert.equal(prepare(p).profile,null)});
+check("rejects duplicate staff",()=>{const p=sample();p.staff.push({...p.staff[0]});assert.equal(prepare(p).profile,null)});
+check("rejects unknown service assignment",()=>{const p=sample();p.staff[0].serviceIds=["other"];assert.equal(prepare(p).profile,null)});
+check("filters unpublished services",()=>{const p=sample();p.services[0].published=false;assert.equal(prepare(p).profile.services.length,0)});
+check("filters inactive staff",()=>{const p=sample();p.staff[0].active=false;assert.equal(prepare(p).profile.staff.length,0)});
+check("removes unexpected customer fields",()=>{const p=sample();p.customerEmail="private@example.com";assert.equal("customerEmail" in prepare(p).profile,false)});
+check("display data immutable",()=>assert.ok(Object.isFrozen(prepare(sample()).profile.services[0])));
+check("adapter has no network",()=>{const s=fs.readFileSync("web/phase1279/publishedProfileAdapter.js","utf8");for(const bad of ["fetch(","XMLHttpRequest","localStorage","sessionStorage","firebase.","WebSocket(","indexedDB"])assert.ok(!s.includes(bad),bad)});
+check("HTML inline script parses",()=>{for(const s of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))if(s[1].trim())new vm.Script(s[1])});
+for(const [name,fragment] of [["readiness heading",'id="dataReadinessHeading"'],["fictional notice",'No live business data is connected.'],["no booking",'cannot accept real appointments.'],["display safety",'Booking and payment actions remain disabled'],["adapter included",'<script src="./publishedProfileAdapter.js"></script>'],["customer details",'id="customerPreviewHeading"'],["booking summary",'Your booking summary'],["confirmation",'DEMONSTRATION ONLY · NO REAL APPOINTMENT']])check(name,()=>assert.ok(html.includes(fragment),name));
