@@ -54,6 +54,9 @@ function render(){
  const selected=[state.serviceId,state.staffId,state.date,state.time].filter(Boolean).length;
  $("selectionReadiness").textContent=selected+" of 4 selected";
  $("selectionReadinessFill").style.width=(selected*25)+"%";
+ const nextStep=!state.serviceId?"Next: choose a service.":!state.staffId?"Next: choose a professional.":!state.date?"Next: select a demonstration date.":!state.time?"Next: choose an available demonstration time.":"Ready to review. Enter fictional details below.";
+ $("summaryNextStep").textContent=nextStep;
+ $("summaryNextStep").classList.toggle("summary-next-step-ready",selected===4);
  $("resetSelection").disabled=!state.serviceId&&!state.staffId&&!state.date&&!state.time;
  $("confirmation").hidden=true;$("feedback").textContent="";updateProgress();
  clear($("services"));view.view.services.forEach(s=>$("services").append(serviceCard(s)));
