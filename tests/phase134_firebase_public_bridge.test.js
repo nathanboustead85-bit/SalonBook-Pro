@@ -1,0 +1,22 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const {createPublicFirestoreLoader,loadFirebasePublicCatalogue}=require("../web/phase134/firebasePublicCatalogueBridge");
+const publicDoc=()=>({schemaVersion:1,slug:"kody-blends",published:true,businessName:"Kody Blends",services:[{id:"cut",name:"Haircut",pricePence:2000,durationMinutes:30,published:true}],staff:[{id:"kody",name:"Kody",active:true,serviceIds:["cut"]}],ownerUid:"owner-secret",clients:[{email:"private@example.test"}],bookings:[{id:"private"}]});
+(async()=>{
+let calls=0;
+const reader=async slug=>{calls++;assert.equal(slug,"kody-blends");return {exists:()=>true,data:()=>publicDoc()};};
+const raw=await createPublicFirestoreLoader(reader)("kody-blends");
+assert.equal(raw.businessName,"Kody Blends");assert.equal("ownerUid" in raw,false);assert.equal("clients" in raw,false);assert.equal("bookings" in raw,false);
+const ready=await loadFirebasePublicCatalogue("kody-blends",reader);
+assert.equal(ready.status,"PUBLIC_CATALOGUE_READY");assert.equal(ready.bookingEnabled,false);assert.equal(ready.display.services[0].price,"£20.00");assert.equal(calls,2);
+assert.ok(!JSON.stringify(ready).includes("private@example.test"));
+assert.equal((await loadFirebasePublicCatalogue("kody-blends")).status,"PUBLIC_CATALOGUE_UNAVAILABLE");
+assert.equal((await loadFirebasePublicCatalogue("../admin",reader)).status,"PUBLIC_CATALOGUE_UNAVAILABLE");assert.equal(calls,2);
+assert.equal((await loadFirebasePublicCatalogue("kody-blends",async()=>({exists:()=>false}))).status,"PUBLIC_CATALOGUE_UNAVAILABLE");
+assert.equal((await loadFirebasePublicCatalogue("kody-blends",async()=>({exists:()=>true,data:()=>({...publicDoc(),published:false})}))).status,"PUBLIC_CATALOGUE_UNAVAILABLE");
+assert.equal((await loadFirebasePublicCatalogue("kody-blends",async()=>{throw Error("permission-denied")})).status,"PUBLIC_CATALOGUE_UNAVAILABLE");
+assert.throws(()=>createPublicFirestoreLoader(null),TypeError);
+const source=fs.readFileSync("web/phase134/firebasePublicCatalogueBridge.js","utf8");
+for(const forbidden of ["innerHTML","fetch(","setDoc(","addDoc(","updateDoc(","deleteDoc(","localStorage","sessionStorage","firebase.auth"])assert.ok(!source.includes(forbidden),forbidden);
+console.log("PASS Phase 13.4 Firebase read-only bridge and fail-closed tests");
+})().catch(e=>{console.error(e);process.exitCode=1});
