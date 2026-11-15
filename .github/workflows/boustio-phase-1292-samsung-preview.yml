@@ -24,6 +24,7 @@ on:
       - 'tests/phase12107_*'
       - 'tests/phase12108_*'
       - 'tests/phase12109_*'
+      - 'tests/phase12110_*'
       - 'tests/phase1290_accessibility_browser.cjs'
       - '.github/workflows/boustio-phase-1292-samsung-preview.yml'
 permissions:
@@ -43,6 +44,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run contracts and regression checks
         run: |
+          node tests/phase12110_final_release_contract.test.js
           node tests/phase12109_revise_details.test.js
           node tests/phase12108_restart_demo.test.js
           node tests/phase12107_edit_selection.test.js
@@ -89,6 +91,7 @@ jobs:
           node tests/phase1289_mobile_progress.cjs
           node tests/phase1290_accessibility_browser.cjs
           node tests/phase1291_visual_browser.cjs
+          node tests/phase12110_final_release_browser.cjs
           node tests/phase12109_revise_details_browser.cjs
           node tests/phase12108_restart_demo_browser.cjs
           node tests/phase12107_edit_selection_browser.cjs
@@ -108,7 +111,7 @@ jobs:
         run: |
           mkdir -p artifacts/phase1292-preview-site/web
           cp -r web/phase1280 web/phase1281 web/phase1282 web/phase1283 web/phase1284 web/phase1285 web/phase1286 web/phase1287 artifacts/phase1292-preview-site/web/
-          cp web/phase1292/SAMSUNG_PREVIEW_README.txt artifacts/phase1292-preview-site/
+          cp web/phase1292/SAMSUNG_PREVIEW_README.txt web/phase1292/PHASE_12_110_RELEASE_CHECKLIST.txt artifacts/phase1292-preview-site/
       - name: Upload Samsung screenshots
         uses: actions/upload-artifact@v4
         with:
