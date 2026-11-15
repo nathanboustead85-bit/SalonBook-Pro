@@ -1,0 +1,12 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const html=fs.readFileSync("web/phase1287/index.html","utf8");
+const app=fs.readFileSync("web/phase1287/app.js","utf8");
+const css=fs.readFileSync("web/phase1287/style.css","utf8");
+for(const id of ["detailsReadiness","detailsReadinessFill"])assert.ok(html.includes('id="'+id+'"'),id);
+assert.ok(html.includes('0 of 4 ready'));
+for(const marker of ['function updateDetailsReadiness()','ready+" of 4 ready"','ready*25','addEventListener("input",updateDetailsReadiness)','addEventListener("change",updateDetailsReadiness)'])assert.ok(app.includes(marker),marker);
+assert.ok(css.includes('.details-readiness-track'));
+assert.ok(!app.includes('fetch('));
+console.log("PASS Phase 12.101 local-only details readiness contract");
