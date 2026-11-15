@@ -210,3 +210,8 @@ button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80
 #selectionReadinessFill{display:block;width:0;height:100%;border-radius:99px;background:#087c70;transition:width .18s ease}
 .summary-toolbar .reset-selection{margin:0}
 @media(prefers-reduced-motion:reduce){#selectionReadinessFill{transition:none}}
+
+
+/* Phase 12.104: clear, accessible next-action cue in the booking summary */
+.summary-next-step{margin:0 0 15px;padding:11px 13px;border-left:3px solid #087c70;background:#f1f8f5;border-radius:0 9px 9px 0;color:#225d53;font-size:13px;font-weight:650;line-height:1.5}
+.summary-next-step-ready{border-left-color:#0a7c70;background:#e9f7f0;color:#075b53}
