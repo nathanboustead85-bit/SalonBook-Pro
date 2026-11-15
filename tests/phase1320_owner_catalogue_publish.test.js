@@ -20,7 +20,7 @@ function fixture(publicData={published:true,businessId:"owner"},serviceData=serv
 (async()=>{
  assert.equal(parseDocument(snapshot({schemaVersion:1,json:"{}"})),null);
  assert.equal(parseDocument(snapshot({schemaVersion:1,json:"not json"})),null);
- assert.equal(project([{...services[0],publicVisible:false}],staff),null);
+ assert.deepEqual(project([{...services[0],publicVisible:false}],staff),{services:[],staff:[{id:"kody",name:"Kody",serviceIds:[]}]});
  assert.equal(project(services,[{...staff[0],publicVisible:false}]).staff.length,0);
  let f=fixture(),result=await publishOwnerCatalogue(f.db,"owner");
  assert.equal(result.status,"CATALOGUE_PUBLISHED");
