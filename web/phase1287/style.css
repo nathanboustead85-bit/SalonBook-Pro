@@ -154,3 +154,12 @@ button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80
 #staff .professional-card[aria-pressed=true] .professional-check{opacity:1}
 #staff .professional-card[aria-pressed=true] .professional-avatar{background:#087c70;color:white;border-color:#087c70}
 @media(max-width:520px){#staff{grid-template-columns:1fr}#staff .professional-card{min-height:76px}}
+
+
+/* Phase 12.98: grouped sample appointment slots for easier scanning */
+#times .time-period-heading{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:5px 0 0;font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:#567b74}
+#times .time-period-heading::after{content:"";height:1px;flex:1;background:#dcece7}
+#times .time-period-heading:not(:first-child){margin-top:14px}
+#times .choice:disabled{background:#f2f5f3;border-style:dashed;color:#82948e;opacity:.7}
+#times .choice[aria-pressed=true]:not(:disabled){box-shadow:0 0 0 2px #b6e6da,0 4px 10px #087c7024}
+@media(max-width:520px){#times .time-period-heading{font-size:11px}}
