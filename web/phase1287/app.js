@@ -26,6 +26,21 @@ function serviceCard(service){
  el.append(name,meta,price);
  return el;
 }
+function professionalCard(person){
+ const el=button(person.name,state.staffId===person.id,false,()=>{state.staffId=person.id;state.time="";render();});
+ el.classList.add("professional-card");
+ el.setAttribute("aria-label",person.name);
+ el.replaceChildren();
+ const avatar=document.createElement("span");avatar.className="professional-avatar";avatar.setAttribute("aria-hidden","true");
+ avatar.textContent=person.name.replace(/\\s*\\(demo\\)/i,"").trim().slice(0,1).toUpperCase();
+ const copy=document.createElement("span");copy.className="professional-copy";
+ const name=document.createElement("strong");name.className="professional-name";name.textContent=person.name;
+ const caption=document.createElement("span");caption.className="professional-caption";caption.textContent="Sample professional";
+ copy.append(name,caption);
+ const check=document.createElement("span");check.className="professional-check";check.setAttribute("aria-hidden","true");check.textContent="✓";
+ el.append(avatar,copy,check);
+ return el;
+}
 function clear(node){node.replaceChildren();}
 function detail(parent,key,value){const row=document.createElement("div");row.className="detail";const k=document.createElement("span");k.textContent=key;const v=document.createElement("strong");v.textContent=value;row.append(k,v);parent.append(row);}
 function updateProgress(){
@@ -40,7 +55,7 @@ function render(){
  clear($("services"));view.view.services.forEach(s=>$("services").append(serviceCard(s)));
  clear($("staff"));
  const eligible=view.view.staff.filter(s=>s.serviceIds.includes(state.serviceId));
- eligible.forEach(s=>$("staff").append(button(s.name,state.staffId===s.id,false,()=>{state.staffId=s.id;state.time="";render();})));
+ eligible.forEach(s=>$("staff").append(professionalCard(s)));
  if(!eligible.length)$("staff").textContent="Choose a service first.";
  clear($("times"));
  if(state.serviceId&&state.staffId&&state.date){
