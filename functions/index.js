@@ -21,6 +21,7 @@
 
 const {
   onCall,
+  onRequest,
   HttpsError
 } = require("firebase-functions/v2/https");
 
@@ -634,4 +635,11 @@ exports.inspectLegacyBookingMigration = onCall(
       throw new HttpsError("internal", "Unable to inspect cloud bookings safely.");
     }
   }
+);
+
+// Phase 13.18: public profile only. Booking and catalogue availability are NOT exposed.
+const {createPublicBusinessHttpHandler}=require("./phase1318PublicBusinessProfile");
+exports.getPublicBusinessProfile = onRequest(
+  {region:"europe-west2",maxInstances:10,cors:false},
+  createPublicBusinessHttpHandler(db)
 );
