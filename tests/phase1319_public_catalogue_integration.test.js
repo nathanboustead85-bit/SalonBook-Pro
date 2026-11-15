@@ -1,0 +1,24 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const {safeCatalogue}=require("../functions/phase1319PublicCatalogue");
+const {createPublicBusinessProfileReader}=require("../functions/phase1318PublicBusinessProfile");
+const services=[{id:"cut",name:"Haircut",pricePence:2000,durationMinutes:30,published:true,internalNote:"SECRET"},{id:"hidden",name:"Private",pricePence:5000,durationMinutes:60,published:false}];
+const staff=[{id:"barber",name:"Kody",active:true,serviceIds:["cut"],email:"PRIVATE"}];
+const profile={slug:"kody-blends",published:true,name:"Kody Blends",services,staff};
+const snapshot=data=>({exists:!!data,get:key=>data?.[key]});
+const db={collection(name){return {doc(){return {async get(){return snapshot(name==="businessSlugs"?{businessId:"owner"}:profile);}};}};}};
+(async()=>{
+ const result=await createPublicBusinessProfileReader(db)("kody-blends");
+ assert.equal(result.status,200);
+ assert.deepEqual(result.body.catalogue,{services:[{id:"cut",name:"Haircut",pricePence:2000,durationMinutes:30}],staff:[{id:"barber",name:"Kody",serviceIds:["cut"]}]});
+ assert.ok(!JSON.stringify(result).includes("SECRET"));assert.ok(!JSON.stringify(result).includes("PRIVATE"));
+ assert.equal(safeCatalogue(snapshot({services:[{...services[0],pricePence:-1}],staff})),null);
+ assert.equal(safeCatalogue(snapshot({services,staff:[{...staff[0],serviceIds:["hidden"]}]})),null);
+ assert.equal(safeCatalogue(snapshot({services:null,staff})),null);
+ assert.equal(safeCatalogue(snapshot({services,staff:[{...staff[0],name:"<img onerror=alert(1)>"}]})).staff[0].name,"<img onerror=alert(1)>");
+ const page=fs.readFileSync(require.resolve("../website/book/index.html"),"utf8");
+ assert.ok(page.includes('item.textContent = service.name'));assert.ok(page.includes('item.textContent = member.name'));
+ assert.ok(page.includes('ui.bookingContent.classList.add("hidden")'));
+ assert.ok(!page.includes('innerHTML = service.name'));
+ console.log("PASS Phase 13.19 published-only services, price validation, staff filtering, no HTML injection, no booking");
+})().catch(error=>{console.error(error);process.exitCode=1});
