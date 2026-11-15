@@ -17,7 +17,7 @@ const db={collection(name){return {doc(){return {async get(){return snapshot(nam
  assert.equal(safeCatalogue(snapshot({services:null,staff})),null);
  assert.equal(safeCatalogue(snapshot({services,staff:[{...staff[0],name:"<img onerror=alert(1)>"}]})).staff[0].name,"<img onerror=alert(1)>");
  const page=fs.readFileSync(require.resolve("../website/book/index.html"),"utf8");
- assert.ok(page.includes('item.textContent = service.name'));assert.ok(page.includes('item.textContent = member.name'));
+ assert.ok(page.includes('title.textContent = service.name'));assert.ok(page.includes('title.textContent = member.name'));
  assert.ok(page.includes('ui.bookingContent.classList.add("hidden")'));
  assert.ok(!page.includes('innerHTML = service.name'));
  console.log("PASS Phase 13.19 published-only services, price validation, staff filtering, no HTML injection, no booking");
