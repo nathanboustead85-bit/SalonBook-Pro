@@ -221,3 +221,8 @@ button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80
 .continue-details{display:block;width:100%;min-height:48px;margin:0 0 15px;padding:12px 16px;border:0;border-radius:999px;background:#087f80;color:white;font:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px #087f8026}
 .continue-details:hover:not(:disabled){background:#066866}
 .continue-details:disabled{background:#dce9e5;color:#56746d;box-shadow:none;cursor:not-allowed}
+
+/* Phase 12.107: return to appointment choices without discarding selections */
+.edit-selection{display:block;width:100%;min-height:44px;margin:0 0 10px;padding:10px 14px;border:1px solid #087f80;border-radius:999px;background:#fff;color:#075b59;font:inherit;font-size:14px;font-weight:750;cursor:pointer}
+.edit-selection:hover:not(:disabled){background:#e5f6f3}
+.edit-selection:disabled{border-color:#d6e5e1;color:#748d86;background:#f4f8f6;cursor:not-allowed}
