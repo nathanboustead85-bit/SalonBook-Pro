@@ -1,0 +1,10 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const app=fs.readFileSync("web/phase1287/app.js","utf8");
+const css=fs.readFileSync("web/phase1287/style.css","utf8");
+for(const marker of ['["morning","Morning"]','["afternoon","Afternoon"]','time-period-heading','heading.setAttribute("role","heading")','heading.setAttribute("aria-level","3")','group.forEach(s=>$("times").append(button('])assert.ok(app.includes(marker),marker);
+for(const marker of ['Phase 12.98','#times .time-period-heading','#times .choice:disabled'])assert.ok(css.includes(marker),marker);
+assert.ok(app.includes('All catalogue records and slots below are invented'));
+assert.ok(!app.includes('fetch('));
+console.log("PASS Phase 12.98 grouped fictional appointment times");
