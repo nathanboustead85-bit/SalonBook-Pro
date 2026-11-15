@@ -15,6 +15,8 @@ on:
       - 'backend/phase137/**'
       - 'backend/phase138/**'
       - 'backend/phase139/**'
+      - 'backend/phase1310/**'
+      - 'tests/phase1310_*'
       - 'tests/phase139_*'
       - 'tests/phase138_*'
       - 'tests/phase137_*'
@@ -63,6 +65,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run contracts and regression checks
         run: |
+          node tests/phase1310_authorized_publish_mapping.test.js
           node tests/phase139_slug_provisioning.test.js
           node tests/phase138_firebase_admin_lookup.test.js
           node tests/phase137_public_slug_lookup.test.js
