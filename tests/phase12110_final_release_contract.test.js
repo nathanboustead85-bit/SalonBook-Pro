@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const root="web/phase1287",html=fs.readFileSync(path.join(root,"index.html"),"utf8"),js=fs.readFileSync(path.join(root,"app.js"),"utf8");
-assert.match(html,/noindex,nofollow/);assert.match(html,/DEMONSTRATION ONLY/);assert.match(html,/No real bookings/);
+assert.match(html,/noindex,nofollow/);assert.match(html,/DEMONSTRATION ONLY/);assert.match(html,/NO REAL BOOKINGS/i);
 assert.match(html,/Nothing is stored or sent/);assert.match(html,/id="journey"/);assert.match(html,/id="confirmation"/);
 for(const id of ["services","staff","date","times","review","customerName","customerEmail","customerPhone","consent","resetSelection","editSelection","continueToDetails"])assert.ok(html.includes('id="'+id+'"'),id);
 for(const forbidden of [/\bfetch\s*\(/,/\bXMLHttpRequest\b/,/\bWebSocket\b/,/\blocalStorage\b/,/\bsessionStorage\b/,/\bindexedDB\b/])assert.ok(!forbidden.test(js),"Unexpected storage/network API: "+forbidden);
