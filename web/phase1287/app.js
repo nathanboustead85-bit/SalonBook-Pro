@@ -42,10 +42,10 @@ function render(){
 dates.forEach(date=>{const opt=document.createElement("option");opt.value=date;opt.textContent=date+" (demo)";$("date").append(opt);});
 $("date").addEventListener("change",()=>{state.date=$("date").value;state.time="";render();});
 $("journey").addEventListener("submit",event=>{
- event.preventDefault();$("confirmation").hidden=true;
+ event.preventDefault();$("confirmation").hidden=true;\n for(const id of ["customerName","customerEmail","customerPhone"]){$(id).removeAttribute("aria-invalid");}
  const customer={name:$("customerName").value,email:$("customerEmail").value,phone:$("customerPhone").value,consent:$("consent").checked};
  const result=window.BoustioBookingJourneyPreview.prepareJourneyPreview(catalogue,{slug:catalogue.slug,...state,customer},slots);
- if(result.status!=="JOURNEY_PREVIEW_READY"){$("feedback").className="error";$("feedback").textContent="Cannot show preview: check your selections, contact details and demonstration consent.";return;}
+ if(result.status!=="JOURNEY_PREVIEW_READY"){\n  $("feedback").className="error";\n  const missingSelection=!state.serviceId||!state.staffId||!state.date||!state.time;\n  const invalidName=!customer.name.trim();\n  const invalidEmail=!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(customer.email.trim());\n  const invalidPhone=!customer.phone.trim();\n  if(invalidName)$("customerName").setAttribute("aria-invalid","true");\n  if(invalidEmail)$("customerEmail").setAttribute("aria-invalid","true");\n  if(invalidPhone)$("customerPhone").setAttribute("aria-invalid","true");\n  $("feedback").textContent=missingSelection?"Choose a service, professional, date and time first.":invalidName?"Enter a demonstration name.":invalidEmail?"Enter a valid demonstration email address.":invalidPhone?"Enter a demonstration phone number.":!customer.consent?"Tick the demonstration consent checkbox.":"Check your details and try again.";\n  $("feedback").focus();return;\n }
  $("feedback").className="";$("feedback").textContent="";
  const panel=$("confirmation");clear(panel);const heading=document.createElement("h2");heading.textContent=result.journey.heading;panel.append(heading);
  detail(panel,"Customer",result.journey.customerName);detail(panel,"Service",result.journey.service.name);detail(panel,"Professional",result.journey.staffName);detail(panel,"Date",result.journey.date);detail(panel,"Time",result.journey.startTime+"–"+result.journey.endTime);detail(panel,"Total",result.journey.totalLabel);
