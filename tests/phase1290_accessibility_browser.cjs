@@ -13,7 +13,7 @@ const assert=require("node:assert/strict");
    assert.equal(await page.locator("#staff").getAttribute("aria-labelledby"),"staffHeading");
    await page.getByRole("button",{name:"Show demonstration confirmation"}).click();
    assert.match(await page.locator("#feedback").innerText(),/Choose a service/);
-   assert.equal(await page.locator("#feedback").evaluate(el=>document.activeElement===el),true);
+   assert.equal(await page.locator("#services").evaluate(el=>el.contains(document.activeElement)),true);
    await page.getByRole("button",{name:/Signature Haircut/}).click();
    await page.getByRole("button",{name:"Kody (demo)"}).click();
    await page.locator("#date").selectOption("2026-11-20");
