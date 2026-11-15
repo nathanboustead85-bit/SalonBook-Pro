@@ -19,14 +19,13 @@ function preparePublicSlugMapping(db,tx,{uid,slug,previousSlug}){
   }};
  });
 }
-function prepareUnpublishMapping(db,tx,{uid,slug}){
- if(typeof slug!=="string"||!slug)return Promise.resolve(()=>{});
+async function prepareUnpublishMapping(db,tx,{uid,slug}){
+ if(typeof slug!=="string"||!slug)return ()=>{};
  const ref=db.collection("publicSlugMappings").doc(slug);
- return tx.get(ref).then(snap=>()=>{
-  if(!snap.exists)return ()=>{};
-  const data=snap.data();
-  if(!data||data.businessId!==uid||data.slug!==slug)return ()=>{};
-  return ()=>tx.set(ref,{slug,businessId:uid,published:false});
- });
+ const snap=await tx.get(ref);
+ if(!snap.exists)return ()=>{};
+ const data=snap.data();
+ if(!data||data.businessId!==uid||data.slug!==slug)return ()=>{};
+ return ()=>{tx.set(ref,{slug,businessId:uid,published:false});};
 }
 module.exports=Object.freeze({preparePublicSlugMapping,prepareUnpublishMapping});
