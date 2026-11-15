@@ -10,6 +10,8 @@ const dates=["2026-11-20","2026-11-21","2026-11-22"];
 const times=["09:00","10:00","11:00","14:00","15:00"];
 const slots=dates.flatMap(date=>times.flatMap(time=>catalogue.staff.flatMap(person=>person.serviceIds.map(serviceId=>({date,time,staffId:person.id,serviceId,available:time!=="11:00"})))));
 const $=id=>document.getElementById(id);
+// Format sample dates locally without parsing UTC midnight into another day.
+function displayDate(iso){const [year,month,day]=iso.split("-").map(Number);return new Intl.DateTimeFormat("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(year,month-1,day)));}
 const state={serviceId:"",staffId:"",date:"",time:""};
 const view=window.BoustioCataloguePresentation.preparePublicView(catalogue,catalogue.slug);
 if(view.status!=="PUBLIC_VIEW_READY"){ $("feedback").textContent="Preview unavailable";return;}
@@ -36,10 +38,10 @@ function render(){
  }else $("times").textContent="Select your service, professional and date first.";
  clear($("review"));
  const result=window.BoustioBookingReview.prepareBookingReview(catalogue,catalogue.slug,state.serviceId,state.staffId,state.date,state.time,slots);
- if(result.status==="REVIEW_PREVIEW_READY"){const r=result.review;detail($("review"),"Service",r.serviceName);detail($("review"),"Professional",r.staffName);detail($("review"),"Date",r.date);detail($("review"),"Time",r.startTime+"–"+r.endTime);detail($("review"),"Duration",r.durationLabel);detail($("review"),"Total",r.totalLabel);}
+ if(result.status==="REVIEW_PREVIEW_READY"){const r=result.review;detail($("review"),"Service",r.serviceName);detail($("review"),"Professional",r.staffName);detail($("review"),"Date",displayDate(r.date));detail($("review"),"Time",r.startTime+"–"+r.endTime);detail($("review"),"Duration",r.durationLabel);detail($("review"),"Total",r.totalLabel);}
  else $("review").textContent="Choose your service, professional and time to see a review.";
 }
-dates.forEach(date=>{const opt=document.createElement("option");opt.value=date;opt.textContent=date+" (demo)";$("date").append(opt);});
+dates.forEach(date=>{const opt=document.createElement("option");opt.value=date;opt.textContent=displayDate(date)+" · demo";$("date").append(opt);});
 $("date").addEventListener("change",()=>{state.date=$("date").value;state.time="";render();});
 $("journey").addEventListener("submit",event=>{
  event.preventDefault();$("confirmation").hidden=true;
@@ -60,7 +62,7 @@ $("journey").addEventListener("submit",event=>{
  }
  $("feedback").className="";$("feedback").textContent="";
  const panel=$("confirmation");clear(panel);const heading=document.createElement("h2");heading.textContent=result.journey.heading;panel.append(heading);
- detail(panel,"Customer",result.journey.customerName);detail(panel,"Service",result.journey.service.name);detail(panel,"Professional",result.journey.staffName);detail(panel,"Date",result.journey.date);detail(panel,"Time",result.journey.startTime+"–"+result.journey.endTime);detail(panel,"Total",result.journey.totalLabel);
+ detail(panel,"Customer",result.journey.customerName);detail(panel,"Service",result.journey.service.name);detail(panel,"Professional",result.journey.staffName);detail(panel,"Date",displayDate(result.journey.date));detail(panel,"Time",result.journey.startTime+"–"+result.journey.endTime);detail(panel,"Total",result.journey.totalLabel);
  const note=document.createElement("p");note.textContent=result.journey.notice;panel.append(note);panel.hidden=false;panel.focus();
 });
 render();
