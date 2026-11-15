@@ -77,7 +77,7 @@ function render(){
 function updateDetailsReadiness(){
  const validName=$("customerName").value.trim().length>0;
  const email=$("customerEmail").value.trim();
- const validEmail=/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);
+ const validEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
  const validPhone=$("customerPhone").value.trim().length>0;
  const ready=[validName,validEmail,validPhone,$("consent").checked].filter(Boolean).length;
  $("detailsReadiness").textContent=ready+" of 4 ready";
