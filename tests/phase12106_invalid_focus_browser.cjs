@@ -1,0 +1,28 @@
+"use strict";
+const {chromium}=require("playwright"),assert=require("node:assert/strict");
+(async()=>{const browser=await chromium.launch();try{for(const width of [360,390,768,1280]){
+ const page=await browser.newPage({viewport:{width,height:850}}),errors=[];page.on("pageerror",e=>errors.push(e.message));
+ await page.goto("http://127.0.0.1:8765/web/phase1287/index.html");
+ const submit=page.getByRole("button",{name:"Show demonstration confirmation"});
+ const focused=()=>page.evaluate(()=>document.activeElement.id);
+ await submit.click();assert.equal(await focused(),"");
+ assert.equal(await page.evaluate(()=>document.activeElement.closest("#services")!==null),true);
+ await page.getByRole("button",{name:/Signature Haircut/}).click();
+ await submit.click();assert.equal(await page.evaluate(()=>document.activeElement.closest("#staff")!==null),true);
+ await page.getByRole("button",{name:"Kody (demo)"}).click();
+ await submit.click();assert.equal(await focused(),"date");
+ await page.locator("#date").selectOption("2026-11-20");
+ await submit.click();assert.equal(await page.evaluate(()=>document.activeElement.closest("#times")!==null),true);
+ await page.getByRole("button",{name:"14:00"}).click();
+ await submit.click();assert.equal(await focused(),"customerName");
+ await page.locator("#customerName").fill("Demo Customer");
+ await submit.click();assert.equal(await focused(),"customerEmail");
+ await page.locator("#customerEmail").fill("demo@example.test");
+ await submit.click();assert.equal(await focused(),"customerPhone");
+ await page.locator("#customerPhone").fill("0000000000");
+ await submit.click();assert.equal(await focused(),"consent");
+ await page.locator("#consent").check();
+ await submit.click();assert.equal(await page.locator("#confirmation").isVisible(),true);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);assert.deepEqual(errors,[]);
+ await page.close();console.log("PASS Phase 12.106 invalid focus viewport "+width);
+}}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
