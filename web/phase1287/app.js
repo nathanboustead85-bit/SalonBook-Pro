@@ -164,7 +164,22 @@ $("journey").addEventListener("submit",event=>{
  const subtitle=document.createElement("p");subtitle.className="confirmation-subtitle";subtitle.textContent="This is an example confirmation. No appointment has been booked.";
  copy.append(eyebrow,heading,subtitle);banner.append(symbol,copy);panel.append(banner);
  detail(panel,"Customer",result.journey.customerName);detail(panel,"Service",result.journey.service.name);detail(panel,"Professional",result.journey.staffName);detail(panel,"Date",displayDate(result.journey.date));detail(panel,"Time",result.journey.startTime+"–"+result.journey.endTime);detail(panel,"Total",result.journey.totalLabel);
- const note=document.createElement("p");note.textContent=result.journey.notice;panel.append(note);panel.hidden=false;panel.focus();
+ const note=document.createElement("p");note.textContent=result.journey.notice;panel.append(note);
+ const restart=document.createElement("button");restart.type="button";restart.id="restartDemo";restart.className="restart-demo";restart.textContent="Explore another demonstration booking";
+ restart.addEventListener("click",()=>{
+  state.serviceId="";state.staffId="";state.date="";state.time="";
+  $("date").value="";
+  for(const id of ["customerName","customerEmail","customerPhone"]){
+   const field=$(id);field.value="";delete field.dataset.touched;field.removeAttribute("aria-invalid");
+  }
+  $("consent").checked=false;
+  for(const [id,message] of [["nameHint","Use a fictional name for this preview."],["emailHint","Enter a fictional email in name@example.test format."],["phoneHint","Use a fictional phone number; no messages will be sent."]]){
+   const hint=$(id);hint.textContent=message;hint.classList.remove("field-hint-error","field-hint-valid");
+  }
+  updateDetailsReadiness();render();
+  $("services").querySelector("button")?.focus();
+ });
+ panel.append(restart);panel.hidden=false;panel.focus();
 });
 render();
 })();
