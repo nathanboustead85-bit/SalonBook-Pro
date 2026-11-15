@@ -1,0 +1,50 @@
+name: Boustio Phase 12.89 Mobile Refinements
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase1287/**'
+      - 'tests/phase1289_*'
+      - '.github/workflows/boustio-phase-1289-mobile-refinements.yml'
+permissions:
+  contents: read
+jobs:
+  mobile-refinements:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run contracts and regressions
+        run: |
+          node tests/phase1289_mobile_contract.test.js
+          node tests/phase1288_mobile_contract.test.js
+          node tests/phase1287_booking_interface.test.js
+          node tests/phase1286_booking_journey_preview.test.js
+          node tests/phase1285_customer_confirmation_preview.test.js
+          node tests/phase1284_booking_review.test.js
+          node tests/phase1283_appointment_selection.test.js
+          node tests/phase1282_service_staff_selection.test.js
+          node tests/phase1281_catalogue_presentation.test.js
+          node tests/phase1280_catalogue_contract.test.js
+          node tests/phase1279_published_profile_adapter.test.js
+      - name: Start local preview server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/boustio-preview-server.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8765/web/phase1287/index.html > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/boustio-preview-server.log
+          exit 1
+      - name: Verify mobile journey and progress
+        run: |
+          node tests/phase1288_mobile_browser.cjs
+          node tests/phase1289_mobile_progress.cjs
