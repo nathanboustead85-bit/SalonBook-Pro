@@ -1,0 +1,12 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const html=fs.readFileSync("web/phase1287/index.html","utf8");
+const css=fs.readFileSync("web/phase1287/style.css","utf8");
+const app=fs.readFileSync("web/phase1287/app.js","utf8");
+for(const marker of ['class="brand-cloud"','class="preview-disclaimer"','Your booking summary','id="salonName"','id="journey"','id="review"','id="times"','id="confirmation"','DEMONSTRATION ONLY','noindex,nofollow'])assert.ok(html.includes(marker),marker);
+for(const marker of ['Phase 12.94','#times{grid-template-columns:repeat(3','@media(max-width:520px)','@media(max-width:350px)','prefers-reduced-motion'])assert.ok(css.includes(marker),marker);
+assert.ok(app.includes('All catalogue records and slots below are invented'));
+assert.ok(!app.includes('fetch('));
+assert.ok(!html.includes('https://'));
+console.log("PASS Phase 12.94 visual refinement and offline demonstration safeguards");
