@@ -1,0 +1,13 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const html=fs.readFileSync("web/phase1287/index.html","utf8");
+const app=fs.readFileSync("web/phase1287/app.js","utf8");
+const css=fs.readFileSync("web/phase1287/style.css","utf8");
+assert.ok(html.includes('id="resetSelection" type="button"'));
+assert.ok(html.includes('class="reset-selection" disabled'));
+for(const marker of ['$("resetSelection").disabled=','$("resetSelection").addEventListener("click"','state.serviceId="";state.staffId="";state.date="";state.time=""','$("date").value=""','$("services").querySelector("button")?.focus()'])assert.ok(app.includes(marker),marker);
+assert.ok(css.includes('.reset-selection:focus-visible'));
+assert.ok(html.includes("No appointment is made."));
+assert.ok(!app.includes("fetch("));
+console.log("PASS Phase 12.99 safe selection reset contract");
