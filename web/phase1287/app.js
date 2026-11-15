@@ -58,6 +58,7 @@ function render(){
  $("summaryNextStep").textContent=nextStep;
  $("summaryNextStep").classList.toggle("summary-next-step-ready",selected===4);
  $("continueToDetails").disabled=selected!==4;
+ $("editSelection").disabled=selected===0;
  $("resetSelection").disabled=!state.serviceId&&!state.staffId&&!state.date&&!state.time;
  $("confirmation").hidden=true;$("feedback").textContent="";updateProgress();
  clear($("services"));view.view.services.forEach(s=>$("services").append(serviceCard(s)));
@@ -115,6 +116,11 @@ for(const id of ["customerName","customerEmail","customerPhone"]){
 }
 $("consent").addEventListener("change",updateDetailsReadiness);
 updateDetailsReadiness();
+$("editSelection").addEventListener("click",()=>{
+ if(!state.serviceId&&!state.staffId&&!state.date&&!state.time)return;
+ const selectedService=$("services").querySelector('button[aria-pressed="true"]');
+ (selectedService||$("services").querySelector("button"))?.focus();
+});
 $("continueToDetails").addEventListener("click",()=>{
  if(!state.serviceId||!state.staffId||!state.date||!state.time)return;
  $("customerName").focus();
