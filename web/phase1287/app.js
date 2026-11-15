@@ -51,6 +51,9 @@ function updateProgress(){
  $("progressMessage").textContent=messages[stage];
 }
 function render(){
+ const selected=[state.serviceId,state.staffId,state.date,state.time].filter(Boolean).length;
+ $("selectionReadiness").textContent=selected+" of 4 selected";
+ $("selectionReadinessFill").style.width=(selected*25)+"%";
  $("resetSelection").disabled=!state.serviceId&&!state.staffId&&!state.date&&!state.time;
  $("confirmation").hidden=true;$("feedback").textContent="";updateProgress();
  clear($("services"));view.view.services.forEach(s=>$("services").append(serviceCard(s)));
