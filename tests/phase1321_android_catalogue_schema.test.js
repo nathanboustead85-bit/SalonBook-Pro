@@ -3,9 +3,9 @@ const assert=require("node:assert/strict"),fs=require("node:fs");
 const {project}=require("../functions/phase1320OwnerCataloguePublish");
 const android=fs.readFileSync(require.resolve("../app/src/main/java/com/salonbook/pro/ManagementActivity.kt"),"utf8");
 const cloud=fs.readFileSync(require.resolve("../app/src/main/java/com/salonbook/pro/CloudSyncManager.kt"),"utf8");
-assert.match(android,/item\.put\("price",/);
-assert.match(android,/item\.put\("duration",/);
-assert.match(android,/item\.put\("publicVisible",/);
+assert.match(android,/item\.put\(\s*"price",/);
+assert.match(android,/item\.put\(\s*"duration",/);
+assert.match(android,/item\.put\(\s*"publicVisible",/);
 assert.match(android,/item\.put\("serviceIds",/);
 assert.match(cloud,/JSONArray\(json\)/);
 const services=[
