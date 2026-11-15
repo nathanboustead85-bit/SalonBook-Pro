@@ -1,0 +1,41 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const {prepareJourneyPreview}=require("../web/phase1286/bookingJourneyPreview");
+const catalogue=()=>({schemaVersion:1,slug:"demo-salon",published:true,businessName:"Demo Salon",
+ services:[{id:"cut",name:"Haircut",pricePence:2050,durationMinutes:30,published:true}],
+ staff:[{id:"sam",name:"Sam",active:true,serviceIds:["cut"]}],ownerUid:"private",clients:[{email:"secret@example.com"}]});
+const request=()=>({slug:"demo-salon",serviceId:"cut",staffId:"sam",date:"2026-11-20",time:"10:00",
+ customer:{name:"Alex Example",email:"alex@example.com",phone:"07123456789",consent:true}});
+const slots=()=>[{date:"2026-11-20",time:"10:00",staffId:"sam",serviceId:"cut",available:true}];
+const run=(r=request(),p=catalogue(),s=slots())=>prepareJourneyPreview(p,r,s);
+const ok=run();
+assert.equal(ok.status,"JOURNEY_PREVIEW_READY");
+assert.equal(ok.bookingEnabled,false);
+assert.equal(ok.journey.service.name,"Haircut");
+assert.equal(ok.journey.service.priceLabel,"£20.50");
+assert.equal(ok.journey.staffName,"Sam");
+assert.equal(ok.journey.startTime,"10:00");
+assert.equal(ok.journey.endTime,"10:30");
+assert.equal(ok.journey.customerName,"Alex Example");
+assert.ok(ok.journey.heading.includes("NO REAL APPOINTMENT"));
+assert.ok(Object.isFrozen(ok.journey));
+assert.ok(Object.isFrozen(ok.journey.service));
+assert.equal("email" in ok.journey,false);
+assert.equal("phone" in ok.journey,false);
+assert.equal("clients" in ok.journey,false);
+assert.equal("ownerUid" in ok.journey,false);
+assert.equal(JSON.stringify(ok).includes("alex@example.com"),false);
+assert.equal(JSON.stringify(ok).includes("07123456789"),false);
+const noStaff=request();noStaff.staffId="missing";
+assert.equal(run(noStaff).stage,"selection");
+const noDate=request();noDate.date="2026-02-30";
+assert.equal(run(noDate).stage,"appointment");
+assert.equal(run(request(),catalogue(),[]).stage,"appointment");
+const noConsent=request();noConsent.customer.consent=false;
+assert.equal(run(noConsent).stage,"customer");
+assert.equal(run(null).stage,"selection");
+assert.equal(run(request(),{...catalogue(),published:false}).bookingEnabled,false);
+const source=fs.readFileSync("web/phase1286/bookingJourneyPreview.js","utf8");
+for(const forbidden of ["fetch(","XMLHttpRequest","localStorage","sessionStorage","indexedDB","firebase.","WebSocket(","sendEmail","sendSMS"])assert.ok(!source.includes(forbidden),forbidden);
+console.log("PASS Phase 12.86 fictional end-to-end journey preview and privacy safety");
