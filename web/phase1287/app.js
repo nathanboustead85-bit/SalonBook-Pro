@@ -74,6 +74,20 @@ function render(){
  if(result.status==="REVIEW_PREVIEW_READY"){const r=result.review;detail($("review"),"Service",r.serviceName);detail($("review"),"Professional",r.staffName);detail($("review"),"Date",displayDate(r.date));detail($("review"),"Time",r.startTime+"–"+r.endTime);detail($("review"),"Duration",r.durationLabel);detail($("review"),"Total",r.totalLabel);}
  else $("review").textContent="Choose your service, professional and time to see a review.";
 }
+function updateDetailsReadiness(){
+ const validName=$("customerName").value.trim().length>0;
+ const email=$("customerEmail").value.trim();
+ const validEmail=/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);
+ const validPhone=$("customerPhone").value.trim().length>0;
+ const ready=[validName,validEmail,validPhone,$("consent").checked].filter(Boolean).length;
+ $("detailsReadiness").textContent=ready+" of 4 ready";
+ $("detailsReadinessFill").style.width=(ready*25)+"%";
+}
+for(const id of ["customerName","customerEmail","customerPhone"]){
+ $(id).addEventListener("input",updateDetailsReadiness);
+}
+$("consent").addEventListener("change",updateDetailsReadiness);
+updateDetailsReadiness();
 $("resetSelection").addEventListener("click",()=>{
  state.serviceId="";state.staffId="";state.date="";state.time="";
  $("date").value="";
