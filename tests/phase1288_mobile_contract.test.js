@@ -1,0 +1,17 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const html=fs.readFileSync("web/phase1287/index.html","utf8");
+const script=fs.readFileSync("tests/phase1288_mobile_browser.cjs","utf8");
+const workflow=fs.readFileSync(".github/workflows/boustio-phase-1288-mobile-browser.yml","utf8");
+assert.ok(html.includes('name="viewport"'));
+assert.ok(html.includes("DEMONSTRATION ONLY"));
+assert.ok(html.includes('id="consent"'));
+assert.ok(html.includes('id="confirmation"'));
+for(const width of ["360","390","412","768"])assert.ok(script.includes("width:"+width));
+assert.ok(script.includes("horizontalOverflow"));
+assert.ok(script.includes("outbound"));
+assert.ok(script.includes("NO REAL APPOINTMENT"));
+assert.ok(workflow.includes("playwright install --with-deps chromium"));
+assert.ok(workflow.includes("phase1288_mobile_browser.cjs"));
+console.log("PASS Phase 12.88 mobile browser test contract");
