@@ -11,7 +11,7 @@ function fixture(mapping,profile){
  let f=fixture({businessId:"owner_1"},{slug:"kody-blends",name:"Kody Blends",description:"Barbers",published:true,phone:"PRIVATE",acceptingBookings:true});
  const read=createPublicBusinessProfileReader(f.db);
  let result=await read("kody-blends");
- assert.equal(result.status,200);assert.deepEqual(result.body,{status:"PUBLIC_PROFILE_READY",business:{slug:"kody-blends",name:"Kody Blends",description:"Barbers",acceptingBookings:false}});
+ assert.equal(result.status,200);assert.deepEqual(result.body,{status:"PUBLIC_PROFILE_READY",business:{slug:"kody-blends",name:"Kody Blends",description:"Barbers",acceptingBookings:false},catalogue:null});
  assert.deepEqual(f.reads,["businessSlugs/kody-blends","publicBusinesses/owner_1"]);
  assert.ok(!JSON.stringify(result).includes("PRIVATE"));
  assert.equal((await read("BAD!")).status,400);
