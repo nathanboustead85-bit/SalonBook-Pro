@@ -182,3 +182,12 @@ button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80
 .confirmation-subtitle{margin:0;color:#4b7167;font-size:13px;line-height:1.5}
 .confirmation .detail:last-of-type strong{font-size:19px;color:#075b53}
 @media(max-width:520px){.confirmation-banner{gap:13px}.confirmation-symbol{flex-basis:42px;width:42px;height:42px;font-size:23px}}
+
+
+/* Phase 12.101: private, local-only demonstration form readiness */
+.details-readiness{margin:14px 0 18px;padding:13px 15px;border:1px solid #d3e7e1;border-radius:13px;background:#f4faf8;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.details-readiness-label{font-size:10px;font-weight:850;letter-spacing:.1em;color:#326c64}
+#detailsReadiness{font-size:12px;font-weight:750;color:#075b53}
+.details-readiness-track{grid-column:1/-1;height:6px;background:#d9e9e4;border-radius:99px;overflow:hidden}
+#detailsReadinessFill{display:block;height:100%;width:0;background:#087c70;border-radius:99px;transition:width .18s ease}
+@media(prefers-reduced-motion:reduce){#detailsReadinessFill{transition:none}}
