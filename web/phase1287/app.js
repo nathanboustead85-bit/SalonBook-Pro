@@ -51,6 +51,7 @@ function updateProgress(){
  $("progressMessage").textContent=messages[stage];
 }
 function render(){
+ $("resetSelection").disabled=!state.serviceId&&!state.staffId&&!state.date&&!state.time;
  $("confirmation").hidden=true;$("feedback").textContent="";updateProgress();
  clear($("services"));view.view.services.forEach(s=>$("services").append(serviceCard(s)));
  clear($("staff"));
@@ -73,6 +74,12 @@ function render(){
  if(result.status==="REVIEW_PREVIEW_READY"){const r=result.review;detail($("review"),"Service",r.serviceName);detail($("review"),"Professional",r.staffName);detail($("review"),"Date",displayDate(r.date));detail($("review"),"Time",r.startTime+"–"+r.endTime);detail($("review"),"Duration",r.durationLabel);detail($("review"),"Total",r.totalLabel);}
  else $("review").textContent="Choose your service, professional and time to see a review.";
 }
+$("resetSelection").addEventListener("click",()=>{
+ state.serviceId="";state.staffId="";state.date="";state.time="";
+ $("date").value="";
+ render();
+ $("services").querySelector("button")?.focus();
+});
 dates.forEach(date=>{const opt=document.createElement("option");opt.value=date;opt.textContent=displayDate(date)+" · demo";$("date").append(opt);});
 $("date").addEventListener("change",()=>{state.date=$("date").value;state.time="";render();});
 $("journey").addEventListener("submit",event=>{
