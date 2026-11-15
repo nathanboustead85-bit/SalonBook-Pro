@@ -39,6 +39,31 @@
     .public-catalogue-card h3 { margin:0 0 8px; font-size:17px; color:#164b4c; }
     .public-catalogue-card p { margin:0; font-size:14px; }
     .public-catalogue-price { color:#087f80; font-weight:750; }
+    /* Phase 13.23: premium responsive real-business catalogue, preview-only. */
+    body.real-public { background:#f7f9f7; color:#173332; }
+    body.real-public header { background:#fff; border-bottom:1px solid #e1eae6; padding:15px 20px; text-align:left; }
+    body.real-public .brand { color:#116b68; font-size:28px; }
+    body.real-public .subtitle { color:#637772; }
+    body.real-public main { max-width:1060px; margin:0 auto; padding:26px 20px 56px; }
+    body.real-public main > .card:first-of-type { background:linear-gradient(120deg,#e3f2ec,#f9fcf9); border:1px solid #d9ebe3; padding:clamp(24px,5vw,52px); border-radius:24px; box-shadow:none; }
+    body.real-public #businessName { font-size:clamp(30px,5vw,46px); letter-spacing:-1.2px; color:#173332; }
+    body.real-public #businessDescription { max-width:620px; color:#4f6861; }
+    body.real-public .steps { display:none; }
+    body.real-public #livePublicCatalogue { padding:clamp(18px,4vw,34px); }
+    body.real-public #livePublicCatalogue h2 { font-size:clamp(21px,3vw,26px); color:#173332; margin-top:0; }
+    body.real-public .public-catalogue-grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:16px; }
+    body.real-public .public-catalogue-card { background:#fff; border:1px solid #dce8e3; border-radius:18px; padding:22px; box-shadow:0 5px 16px #17333208; min-width:0; overflow-wrap:anywhere; }
+    body.real-public .public-catalogue-card h3 { font-size:19px; }
+    body.real-public .public-catalogue-price { font-size:16px; }
+    body.real-public #customerChat { border:1px solid #e0eae5; box-shadow:none; }
+    @media (max-width:600px) {
+      body.real-public header { padding:14px 16px; }
+      body.real-public main { padding:16px 12px 36px; }
+      body.real-public main > .card:first-of-type { padding:26px 20px; border-radius:18px; }
+      body.real-public .public-catalogue-grid { grid-template-columns:minmax(0,1fr); gap:12px; }
+      body.real-public .public-catalogue-card { padding:18px; }
+      body.real-public #livePublicCatalogue { padding:20px 16px; }
+    }
     .disabled-action { margin-top:18px; background:#9ca3af; color:white; font-weight:700; border:0; cursor:not-allowed; }
     footer { text-align:center; padding:20px; color:#64748b; font-size:12px; }
   </style>
@@ -276,6 +301,7 @@ async function loadCatalogue() {
       if (!response.ok) throw new Error("Public profile unavailable");
       const payload = await response.json();
       if (payload.status !== "PUBLIC_PROFILE_READY" || !payload.business || payload.business.slug !== slug || typeof payload.business.name !== "string") throw new Error("Invalid public profile");
+      document.body.classList.add("real-public");
       ui.businessName.textContent = payload.business.name;
       ui.businessDescription.textContent = payload.business.description || "";
       // Only show service/staff information explicitly published in the public
