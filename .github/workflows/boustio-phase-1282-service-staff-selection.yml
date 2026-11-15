@@ -1,0 +1,26 @@
+name: Boustio Phase 12.82 Service and Staff Selection Safety
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase1282/**'
+      - 'tests/phase1282_service_staff_selection.test.js'
+      - '.github/workflows/boustio-phase-1282-service-staff-selection.yml'
+permissions:
+  contents: read
+jobs:
+  selection-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify service and staff selection
+        run: |
+          node tests/phase1282_service_staff_selection.test.js
+          node tests/phase1281_catalogue_presentation.test.js
+          node tests/phase1280_catalogue_contract.test.js
+          node tests/phase1279_published_profile_adapter.test.js
