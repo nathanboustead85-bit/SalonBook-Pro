@@ -1,0 +1,27 @@
+BOUSTIO PHASE 12.110 — PREVIEW RELEASE CHECKLIST
+================================================
+Scope: premium Kody Blends customer-facing booking DEMONSTRATION only.
+This release is NOT a live booking platform and must not be deployed as a real reservation flow.
+
+Automated release gates (GitHub Actions):
+- Existing phase 12 contract and browser regression tests remain mandatory.
+- Phase 12.110 contract verifies demo disclaimers, required controls, relative script dependencies and absence of network/storage APIs in the preview controller.
+- Phase 12.110 Chromium journey verifies selection, editing, fictional details, confirmation, revision, restart, reload reset and no external requests.
+- Five viewport widths: 360, 390, 412, 768 and 1280 pixels.
+- Preview screenshots and packaged static site remain downloadable as workflow artifacts.
+
+Before marking Phase 12 complete:
+1. Confirm the latest GitHub Actions run is GREEN with zero failed steps.
+2. Download the Samsung screenshots and inspect the approved premium teal-and-white appearance on a real Samsung phone.
+3. Optionally inspect the interactive demo using a browser that supports local JavaScript, or host it privately for review. It is not currently published as a live site.
+4. Keep the Android app's two original appointments unchanged; this phase only edits preview website and tests.
+5. Treat all sample services, professionals, dates, time slots and customer data as fictional.
+
+AFTER PHASE 12 — NOT YET IMPLEMENTED IN THIS DEMO:
+- Real business catalogue publication and ownership authorization.
+- Server-generated availability and race-safe appointment creation.
+- Real customer identity, consent, privacy notices and GDPR handling.
+- Business notifications and optional messaging/payments.
+- Domain, hosting, production security review and live Samsung acceptance tests.
+
+A successful Phase 12.110 workflow validates the offline demonstration, NOT production readiness.
