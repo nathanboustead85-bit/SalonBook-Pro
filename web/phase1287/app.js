@@ -74,6 +74,26 @@ function render(){
  if(result.status==="REVIEW_PREVIEW_READY"){const r=result.review;detail($("review"),"Service",r.serviceName);detail($("review"),"Professional",r.staffName);detail($("review"),"Date",displayDate(r.date));detail($("review"),"Time",r.startTime+"–"+r.endTime);detail($("review"),"Duration",r.durationLabel);detail($("review"),"Total",r.totalLabel);}
  else $("review").textContent="Choose your service, professional and time to see a review.";
 }
+function updateFieldGuidance(id,hintId,valid,emptyMessage,validMessage,invalidMessage){
+ const field=$(id),hint=$(hintId);
+ const touched=field.dataset.touched==="true";
+ if(!touched){hint.classList.remove("field-hint-error","field-hint-valid");return;}
+ const empty=!field.value.trim();
+ hint.textContent=empty?emptyMessage:valid?validMessage:invalidMessage;
+ hint.classList.toggle("field-hint-error",!valid);
+ hint.classList.toggle("field-hint-valid",valid);
+ field.setAttribute("aria-invalid",String(!valid));
+}
+function updateCustomerFieldGuidance(){
+ const email=$("customerEmail").value.trim();
+ updateFieldGuidance("customerName","nameHint",!!$("customerName").value.trim(),"Enter a fictional name.","Name looks ready.","Please enter a fictional name.");
+ updateFieldGuidance("customerEmail","emailHint",/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),"Enter a fictional email address.","Email format looks ready.","Use a valid email format, such as name@example.test.");
+ updateFieldGuidance("customerPhone","phoneHint",!!$("customerPhone").value.trim(),"Enter a fictional phone number.","Phone looks ready.","Please enter a fictional phone number.");
+}
+for(const id of ["customerName","customerEmail","customerPhone"]){
+ $(id).addEventListener("blur",()=>{$(id).dataset.touched="true";updateCustomerFieldGuidance();});
+ $(id).addEventListener("input",updateCustomerFieldGuidance);
+}
 function updateDetailsReadiness(){
  const validName=$("customerName").value.trim().length>0;
  const email=$("customerEmail").value.trim();
