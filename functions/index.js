@@ -643,3 +643,21 @@ exports.getPublicBusinessProfile = onRequest(
   {region:"europe-west2",maxInstances:10,cors:false},
   createPublicBusinessHttpHandler(db)
 );
+
+// Phase 13.20: owner-triggered publication of explicitly opted-in catalogue
+// entries. Never grants customer booking access.
+const {publishOwnerCatalogue}=require("./phase1320OwnerCataloguePublish");
+exports.publishPublicCatalogue = onCall(
+  {region:"europe-west2",maxInstances:10,enforceAppCheck:false},
+  async request=>{
+    const uid=verifiedUser(request);
+    if(request.data&&Object.keys(request.data).length!==0)
+      throw new HttpsError("invalid-argument","No client catalogue payload accepted.");
+    const result=await publishOwnerCatalogue(db,uid);
+    if(result.status==="CATALOGUE_FORMAT_UNSUPPORTED")
+      throw new HttpsError("failed-precondition","Services or staff are not in the supported publishing format.");
+    if(result.status!=="CATALOGUE_PUBLISHED")
+      throw new HttpsError("failed-precondition","Publish your business profile first.");
+    return result;
+  }
+);
