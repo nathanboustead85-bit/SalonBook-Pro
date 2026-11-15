@@ -1,0 +1,26 @@
+name: Boustio Phase 12.81 Public Catalogue Presentation Safety
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase1281/**'
+      - 'web/phase1280/catalogueContract.js'
+      - 'tests/phase1281_catalogue_presentation.test.js'
+      - '.github/workflows/boustio-phase-1281-catalogue-presentation.yml'
+permissions:
+  contents: read
+jobs:
+  catalogue-presentation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify Phase 12.81 presentation safety
+        run: |
+          node tests/phase1281_catalogue_presentation.test.js
+          node tests/phase1280_catalogue_contract.test.js
+          node tests/phase1279_published_profile_adapter.test.js
