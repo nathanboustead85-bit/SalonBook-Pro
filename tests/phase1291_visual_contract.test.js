@@ -1,0 +1,12 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const html=fs.readFileSync("web/phase1287/index.html","utf8");
+const css=fs.readFileSync("web/phase1287/style.css","utf8");
+for(const text of ['id="salonName"','class="hero-inner"','class="hero-mark"','class="hero-pills"','class="section-kicker"'])assert.ok(html.includes(text),text);
+assert.ok(html.includes("DEMONSTRATION ONLY"));
+assert.ok(css.includes("--boustio-teal"));
+assert.ok(css.includes("@media(max-width:520px)"));
+assert.ok(css.includes("prefers-reduced-motion"));
+assert.ok(!html.includes("https://"));
+console.log("PASS Phase 12.91 premium design contract");
