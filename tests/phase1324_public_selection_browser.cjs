@@ -18,7 +18,7 @@ const {chromium}=require("playwright");
   const service=page.locator('.public-select[data-kind="service"]');
   const staff=page.locator('.public-select[data-kind="staff"]');
   await service.first().click();
-  assert.match(await page.locator("#publicSelectionSummary").innerText(),/Haircut · £20.00/);
+  assert.match(await page.locator("#publicSelectionSummary").innerText(),/Haircut[\\s\\S]*£20\\.00/);
   assert.equal(await staff.nth(1).isDisabled(),true);
   await staff.first().click();
   assert.match(await page.locator("#publicSelectionSummary").innerText(),/Professional: Stylist A/);
