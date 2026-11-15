@@ -20,6 +20,8 @@ on:
       - 'backend/phase1312/**'
       - 'backend/phase1313/**'
       - 'backend/phase1314/**'
+      - 'backend/phase1315/**'
+      - 'tests/phase1315_*'
       - 'tests/phase1314_*'
       - 'tests/phase1313_*'
       - 'tests/phase1312_*'
@@ -73,6 +75,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run contracts and regression checks
         run: |
+          node tests/phase1315_rate_limited_publish_endpoint.test.js
           node tests/phase1314_bounded_publish_endpoint.test.js
           node tests/phase1313_validated_publish_endpoint.test.js
           node tests/phase1312_publish_http_handler.test.js
