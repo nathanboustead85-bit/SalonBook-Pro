@@ -199,3 +199,14 @@ button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80
 .field-hint-valid{color:#087c70;font-weight:650}
 .details-panel input[aria-invalid="true"]{border-color:#a22e2e}
 @media(max-width:520px){.field-hint{font-size:12px}}
+
+
+/* Phase 12.103: appointment selection completeness in the premium summary */
+.summary-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:0 0 15px}
+.summary-readiness{min-width:145px;flex:1;display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center}
+.summary-readiness-label{font-size:10px;letter-spacing:.08em;font-weight:850;color:#4d776d}
+#selectionReadiness{font-size:11px;color:#075b53;white-space:nowrap}
+.summary-readiness-track{grid-column:1/-1;height:6px;background:#d9e9e4;border-radius:99px;overflow:hidden}
+#selectionReadinessFill{display:block;width:0;height:100%;border-radius:99px;background:#087c70;transition:width .18s ease}
+.summary-toolbar .reset-selection{margin:0}
+@media(prefers-reduced-motion:reduce){#selectionReadinessFill{transition:none}}
