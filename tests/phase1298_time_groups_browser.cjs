@@ -11,7 +11,7 @@ const assert=require("node:assert/strict");
    await page.getByRole("button",{name:/Signature Haircut/}).click();
    await page.getByRole("button",{name:"Kody (demo)"}).click();
    await page.locator("#date").selectOption("2026-11-20");
-   assert.deepEqual(await page.locator("#times .time-period-heading").allInnerTexts(),["Morning","Afternoon"]);
+   assert.deepEqual(await page.locator("#times .time-period-heading").allInnerTexts(),["MORNING","AFTERNOON"]);
    assert.equal(await page.getByRole("button",{name:/11:00/}).isDisabled(),true);
    await page.getByRole("button",{name:"14:00"}).click();
    assert.match(await page.locator("#review").innerText(),/14:00/);
