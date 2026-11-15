@@ -22,6 +22,9 @@ on:
       - 'backend/phase1314/**'
       - 'backend/phase1315/**'
       - 'backend/phase1316/**'
+      - 'functions/index.js'
+      - 'functions/phase1317PublicSlugMapping.js'
+      - 'tests/phase1317_*'
       - 'tests/phase1316_*'
       - 'tests/phase1315_*'
       - 'tests/phase1314_*'
@@ -77,6 +80,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run contracts and regression checks
         run: |
+          node --check functions/index.js
+          node tests/phase1317_existing_publish_integration.test.js
           node tests/phase1316_firebase_publish_factory.test.js
           node tests/phase1315_rate_limited_publish_endpoint.test.js
           node tests/phase1314_bounded_publish_endpoint.test.js
