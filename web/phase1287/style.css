@@ -191,3 +191,11 @@ button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80
 .details-readiness-track{grid-column:1/-1;height:6px;background:#d9e9e4;border-radius:99px;overflow:hidden}
 #detailsReadinessFill{display:block;height:100%;width:0;background:#087c70;border-radius:99px;transition:width .18s ease}
 @media(prefers-reduced-motion:reduce){#detailsReadinessFill{transition:none}}
+
+
+/* Phase 12.102: accessible contextual guidance, shown after leaving each field */
+.field-hint{display:block;margin:6px 2px 12px;color:#587b72;font-size:12px;line-height:1.45}
+.field-hint-error{color:#a22e2e;font-weight:650}
+.field-hint-valid{color:#087c70;font-weight:650}
+.details-panel input[aria-invalid="true"]{border-color:#a22e2e}
+@media(max-width:520px){.field-hint{font-size:12px}}
