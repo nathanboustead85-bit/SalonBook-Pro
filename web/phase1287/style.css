@@ -215,3 +215,9 @@ button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80
 /* Phase 12.104: clear, accessible next-action cue in the booking summary */
 .summary-next-step{margin:0 0 15px;padding:11px 13px;border-left:3px solid #087c70;background:#f1f8f5;border-radius:0 9px 9px 0;color:#225d53;font-size:13px;font-weight:650;line-height:1.5}
 .summary-next-step-ready{border-left-color:#0a7c70;background:#e9f7f0;color:#075b53}
+
+
+/* Phase 12.105: guided continuation to fictional customer details */
+.continue-details{display:block;width:100%;min-height:48px;margin:0 0 15px;padding:12px 16px;border:0;border-radius:999px;background:#087f80;color:white;font:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px #087f8026}
+.continue-details:hover:not(:disabled){background:#066866}
+.continue-details:disabled{background:#dce9e5;color:#56746d;box-shadow:none;cursor:not-allowed}
