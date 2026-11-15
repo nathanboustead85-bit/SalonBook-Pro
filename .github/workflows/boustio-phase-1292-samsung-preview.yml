@@ -9,6 +9,8 @@ on:
       - 'web/phase131/**'
       - 'web/phase132/**'
       - 'web/phase133/**'
+      - 'web/phase134/**'
+      - 'tests/phase134_*'
       - 'tests/phase133_*'
       - 'tests/phase132_*'
       - 'tests/phase131_*'
@@ -50,6 +52,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run contracts and regression checks
         run: |
+          node tests/phase134_firebase_public_bridge.test.js
           node tests/phase133_public_catalogue_loader.test.js
           node tests/phase132_public_catalogue_display.test.js
           node tests/phase131_public_business_profile.test.js
