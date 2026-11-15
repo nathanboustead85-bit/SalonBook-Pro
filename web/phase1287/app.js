@@ -59,7 +59,14 @@ function render(){
  if(!eligible.length)$("staff").textContent="Choose a service first.";
  clear($("times"));
  if(state.serviceId&&state.staffId&&state.date){
-  slots.filter(s=>s.serviceId===state.serviceId&&s.staffId===state.staffId&&s.date===state.date).forEach(s=>$("times").append(button(s.time+(s.available?"":" · Unavailable"),state.time===s.time,!s.available,()=>{state.time=s.time;render();})));
+  const matching=slots.filter(s=>s.serviceId===state.serviceId&&s.staffId===state.staffId&&s.date===state.date);
+  for(const [period,label] of [["morning","Morning"],["afternoon","Afternoon"]]){
+   const group=matching.filter(s=>(Number(s.time.slice(0,2))<12?"morning":"afternoon")===period);
+   if(!group.length)continue;
+   const heading=document.createElement("div");heading.className="time-period-heading";heading.setAttribute("role","heading");heading.setAttribute("aria-level","3");heading.textContent=label;
+   $("times").append(heading);
+   group.forEach(s=>$("times").append(button(s.time+(s.available?"":" · Unavailable"),state.time===s.time,!s.available,()=>{state.time=s.time;render();})));
+  }
  }else $("times").textContent="Select your service, professional and date first.";
  clear($("review"));
  const result=window.BoustioBookingReview.prepareBookingReview(catalogue,catalogue.slug,state.serviceId,state.staffId,state.date,state.time,slots);
