@@ -12,7 +12,7 @@ function fixture(publicData={published:true,businessId:"owner"},serviceData=serv
   "publicBusinesses/owner":publicData
  };
  const db={collection(name){return {doc(id){const path=name+"/"+id;return {
-  path,collection(child){return {doc(key){return {path:path+"/"+child+"/"+key",get:async()=>{reads.push(path+"/"+child+"/"+key);return snapshot(docs[path+"/"+child+"/"+key]);}};}};},
+  path,collection(child){return {doc(key){return {path:path+"/"+child+"/"+key,get:async()=>{reads.push(path+"/"+child+"/"+key);return snapshot(docs[path+"/"+child+"/"+key]);}};}};},
   get:async()=>snapshot(docs[path])
  };}};},async runTransaction(callback){return callback({get:async ref=>{reads.push(ref.path);return snapshot(docs[ref.path]);},update:(ref,value)=>writes.push({path:ref.path,value})});}};
  return {db,writes,reads};
