@@ -10,6 +10,13 @@
     "trailingSlash": false,
     "rewrites": [
       {
+        "source": "/api/public-business",
+        "function": {
+          "functionId": "getPublicBusinessProfile",
+          "region": "europe-west2"
+        }
+      },
+      {
         "source": "/book/**",
         "destination": "/book/index.html"
       }
