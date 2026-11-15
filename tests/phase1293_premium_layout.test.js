@@ -1,0 +1,14 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const css=fs.readFileSync("web/phase1287/style.css","utf8");
+const html=fs.readFileSync("web/phase1287/index.html","utf8");
+const js=fs.readFileSync("web/phase1287/app.js","utf8");
+assert.ok(css.includes("Phase 12.93"));
+for(const selector of ["#journey{display:grid","grid-template-columns:minmax(0,1.7fr)","@media(max-width:760px)","@media(max-width:520px)","--boustio-teal:#087f80"])assert.ok(css.includes(selector),selector);
+for(const id of ["services","staff","date","times","review","customerName","customerEmail","customerPhone","consent","confirmation"])assert.ok(html.includes('id="'+id+'"'),id);
+assert.ok(html.includes("DEMONSTRATION ONLY"));
+assert.ok(html.includes('noindex,nofollow'));
+assert.ok(js.includes("All catalogue records and slots below are invented"));
+assert.ok(!js.includes("fetch("));
+console.log("PASS Phase 12.93 responsive visual-only contract and demo safety");
