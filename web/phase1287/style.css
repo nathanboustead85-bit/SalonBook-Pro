@@ -226,3 +226,8 @@ button[type=submit]{border-radius:999px;background:linear-gradient(90deg,#087f80
 .edit-selection{display:block;width:100%;min-height:44px;margin:0 0 10px;padding:10px 14px;border:1px solid #087f80;border-radius:999px;background:#fff;color:#075b59;font:inherit;font-size:14px;font-weight:750;cursor:pointer}
 .edit-selection:hover:not(:disabled){background:#e5f6f3}
 .edit-selection:disabled{border-color:#d6e5e1;color:#748d86;background:#f4f8f6;cursor:not-allowed}
+
+/* Phase 12.108: premium demonstration-only restart action */
+.restart-demo{display:block;width:100%;min-height:50px;margin:18px 0 0;padding:12px 16px;border:1px solid #087f80;border-radius:999px;background:#fff;color:#075b59;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.restart-demo:hover{background:#e5f6f3}
+.restart-demo:focus-visible{outline:3px solid #d4a331;outline-offset:3px}
