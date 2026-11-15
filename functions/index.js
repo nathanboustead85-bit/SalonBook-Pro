@@ -36,6 +36,7 @@ const {
 initializeApp();
 
 const db = getFirestore();
+const {preparePublicSlugMapping,prepareUnpublishMapping} = require("./phase1317PublicSlugMapping");
 
 const DEFAULT_PUBLIC_BASE_URL =
   "https://salonbook-pro-ad5ff.web.app";
@@ -229,6 +230,14 @@ exports.publishBusiness = onCall(
           );
         }
 
+        // Phase 13.17: read and validate public mapping in the SAME transaction.
+        const publicMapping = await preparePublicSlugMapping(db, transaction, {
+          uid, slug, previousSlug
+        });
+        if (publicMapping.status !== "READY") {
+          throw new HttpsError("already-exists", "This booking link is already taken.");
+        }
+
         const publicProfile = {
           businessId: uid,
           name: profile.name.trim(),
@@ -243,6 +252,8 @@ exports.publishBusiness = onCall(
           updatedAt:
             FieldValue.serverTimestamp()
         };
+
+        publicMapping.apply();
 
         transaction.set(
           slugRef,
@@ -309,6 +320,12 @@ exports.unpublishBusiness = onCall(
         if (!snapshot.exists) {
           return;
         }
+
+        // Keep the mapping reserved but no longer publicly discoverable.
+        const disableMapping = await prepareUnpublishMapping(db, transaction, {
+          uid, slug: snapshot.get("slug")
+        });
+        disableMapping();
 
         transaction.update(
           publicRef,
