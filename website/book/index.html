@@ -273,7 +273,40 @@ async function loadCatalogue() {
       if (payload.status !== "PUBLIC_PROFILE_READY" || !payload.business || payload.business.slug !== slug || typeof payload.business.name !== "string") throw new Error("Invalid public profile");
       ui.businessName.textContent = payload.business.name;
       ui.businessDescription.textContent = payload.business.description || "";
+      // Only show service/staff information explicitly published in the public
+      // document. No appointment slots are offered from this projection.
       ui.bookingContent.classList.add("hidden");
+      const oldCatalogue = document.getElementById("livePublicCatalogue");
+      if (oldCatalogue) oldCatalogue.remove();
+      if (payload.catalogue && Array.isArray(payload.catalogue.services) && Array.isArray(payload.catalogue.staff)) {
+        const section = document.createElement("section");
+        section.className = "card";
+        section.id = "livePublicCatalogue";
+        const heading = document.createElement("h2");
+        heading.textContent = "Services and professionals";
+        section.append(heading);
+        const list = document.createElement("ul");
+        for (const service of payload.catalogue.services) {
+          const item = document.createElement("li");
+          item.textContent = service.name + " — " + formatPrice(service.pricePence / 100) + " · " + service.durationMinutes + " minutes";
+          list.append(item);
+        }
+        section.append(list);
+        const staffHeading = document.createElement("h2");
+        staffHeading.textContent = "Professionals";
+        section.append(staffHeading);
+        const people = document.createElement("ul");
+        for (const member of payload.catalogue.staff) {
+          const item = document.createElement("li");
+          item.textContent = member.name;
+          people.append(item);
+        }
+        section.append(people);
+        const notice = document.createElement("p");
+        notice.textContent = "Information only — appointments cannot yet be booked online.";
+        section.append(notice);
+        ui.bookingContent.after(section);
+      }
       document.title = payload.business.name + " | Boustio";
     } catch {
       showError("Business unavailable","This published business could not be loaded.");
