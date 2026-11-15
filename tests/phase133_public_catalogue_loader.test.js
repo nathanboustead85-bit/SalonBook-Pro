@@ -1,0 +1,28 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const {requestedSlug,loadPublishedBusiness,renderPublishedBusiness}=require("../web/phase133/publicCatalogueLoader");
+const sample=()=>({schemaVersion:1,slug:"kody-blends",published:true,businessName:"Kody Blends",services:[{id:"cut",name:"Haircut",pricePence:2000,durationMinutes:30,published:true}],staff:[{id:"kody",name:"Kody",active:true,serviceIds:["cut"]}],ownerUid:"secret",clients:[{email:"private@example.test"}]});
+(async()=>{
+assert.equal(requestedSlug("?business=kody-blends"),"kody-blends");
+for(const s of ["?business=../admin","?business=kody-blends&business=other","?business=","?business=%3Cscript%3E"])assert.equal(requestedSlug(s),null);
+let called=0;
+const loader=async slug=>{called++;assert.equal(slug,"kody-blends");return sample();};
+const ready=await loadPublishedBusiness("kody-blends",loader);
+assert.equal(ready.status,"PUBLIC_CATALOGUE_READY");assert.equal(ready.bookingEnabled,false);assert.equal(ready.display.services[0].price,"£20.00");assert.equal(called,1);
+assert.ok(!JSON.stringify(ready).includes("private@example.test"));
+assert.equal((await loadPublishedBusiness("../private",loader)).status,"PUBLIC_CATALOGUE_UNAVAILABLE");assert.equal(called,1);
+assert.equal((await loadPublishedBusiness("kody-blends")).reason,"public_loader_not_configured");
+assert.equal((await loadPublishedBusiness("kody-blends",async()=>{throw Error("network")})).reason,"public_catalogue_request_failed");
+assert.equal((await loadPublishedBusiness("kody-blends",async()=>({...sample(),published:false}))).status,"PUBLIC_CATALOGUE_UNAVAILABLE");
+assert.equal((await loadPublishedBusiness("other",async()=>sample())).status,"PUBLIC_CATALOGUE_UNAVAILABLE");
+const doc={createElement(tag){return {tag,textContent:"",children:[],append(...nodes){this.children.push(...nodes)}}}};
+const container={ownerDocument:doc,children:[],replaceChildren(){this.children=[]},append(...nodes){this.children.push(...nodes)}};
+assert.equal((await renderPublishedBusiness(container,"kody-blends",loader)).status,"PUBLIC_CATALOGUE_READY");
+assert.equal(container.children[0].textContent,"Kody Blends");
+assert.ok(!JSON.stringify(container.children).includes("secret"));
+assert.equal((await renderPublishedBusiness(container,"kody-blends",async()=>null)).status,"PUBLIC_CATALOGUE_UNAVAILABLE");
+assert.equal(container.children.length,1);
+const source=fs.readFileSync("web/phase133/publicCatalogueLoader.js","utf8");
+for(const bad of ["innerHTML","fetch(","localStorage","sessionStorage","XMLHttpRequest","firebase.","WebSocket("])assert.ok(!source.includes(bad),bad);
+console.log("PASS Phase 13.3 public catalogue loader, slug, privacy and fail-closed tests");
+})().catch(e=>{console.error(e);process.exitCode=1});
