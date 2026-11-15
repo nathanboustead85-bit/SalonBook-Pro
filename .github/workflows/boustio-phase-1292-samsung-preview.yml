@@ -16,6 +16,7 @@ on:
       - 'tests/phase1299_*'
       - 'tests/phase12100_*'
       - 'tests/phase12101_*'
+      - 'tests/phase12102_*'
       - '.github/workflows/boustio-phase-1292-samsung-preview.yml'
 permissions:
   contents: read
@@ -34,6 +35,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run contracts and regression checks
         run: |
+          node tests/phase12102_field_guidance.test.js
           node tests/phase12101_details_readiness.test.js
           node tests/phase12100_confirmation_polish.test.js
           node tests/phase1299_selection_reset.test.js
@@ -72,6 +74,7 @@ jobs:
           node tests/phase1289_mobile_progress.cjs
           node tests/phase1290_accessibility_browser.cjs
           node tests/phase1291_visual_browser.cjs
+          node tests/phase12102_field_guidance_browser.cjs
           node tests/phase12101_details_readiness_browser.cjs
           node tests/phase12100_confirmation_polish_browser.cjs
           node tests/phase1299_selection_reset_browser.cjs
