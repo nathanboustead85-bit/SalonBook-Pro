@@ -29,7 +29,7 @@ const {chromium}=require("playwright");
     assert.match(await region.locator("#publicPreviewSafetyNotice").innerText(),/no appointment is held or booked/,step+" warning");
     assert.equal(await progress.getAttribute("aria-live"),"polite",step+" live status");
     assert.equal(await progress.innerText(),expected,step+" progress");
-    assert.equal(await progress.elementHandle()===originalProgress,true,step+" persistent status");
+    assert.equal(await progress.evaluate((node,original)=>node===original,originalProgress),true,step+" persistent status");
     assert.equal(await page.locator("#bookingContent").isVisible(),false,step+" no live booking form");
     assert.deepEqual(writes,[],step+" no write requests");
    }
