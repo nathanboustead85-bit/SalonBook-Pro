@@ -535,6 +535,20 @@ async function loadCatalogue() {
                 ? (selected ? "Selected professional: " : "Select professional: ") + (item?.name || "Unnamed")
                 : "Unavailable professional: " + (item?.name || "Unnamed") + " — does not offer " + service.name);
               button.setAttribute("aria-disabled",String(!eligible));
+              // Phase 13.41: show a visible compatibility explanation alongside the
+              // disabled button, including for touch users who cannot hover.
+              const card = button.closest(".public-catalogue-card");
+              let hint = card.querySelector(".public-staff-compatibility");
+              if (!hint) {
+                hint = document.createElement("p");
+                hint.className = "public-staff-compatibility public-search-status";
+                hint.dataset.role = "compatibility";
+                card.append(hint);
+              }
+              hint.hidden = eligible;
+              hint.textContent = eligible ? "" : "Not available for " + service.name;
+              button.setAttribute("aria-describedby",hint.hidden ? "" : "publicCompatibilityHint-" + button.dataset.id);
+              hint.id = "publicCompatibilityHint-" + button.dataset.id;
             }
           }
         }
