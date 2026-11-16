@@ -3,7 +3,7 @@ const assert=require("node:assert/strict");
 const {checkWorkingHours}=require("../functions/phase142WorkingHours");
 const catalogue={services:[{id:"cut",published:true,durationMinutes:30}],staff:[{id:"kody",active:true,serviceIds:["cut"]}]};
 const intent={serviceId:"cut",staffId:"kody",date:"2026-11-20",time:"09:00"}; // Friday
-const staff=[{id:"kody",weeklySchedule:{fri:{open:"09:00",close:"17:00"},mon:{open:"10:00",close:"16:00"}}}];
+const staff=[{id:"kody",weeklySchedule:{friday:{open:"09:00",close:"17:00"},monday:{open:"10:00",close:"16:00"}}}];
 const cases=[
  ["opens exactly",intent,staff,"WITHIN_WORKING_HOURS_ONLY"],
  ["closes exactly",{...intent,time:"16:30"},staff,"WITHIN_WORKING_HOURS_ONLY"],
@@ -14,9 +14,9 @@ const cases=[
  ["missing schedule",intent,[],"WORKING_HOURS_UNAVAILABLE"],
  ["missing weeklySchedule",intent,[{id:"kody"}],"WORKING_HOURS_UNAVAILABLE"],
  ["duplicate staff",intent,[...staff,...staff],"WORKING_HOURS_UNAVAILABLE"],
- ["invalid open",intent,[{id:"kody",weeklySchedule:{fri:{open:"9:00",close:"17:00"}}}],"WORKING_HOURS_UNAVAILABLE"],
- ["inverted hours",intent,[{id:"kody",weeklySchedule:{fri:{open:"17:00",close:"09:00"}}}],"WORKING_HOURS_UNAVAILABLE"],
- ["extra period field",intent,[{id:"kody",weeklySchedule:{fri:{open:"09:00",close:"17:00",unsafe:true}}}],"WORKING_HOURS_UNAVAILABLE"],
+ ["invalid open",intent,[{id:"kody",weeklySchedule:{friday:{open:"9:00",close:"17:00"}}}],"WORKING_HOURS_UNAVAILABLE"],
+ ["inverted hours",intent,[{id:"kody",weeklySchedule:{friday:{open:"17:00",close:"09:00"}}}],"WORKING_HOURS_UNAVAILABLE"],
+ ["extra period field",intent,[{id:"kody",weeklySchedule:{friday:{open:"09:00",close:"17:00",unsafe:true}}}],"WORKING_HOURS_UNAVAILABLE"],
  ["invalid intent",{...intent,date:"2026-11-31"},staff,"INVALID_REQUEST"]
 ];
 for(const [label,request,schedules,expected] of cases){
