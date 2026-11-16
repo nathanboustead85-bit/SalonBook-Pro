@@ -24,7 +24,7 @@ async function main(){
  assert.equal(out.results.length,50);
  assert.equal(out.results.filter(r=>r.status==="STRESS_ACKNOWLEDGEMENT_LOST").length,1);
  assert.equal(out.results.filter(r=>r.status==="EXISTING_BOOKING_CONFLICT").length,49);
- assert.equal(out.results[49].attempts,2,"winner retries after stale snapshot");
+ assert.equal(out.results[49].attempts,1,"first winner commits against initial snapshot");
  assert.equal(s.read().bookings.length,2,"50 competing devices must not double-book");
  assert.equal(s.read().requestCount,1);
  assert.deepEqual(s.read().bookings[0],original);
