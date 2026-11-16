@@ -16,7 +16,7 @@ const {chromium}=require("playwright");
      staff:[{id:"a",name:"Kody",serviceIds:["cut"]},{id:"b",name:"Stylist B",serviceIds:["colour"]}]}
    })}));
    await page.goto("http://127.0.0.1:8765/book/test-salon");
-   await page.locator("#publicResetSelection").waitFor();
+   await page.locator("#publicResetSelection").waitFor({state:"attached"});
    assert.equal(await page.locator("#publicResetSelection").isVisible(),false);
    await page.locator('.public-select[data-kind="service"][data-id="cut"]').click();
    await page.locator('.public-select[data-kind="staff"][data-id="a"]').click();
