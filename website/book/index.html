@@ -402,6 +402,10 @@ async function loadCatalogue() {
           function summaryCell(title,value) {
             const cell = document.createElement("div");
             cell.className = "public-summary-cell";
+            // Phase 13.49: make each preview detail a self-contained
+            // labelled group, retaining the same visible layout.
+            cell.setAttribute("role","group");
+            cell.setAttribute("aria-label",title + ": " + value);
             const label = document.createElement("strong");
             label.textContent = title;
             const detail = document.createElement("p");
