@@ -5,6 +5,17 @@
 // Does not deploy a Cloud Function or change booking state.
 const {DISABLED}=require("./phase147DisabledAtomicReservation");
 const ID=/^[A-Za-z0-9_-]{1,128}$/;
+// Only fixed diagnostic labels; never expose raw Firebase error messages or document data.
+function safeFailureCode(error){
+ const code=error&&error.code;
+ if(code===7||code==="7"||code==="permission-denied")return "PERMISSION_DENIED";
+ if(code===16||code==="16"||code==="unauthenticated")return "UNAUTHENTICATED";
+ if(code===5||code==="5"||code==="not-found")return "NOT_FOUND";
+ if(code===14||code==="14"||code==="unavailable")return "SERVICE_UNAVAILABLE";
+ if(code===4||code==="4"||code==="deadline-exceeded")return "DEADLINE_EXCEEDED";
+ if(code===9||code==="9"||code==="failed-precondition")return "FAILED_PRECONDITION";
+ return "UNKNOWN";
+}
 function createRealFirebaseReadOnlyProbe({db,projectId,allowedProjectId,enabled=false}={}){
  async function verify(ownerId){
   const deny=status=>Object.freeze({status,connected:false,acceptingBookings:false,reservationCreated:false,productionReady:false});
@@ -29,7 +40,7 @@ function createRealFirebaseReadOnlyProbe({db,projectId,allowedProjectId,enabled=
     connected:true,documentsPresent:result.filter(Boolean).length,
     acceptingBookings:false,reservationCreated:false,productionReady:false
    });
-  }catch{return deny("REAL_FIREBASE_PROBE_REVIEW_REQUIRED");}
+  }catch(error){return Object.freeze({...deny("REAL_FIREBASE_PROBE_REVIEW_REQUIRED"),failureCode:safeFailureCode(error)});}
  }
  return Object.freeze({verify,reserve:async()=>({...DISABLED})});
 }
