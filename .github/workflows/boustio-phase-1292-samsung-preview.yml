@@ -154,6 +154,8 @@ on:
       - 'tests/phase1613_*'
       - 'functions/phase1614BoundedRecoveryInspector.js'
       - 'tests/phase1614_*'
+      - 'functions/phase1615ThrottledRecoveryInspector.js'
+      - 'tests/phase1615_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -352,6 +354,9 @@ jobs:
           node --check functions/phase1614BoundedRecoveryInspector.js
           node --check tests/phase1614_bounded_recovery.test.js
           node tests/phase1614_bounded_recovery.test.js
+          node --check functions/phase1615ThrottledRecoveryInspector.js
+          node --check tests/phase1615_throttled_recovery.test.js
+          node tests/phase1615_throttled_recovery.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
