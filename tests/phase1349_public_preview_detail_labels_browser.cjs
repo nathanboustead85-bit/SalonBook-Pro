@@ -26,7 +26,7 @@ const {chromium}=require("playwright");
     assert.deepEqual(labels.map(x=>x.role),["group","group","group"]);
     assert.equal(labels[0].name,service?"Service: Haircut":"Service: Choose a service to explore.");
     assert.match(labels[1].name,service?/Price & duration: .*20.*30 minutes/:/Price & duration: Not selected/);
-    assert.equal(labels[2].name,professional?"Professional: Professional: Kody":"Professional: Professional: not selected");
+    assert.equal(labels[2].name,professional?"Professional: Kody":"Professional: not selected");
    }
    await check(false,false);
    await page.locator('.public-select[data-kind="service"][data-id="cut"]').click();
