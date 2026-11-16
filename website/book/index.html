@@ -359,6 +359,10 @@ async function loadCatalogue() {
         function updatePublicSelection() {
           const service = payload.catalogue.services.find(s => s.id === selectedServiceId);
           const member = payload.catalogue.staff.find(p => p.id === selectedStaffId);
+          // Phase 13.45: expose the preview summary as a named navigation region.
+          // Keep the name explicit that selections do not create an appointment.
+          selectionSummary.setAttribute("role","region");
+          selectionSummary.setAttribute("aria-label","Appointment preview — no booking made");
           // Phase 13.43: keep the same live-region node mounted across updates.
           // Recreating a live region can cause assistive technology to miss changes.
           let progress = selectionSummary.querySelector(".public-progress");
