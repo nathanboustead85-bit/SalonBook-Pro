@@ -72,6 +72,8 @@ on:
       - 'tests/phase145_*'
       - 'functions/phase146BookingConflictRehearsal.js'
       - 'tests/phase146_*'
+      - 'functions/phase147DisabledAtomicReservation.js'
+      - 'tests/phase147_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -147,6 +149,9 @@ jobs:
           node --check functions/phase146BookingConflictRehearsal.js
           node --check tests/phase146_booking_conflict_rehearsal.test.js
           node tests/phase146_booking_conflict_rehearsal.test.js
+          node --check functions/phase147DisabledAtomicReservation.js
+          node --check tests/phase147_disabled_atomic_reservation.test.js
+          node tests/phase147_disabled_atomic_reservation.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
