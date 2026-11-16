@@ -1,0 +1,45 @@
+name: Boustio Phase 17.4 Controlled Live Firebase Read-only Check
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type VERIFY_READ_ONLY to authorize one metadata-only Firestore check'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-phase174-live-readonly
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: ${{ inputs.approval == 'VERIFY_READ_ONLY' }}
+    runs-on: ubuntu-latest
+    environment: boustio-readonly-verification
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned backend dependencies
+        run: npm install --prefix functions --no-package-lock --ignore-scripts
+      - name: Authenticate with restricted Google Workload Identity
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.BOUSTIO_WIF_PROVIDER }}
+          service_account: ${{ vars.BOUSTIO_READONLY_SERVICE_ACCOUNT }}
+          project_id: ${{ vars.BOUSTIO_FIREBASE_PROJECT_ID }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Verify Firestore metadata without writes
+        env:
+          BOUSTIO_PHASE173_APPROVED: 'true'
+          BOUSTIO_FIREBASE_PROJECT_ID: ${{ vars.BOUSTIO_FIREBASE_PROJECT_ID }}
+          BOUSTIO_FIREBASE_ALLOWED_PROJECT_ID: ${{ vars.BOUSTIO_FIREBASE_PROJECT_ID }}
+          BOUSTIO_FIREBASE_OWNER_ID: ${{ secrets.BOUSTIO_FIREBASE_OWNER_ID }}
+          NODE_PATH: ${{ github.workspace }}/functions/node_modules
+        run: node scripts/phase173_real_firebase_readonly_probe.js
