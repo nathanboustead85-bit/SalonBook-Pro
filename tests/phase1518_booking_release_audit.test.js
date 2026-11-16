@@ -21,7 +21,7 @@ async function main(){
  assert.ok(report.checks.every(c=>c.passed));
  assert.deepEqual(await reserve(),DISABLED);
  // Mutated release output must not change the source of truth.
- report.launchBlockers[0].ready=true;
+ assert.throws(()=>{report.launchBlockers[0].ready=true;},TypeError,"launch gates must be immutable");
  assert.equal(auditBookingInfrastructure().launchBlockers[0].ready,false);
  // Missing or unsafe source must fail closed, never return launch-ready.
  const empty=fs.mkdtempSync(path.join(os.tmpdir(),"boustio-1518-"));
