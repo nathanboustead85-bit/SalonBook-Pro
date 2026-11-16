@@ -531,6 +531,26 @@ async function loadCatalogue() {
           serviceGrid.append(card);
         }
         section.append(serviceGrid);
+        // Phase 13.34: helpful empty-result recovery, without resetting selections.
+        const serviceEmpty = document.createElement("div");
+        serviceEmpty.id = "publicServiceNoResults";
+        serviceEmpty.className = "public-search-status";
+        serviceEmpty.hidden = true;
+        const serviceEmptyText = document.createElement("p");
+        serviceEmptyText.textContent = "No matching services. Try a different search.";
+        const serviceEmptyReset = document.createElement("button");
+        serviceEmptyReset.type = "button";
+        serviceEmptyReset.id = "publicResetServiceSearch";
+        serviceEmptyReset.className = "public-reset";
+        serviceEmptyReset.textContent = "Show all services";
+        serviceEmptyReset.addEventListener("click",() => {
+          serviceSearch.value = "";
+          filterServices();
+          updateClearFilters();
+          serviceSearch.focus();
+        });
+        serviceEmpty.append(serviceEmptyText,serviceEmptyReset);
+        section.append(serviceEmpty);
         function filterServices() {
           const query = serviceSearch.value.trim().toLocaleLowerCase();
           let visible = 0;
@@ -540,6 +560,7 @@ async function loadCatalogue() {
             card.hidden = !matches;
             if (matches) visible++;
           }
+          serviceEmpty.hidden = !query || visible !== 0;
           serviceSearchStatus.textContent = query
             ? visible + " matching service" + (visible === 1 ? "" : "s") + (visible ? "" : " — try another search.")
             : payload.catalogue.services.length + " service" + (payload.catalogue.services.length === 1 ? "" : "s") + " available to explore";
@@ -618,6 +639,26 @@ async function loadCatalogue() {
           updateStaffFilter();
         }
         staffSort.addEventListener("change",sortStaff);
+        // Phase 13.34: recover from an empty professional search/filter result.
+        const staffEmpty = document.createElement("div");
+        staffEmpty.id = "publicStaffNoResults";
+        staffEmpty.className = "public-search-status";
+        staffEmpty.hidden = true;
+        const staffEmptyText = document.createElement("p");
+        staffEmptyText.textContent = "No matching professionals. Try a different search or filter.";
+        const staffEmptyReset = document.createElement("button");
+        staffEmptyReset.type = "button";
+        staffEmptyReset.id = "publicResetStaffFilters";
+        staffEmptyReset.className = "public-reset";
+        staffEmptyReset.textContent = "Show all professionals";
+        staffEmptyReset.addEventListener("click",() => {
+          staffSearch.value = "";
+          staffFilter.checked = false;
+          updateStaffFilter();
+          updateClearFilters();
+          staffSearch.focus();
+        });
+        staffEmpty.append(staffEmptyText,staffEmptyReset);
         function updateStaffFilter() {
           const chosen = payload.catalogue.services.find(service => service.id === selectedServiceId);
           staffFilter.disabled = !chosen;
@@ -632,6 +673,7 @@ async function loadCatalogue() {
             card.hidden = !show;
             if (show) visible++;
           }
+          staffEmpty.hidden = visible !== 0 || !(staffSearch.value.trim() || staffFilter.checked);
           const count = visible + " professional" + (visible === 1 ? "" : "s") + " shown";
           staffFilterStatus.textContent = chosen
             ? count + (visible ? "" : " — try another search or turn off the filter.")
@@ -689,7 +731,7 @@ async function loadCatalogue() {
         });
         for (const input of [serviceSearch,staffSearch]) input.addEventListener("input",updateClearFilters);
         for (const input of [sortSelect,staffFilter,staffSort]) input.addEventListener("change",updateClearFilters);
-        section.append(staffSearchLabel,staffSearch,staffSortLabel,staffSort,staffFilterWrap,staffFilterStatus,staffGrid,clearFilters);
+        section.append(staffSearchLabel,staffSearch,staffSortLabel,staffSort,staffFilterWrap,staffFilterStatus,staffGrid,staffEmpty,clearFilters);
         updateClearFilters();
         section.append(selectionSummary);
         updatePublicSelection();
