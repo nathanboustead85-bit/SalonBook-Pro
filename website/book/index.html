@@ -529,6 +529,12 @@ async function loadCatalogue() {
               const eligible = !service || payload.catalogue.staff.find(p => p.id === button.dataset.id)?.serviceIds.includes(service.id);
               button.disabled = !eligible;
               button.title = eligible ? "" : "This professional does not offer the selected service";
+              // Phase 13.40: expose compatibility to assistive technology without
+              // relying on a hover-only tooltip (disabled buttons cannot be focused).
+              button.setAttribute("aria-label",eligible
+                ? (selected ? "Selected professional: " : "Select professional: ") + (item?.name || "Unnamed")
+                : "Unavailable professional: " + (item?.name || "Unnamed") + " — does not offer " + service.name);
+              button.setAttribute("aria-disabled",String(!eligible));
             }
           }
         }
