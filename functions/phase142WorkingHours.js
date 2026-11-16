@@ -2,7 +2,7 @@
 // Phase 14.2: pure weekly-hours eligibility using Android staff.weeklySchedule.
 // Does not read live cloud data, handle breaks/time off, reserve slots or enable booking.
 const {validateBookingIntent,minuteOfDay}=require("./phase141BookingIntent");
-const DAYS=["sun","mon","tue","wed","thu","fri","sat"];
+const DAYS=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
 function checkWorkingHours(intent,catalogue,staffSchedules){
  const validated=validateBookingIntent(intent,catalogue);
  if(validated.status!=="VALIDATED_INTENT_ONLY")return validated;
