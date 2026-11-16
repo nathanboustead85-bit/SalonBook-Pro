@@ -488,7 +488,30 @@ async function loadCatalogue() {
               firstEligible.focus({preventScroll:true});
             }
           });
-          selectionSummary.append(changeProfessional,reset);
+          // Phase 13.38: change the service without restarting the entire preview.
+          // Keep the professional only when they also offer the newly chosen service.
+          const changeService = document.createElement("button");
+          changeService.type = "button";
+          changeService.id = "publicChangeService";
+          changeService.className = "public-reset";
+          changeService.textContent = "Change service";
+          changeService.hidden = !service;
+          changeService.addEventListener("click",() => {
+            if (!selectedServiceId) return;
+            selectedServiceId = null;
+            selectedStaffId = null;
+            serviceSearch.value = "";
+            staffFilter.checked = false;
+            updatePublicSelection();
+            filterServices();
+            updateClearFilters();
+            const firstService = serviceGrid.querySelector('.public-select[data-kind="service"]');
+            if (firstService) {
+              firstService.scrollIntoView({block:"center",behavior:"smooth"});
+              firstService.focus({preventScroll:true});
+            }
+          });
+          selectionSummary.append(changeService,changeProfessional,reset);
           updateStaffFilter();
           for (const button of section.querySelectorAll(".public-select")) {
             const selected = button.dataset.kind === "service" ? button.dataset.id === selectedServiceId : button.dataset.id === selectedStaffId;
