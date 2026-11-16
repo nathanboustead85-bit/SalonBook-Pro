@@ -78,6 +78,9 @@
     body.real-public .public-next { background:#087f80; color:#fff; border:0; font-weight:750; margin-top:12px; cursor:pointer; }
     body.real-public .public-next:disabled { background:#a5b9b3; cursor:not-allowed; }
     body.real-public .public-next:focus-visible { outline:3px solid #087f80; outline-offset:3px; }
+    body.real-public .public-reset { display:block; margin-top:10px; padding:10px 12px; background:transparent; color:#087f80; border:1px solid #087f80; border-radius:10px; font-weight:700; cursor:pointer; }
+    body.real-public .public-reset[hidden] { display:none; }
+    body.real-public .public-reset:focus-visible { outline:3px solid #087f80; outline-offset:3px; }
     .disabled-action { margin-top:18px; background:#9ca3af; color:white; font-weight:700; border:0; cursor:not-allowed; }
     footer { text-align:center; padding:20px; color:#64748b; font-size:12px; }
   </style>
@@ -379,7 +382,20 @@ async function loadCatalogue() {
             const target = document.getElementById(staffHeadingId);
             if (target) { target.scrollIntoView({block:"start",behavior:"smooth"}); target.focus({preventScroll:true}); }
           });
-          selectionSummary.append(progress,heading,grid,warning,next);
+          const reset = document.createElement("button");
+          reset.type = "button";
+          reset.id = "publicResetSelection";
+          reset.className = "public-reset";
+          reset.textContent = "Start again";
+          reset.hidden = !service && !member;
+          reset.addEventListener("click",() => {
+            selectedServiceId = null;
+            selectedStaffId = null;
+            updatePublicSelection();
+            const firstService = section.querySelector('.public-select[data-kind="service"]');
+            if (firstService) firstService.focus();
+          });
+          selectionSummary.append(progress,heading,grid,warning,next,reset);
           for (const button of section.querySelectorAll(".public-select")) {
             const selected = button.dataset.kind === "service" ? button.dataset.id === selectedServiceId : button.dataset.id === selectedStaffId;
             button.setAttribute("aria-pressed",String(selected));
