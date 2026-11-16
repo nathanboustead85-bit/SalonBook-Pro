@@ -605,7 +605,32 @@ async function loadCatalogue() {
           card.append(title,details,selectionButton("staff",member.id));
           staffGrid.append(card);
         }
-        section.append(staffSearchLabel,staffSearch,staffFilterWrap,staffFilterStatus,staffGrid);
+        // Phase 13.31: clear discovery controls without clearing appointment selections.
+        const clearFilters = document.createElement("button");
+        clearFilters.type = "button";
+        clearFilters.id = "publicClearFilters";
+        clearFilters.className = "public-reset";
+        clearFilters.textContent = "Clear search and filters";
+        function updateClearFilters() {
+          const active = !!serviceSearch.value.trim() || sortSelect.value !== "default" ||
+            !!staffSearch.value.trim() || staffFilter.checked;
+          clearFilters.hidden = !active;
+        }
+        clearFilters.addEventListener("click",() => {
+          serviceSearch.value = "";
+          sortSelect.value = "default";
+          staffSearch.value = "";
+          staffFilter.checked = false;
+          // Reuse the existing handlers so ordering and visible counts stay in sync.
+          sortSelect.dispatchEvent(new Event("change"));
+          updateStaffFilter();
+          updateClearFilters();
+          serviceSearch.focus();
+        });
+        for (const input of [serviceSearch,staffSearch]) input.addEventListener("input",updateClearFilters);
+        for (const input of [sortSelect,staffFilter]) input.addEventListener("change",updateClearFilters);
+        section.append(staffSearchLabel,staffSearch,staffFilterWrap,staffFilterStatus,staffGrid,clearFilters);
+        updateClearFilters();
         section.append(selectionSummary);
         updatePublicSelection();
         const notice = document.createElement("p");
