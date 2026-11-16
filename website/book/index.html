@@ -389,6 +389,10 @@ async function loadCatalogue() {
               : "Step 1 of 2. Choose a service. No appointment has been booked.");
           const heading = document.createElement("strong");
           heading.textContent = "Your appointment preview";
+          // Phase 13.46: expose the existing visual title as a real heading
+          // to assist screen-reader heading navigation without altering styling.
+          heading.setAttribute("role","heading");
+          heading.setAttribute("aria-level","2");
           const grid = document.createElement("div");
           grid.className = "public-summary-grid";
           function summaryCell(title,value) {
