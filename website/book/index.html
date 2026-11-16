@@ -362,6 +362,11 @@ async function loadCatalogue() {
           selectionSummary.replaceChildren();
           const progress = document.createElement("div");
           progress.className = "public-progress";
+          // Phase 13.42: expose selection progress as a non-interrupting
+          // status update to screen readers, including on mobile devices.
+          progress.setAttribute("role","status");
+          progress.setAttribute("aria-live","polite");
+          progress.setAttribute("aria-atomic","true");
           progress.textContent = service && member ? "2 of 2 · Preview selections complete" : service ? "1 of 2 · Choose your professional" : "Step 1 of 2 · Choose your service";
           const heading = document.createElement("strong");
           heading.textContent = "Your appointment preview";
