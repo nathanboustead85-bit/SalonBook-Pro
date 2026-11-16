@@ -150,6 +150,8 @@ on:
       - 'tests/phase1611_*'
       - 'functions/phase1612RecoveryBatchAuditor.js'
       - 'tests/phase1612_*'
+      - 'functions/phase1613RecoveryResilienceInspector.js'
+      - 'tests/phase1613_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -342,6 +344,9 @@ jobs:
           node --check functions/phase1612RecoveryBatchAuditor.js
           node --check tests/phase1612_recovery_batch_audit.test.js
           node tests/phase1612_recovery_batch_audit.test.js
+          node --check functions/phase1613RecoveryResilienceInspector.js
+          node --check tests/phase1613_recovery_resilience.test.js
+          node tests/phase1613_recovery_resilience.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
