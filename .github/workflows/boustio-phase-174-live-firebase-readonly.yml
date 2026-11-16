@@ -23,10 +23,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: functions/package-lock.json
-      - name: Install pinned backend dependencies
-        run: npm ci --prefix functions --ignore-scripts
+      - name: Install backend dependencies without modifying repository lockfiles
+        run: npm install --prefix functions --no-package-lock --ignore-scripts --no-audit --no-fund
       - name: Authenticate with restricted Google Workload Identity
         uses: google-github-actions/auth@v2
         with:
