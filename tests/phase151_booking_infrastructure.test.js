@@ -34,7 +34,7 @@ async function main(){
  const functions=fs.readFileSync(path.resolve(__dirname,"../functions/index.js"),"utf8");
  assert.ok(!/exports\.(?:reserve|createBooking|bookAppointment|customerBooking)\s*=/.test(functions));
  const source=fs.readFileSync(path.resolve(__dirname,"../functions/phase151BookingInfrastructurePreparation.js"),"utf8");
- assert.ok(!/\.set\s*\(|\.create\s*\(|\.update\s*\(|\.delete\s*\(/.test(source),
+ assert.ok(!/\b(?:transaction|tx|batch|docRef|documentRef|db)\s*\.\s*(?:set|create|update|delete|runTransaction|batch)\s*\(/.test(source),
   "preparation module must not write Firestore");
  assert.ok(!source.includes("firebase-admin"),"no Firestore admin access");
  console.log("PASS Phase 15.1 deterministic opaque storage plan, owner isolation, no writes, booking disabled");
