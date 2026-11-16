@@ -53,7 +53,7 @@ async function main(){
  await check("stale public catalogue",{ages:[MAX_AGE_MS+1,0,0]},intent,"CLOUD_SNAPSHOT_STALE");
  await check("future timestamp",{age:-1},intent,"CLOUD_SNAPSHOT_STALE");
  await check("cache rejected",{cache:true},intent,"CLOUD_SNAPSHOT_STALE");
- await check("missing cloud bookings",{bookingData:undefined},intent,"CLOUD_SNAPSHOT_STALE");
+ await check("missing cloud bookings",{bookingData:null},intent,"CLOUD_AVAILABILITY_UNAVAILABLE");
  await check("published booking switch",{publicData:{...pub,acceptingBookings:true}},intent,"CLOUD_AVAILABILITY_UNAVAILABLE");
  await check("malformed legacy",{bookingData:[{id:"old",time:"09:00"}]},intent,"CLOUD_AVAILABILITY_UNAVAILABLE");
  const offline=dbFake({fail:true});
