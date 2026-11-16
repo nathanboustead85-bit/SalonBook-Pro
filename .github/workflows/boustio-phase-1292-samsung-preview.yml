@@ -60,6 +60,8 @@ on:
       - 'tests/phase1348_*'
       - 'tests/phase1349_*'
       - 'tests/phase1350_*'
+      - 'functions/phase141BookingIntent.js'
+      - 'tests/phase141_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -121,6 +123,8 @@ jobs:
       - name: Run contracts and regression checks
         run: |
           node --check functions/index.js
+          node --check functions/phase141BookingIntent.js
+          node tests/phase141_booking_intent.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
