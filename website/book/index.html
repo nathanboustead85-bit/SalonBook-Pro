@@ -395,6 +395,10 @@ async function loadCatalogue() {
           heading.setAttribute("aria-level","2");
           const grid = document.createElement("div");
           grid.className = "public-summary-grid";
+          // Phase 13.48: give the service, price and professional details
+          // a distinct accessible group inside the appointment preview.
+          grid.setAttribute("role","group");
+          grid.setAttribute("aria-label","Selected service, price and professional");
           function summaryCell(title,value) {
             const cell = document.createElement("div");
             cell.className = "public-summary-cell";
