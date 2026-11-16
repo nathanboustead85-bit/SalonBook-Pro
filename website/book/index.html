@@ -421,6 +421,10 @@ async function loadCatalogue() {
             : "No published professionals currently offer this service. You can choose another service, but online booking is not available yet.";
           const warning = document.createElement("p");
           warning.textContent = "Preview only — no appointment is held or booked. Dates and times are not available for real businesses yet.";
+          // Phase 13.47: associate the preview safety explanation with its
+          // named landmark so assistive technology can discover the limitation.
+          warning.id = "publicPreviewSafetyNotice";
+          selectionSummary.setAttribute("aria-describedby",warning.id);
           const next = document.createElement("button");
           next.type = "button";
           next.id = "publicNextStep";
