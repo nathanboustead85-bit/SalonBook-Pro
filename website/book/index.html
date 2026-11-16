@@ -408,7 +408,36 @@ async function loadCatalogue() {
             const firstService = section.querySelector('.public-select[data-kind="service"]');
             if (firstService) firstService.focus();
           });
-          selectionSummary.append(progress,heading,grid,warning,next,reset);
+          // Phase 13.32: jump back to selected cards, even when searches hide them.
+          function selectedJump(kind,id,label) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "public-reset";
+            button.id = kind === "service" ? "publicViewSelectedService" : "publicViewSelectedProfessional";
+            button.textContent = label;
+            button.addEventListener("click",() => {
+              if (kind === "service") {
+                serviceSearch.value = "";
+                filterServices();
+              } else {
+                staffSearch.value = "";
+                staffFilter.checked = false;
+                updateStaffFilter();
+              }
+              updateClearFilters();
+              const target = Array.from(section.querySelectorAll('.public-select[data-kind="' + kind + '"]'))
+                .find(item => item.dataset.id === id);
+              if (target) {
+                target.scrollIntoView({block:"center",behavior:"smooth"});
+                target.focus({preventScroll:true});
+              }
+            });
+            return button;
+          }
+          selectionSummary.append(progress,heading,grid,warning,next);
+          if (service) selectionSummary.append(selectedJump("service",service.id,"View selected service"));
+          if (member) selectionSummary.append(selectedJump("staff",member.id,"View selected professional"));
+          selectionSummary.append(reset);
           updateStaffFilter();
           for (const button of section.querySelectorAll(".public-select")) {
             const selected = button.dataset.kind === "service" ? button.dataset.id === selectedServiceId : button.dataset.id === selectedStaffId;
