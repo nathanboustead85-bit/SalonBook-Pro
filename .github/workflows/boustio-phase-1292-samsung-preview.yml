@@ -76,6 +76,8 @@ on:
       - 'tests/phase147_*'
       - 'functions/phase148RollbackSimulator.js'
       - 'tests/phase148_*'
+      - 'functions/phase149IdempotencySimulator.js'
+      - 'tests/phase149_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -157,6 +159,9 @@ jobs:
           node --check functions/phase148RollbackSimulator.js
           node --check tests/phase148_rollback_simulator.test.js
           node tests/phase148_rollback_simulator.test.js
+          node --check functions/phase149IdempotencySimulator.js
+          node --check tests/phase149_idempotency_simulator.test.js
+          node tests/phase149_idempotency_simulator.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
