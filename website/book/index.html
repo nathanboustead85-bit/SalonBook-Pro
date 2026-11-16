@@ -81,6 +81,11 @@
     body.real-public .public-reset { display:block; margin-top:10px; padding:10px 12px; background:transparent; color:#087f80; border:1px solid #087f80; border-radius:10px; font-weight:700; cursor:pointer; }
     body.real-public .public-reset[hidden] { display:none; }
     body.real-public .public-reset:focus-visible { outline:3px solid #087f80; outline-offset:3px; }
+    body.real-public .public-search-label { display:block; margin:14px 0 6px; font-weight:750; color:#164b4a; }
+    body.real-public .public-service-search { box-sizing:border-box; width:100%; min-height:44px; padding:12px; border:1px solid #a8d3c6; border-radius:12px; background:#fff; color:#163f3e; font:inherit; }
+    body.real-public .public-service-search:focus-visible { outline:3px solid #087f80; outline-offset:2px; }
+    body.real-public .public-search-status { font-size:13px; color:#47635e; margin:8px 0 12px; }
+    body.real-public .public-catalogue-card[hidden] { display:none; }
     .disabled-action { margin-top:18px; background:#9ca3af; color:white; font-weight:700; border:0; cursor:not-allowed; }
     footer { text-align:center; padding:20px; color:#64748b; font-size:12px; }
   </style>
@@ -431,6 +436,23 @@ async function loadCatalogue() {
           });
           return button;
         }
+        // Phase 13.27: local-only service search; no customer data is transmitted.
+        const serviceSearchLabel = document.createElement("label");
+        serviceSearchLabel.className = "public-search-label";
+        serviceSearchLabel.htmlFor = "publicServiceSearch";
+        serviceSearchLabel.textContent = "Find a service";
+        const serviceSearch = document.createElement("input");
+        serviceSearch.id = "publicServiceSearch";
+        serviceSearch.className = "public-service-search";
+        serviceSearch.type = "search";
+        serviceSearch.autocomplete = "off";
+        serviceSearch.placeholder = "Search services";
+        const serviceSearchStatus = document.createElement("p");
+        serviceSearchStatus.id = "publicServiceSearchStatus";
+        serviceSearchStatus.className = "public-search-status";
+        serviceSearchStatus.setAttribute("role","status");
+        serviceSearchStatus.setAttribute("aria-live","polite");
+        section.append(serviceSearchLabel,serviceSearch,serviceSearchStatus);
         const serviceGrid = document.createElement("div");
         serviceGrid.className = "public-catalogue-grid";
         if (!payload.catalogue.services.length) {
@@ -450,6 +472,21 @@ async function loadCatalogue() {
           serviceGrid.append(card);
         }
         section.append(serviceGrid);
+        function filterServices() {
+          const query = serviceSearch.value.trim().toLocaleLowerCase();
+          let visible = 0;
+          for (const card of serviceGrid.querySelectorAll(".public-catalogue-card")) {
+            const name = card.querySelector("h3")?.textContent || "";
+            const matches = name.toLocaleLowerCase().includes(query);
+            card.hidden = !matches;
+            if (matches) visible++;
+          }
+          serviceSearchStatus.textContent = query
+            ? visible + " matching service" + (visible === 1 ? "" : "s") + (visible ? "" : " — try another search.")
+            : payload.catalogue.services.length + " service" + (payload.catalogue.services.length === 1 ? "" : "s") + " available to explore";
+        }
+        serviceSearch.addEventListener("input",filterServices);
+        filterServices();
         const staffHeading = document.createElement("h2");
         staffHeading.textContent = "Meet the professionals";
         staffHeading.id = staffHeadingId;
