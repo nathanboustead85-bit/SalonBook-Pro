@@ -7,13 +7,44 @@ const {DISABLED}=require("./phase147DisabledAtomicReservation");
 const ID=/^[A-Za-z0-9_-]{1,128}$/;
 // Only fixed diagnostic labels; never expose raw Firebase error messages or document data.
 function safeFailureCode(error){
- const code=error&&error.code;
- if(code===7||code==="7"||code==="permission-denied")return "PERMISSION_DENIED";
- if(code===16||code==="16"||code==="unauthenticated")return "UNAUTHENTICATED";
- if(code===5||code==="5"||code==="not-found")return "NOT_FOUND";
- if(code===14||code==="14"||code==="unavailable")return "SERVICE_UNAVAILABLE";
- if(code===4||code==="4"||code==="deadline-exceeded")return "DEADLINE_EXCEEDED";
- if(code===9||code==="9"||code==="failed-precondition")return "FAILED_PRECONDITION";
+ // Classify only allowlisted categories; never return exception text, stack or IDs.
+ const known=new Map([
+  ["7","PERMISSION_DENIED"],["permission-denied","PERMISSION_DENIED"],["PERMISSION_DENIED","PERMISSION_DENIED"],
+  ["16","UNAUTHENTICATED"],["unauthenticated","UNAUTHENTICATED"],["UNAUTHENTICATED","UNAUTHENTICATED"],
+  ["5","NOT_FOUND"],["not-found","NOT_FOUND"],["NOT_FOUND","NOT_FOUND"],
+  ["14","SERVICE_UNAVAILABLE"],["unavailable","SERVICE_UNAVAILABLE"],["UNAVAILABLE","SERVICE_UNAVAILABLE"],
+  ["4","DEADLINE_EXCEEDED"],["deadline-exceeded","DEADLINE_EXCEEDED"],["DEADLINE_EXCEEDED","DEADLINE_EXCEEDED"],
+  ["9","FAILED_PRECONDITION"],["failed-precondition","FAILED_PRECONDITION"],["FAILED_PRECONDITION","FAILED_PRECONDITION"],
+  ["3","INVALID_ARGUMENT"],["invalid-argument","INVALID_ARGUMENT"],["INVALID_ARGUMENT","INVALID_ARGUMENT"],
+  ["12","UNIMPLEMENTED"],["unimplemented","UNIMPLEMENTED"],["UNIMPLEMENTED","UNIMPLEMENTED"],
+  ["8","RESOURCE_EXHAUSTED"],["resource-exhausted","RESOURCE_EXHAUSTED"],["RESOURCE_EXHAUSTED","RESOURCE_EXHAUSTED"]
+ ]);
+ const seen=new Set();let current=error;
+ for(let i=0;i<4&&current&&typeof current==="object"&&!seen.has(current);i++){
+  seen.add(current);
+  const code=current.code;
+  if((typeof code==="number"||typeof code==="string")&&known.has(String(code)))
+   return known.get(String(code));
+  current=current.cause;
+ }
+ // Common credential and transport failures can be categorized by fixed phrases,
+ // without disclosing the underlying error message or any personal data.
+ const message=typeof error?.message==="string"?error.message.slice(0,2048):"";
+ if(/iam\\.serviceAccounts\\.getAccessToken|iamcredentials|generateAccessToken|iam\\.serviceAccounts\\.getOpenIdToken/i.test(message))
+  return "SERVICE_ACCOUNT_IMPERSONATION";
+ if(/invalid_grant|invalid_target|invalid_subject_token|invalid_credential/i.test(message))
+  return "FEDERATED_CREDENTIAL_REJECTED";
+ if(/Could not load the default credentials|application default credentials/i.test(message))
+  return "CREDENTIALS_UNAVAILABLE";
+ if(/PERMISSION_DENIED|permission denied|403 Forbidden|insufficient permissions/i.test(message))
+  return "PERMISSION_DENIED";
+ if(/UNAUTHENTICATED|401 Unauthorized/i.test(message))return "UNAUTHENTICATED";
+ if(/FAILED_PRECONDITION/i.test(message))return "FAILED_PRECONDITION";
+ if(/INVALID_ARGUMENT/i.test(message))return "INVALID_ARGUMENT";
+ if(/UNIMPLEMENTED/i.test(message))return "UNIMPLEMENTED";
+ if(/RESOURCE_EXHAUSTED/i.test(message))return "RESOURCE_EXHAUSTED";
+ if(/DEADLINE_EXCEEDED|deadline exceeded/i.test(message))return "DEADLINE_EXCEEDED";
+ if(/UNAVAILABLE|ECONNRESET|ENOTFOUND|ETIMEDOUT/i.test(message))return "SERVICE_UNAVAILABLE";
  return "UNKNOWN";
 }
 function createRealFirebaseReadOnlyProbe({db,projectId,allowedProjectId,enabled=false}={}){
