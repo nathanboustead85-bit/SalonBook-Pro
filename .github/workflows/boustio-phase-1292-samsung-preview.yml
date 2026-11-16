@@ -128,6 +128,8 @@ on:
       - 'tests/phase1518_*'
       - 'functions/phase161ProductionBookingFoundation.js'
       - 'tests/phase161_*'
+      - 'functions/phase162OwnerAuthenticationPreparation.js'
+      - 'tests/phase162_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -287,6 +289,9 @@ jobs:
           node --check functions/phase161ProductionBookingFoundation.js
           node --check tests/phase161_production_booking_foundation.test.js
           node tests/phase161_production_booking_foundation.test.js
+          node --check functions/phase162OwnerAuthenticationPreparation.js
+          node --check tests/phase162_owner_authentication.test.js
+          node tests/phase162_owner_authentication.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
