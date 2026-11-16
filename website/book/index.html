@@ -550,6 +550,17 @@ async function loadCatalogue() {
         staffFilterStatus.setAttribute("role","status");
         staffFilterStatus.setAttribute("aria-live","polite");
         staffFilterWrap.append(staffFilter,staffFilterLabel);
+        // Phase 13.30: search professionals locally, alongside compatibility filtering.
+        const staffSearchLabel = document.createElement("label");
+        staffSearchLabel.htmlFor = "publicStaffSearch";
+        staffSearchLabel.className = "public-search-label";
+        staffSearchLabel.textContent = "Find a professional";
+        const staffSearch = document.createElement("input");
+        staffSearch.id = "publicStaffSearch";
+        staffSearch.className = "public-service-search";
+        staffSearch.type = "search";
+        staffSearch.autocomplete = "off";
+        staffSearch.placeholder = "Search professionals";
         function updateStaffFilter() {
           const chosen = payload.catalogue.services.find(service => service.id === selectedServiceId);
           staffFilter.disabled = !chosen;
@@ -558,15 +569,19 @@ async function loadCatalogue() {
           for (const card of staffGrid.querySelectorAll(".public-catalogue-card")) {
             const id = card.querySelector('.public-select[data-kind="staff"]')?.dataset.id;
             const member = payload.catalogue.staff.find(person => person.id === id);
-            const show = !chosen || !staffFilter.checked || !!member?.serviceIds.includes(chosen.id);
+            const compatible = !chosen || !staffFilter.checked || !!member?.serviceIds.includes(chosen.id);
+            const matchesName = (member?.name || "").toLocaleLowerCase().includes(staffSearch.value.trim().toLocaleLowerCase());
+            const show = compatible && matchesName;
             card.hidden = !show;
             if (show) visible++;
           }
+          const count = visible + " professional" + (visible === 1 ? "" : "s") + " shown";
           staffFilterStatus.textContent = chosen
-            ? visible + " professional" + (visible === 1 ? "" : "s") + " shown"
-            : "Choose a service to filter professionals";
+            ? count + (visible ? "" : " — try another search or turn off the filter.")
+            : staffSearch.value.trim() ? count + (visible ? "" : " — try another search.") : "Choose a service to filter professionals";
         }
         staffFilter.addEventListener("change",updateStaffFilter);
+        staffSearch.addEventListener("input",updateStaffFilter);
         const staffHeading = document.createElement("h2");
         staffHeading.textContent = "Meet the professionals";
         staffHeading.id = staffHeadingId;
@@ -590,7 +605,7 @@ async function loadCatalogue() {
           card.append(title,details,selectionButton("staff",member.id));
           staffGrid.append(card);
         }
-        section.append(staffFilterWrap,staffFilterStatus,staffGrid);
+        section.append(staffSearchLabel,staffSearch,staffFilterWrap,staffFilterStatus,staffGrid);
         section.append(selectionSummary);
         updatePublicSelection();
         const notice = document.createElement("p");
