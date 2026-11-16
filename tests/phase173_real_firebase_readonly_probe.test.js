@@ -35,6 +35,13 @@ async function main(){
  assert.equal(missing.status,"REAL_FIREBASE_DOCUMENTS_MISSING");
  const offline=await make({enabled:true,db:{...db,runTransaction:async()=>{throw Error("offline");}}}).verify("salonA");
  assert.equal(offline.status,"REAL_FIREBASE_PROBE_REVIEW_REQUIRED");
+ assert.equal(offline.failureCode,"UNKNOWN");
+ for(const [code,expected] of [[7,"PERMISSION_DENIED"],[16,"UNAUTHENTICATED"],[14,"SERVICE_UNAVAILABLE"],[4,"DEADLINE_EXCEEDED"],[9,"FAILED_PRECONDITION"]]){
+  const failure=await make({enabled:true,db:{...db,runTransaction:async()=>{throw Object.assign(new Error("private details"),{code});}}}).verify("salonA");
+  assert.equal(failure.failureCode,expected);
+  assert.equal(failure.acceptingBookings,false);
+  assert.ok(!JSON.stringify(failure).includes("private details"));
+ }
  assert.deepEqual(await probe.reserve(),DISABLED);
  const entry=fs.readFileSync(path.join(__dirname,"../functions/index.js"),"utf8");
  const source=fs.readFileSync(path.join(__dirname,"../functions/phase173RealFirebaseReadOnlyProbe.js"),"utf8");
