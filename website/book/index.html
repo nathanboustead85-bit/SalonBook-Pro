@@ -590,6 +590,34 @@ async function loadCatalogue() {
         staffSearch.type = "search";
         staffSearch.autocomplete = "off";
         staffSearch.placeholder = "Search professionals";
+        // Phase 13.33: stable browser-only professional ordering.
+        const staffSortLabel = document.createElement("label");
+        staffSortLabel.className = "public-sort-label";
+        staffSortLabel.htmlFor = "publicStaffSort";
+        staffSortLabel.textContent = "Sort professionals";
+        const staffSort = document.createElement("select");
+        staffSort.id = "publicStaffSort";
+        staffSort.className = "public-service-sort";
+        for (const [value,label] of [["default","Original order"],["name","Name: A to Z"],["name-desc","Name: Z to A"]]) {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          staffSort.append(option);
+        }
+        function sortStaff() {
+          const cards = Array.from(staffGrid.querySelectorAll(".public-catalogue-card"));
+          const names = new Map(payload.catalogue.staff.map(member => [member.id,member.name]));
+          cards.sort((a,b) => {
+            const nameA = names.get(a.querySelector(".public-select").dataset.id) || "";
+            const nameB = names.get(b.querySelector(".public-select").dataset.id) || "";
+            const difference = staffSort.value === "name" ? nameA.localeCompare(nameB)
+              : staffSort.value === "name-desc" ? nameB.localeCompare(nameA) : 0;
+            return difference || Number(a.dataset.originalIndex) - Number(b.dataset.originalIndex);
+          });
+          staffGrid.append(...cards);
+          updateStaffFilter();
+        }
+        staffSort.addEventListener("change",sortStaff);
         function updateStaffFilter() {
           const chosen = payload.catalogue.services.find(service => service.id === selectedServiceId);
           staffFilter.disabled = !chosen;
@@ -623,8 +651,9 @@ async function loadCatalogue() {
           empty.textContent = "No professionals are currently listed online.";
           staffGrid.append(empty);
         }
-        for (const member of payload.catalogue.staff) {
+        for (const [index,member] of payload.catalogue.staff.entries()) {
           const card = document.createElement("article");
+          card.dataset.originalIndex = String(index);
           card.className = "public-catalogue-card";
           const title = document.createElement("h3");
           title.textContent = member.name;
@@ -642,7 +671,7 @@ async function loadCatalogue() {
         clearFilters.textContent = "Clear search and filters";
         function updateClearFilters() {
           const active = !!serviceSearch.value.trim() || sortSelect.value !== "default" ||
-            !!staffSearch.value.trim() || staffFilter.checked;
+            !!staffSearch.value.trim() || staffFilter.checked || staffSort.value !== "default";
           clearFilters.hidden = !active;
         }
         clearFilters.addEventListener("click",() => {
@@ -650,6 +679,8 @@ async function loadCatalogue() {
           sortSelect.value = "default";
           staffSearch.value = "";
           staffFilter.checked = false;
+          staffSort.value = "default";
+          sortStaff();
           // Reuse the existing handlers so ordering and visible counts stay in sync.
           sortSelect.dispatchEvent(new Event("change"));
           updateStaffFilter();
@@ -657,8 +688,8 @@ async function loadCatalogue() {
           serviceSearch.focus();
         });
         for (const input of [serviceSearch,staffSearch]) input.addEventListener("input",updateClearFilters);
-        for (const input of [sortSelect,staffFilter]) input.addEventListener("change",updateClearFilters);
-        section.append(staffSearchLabel,staffSearch,staffFilterWrap,staffFilterStatus,staffGrid,clearFilters);
+        for (const input of [sortSelect,staffFilter,staffSort]) input.addEventListener("change",updateClearFilters);
+        section.append(staffSearchLabel,staffSearch,staffSortLabel,staffSort,staffFilterWrap,staffFilterStatus,staffGrid,clearFilters);
         updateClearFilters();
         section.append(selectionSummary);
         updatePublicSelection();
