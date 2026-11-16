@@ -82,6 +82,8 @@ on:
       - 'tests/phase1410_*'
       - 'functions/phase1411RecoveryRecordPreparation.js'
       - 'tests/phase1411_*'
+      - 'functions/phase1412SecureStoragePreparation.js'
+      - 'tests/phase1412_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -172,6 +174,9 @@ jobs:
           node --check functions/phase1411RecoveryRecordPreparation.js
           node --check tests/phase1411_recovery_records.test.js
           node tests/phase1411_recovery_records.test.js
+          node --check functions/phase1412SecureStoragePreparation.js
+          node --check tests/phase1412_secure_storage.test.js
+          node tests/phase1412_secure_storage.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
