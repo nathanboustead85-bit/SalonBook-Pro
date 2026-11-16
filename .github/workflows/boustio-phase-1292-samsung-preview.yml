@@ -134,6 +134,8 @@ on:
       - 'tests/phase163_*'
       - 'functions/phase164TransactionSafetyPreparation.js'
       - 'tests/phase164_*'
+      - 'functions/phase165AtomicIdempotencySafeguards.js'
+      - 'tests/phase165_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -302,6 +304,9 @@ jobs:
           node --check functions/phase164TransactionSafetyPreparation.js
           node --check tests/phase164_transaction_safety.test.js
           node tests/phase164_transaction_safety.test.js
+          node --check functions/phase165AtomicIdempotencySafeguards.js
+          node --check tests/phase165_atomic_idempotency.test.js
+          node tests/phase165_atomic_idempotency.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
