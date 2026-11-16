@@ -47,6 +47,7 @@ on:
       - 'tests/phase1335_*'
       - 'tests/phase1336_*'
       - 'tests/phase1337_*'
+      - 'tests/phase1338_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -172,6 +173,7 @@ jobs:
           exit 1
       - name: Test mobile journey and generate screenshots
         run: |
+          node tests/phase1338_public_change_service_browser.cjs
           node tests/phase1337_public_change_professional_browser.cjs
           node tests/phase1336_public_matching_shortcut_browser.cjs
           node tests/phase1335_public_compatibility_summary_browser.cjs
