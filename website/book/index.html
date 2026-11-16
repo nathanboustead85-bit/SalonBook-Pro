@@ -376,6 +376,13 @@ async function loadCatalogue() {
           progress.setAttribute("aria-live","polite");
           progress.setAttribute("aria-atomic","true");
           progress.textContent = service && member ? "2 of 2 · Preview selections complete" : service ? "1 of 2 · Choose your professional" : "Step 1 of 2 · Choose your service";
+          // Phase 13.44: give the persistent progress status meaningful context
+          // without exposing customer details or changing visible preview text.
+          progress.setAttribute("aria-label",service && member
+            ? "Preview complete. Service: " + service.name + ". Professional: " + member.name + ". No appointment has been booked."
+            : service
+              ? "Service selected: " + service.name + ". Next, choose a professional."
+              : "Step 1 of 2. Choose a service. No appointment has been booked.");
           const heading = document.createElement("strong");
           heading.textContent = "Your appointment preview";
           const grid = document.createElement("div");
