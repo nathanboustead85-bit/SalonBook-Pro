@@ -38,6 +38,6 @@ jobs:
           BOUSTIO_PHASE173_APPROVED: 'true'
           BOUSTIO_FIREBASE_PROJECT_ID: ${{ vars.BOUSTIO_FIREBASE_PROJECT_ID }}
           BOUSTIO_FIREBASE_ALLOWED_PROJECT_ID: ${{ vars.BOUSTIO_FIREBASE_PROJECT_ID }}
-          BOUSTIO_FIREBASE_OWNER_ID: ${{ secrets.BOUSTIO_FIREBASE_OWNER_ID }}
+          BOUSTIO_FIREBASE_OWNER_ID: ${{ vars.BOUSTIO_FIREBASE_OWNER_ID }}
           NODE_PATH: ${{ github.workspace }}/functions/node_modules
         run: node scripts/phase173_real_firebase_readonly_probe.js
