@@ -173,6 +173,9 @@ on:
       - 'functions/phase173RealFirebaseReadOnlyProbe.js'
       - 'scripts/phase173_real_firebase_readonly_probe.js'
       - 'tests/phase173_*'
+      - '.github/workflows/boustio-phase-174-live-firebase-readonly.yml'
+      - 'tests/phase174_*'
+      - 'docs/phase174-live-firebase-readonly-setup.md'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -399,6 +402,8 @@ jobs:
           node --check scripts/phase173_real_firebase_readonly_probe.js
           node --check tests/phase173_real_firebase_readonly_probe.test.js
           node tests/phase173_real_firebase_readonly_probe.test.js
+          node --check tests/phase174_live_firebase_workflow_contract.test.js
+          node tests/phase174_live_firebase_workflow_contract.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
