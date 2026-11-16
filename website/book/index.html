@@ -467,7 +467,28 @@ async function loadCatalogue() {
           selectionSummary.append(progress,heading,grid,compatibility,warning,next,matching);
           if (service) selectionSummary.append(selectedJump("service",service.id,"View selected service"));
           if (member) selectionSummary.append(selectedJump("staff",member.id,"View selected professional"));
-          selectionSummary.append(reset);
+          // Phase 13.37: change just the professional, keeping the chosen service.
+          const changeProfessional = document.createElement("button");
+          changeProfessional.type = "button";
+          changeProfessional.id = "publicChangeProfessional";
+          changeProfessional.className = "public-reset";
+          changeProfessional.textContent = "Change professional";
+          changeProfessional.hidden = !member;
+          changeProfessional.addEventListener("click",() => {
+            if (!selectedStaffId) return;
+            selectedStaffId = null;
+            staffSearch.value = "";
+            staffFilter.checked = true;
+            updatePublicSelection();
+            updateClearFilters();
+            const firstEligible = Array.from(staffGrid.querySelectorAll('.public-select[data-kind="staff"]'))
+              .find(button => !button.disabled && !button.closest(".public-catalogue-card").hidden);
+            if (firstEligible) {
+              firstEligible.scrollIntoView({block:"center",behavior:"smooth"});
+              firstEligible.focus({preventScroll:true});
+            }
+          });
+          selectionSummary.append(changeProfessional,reset);
           updateStaffFilter();
           for (const button of section.querySelectorAll(".public-select")) {
             const selected = button.dataset.kind === "service" ? button.dataset.id === selectedServiceId : button.dataset.id === selectedStaffId;
