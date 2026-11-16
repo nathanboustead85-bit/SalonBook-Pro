@@ -5,7 +5,7 @@ const path=require("node:path");
 const {createAtomicTransactionPreparation}=require("../functions/phase152AtomicTransactionPreparation");
 const {DISABLED}=require("../functions/phase147DisabledAtomicReservation");
 const secret="phase152-test-secret-at-least-32-bytes-long";
-const input={ownerId:"owner1",key:"request_1234",intent:{serviceId:"cut",date:"2026-11-20",time:"10:00"},secret};
+const input={ownerId:"owner1",key:"request_1234",intent:{serviceId:"cut",staffId:"kody",date:"2026-11-20",time:"10:00"},secret};
 function fakeDb({requestExists=false,published=true,fail=false,missing=false}={}){
  const trace=[];
  const db={
