@@ -28,7 +28,13 @@ function createRecoveryConsistencyInspector({secret,readConsistentPair}={}){
   if(!pair.marker||!pair.reservation)return deny("CONSISTENCY_PARTIAL_RECORD_MANUAL_REVIEW");
   const m=pair.marker,r=pair.reservation;
   if(!exact(m,MARKER)||!exact(r,RESERVATION)
-   ||m.schemaVersion!==1||r.schemaVersion!==1)
+   ||m.schemaVersion!==1||r.schemaVersion!==1
+   ||typeof m.ownerId!=="string"||!m.ownerId
+   ||typeof r.ownerId!=="string"||!r.ownerId
+   ||!HEX.test(m.requestId??"")||!HEX.test(r.requestId??"")
+   ||!HEX.test(m.fingerprint??"")||!HEX.test(r.fingerprint??"")
+   ||!HEX.test(m.reservationId??"")||!HEX.test(r.id??"")
+   ||typeof m.state!=="string"||typeof r.state!=="string")
    return deny("CONSISTENCY_SCHEMA_INVALID");
   if(!equal(m.fingerprint,plan.fingerprint))
    return deny("CONSISTENCY_IDEMPOTENCY_KEY_REUSED");
