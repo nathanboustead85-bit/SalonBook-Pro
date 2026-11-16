@@ -8,23 +8,34 @@ const publicData={businessId:ownerId,published:true,acceptingBookings:false,
  staff:[{id:"kody",active:true,serviceIds:["cut"]}]};
 const staff=[{id:"kody",weeklySchedule:{friday:{open:"09:00",close:"17:00"}},weeklyBreaks:[],timeOff:[]}];
 const bookings=[{id:"original-1",staffId:"kody",date:"2026-11-20",time:"10:00",duration:30,client:"Private customer",notes:"Private notes"}];
-function fakeDb(overrides={}){
+function fakeDb(overrides={}) {
  const data={publicBusinesses:{[ownerId]:publicData},staff,bookings,...overrides};
  const reads=[];
- function snap(value){
-  return {exists:value!==undefined,get:k=>value?.[k]};
+ function snap(value) {
+  return {exists:value!==undefined,get:key=>value?.[key]};
  }
- return {reads,collection(name){
-  return {doc(id){
-   return {get:async()=>{reads.push(name+"/"+id);return snap(data.publicBusinesses[id]);},
-    collection(type){return {doc(key){return {get:async()=>{
-     reads.push(name+"/"+id+"/"+type+"/"+key);
-     const value=data[key];
-     return snap(value===undefined?undefined:{schemaVersion:1,json:JSON.stringify(value)});
-    }};}}};
-   };
-  }};
- }};
+ function doc(name,id) {
+  return {
+   async get() {
+    reads.push(name+"/"+id);
+    return snap(data.publicBusinesses[id]);
+   },
+   collection(type) {
+    return {
+     doc(key) {
+      return {
+       async get() {
+        reads.push(name+"/"+id+"/"+type+"/"+key);
+        const value=data[key];
+        return snap(value===undefined?undefined:{schemaVersion:1,json:JSON.stringify(value)});
+       }
+      };
+     }
+    };
+   }
+  };
+ }
+ return {reads,collection(name){return {doc(id){return doc(name,id);}};}};
 }
 async function main(){
  const cases=[
