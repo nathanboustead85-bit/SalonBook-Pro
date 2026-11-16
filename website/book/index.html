@@ -517,6 +517,13 @@ async function loadCatalogue() {
             const selected = button.dataset.kind === "service" ? button.dataset.id === selectedServiceId : button.dataset.id === selectedStaffId;
             button.setAttribute("aria-pressed",String(selected));
             button.textContent = selected ? "Selected" : button.dataset.kind === "service" ? "Select service" : "Select professional";
+            // Phase 13.39: announce the specific card and selection state to screen readers.
+            // Text is always assigned as a DOM property, never interpreted as markup.
+            const item = button.dataset.kind === "service"
+              ? payload.catalogue.services.find(s => s.id === button.dataset.id)
+              : payload.catalogue.staff.find(p => p.id === button.dataset.id);
+            const kindLabel = button.dataset.kind === "service" ? "service" : "professional";
+            button.setAttribute("aria-label",(selected ? "Selected " : "Select ") + kindLabel + ": " + (item?.name || "Unnamed"));
             button.closest(".public-catalogue-card").classList.toggle("is-selected",selected);
             if (button.dataset.kind === "staff") {
               const eligible = !service || payload.catalogue.staff.find(p => p.id === button.dataset.id)?.serviceIds.includes(service.id);
