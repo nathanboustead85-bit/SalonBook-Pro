@@ -50,8 +50,10 @@ async function main(){
  monitor=createPersistentRecoveryMonitor(bookingStore,persistence,options);
  assert.equal((await monitor.inspect(input,context)).status,"MONITORING_UNAVAILABLE");
  stored=previous;
- const many=await Promise.all(Array.from({length:20},()=>monitor=createPersistentRecoveryMonitor(bookingStore,persistence,options)));
- assert.equal(many.length,20);
+ monitor=createPersistentRecoveryMonitor(bookingStore,persistence,options);
+ const many=await Promise.all(Array.from({length:20},()=>monitor.inspect(input,{...context,ownerId:"salonB"})));
+ assert.ok(many.every(r=>r.status==="OWNERSHIP_FORBIDDEN"));
+ assert.equal(stored.events.access_denied.length,23,"parallel inspections retain every mock counter");
  assert.equal(writes,0);
  assert.throws(()=>createPersistentRecoveryMonitor(bookingStore,{}),TypeError);
  const entry=fs.readFileSync(path.resolve(__dirname,"../functions/index.js"),"utf8");
