@@ -87,6 +87,11 @@
     body.real-public .public-sort-label { display:block; margin:12px 0 6px; font-weight:750; color:#164b4a; }
     body.real-public .public-service-sort { box-sizing:border-box; width:100%; min-height:44px; padding:10px 12px; border:1px solid #a8d3c6; border-radius:12px; background:#fff; color:#163f3e; font:inherit; }
     body.real-public .public-service-sort:focus-visible { outline:3px solid #087f80; outline-offset:2px; }
+    body.real-public .public-staff-filter { display:flex; align-items:center; gap:10px; margin:12px 0 4px; color:#164b4a; font-weight:650; }
+    body.real-public .public-staff-filter input { width:20px; height:20px; flex:none; accent-color:#087f80; }
+    body.real-public .public-staff-filter input:focus-visible { outline:3px solid #087f80; outline-offset:2px; }
+    body.real-public .public-staff-filter:has(input:disabled) { opacity:.65; }
+    body.real-public .public-catalogue-card[hidden] { display:none; }
     body.real-public .public-search-status { font-size:13px; color:#47635e; margin:8px 0 12px; }
     body.real-public .public-catalogue-card[hidden] { display:none; }
     .disabled-action { margin-top:18px; background:#9ca3af; color:white; font-weight:700; border:0; cursor:not-allowed; }
@@ -404,6 +409,7 @@ async function loadCatalogue() {
             if (firstService) firstService.focus();
           });
           selectionSummary.append(progress,heading,grid,warning,next,reset);
+          updateStaffFilter();
           for (const button of section.querySelectorAll(".public-select")) {
             const selected = button.dataset.kind === "service" ? button.dataset.id === selectedServiceId : button.dataset.id === selectedStaffId;
             button.setAttribute("aria-pressed",String(selected));
@@ -529,6 +535,38 @@ async function loadCatalogue() {
           filterServices();
         });
         filterServices();
+        // Phase 13.29: optional, browser-only professional compatibility filter.
+        const staffFilterWrap = document.createElement("div");
+        staffFilterWrap.className = "public-staff-filter";
+        const staffFilter = document.createElement("input");
+        staffFilter.type = "checkbox";
+        staffFilter.id = "publicCompatibleStaffOnly";
+        const staffFilterLabel = document.createElement("label");
+        staffFilterLabel.htmlFor = staffFilter.id;
+        staffFilterLabel.textContent = "Show only professionals offering my service";
+        const staffFilterStatus = document.createElement("p");
+        staffFilterStatus.id = "publicStaffFilterStatus";
+        staffFilterStatus.className = "public-search-status";
+        staffFilterStatus.setAttribute("role","status");
+        staffFilterStatus.setAttribute("aria-live","polite");
+        staffFilterWrap.append(staffFilter,staffFilterLabel);
+        function updateStaffFilter() {
+          const chosen = payload.catalogue.services.find(service => service.id === selectedServiceId);
+          staffFilter.disabled = !chosen;
+          if (!chosen) staffFilter.checked = false;
+          let visible = 0;
+          for (const card of staffGrid.querySelectorAll(".public-catalogue-card")) {
+            const id = card.querySelector('.public-select[data-kind="staff"]')?.dataset.id;
+            const member = payload.catalogue.staff.find(person => person.id === id);
+            const show = !chosen || !staffFilter.checked || !!member?.serviceIds.includes(chosen.id);
+            card.hidden = !show;
+            if (show) visible++;
+          }
+          staffFilterStatus.textContent = chosen
+            ? visible + " professional" + (visible === 1 ? "" : "s") + " shown"
+            : "Choose a service to filter professionals";
+        }
+        staffFilter.addEventListener("change",updateStaffFilter);
         const staffHeading = document.createElement("h2");
         staffHeading.textContent = "Meet the professionals";
         staffHeading.id = staffHeadingId;
@@ -552,7 +590,7 @@ async function loadCatalogue() {
           card.append(title,details,selectionButton("staff",member.id));
           staffGrid.append(card);
         }
-        section.append(staffGrid);
+        section.append(staffFilterWrap,staffFilterStatus,staffGrid);
         section.append(selectionSummary);
         updatePublicSelection();
         const notice = document.createElement("p");
