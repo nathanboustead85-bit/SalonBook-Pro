@@ -5,7 +5,10 @@ const {createDisabledAtomicReservation,DISABLED}=require("./phase147DisabledAtom
 const {prepareBookingStoragePlan}=require("./phase151BookingInfrastructurePreparation");
 function createControlledBookingIntegration(db,{secret,clock,maxAgeMs}={}){
  // The underlying inspector uses an explicitly read-only Firestore transaction.
- const inspector=createDisabledAtomicReservation(db,{clock,maxAgeMs});
+ const options={};
+ if(clock!==undefined)options.clock=clock;
+ if(maxAgeMs!==undefined)options.maxAgeMs=maxAgeMs;
+ const inspector=createDisabledAtomicReservation(db,options);
  async function inspect({ownerId,key,intent}={}){
   const plan=prepareBookingStoragePlan({ownerId,key,intent,secret});
   if(plan.status!=="BOOKING_STORAGE_PLAN_ONLY")
