@@ -164,6 +164,8 @@ on:
       - 'tests/phase1618_*'
       - 'functions/phase1619EndToEndBookingSafetyAudit.js'
       - 'tests/phase1619_*'
+      - 'functions/phase1620ReleaseReadinessAudit.js'
+      - 'tests/phase1620_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -377,6 +379,9 @@ jobs:
           node --check functions/phase1619EndToEndBookingSafetyAudit.js
           node --check tests/phase1619_end_to_end_booking_safety.test.js
           node tests/phase1619_end_to_end_booking_safety.test.js
+          node --check functions/phase1620ReleaseReadinessAudit.js
+          node --check tests/phase1620_release_readiness_audit.test.js
+          node tests/phase1620_release_readiness_audit.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
