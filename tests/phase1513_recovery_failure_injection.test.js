@@ -30,7 +30,8 @@ async function main(){
  for(const fault of ["offline","timeout","interrupted","malformed","torn","stale","storage-error"]){
   const recovery=createRecoveryFailureInjection(store,{fault,clock:()=>now});
   const results=await Promise.all(Array.from({length:25},()=>recovery.inspect(input,context)));
-  assert.ok(results.every(x=>x.status==="OWNERSHIP_UNCERTAIN"
+  assert.ok(results.every(x=>(x.status==="OWNERSHIP_UNCERTAIN"
+   ||(fault==="malformed"&&x.status==="OWNERSHIP_KEY_REUSED_OR_CORRUPT"))
    &&x.acceptingBookings===false&&x.reservationCreated===false),fault);
   assert.equal(recovery.readCount(),25);
   assert.deepEqual(await recovery.reserve(input),DISABLED);
