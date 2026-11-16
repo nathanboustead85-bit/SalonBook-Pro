@@ -42,6 +42,23 @@ async function main(){
   assert.equal(failure.acceptingBookings,false);
   assert.ok(!JSON.stringify(failure).includes("private details"));
  }
+ for(const [error,expected] of [
+  [{code:"INVALID_ARGUMENT"},"INVALID_ARGUMENT"],
+  [{code:12},"UNIMPLEMENTED"],
+  [{code:8},"RESOURCE_EXHAUSTED"],
+  [{cause:{code:7},message:"private details"},"PERMISSION_DENIED"],
+  [{message:"iam.serviceAccounts.getAccessToken rejected: private token"},"SERVICE_ACCOUNT_IMPERSONATION"],
+  [{message:"invalid_grant private token"},"FEDERATED_CREDENTIAL_REJECTED"],
+  [{message:"Could not load the default credentials private path"},"CREDENTIALS_UNAVAILABLE"],
+  [{message:"403 Forbidden private identity"},"PERMISSION_DENIED"],
+  [{message:"unrecognized private customer content"},"UNKNOWN"]
+ ]){
+  const failure=await make({enabled:true,db:{...db,runTransaction:async()=>{throw error;}}}).verify("salonA");
+  assert.equal(failure.failureCode,expected);
+  assert.equal(failure.acceptingBookings,false);
+  assert.equal(failure.reservationCreated,false);
+  assert.ok(!JSON.stringify(failure).includes("private"));
+ }
  assert.deepEqual(await probe.reserve(),DISABLED);
  const entry=fs.readFileSync(path.join(__dirname,"../functions/index.js"),"utf8");
  const source=fs.readFileSync(path.join(__dirname,"../functions/phase173RealFirebaseReadOnlyProbe.js"),"utf8");
