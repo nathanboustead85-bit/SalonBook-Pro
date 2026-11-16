@@ -64,6 +64,8 @@ on:
       - 'tests/phase141_*'
       - 'functions/phase142WorkingHours.js'
       - 'tests/phase142_*'
+      - 'functions/phase143BookingExclusions.js'
+      - 'tests/phase143_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -129,6 +131,8 @@ jobs:
           node tests/phase141_booking_intent.test.js
           node --check functions/phase142WorkingHours.js
           node tests/phase142_working_hours.test.js
+          node --check functions/phase143BookingExclusions.js
+          node tests/phase143_booking_exclusions.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
