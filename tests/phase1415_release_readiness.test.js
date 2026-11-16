@@ -35,7 +35,8 @@ async function main(){
   "no known production booking function exported");
  assert.ok(entry.includes("acceptingBookings: false"),"public catalogue publishing must remain disabled");
  const preview=read("website/book/index.html");
- assert.ok(preview.includes("acceptingBookings"),"public booking page must retain disabled-booking state");
+ assert.ok(preview.includes("Information only — appointments cannot yet be booked online."),"real-business page must display booking-disabled notice");
+ assert.ok(preview.includes("Never submit or persist a selection as a booking."),"public selections must remain read-only");
  const nonAtomic=read("functions/phase1414EndToEndSafetyRehearsal.js");
  assert.ok(nonAtomic.includes("NOT atomic"),"non-atomic simulation risk must be documented");
  const freshness=read("functions/phase145ConsistentAvailability.js");
