@@ -1,0 +1,54 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const path=require("node:path");
+const {createThrottledRecoveryInspector}=require("../functions/phase1615ThrottledRecoveryInspector");
+const {prepareBookingStoragePlan}=require("../functions/phase151BookingInfrastructurePreparation");
+const {DISABLED}=require("../functions/phase147DisabledAtomicReservation");
+const secret="phase1615-server-test-secret-more-than-32";
+const input={ownerId:"salonA",key:"request_12345",intent:{serviceId:"cut",staffId:"barber",date:"2026-11-20",time:"10:00"}};
+const plan=prepareBookingStoragePlan({...input,secret});
+const id="b".repeat(64);
+const marker={ownerId:"salonA",requestId:plan.requestId,fingerprint:plan.fingerprint,reservationId:id,state:"COMMITTED_SIMULATION",schemaVersion:1};
+const reservation={id,ownerId:"salonA",requestId:plan.requestId,fingerprint:plan.fingerprint,state:"COMMITTED_SIMULATION",schemaVersion:1};
+const pair={consistentSnapshot:true,marker,reservation};
+const make=readConsistentPair=>createThrottledRecoveryInspector({secret,readConsistentPair});
+async function main(){
+ let active=0,peak=0,calls=0;
+ const inspector=make(async()=>{
+  active++;peak=Math.max(peak,active);calls++;
+  await new Promise(resolve=>setImmediate(resolve));
+  active--;return pair;
+ });
+ const repeat=await inspector.inspectBatch(Array.from({length:100},()=>input));
+ assert.equal(repeat.status,"THROTTLE_MANUAL_REVIEW_REQUIRED");
+ assert.equal(repeat.checked,100);
+ assert.equal(repeat.inspected,10);
+ assert.equal(repeat.throttled,90);
+ assert.equal(repeat.uncertainCount,90);
+ assert.equal(calls,10);
+ assert.ok(peak<=5&&peak>1);
+ const single=await inspector.inspectBatch([input]);
+ assert.equal(single.status,"THROTTLE_READ_ONLY_COMPLETE");
+ assert.equal(single.throttled,0);
+ const mixed=await inspector.inspectBatch(Array.from({length:20},(_,i)=>({...input,ownerId:i<10?"salonA":"salonB"})));
+ assert.equal(mixed.inspected,20);
+ assert.equal(mixed.throttled,0);
+ assert.equal(mixed.status,"THROTTLE_MANUAL_REVIEW_REQUIRED"); // other owner's fixture must fail
+ assert.equal((await inspector.inspectBatch([])).status,"THROTTLE_BATCH_INVALID");
+ assert.equal((await inspector.inspectBatch(Array.from({length:101},()=>input))).status,"THROTTLE_BATCH_INVALID");
+ assert.equal((await inspector.inspectBatch("bad")).status,"THROTTLE_BATCH_INVALID");
+ assert.equal((await inspector.inspectBatch([{...input,ownerId:""}])).status,"THROTTLE_MANUAL_REVIEW_REQUIRED");
+ assert.equal((await make(async()=>{throw Error("offline");}).inspectBatch([input])).status,"THROTTLE_MANUAL_REVIEW_REQUIRED");
+ assert.equal((await make(async()=>({...pair,marker:null})).inspectBatch([input])).status,"THROTTLE_MANUAL_REVIEW_REQUIRED");
+ assert.equal((await make(async()=>({...pair,reservation:{...reservation,ownerId:"salonB"}})).inspectBatch([input])).status,"THROTTLE_MANUAL_REVIEW_REQUIRED");
+ assert.equal((await make(async()=>({consistentSnapshot:true,marker:null,reservation:null})).inspectBatch([input])).status,"THROTTLE_READ_ONLY_COMPLETE");
+ assert.deepEqual(await inspector.reserve(input),DISABLED);
+ const entry=fs.readFileSync(path.join(__dirname,"../functions/index.js"),"utf8");
+ const source=fs.readFileSync(path.join(__dirname,"../functions/phase1615ThrottledRecoveryInspector.js"),"utf8");
+ assert.ok(!entry.includes("phase1615ThrottledRecoveryInspector"));
+ assert.ok(!source.includes("firebase-admin")&&!source.includes("runTransaction("));
+ assert.ok(!JSON.stringify(repeat).includes("request_12345"));
+ console.log("PASS Phase 16.15 per-batch throttling, concurrency, isolation, outages, disabled bookings");
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});
