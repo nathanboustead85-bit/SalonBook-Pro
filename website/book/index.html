@@ -84,6 +84,9 @@
     body.real-public .public-search-label { display:block; margin:14px 0 6px; font-weight:750; color:#164b4a; }
     body.real-public .public-service-search { box-sizing:border-box; width:100%; min-height:44px; padding:12px; border:1px solid #a8d3c6; border-radius:12px; background:#fff; color:#163f3e; font:inherit; }
     body.real-public .public-service-search:focus-visible { outline:3px solid #087f80; outline-offset:2px; }
+    body.real-public .public-sort-label { display:block; margin:12px 0 6px; font-weight:750; color:#164b4a; }
+    body.real-public .public-service-sort { box-sizing:border-box; width:100%; min-height:44px; padding:10px 12px; border:1px solid #a8d3c6; border-radius:12px; background:#fff; color:#163f3e; font:inherit; }
+    body.real-public .public-service-sort:focus-visible { outline:3px solid #087f80; outline-offset:2px; }
     body.real-public .public-search-status { font-size:13px; color:#47635e; margin:8px 0 12px; }
     body.real-public .public-catalogue-card[hidden] { display:none; }
     .disabled-action { margin-top:18px; background:#9ca3af; color:white; font-weight:700; border:0; cursor:not-allowed; }
@@ -452,7 +455,27 @@ async function loadCatalogue() {
         serviceSearchStatus.className = "public-search-status";
         serviceSearchStatus.setAttribute("role","status");
         serviceSearchStatus.setAttribute("aria-live","polite");
-        section.append(serviceSearchLabel,serviceSearch,serviceSearchStatus);
+        // Phase 13.28: accessible client-side ordering of published services.
+        const sortLabel = document.createElement("label");
+        sortLabel.className = "public-sort-label";
+        sortLabel.htmlFor = "publicServiceSort";
+        sortLabel.textContent = "Sort services";
+        const sortSelect = document.createElement("select");
+        sortSelect.id = "publicServiceSort";
+        sortSelect.className = "public-service-sort";
+        for (const [value,label] of [
+          ["default","Original order"],
+          ["price-asc","Price: low to high"],
+          ["price-desc","Price: high to low"],
+          ["duration-asc","Duration: shortest first"],
+          ["name","Name: A to Z"]
+        ]) {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          sortSelect.append(option);
+        }
+        section.append(serviceSearchLabel,serviceSearch,sortLabel,sortSelect,serviceSearchStatus);
         const serviceGrid = document.createElement("div");
         serviceGrid.className = "public-catalogue-grid";
         if (!payload.catalogue.services.length) {
@@ -460,8 +483,9 @@ async function loadCatalogue() {
           empty.textContent = "No services are currently listed online.";
           serviceGrid.append(empty);
         }
-        for (const service of payload.catalogue.services) {
+        for (const [index,service] of payload.catalogue.services.entries()) {
           const card = document.createElement("article");
+          card.dataset.originalIndex = String(index);
           card.className = "public-catalogue-card";
           const title = document.createElement("h3");
           title.textContent = service.name;
@@ -486,6 +510,24 @@ async function loadCatalogue() {
             : payload.catalogue.services.length + " service" + (payload.catalogue.services.length === 1 ? "" : "s") + " available to explore";
         }
         serviceSearch.addEventListener("input",filterServices);
+        sortSelect.addEventListener("change",() => {
+          const cards = Array.from(serviceGrid.querySelectorAll(".public-catalogue-card"));
+          const serviceById = new Map(payload.catalogue.services.map(item => [item.id,item]));
+          cards.sort((a,b) => {
+            const x = serviceById.get(a.querySelector(".public-select").dataset.id);
+            const y = serviceById.get(b.querySelector(".public-select").dataset.id);
+            let result = 0;
+            switch(sortSelect.value) {
+              case "price-asc": result = x.pricePence - y.pricePence; break;
+              case "price-desc": result = y.pricePence - x.pricePence; break;
+              case "duration-asc": result = x.durationMinutes - y.durationMinutes; break;
+              case "name": result = x.name.localeCompare(y.name); break;
+            }
+            return result || Number(a.dataset.originalIndex) - Number(b.dataset.originalIndex);
+          });
+          serviceGrid.append(...cards);
+          filterServices();
+        });
         filterServices();
         const staffHeading = document.createElement("h2");
         staffHeading.textContent = "Meet the professionals";
