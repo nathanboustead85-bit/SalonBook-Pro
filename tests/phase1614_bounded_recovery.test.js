@@ -1,0 +1,47 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const path=require("node:path");
+const {createBoundedRecoveryInspector}=require("../functions/phase1614BoundedRecoveryInspector");
+const {prepareBookingStoragePlan}=require("../functions/phase151BookingInfrastructurePreparation");
+const {DISABLED}=require("../functions/phase147DisabledAtomicReservation");
+const secret="phase1614-server-test-secret-more-than-32";
+const input={ownerId:"salonA",key:"request_12345",intent:{serviceId:"cut",staffId:"barber",date:"2026-11-20",time:"10:00"}};
+const plan=prepareBookingStoragePlan({...input,secret});
+const id="b".repeat(64);
+const marker={ownerId:"salonA",requestId:plan.requestId,fingerprint:plan.fingerprint,reservationId:id,state:"COMMITTED_SIMULATION",schemaVersion:1};
+const reservation={id,ownerId:"salonA",requestId:plan.requestId,fingerprint:plan.fingerprint,state:"COMMITTED_SIMULATION",schemaVersion:1};
+const pair={consistentSnapshot:true,marker,reservation};
+const make=readConsistentPair=>createBoundedRecoveryInspector({secret,readConsistentPair});
+async function main(){
+ let active=0,peak=0,calls=0;
+ const inspector=make(async()=>{
+  active++;peak=Math.max(peak,active);calls++;
+  await new Promise(resolve=>setImmediate(resolve));
+  active--;
+  return pair;
+ });
+ const hundred=await inspector.inspectBatch(Array.from({length:100},()=>input));
+ assert.equal(hundred.status,"BOUNDED_BATCH_READ_ONLY_COMPLETE");
+ assert.equal(hundred.checked,100);
+ assert.equal(hundred.uncertainCount,0);
+ assert.equal(calls,100);
+ assert.ok(peak<=5&&peak>1,"concurrency must be bounded to five");
+ assert.equal((await inspector.inspectBatch([])).status,"BOUNDED_BATCH_INVALID");
+ assert.equal((await inspector.inspectBatch(Array.from({length:101},()=>input))).status,"BOUNDED_BATCH_INVALID");
+ assert.equal((await inspector.inspectBatch("bad")).status,"BOUNDED_BATCH_INVALID");
+ assert.equal((await make(async()=>{throw Error("offline");}).inspectBatch([input])).status,"BOUNDED_BATCH_MANUAL_REVIEW_REQUIRED");
+ assert.equal((await make(async()=>({...pair,marker:null})).inspectBatch([input])).status,"BOUNDED_BATCH_MANUAL_REVIEW_REQUIRED");
+ assert.equal((await make(async()=>({...pair,reservation:{...reservation,ownerId:"salonB"}})).inspectBatch([input])).status,"BOUNDED_BATCH_MANUAL_REVIEW_REQUIRED");
+ assert.equal((await make(async()=>({...pair,consistentSnapshot:false})).inspectBatch([input])).status,"BOUNDED_BATCH_MANUAL_REVIEW_REQUIRED");
+ assert.equal((await make(async()=>({consistentSnapshot:true,marker:null,reservation:null})).inspectBatch([input])).status,"BOUNDED_BATCH_READ_ONLY_COMPLETE");
+ assert.equal((await inspector.inspectBatch([{...input,key:"bad"}])).status,"BOUNDED_BATCH_MANUAL_REVIEW_REQUIRED");
+ assert.deepEqual(await inspector.reserve(input),DISABLED);
+ const entry=fs.readFileSync(path.join(__dirname,"../functions/index.js"),"utf8");
+ const source=fs.readFileSync(path.join(__dirname,"../functions/phase1614BoundedRecoveryInspector.js"),"utf8");
+ assert.ok(!entry.includes("phase1614BoundedRecoveryInspector"));
+ assert.ok(!source.includes("firebase-admin")&&!source.includes("runTransaction("));
+ assert.ok(!JSON.stringify(hundred).includes("request_12345"));
+ console.log("PASS Phase 16.14 bounded concurrency, 100 inspections, outage/corruption isolation, disabled booking");
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});
