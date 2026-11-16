@@ -30,7 +30,7 @@ function safeFailureCode(error){
  // Common credential and transport failures can be categorized by fixed phrases,
  // without disclosing the underlying error message or any personal data.
  const message=typeof error?.message==="string"?error.message.slice(0,2048):"";
- if(/iam\\.serviceAccounts\\.getAccessToken|iamcredentials|generateAccessToken|iam\\.serviceAccounts\\.getOpenIdToken/i.test(message))
+ if(/iam\.serviceAccounts\.getAccessToken|iamcredentials|generateAccessToken|iam\.serviceAccounts\.getOpenIdToken/i.test(message))
   return "SERVICE_ACCOUNT_IMPERSONATION";
  if(/invalid_grant|invalid_target|invalid_subject_token|invalid_credential/i.test(message))
   return "FEDERATED_CREDENTIAL_REJECTED";
