@@ -225,6 +225,24 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // PHASE 16.7: private customer booking infrastructure is server-only.
+    // These collections are not live. Firestore client SDKs, including
+    // authenticated owners, must not read or write reservation/marker records.
+    // Firebase Admin SDK bypasses Firestore rules; backend authorization,
+    // validation and transaction safety must be enforced separately.
+    match /users/{userId}/customerBookingReservations/{reservationId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/customerBookingRequests/{requestId} {
+      allow read, write: if false;
+    }
+
+    // Future shared staff/date guard documents are likewise server-only.
+    match /businesses/{businessId}/customerBookingGuards/{guardId} {
+      allow read, write: if false;
+    }
+
     // ===================================
     // PHASE 8C: PRIVATE APPOINTMENTS
     // ===================================
