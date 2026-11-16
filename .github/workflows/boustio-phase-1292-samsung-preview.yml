@@ -170,6 +170,9 @@ on:
       - 'tests/phase171_*'
       - 'functions/phase172FirebaseConnectivityVerification.js'
       - 'tests/phase172_*'
+      - 'functions/phase173RealFirebaseReadOnlyProbe.js'
+      - 'scripts/phase173_real_firebase_readonly_probe.js'
+      - 'tests/phase173_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -392,6 +395,10 @@ jobs:
           node --check functions/phase172FirebaseConnectivityVerification.js
           node --check tests/phase172_firebase_connectivity_verification.test.js
           node tests/phase172_firebase_connectivity_verification.test.js
+          node --check functions/phase173RealFirebaseReadOnlyProbe.js
+          node --check scripts/phase173_real_firebase_readonly_probe.js
+          node --check tests/phase173_real_firebase_readonly_probe.test.js
+          node tests/phase173_real_firebase_readonly_probe.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
