@@ -405,7 +405,7 @@ async function loadCatalogue() {
             // Phase 13.49: make each preview detail a self-contained
             // labelled group, retaining the same visible layout.
             cell.setAttribute("role","group");
-            cell.setAttribute("aria-label",title + ": " + value);
+            cell.setAttribute("aria-label",title + ": " + (title === "Professional" ? value.replace(/^Professional: /,"") : value));
             const label = document.createElement("strong");
             label.textContent = title;
             const detail = document.createElement("p");
