@@ -382,13 +382,22 @@ async function loadCatalogue() {
             summaryCell("Price & duration",service ? formatPrice(service.pricePence / 100) + " · " + service.durationMinutes + " minutes" : "Not selected"),
             summaryCell("Professional",member ? "Professional: " + member.name : "Professional: not selected")
           );
+          // Phase 13.35: explain service-to-professional compatibility before proceeding.
+          const compatibleCount = service ? payload.catalogue.staff.filter(person =>
+            Array.isArray(person.serviceIds) && person.serviceIds.includes(service.id)).length : 0;
+          const compatibility = document.createElement("p");
+          compatibility.id = "publicCompatibilitySummary";
+          compatibility.className = "public-search-status";
+          compatibility.textContent = !service ? "Choose a service to see which professionals offer it."
+            : compatibleCount ? compatibleCount + " professional" + (compatibleCount === 1 ? "" : "s") + " offer" + (compatibleCount === 1 ? "s" : "") + " this service."
+            : "No published professionals currently offer this service. You can choose another service, but online booking is not available yet.";
           const warning = document.createElement("p");
           warning.textContent = "Preview only — no appointment is held or booked. Dates and times are not available for real businesses yet.";
           const next = document.createElement("button");
           next.type = "button";
           next.id = "publicNextStep";
           next.className = "public-next";
-          next.disabled = !service || !!member;
+          next.disabled = !service || !!member || compatibleCount === 0;
           next.textContent = member ? "Preview complete — booking coming soon" : "Continue to professionals";
           next.addEventListener("click",() => {
             if (!service || member) return;
@@ -434,7 +443,7 @@ async function loadCatalogue() {
             });
             return button;
           }
-          selectionSummary.append(progress,heading,grid,warning,next);
+          selectionSummary.append(progress,heading,grid,compatibility,warning,next);
           if (service) selectionSummary.append(selectedJump("service",service.id,"View selected service"));
           if (member) selectionSummary.append(selectedJump("staff",member.id,"View selected professional"));
           selectionSummary.append(reset);
