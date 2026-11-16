@@ -359,8 +359,16 @@ async function loadCatalogue() {
         function updatePublicSelection() {
           const service = payload.catalogue.services.find(s => s.id === selectedServiceId);
           const member = payload.catalogue.staff.find(p => p.id === selectedStaffId);
-          selectionSummary.replaceChildren();
-          const progress = document.createElement("div");
+          // Phase 13.43: keep the same live-region node mounted across updates.
+          // Recreating a live region can cause assistive technology to miss changes.
+          let progress = selectionSummary.querySelector(".public-progress");
+          if (!progress) {
+            progress = document.createElement("div");
+            selectionSummary.append(progress);
+          }
+          for (const child of Array.from(selectionSummary.children)) {
+            if (child !== progress) child.remove();
+          }
           progress.className = "public-progress";
           // Phase 13.42: expose selection progress as a non-interrupting
           // status update to screen readers, including on mobile devices.
@@ -469,7 +477,7 @@ async function loadCatalogue() {
               firstMatching.focus({preventScroll:true});
             }
           });
-          selectionSummary.append(progress,heading,grid,compatibility,warning,next,matching);
+          selectionSummary.append(heading,grid,compatibility,warning,next,matching);
           if (service) selectionSummary.append(selectedJump("service",service.id,"View selected service"));
           if (member) selectionSummary.append(selectedJump("staff",member.id,"View selected professional"));
           // Phase 13.37: change just the professional, keeping the chosen service.
