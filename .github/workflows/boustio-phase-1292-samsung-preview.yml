@@ -100,6 +100,8 @@ on:
       - 'tests/phase154_*'
       - 'functions/phase155MultiDeviceRecoverySimulation.js'
       - 'tests/phase155_*'
+      - 'functions/phase156TransactionRecoveryIntegration.js'
+      - 'tests/phase156_*'
       - 'app/src/main/java/com/salonbook/pro/ManagementActivity.kt'
       - 'app/src/main/java/com/salonbook/pro/CloudSyncManager.kt'
       - 'tests/phase1318_*'
@@ -217,6 +219,9 @@ jobs:
           node --check functions/phase155MultiDeviceRecoverySimulation.js
           node --check tests/phase155_multi_device_recovery.test.js
           node tests/phase155_multi_device_recovery.test.js
+          node --check functions/phase156TransactionRecoveryIntegration.js
+          node --check tests/phase156_transaction_recovery_integration.test.js
+          node tests/phase156_transaction_recovery_integration.test.js
           node tests/phase1321_android_catalogue_schema.test.js
           node tests/phase1320_owner_catalogue_publish.test.js
           node tests/phase1319_public_catalogue_integration.test.js
