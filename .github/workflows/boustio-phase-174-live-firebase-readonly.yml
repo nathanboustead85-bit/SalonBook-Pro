@@ -31,7 +31,7 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.BOUSTIO_WIF_PROVIDER }}
-          service_account: ${{ vars.BOUSTIO_READONLY_SERVICE_ACCOUNT }}
+          service_account: boustio-readonly-verifier@salonbook-pro-ad5ff.iam.gserviceaccount.com
           project_id: ${{ vars.BOUSTIO_FIREBASE_PROJECT_ID }}
           create_credentials_file: true
           export_environment_variables: true
