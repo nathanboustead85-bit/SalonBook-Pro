@@ -1,0 +1,15 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const {classify,names}=require("../scripts/boustio_live_inventory.js");
+assert.equal(classify("PERMISSION_DENIED: cloudfunctions.functions.list"),"PERMISSION_DENIED");
+assert.equal(classify("ERROR: 404 NOT_FOUND"),"NOT_FOUND");
+assert.equal(classify("unknown command"),"CLI_COMMAND_ERROR");
+assert.deepEqual(names([{name:"projects/a/locations/b/functions/publishBusiness"}]),["projects/a/locations/b/functions/publishBusiness"]);
+assert.equal(names({}),null);
+const w=fs.readFileSync(".github/workflows/boustio-live-inventory.yml","utf8");
+assert.match(w,/CHECK_LIVE_INVENTORY/);
+assert.match(w,/environment: boustio-function-deployment/);
+assert.match(w,/milestone-customer-booking-experience/);
+assert.match(w,/boustio-function-deployer@salonbook-pro-ad5ff/);
+assert.doesNotMatch(w,/firebase deploy|gcloud functions deploy|gcloud run deploy|npm run deploy/);
+console.log("PASS Boustio read-only inventory guards");
