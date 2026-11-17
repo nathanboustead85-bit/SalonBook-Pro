@@ -154,6 +154,8 @@ function validateProfile(profile, uid) {
 exports.publishBusiness = onCall(
   {
     region: "europe-west2",
+    // Dedicated runtime identity. Deployment and IAM grants are separate, manual approvals.
+    serviceAccount: "boustio-business-publisher@salonbook-pro-ad5ff.iam.gserviceaccount.com",
     maxInstances: 10,
     enforceAppCheck: false
   },
