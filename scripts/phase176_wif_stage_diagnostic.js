@@ -22,12 +22,12 @@ async function diagnose({env=process.env,loadCredentials,exchange}={}){
  // Only remove the impersonation URL in memory to isolate the STS token exchange.
  const direct={...credentials};
  delete direct.service_account_impersonation_url;
- const authExchange=exchange||async(json)=>{
+ const authExchange=exchange||(async (json)=>{
   const {GoogleAuth}=require("../functions/node_modules/google-auth-library");
   const auth=new GoogleAuth({scopes:["https://www.googleapis.com/auth/cloud-platform"]});
   const client=auth.fromJSON(json,{scopes:["https://www.googleapis.com/auth/cloud-platform"]});
   return client.getAccessToken();
- };
+ });
  const attempt=async(stage,json)=>{
   try{
    const response=await authExchange(json,stage);
