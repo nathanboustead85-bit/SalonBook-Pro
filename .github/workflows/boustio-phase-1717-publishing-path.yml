@@ -1,0 +1,66 @@
+name: Boustio Phase 17.17 Public Profile Publishing Path Diagnostic
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type VERIFY_FIRESTORE_METADATA to run a restricted metadata-only read'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-phase1717-firestore-metadata
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: ${{ inputs.approval == 'VERIFY_FIRESTORE_METADATA' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    environment: boustio-readonly-verification
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify existing no-write safeguards
+        run: |
+          node --check scripts/phase173_real_firebase_readonly_probe.js
+          node tests/phase173_real_firebase_readonly_probe.test.js
+          node tests/phase1716_document_existence.test.js
+          node tests/phase1717_publish_path_readonly.test.js
+          node tests/phase176_wif_stage_diagnostic.test.js
+      - name: Check required configuration without printing values
+        env:
+          BOUSTIO_WIF_PROVIDER: ${{ vars.BOUSTIO_WIF_PROVIDER }}
+          BOUSTIO_FIREBASE_PROJECT_ID: ${{ vars.BOUSTIO_FIREBASE_PROJECT_ID }}
+          BOUSTIO_FIREBASE_OWNER_ID: ${{ vars.BOUSTIO_FIREBASE_OWNER_ID }}
+        run: |
+          if [ -z "$BOUSTIO_WIF_PROVIDER" ] || [ -z "$BOUSTIO_FIREBASE_PROJECT_ID" ] || [ -z "$BOUSTIO_FIREBASE_OWNER_ID" ]; then
+            echo 'Phase 17.17: REQUIRED_CONFIGURATION_MISSING; NO_FIRESTORE_ACCESS'
+            exit 1
+          fi
+          if [ "$BOUSTIO_FIREBASE_PROJECT_ID" != 'salonbook-pro-ad5ff' ]; then
+            echo 'Phase 17.17: PROJECT_NOT_ALLOWLISTED; NO_FIRESTORE_ACCESS'
+            exit 1
+          fi
+      - name: Install backend dependencies without changing lockfiles
+        run: npm install --prefix functions --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Authenticate restricted read-only service account
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.BOUSTIO_WIF_PROVIDER }}
+          service_account: boustio-readonly-verifier@salonbook-pro-ad5ff.iam.gserviceaccount.com
+          project_id: salonbook-pro-ad5ff
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Verify only Firestore document existence with read-only transaction
+        env:
+          BOUSTIO_PHASE1717_APPROVED: 'true'
+          BOUSTIO_FIREBASE_PROJECT_ID: salonbook-pro-ad5ff
+          BOUSTIO_FIREBASE_ALLOWED_PROJECT_ID: salonbook-pro-ad5ff
+          BOUSTIO_FIREBASE_OWNER_ID: ${{ vars.BOUSTIO_FIREBASE_OWNER_ID }}
+          NODE_PATH: ${{ github.workspace }}/functions/node_modules
+        run: node scripts/phase1717_publish_path_readonly.js
