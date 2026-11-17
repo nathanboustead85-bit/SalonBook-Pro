@@ -13,7 +13,10 @@ function describeSubject(sub){
  sub.startsWith("repo:")?"OTHER_REPOSITORY_OR_CUSTOM":"CUSTOM_OR_UNKNOWN";
  return {format,repoPrefix,environmentSegment:tail.startsWith("environment:"),exactEnvironment:tail==="environment:"+EXPECTED.environment,exactSubject:sub===EXPECTED.sub};
 }
-function isAllowedOidcEndpoint(url){\n return url.protocol==="https:" && (url.hostname==="token.actions.githubusercontent.com" || url.hostname.endsWith(".actions.githubusercontent.com"));\n}\nfunction fetchToken(){
+function isAllowedOidcEndpoint(url){
+ return url.protocol==="https:" && (url.hostname==="token.actions.githubusercontent.com" || url.hostname.endsWith(".actions.githubusercontent.com"));
+}
+function fetchToken(){
  return new Promise((resolve,reject)=>{
   const urlText=process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
   const bearer=process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
