@@ -1,0 +1,25 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {verify,classify}=require("../scripts/phase175_auth_diagnostic");
+(async()=>{
+ const env={BOUSTIO_PHASE175_APPROVED:"true",BOUSTIO_FIREBASE_PROJECT_ID:"salonbook-pro-ad5ff",GOOGLE_APPLICATION_CREDENTIALS:"test-only"};
+ const target="boustio-readonly-verifier@salonbook-pro-ad5ff.iam.gserviceaccount.com";
+ const good={type:"external_account",service_account_impersonation_url:"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"+target+":generateAccessToken"};
+ let calls=0;
+ const loadCredentials=()=>good,requestToken=()=>{calls++;return {token:"test-only-token-123456789012345"};};
+ assert.equal((await verify({env:{},loadCredentials,requestToken})).status,"AUTH_DIAGNOSTIC_DISABLED");
+ assert.equal(calls,0);
+ assert.equal((await verify({env,loadCredentials:()=>({...good,service_account_impersonation_url:"https://wrong.example"}),requestToken})).status,"AUTH_DIAGNOSTIC_CREDENTIAL_TARGET_REJECTED");
+ assert.equal(calls,0);
+ const ok=await verify({env,loadCredentials,requestToken});
+ assert.equal(ok.status,"AUTH_DIAGNOSTIC_TOKEN_ISSUED");
+ assert.equal(ok.tokenPrinted,false);
+ assert.equal(ok.firestoreAccessed,false);
+ assert.equal(ok.bookingsEnabled,false);
+ const failed=await verify({env,loadCredentials,requestToken:()=>{throw new Error("iamcredentials private-secret");}});
+ assert.equal(failed.status,"AUTH_DIAGNOSTIC_REVIEW_REQUIRED");
+ assert.equal(failed.category,"IMPERSONATION_DENIED_OR_IAM_API");
+ assert.ok(!JSON.stringify(failed).includes("private-secret"));
+ assert.equal(classify({response:{status:403}}),"ACCESS_DENIED");
+ console.log("PASS Phase 17.5 isolated credential diagnostic safeguards");
+})().catch(e=>{console.error(e);process.exitCode=1;});
