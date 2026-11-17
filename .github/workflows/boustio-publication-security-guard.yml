@@ -1,0 +1,27 @@
+name: Boustio Publication Security Guard
+on:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/index.js'
+      - 'functions/phase1317PublicSlugMapping.js'
+      - 'tests/publication_security_guard.test.js'
+      - '.github/workflows/boustio-publication-security-guard.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check function syntax and publication safety
+        run: |
+          node --check functions/index.js
+          node --check functions/phase1317PublicSlugMapping.js
+          node tests/publication_security_guard.test.js
