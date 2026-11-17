@@ -1,0 +1,36 @@
+name: Boustio OIDC Subject Correction Evidence
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type REVEAL_SUBJECT_ONLY (prints OIDC subject, NEVER token)'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-identity-subject-correction
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: ${{ inputs.approval == 'REVEAL_SUBJECT_ONLY' && github.ref == 'refs/heads/milestone-customer-booking-experience' && github.repository == 'nathanboustead85-bit/SalonBook-Pro' }}
+    runs-on: ubuntu-latest
+    environment: boustio-function-deployment
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify subject-only security guards
+        run: |
+          node --check scripts/boustio_identity_subject_correction.js
+          node tests/boustio_identity_subject_correction.test.js
+      - name: Show only verified OIDC subject claim for exact IAM correction
+        env:
+          BOUSTIO_APPROVAL: ${{ inputs.approval }}
+        run: node scripts/boustio_identity_subject_correction.js
