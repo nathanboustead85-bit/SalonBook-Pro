@@ -1,0 +1,17 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const {verify}=require("../scripts/boustio_identity_subject_correction.js");
+const claims={repository:"nathanboustead85-bit/SalonBook-Pro",ref:"refs/heads/milestone-customer-booking-experience",environment:"boustio-function-deployment",sub:"repo:custom@id:environment:boustio-function-deployment"};
+assert.equal(verify(claims),true);
+assert.equal(verify({...claims,repository:"other/repo"}),false);
+assert.equal(verify({...claims,ref:"refs/heads/main"}),false);
+assert.equal(verify({...claims,environment:"production"}),false);
+assert.equal(verify({...claims,sub:"not-repo"}),false);
+const y=fs.readFileSync(".github/workflows/boustio-identity-subject-correction.yml","utf8");
+assert.match(y,/environment: boustio-function-deployment/);
+assert.match(y,/REVEAL_SUBJECT_ONLY/);
+assert.match(y,/id-token: write/);
+assert.match(y,/github\.ref == 'refs\/heads\/milestone-customer-booking-experience'/);
+assert.doesNotMatch(y,/gcloud|firebase deploy|google-github-actions\/auth/);
+console.log("PASS Boustio subject-only correction safeguards");
