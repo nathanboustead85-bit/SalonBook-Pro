@@ -1,0 +1,22 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {inspect,run}=require("../scripts/phase179_subject_components");
+const repo="nathanboustead85-bit/SalonBook-Pro",environment="boustio-readonly-verification";
+const claims={sub:"repo:"+repo+":environment:"+environment,repository:repo,environment,iss:"https://token.actions.githubusercontent.com",aud:"projects/107806967630/locations/global/workloadIdentityPools/boustio-github/providers/github-readonly"};
+const jwt=c=>["header",Buffer.from(JSON.stringify(c)).toString("base64url"),"signature"].join(".");
+const env={BOUSTIO_PHASE179_APPROVED:"true",ACTIONS_ID_TOKEN_REQUEST_URL:"https://pipelines.actions.githubusercontent.com/token",ACTIONS_ID_TOKEN_REQUEST_TOKEN:"test-secret"};
+(async()=>{
+ assert.equal(inspect(claims).classification,"STANDARD_ENVIRONMENT");
+ const custom=inspect({...claims,sub:"repository_id:123456:job_workflow_ref:private-workflow-value"});
+ assert.equal(custom.classification,"NONSTANDARD_SUBJECT");
+ assert.equal(custom.subjectHasRepositoryId,"YES");
+ assert.equal(custom.subjectHasJobWorkflowRef,"YES");
+ assert.ok(!JSON.stringify(custom).includes("123456"));
+ assert.ok(!JSON.stringify(custom).includes("private-workflow-value"));
+ assert.equal((await run({env:{},request:async()=>jwt(claims)})).status,"DISABLED");
+ const result=await run({env,request:async()=>jwt({...claims,sub:"repository_id:123456:job_workflow_ref:private-workflow-value"})});
+ assert.equal(result.status,"INSPECTED");
+ assert.ok(!JSON.stringify(result).includes("123456"));
+ assert.equal((await run({env,request:async()=>{throw Error("private-token");}})).status,"DIAGNOSTIC_UNAVAILABLE");
+ console.log("PASS Phase 17.9 known OIDC subject component classification and no-claims-output safeguards");
+})().catch(e=>{console.error(e);process.exitCode=1;});
