@@ -1,0 +1,15 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const {classify,allowed}=require("../scripts/phase1728_deployment_permissions.js");
+assert.equal(classify("PERMISSION_DENIED: 403"),"METADATA_PERMISSION_DENIED");
+assert.equal(classify("NOT_FOUND: 404"),"FUNCTION_NOT_FOUND_OR_NOT_VISIBLE");
+assert.equal(classify("other"),"METADATA_CHECK_INCONCLUSIVE");
+assert.deepEqual(allowed,["functions","describe","publishBusiness","--gen2","--region=europe-west2","--project=salonbook-pro-ad5ff","--format=json"]);
+const workflow=fs.readFileSync(".github/workflows/boustio-phase-1728-deployment-permissions.yml","utf8");
+assert.match(workflow,/environment: boustio-function-deployment/);
+assert.match(workflow,/github\.ref == 'refs\/heads\/milestone-customer-booking-experience'/);
+assert.match(workflow,/CHECK_DEPLOYMENT_PERMISSIONS/);
+assert.match(workflow,/google-github-actions\/auth@v2/);
+assert.doesNotMatch(workflow,/firebase deploy|gcloud functions deploy|npm run deploy/);
+console.log("PASS Phase 17.28 fixed-target read-only metadata permission diagnostic safeguards");
