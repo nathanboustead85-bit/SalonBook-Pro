@@ -1,0 +1,44 @@
+name: Boustio Phase 17.5 Read-only Identity Token Diagnostic
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type VERIFY_IDENTITY_ONLY to check short-lived read-only service account token'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-phase175-auth-diagnostic
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: ${{ inputs.approval == 'VERIFY_IDENTITY_ONLY' }}
+    runs-on: ubuntu-latest
+    environment: boustio-readonly-verification
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install authentication library without lockfile modifications
+        run: npm install --prefix functions --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Test no-token-output and fail-closed behavior
+        run: node tests/phase175_auth_diagnostic.test.js
+      - name: Set up GitHub OIDC credentials for restricted service account
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.BOUSTIO_WIF_PROVIDER }}
+          service_account: boustio-readonly-verifier@salonbook-pro-ad5ff.iam.gserviceaccount.com
+          project_id: ${{ vars.BOUSTIO_FIREBASE_PROJECT_ID }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Diagnose token exchange only — no Firestore access
+        env:
+          BOUSTIO_PHASE175_APPROVED: 'true'
+          BOUSTIO_FIREBASE_PROJECT_ID: ${{ vars.BOUSTIO_FIREBASE_PROJECT_ID }}
+        run: node scripts/phase175_auth_diagnostic.js
