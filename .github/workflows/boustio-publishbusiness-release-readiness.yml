@@ -1,0 +1,51 @@
+name: Boustio PublishBusiness Release Readiness (No Deployment)
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type CHECK_PUBLISH_READINESS (tests only, no cloud writes)'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: boustio-publishbusiness-release-readiness
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: ${{ inputs.approval == 'CHECK_PUBLISH_READINESS' && github.repository == 'nathanboustead85-bit/SalonBook-Pro' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact deployment target and booking safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "nathanboustead85-bit/SalonBook-Pro"
+          test "$GITHUB_REF" = "refs/heads/milestone-customer-booking-experience"
+          node --check functions/index.js
+          node --check functions/phase1317PublicSlugMapping.js
+          node tests/phase1718_publishing_prerequisites.test.js
+          node tests/phase1722_deployment_readiness.test.js
+          node tests/phase1724_deployment_preparation.test.js
+          node tests/phase1725_authorization_plan.test.js
+          node tests/customer_booking_readiness.test.js
+      - name: Install functions dependencies without lifecycle scripts
+        working-directory: functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --ignore-scripts --no-audit --no-fund --package-lock=false
+          npm run lint
+          npm run test:booking-integration
+      - name: Confirm safe outcome
+        run: |
+          echo "BOUSTIO_RELEASE: SOURCE_AND_DEPENDENCY_TESTS_PASSED"
+          echo "BOUSTIO_RELEASE: NO_CLOUD_CREDENTIALS_NO_DEPLOYMENT_NO_FIRESTORE_WRITES"
