@@ -1,0 +1,29 @@
+name: Boustio Phase 17.18 Publishing Prerequisite Audit
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type AUDIT_PUBLISHING to run source-only publishing safety checks'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: boustio-phase1718-publishing-audit
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: ${{ inputs.approval == 'AUDIT_PUBLISHING' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit publishing prerequisites without cloud access
+        run: |
+          node --check functions/index.js
+          node tests/phase1718_publishing_prerequisites.test.js
