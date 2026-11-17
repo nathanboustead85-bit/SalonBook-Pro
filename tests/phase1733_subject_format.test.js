@@ -1,7 +1,11 @@
 "use strict";
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
-const {describeSubject}=require("../scripts/phase1733_subject_format.js");
+const {describeSubject,isAllowedOidcEndpoint}=require("../scripts/phase1733_subject_format.js");
+assert.equal(isAllowedOidcEndpoint(new URL("https://token.actions.githubusercontent.com/oidc")),true);
+assert.equal(isAllowedOidcEndpoint(new URL("https://pipelines.actions.githubusercontent.com/oidc")),true);
+assert.equal(isAllowedOidcEndpoint(new URL("https://example.com/oidc")),false);
+assert.equal(isAllowedOidcEndpoint(new URL("http://token.actions.githubusercontent.com/oidc")),false);
 const base="repo:nathanboustead85-bit/SalonBook-Pro:";
 assert.deepEqual(describeSubject(base+"environment:boustio-function-deployment"),{format:"ENVIRONMENT",repoPrefix:true,environmentSegment:true,exactEnvironment:true,exactSubject:true});
 assert.equal(describeSubject(base+"ref:refs/heads/milestone-customer-booking-experience").format,"BRANCH_REF");
