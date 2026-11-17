@@ -1,0 +1,35 @@
+name: Boustio Phase 17.9 OIDC Subject Component Diagnostic
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type VERIFY_SUBJECT_COMPONENTS to inspect identity structure without exposing claims'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-phase179-subject-components
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: ${{ inputs.approval == 'VERIFY_SUBJECT_COMPONENTS' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    environment: boustio-readonly-verification
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check subject component classifier and privacy safeguards
+        run: |
+          node --check scripts/phase179_subject_components.js
+          node tests/phase179_subject_components.test.js
+      - name: Classify known subject components without logging OIDC claims
+        env:
+          BOUSTIO_PHASE179_APPROVED: 'true'
+        run: node scripts/phase179_subject_components.js
