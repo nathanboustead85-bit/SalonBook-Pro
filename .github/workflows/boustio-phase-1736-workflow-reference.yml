@@ -1,0 +1,36 @@
+name: Boustio Phase 17.36 OIDC Workflow Reference Diagnostic
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type CHECK_WORKFLOW_REFERENCE (read-only identity diagnosis)'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-phase1736-workflow-reference
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    if: ${{ inputs.approval == 'CHECK_WORKFLOW_REFERENCE' && github.ref == 'refs/heads/milestone-customer-booking-experience' && github.repository == 'nathanboustead85-bit/SalonBook-Pro' }}
+    runs-on: ubuntu-latest
+    environment: boustio-function-deployment
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test workflow reference classification and guards
+        run: |
+          node --check scripts/phase1736_workflow_reference.js
+          node tests/phase1736_workflow_reference.test.js
+      - name: Diagnose workflow reference match without exposing token or subject
+        env:
+          BOUSTIO_PHASE1736_APPROVAL: ${{ inputs.approval }}
+        run: node scripts/phase1736_workflow_reference.js
