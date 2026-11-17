@@ -1,0 +1,32 @@
+name: Boustio Phase 17.24 Controlled Deployment Preparation
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type PREPARE_SINGLE_FUNCTION_DEPLOYMENT (does NOT deploy)'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: boustio-phase1724-deployment-preparation
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: ${{ inputs.approval == 'PREPARE_SINGLE_FUNCTION_DEPLOYMENT' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify deployment preparation safeguards without cloud credentials
+        run: |
+          node --check functions/index.js
+          node --check functions/phase1317PublicSlugMapping.js
+          node tests/phase1718_publishing_prerequisites.test.js
+          node tests/phase1722_deployment_readiness.test.js
+          node tests/phase1724_deployment_preparation.test.js
