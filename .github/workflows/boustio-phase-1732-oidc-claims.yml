@@ -1,0 +1,36 @@
+name: Boustio Phase 17.32 GitHub OIDC Claims Diagnostic
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type VERIFY_OIDC_CLAIMS (no tokens displayed, no cloud changes)'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-phase1732-oidc-diagnostic
+  cancel-in-progress: false
+jobs:
+  inspect-claims:
+    if: ${{ inputs.approval == 'VERIFY_OIDC_CLAIMS' && github.ref == 'refs/heads/milestone-customer-booking-experience' && github.repository == 'nathanboustead85-bit/SalonBook-Pro' }}
+    runs-on: ubuntu-latest
+    environment: boustio-function-deployment
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate OIDC claim comparison safeguards
+        run: |
+          node --check scripts/phase1732_oidc_claims.js
+          node tests/phase1732_oidc_claims.test.js
+      - name: Compare actual GitHub OIDC claims locally without printing tokens
+        env:
+          BOUSTIO_PHASE1732_APPROVAL: ${{ inputs.approval }}
+        run: node scripts/phase1732_oidc_claims.js
