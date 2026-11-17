@@ -1,0 +1,35 @@
+name: Boustio Phase 17.10 OIDC Repository Encoding Diagnostic
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type VERIFY_REPOSITORY_ENCODING to classify OIDC subject without logging claims'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-phase1710-repository-encoding
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: ${{ inputs.approval == 'VERIFY_REPOSITORY_ENCODING' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    environment: boustio-readonly-verification
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check repository encoding classifier and redaction safeguards
+        run: |
+          node --check scripts/phase1710_repository_encoding.js
+          node tests/phase1710_repository_encoding.test.js
+      - name: Classify repository identity encoding without logging OIDC claims
+        env:
+          BOUSTIO_PHASE1710_APPROVED: 'true'
+        run: node scripts/phase1710_repository_encoding.js
