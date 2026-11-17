@@ -1,0 +1,47 @@
+name: Boustio Corrected Identity Verification
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type VERIFY_CORRECTED_IDENTITY (authentication only)'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-corrected-identity-verification
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: ${{ inputs.approval == 'VERIFY_CORRECTED_IDENTITY' && github.repository == 'nathanboustead85-bit/SalonBook-Pro' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    environment: boustio-function-deployment
+    timeout-minutes: 8
+    steps:
+      - name: Validate expected GitHub context
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "nathanboustead85-bit/SalonBook-Pro"
+          test "$GITHUB_REF" = "refs/heads/milestone-customer-booking-experience"
+          echo "BOUSTIO_AUTH: REPOSITORY_AND_BRANCH_VERIFIED"
+      - name: Authenticate with corrected Workload Identity User binding
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/107806967630/locations/global/workloadIdentityPools/boustio-github/providers/github-development-deploy
+          service_account: boustio-function-deployer@salonbook-pro-ad5ff.iam.gserviceaccount.com
+          token_format: access_token
+          access_token_lifetime: 600s
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Report authentication success without printing token
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$ACCESS_TOKEN"
+          echo "BOUSTIO_AUTH: ACCESS_TOKEN_IMPERSONATION_SUCCESS"
+          echo "BOUSTIO_AUTH: NO_TOKEN_PRINTED_NO_DEPLOYMENT_NO_FIRESTORE_WRITES"
