@@ -1,0 +1,27 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {diagnose}=require("../scripts/phase176_wif_stage_diagnostic");
+(async()=>{
+ const env={BOUSTIO_PHASE176_APPROVED:"true",BOUSTIO_FIREBASE_PROJECT_ID:"salonbook-pro-ad5ff",GOOGLE_APPLICATION_CREDENTIALS:"test-only"};
+ const good={type:"external_account",audience:"//iam.googleapis.com/projects/test",credential_source:{file:"test-only"},service_account_impersonation_url:"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/boustio-readonly-verifier@salonbook-pro-ad5ff.iam.gserviceaccount.com:generateAccessToken"};
+ const token="synthetic-test-token-not-a-real-secret";
+ let calls=0;
+ const exchange=(json,stage)=>{calls++;assert.equal(Boolean(json.service_account_impersonation_url),stage==="SERVICE_ACCOUNT_IMPERSONATION");return {token};};
+ assert.equal((await diagnose({env:{},loadCredentials:()=>good,exchange}))[0].status,"DISABLED");
+ assert.equal(calls,0);
+ const success=await diagnose({env,loadCredentials:()=>good,exchange});
+ assert.deepEqual(success.map(x=>x.status),["PASS","PASS"]);
+ assert.equal(calls,2);
+ assert.ok(success.every(x=>!x.tokenPrinted&&!x.firestoreAccessed&&!x.bookingsEnabled));
+ calls=0;
+ const fail=await diagnose({env,loadCredentials:()=>good,exchange:()=>{calls++;throw Object.assign(new Error("private-secret"),{response:{status:403}});}});
+ assert.deepEqual(fail.map(x=>x.status),["FAIL","NOT_ATTEMPTED"]);
+ assert.equal(fail[0].category,"ACCESS_DENIED");
+ assert.equal(calls,1);
+ assert.ok(!JSON.stringify(fail).includes("private-secret"));
+ const secondFail=await diagnose({env,loadCredentials:()=>good,exchange:(json,stage)=>stage==="FEDERATED_STS_EXCHANGE"?{token}:(()=>{throw Object.assign(new Error("private-secret"),{response:{status:403}});})()});
+ assert.deepEqual(secondFail.map(x=>x.status),["PASS","FAIL"]);
+ assert.equal(secondFail[1].category,"ACCESS_DENIED");
+ assert.equal((await diagnose({env,loadCredentials:()=>({...good,service_account_impersonation_url:"https://other.example"}),exchange}))[0].status,"REJECTED");
+ console.log("PASS Phase 17.6 staged identity checks, fail-closed behavior and token redaction");
+})().catch(e=>{console.error(e);process.exitCode=1;});
