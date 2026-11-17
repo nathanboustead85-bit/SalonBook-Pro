@@ -1,0 +1,45 @@
+name: Boustio Live Function Inventory (Read Only)
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type CHECK_LIVE_INVENTORY (read-only, no deployment)'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-live-inventory
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: ${{ inputs.approval == 'CHECK_LIVE_INVENTORY' && github.repository == 'nathanboustead85-bit/SalonBook-Pro' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    environment: boustio-function-deployment
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test inventory safety guards
+        run: |
+          node --check scripts/boustio_live_inventory.js
+          node tests/boustio_live_inventory.test.js
+      - name: Authenticate restricted deployer
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/107806967630/locations/global/workloadIdentityPools/boustio-github/providers/github-development-deploy
+          service_account: boustio-function-deployer@salonbook-pro-ad5ff.iam.gserviceaccount.com
+          project_id: salonbook-pro-ad5ff
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: List existing Cloud Functions and Cloud Run services without modifications
+        env:
+          BOUSTIO_READONLY_APPROVAL: ${{ inputs.approval }}
+        run: node scripts/boustio_live_inventory.js
