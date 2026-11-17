@@ -13,13 +13,13 @@ function describeSubject(sub){
  sub.startsWith("repo:")?"OTHER_REPOSITORY_OR_CUSTOM":"CUSTOM_OR_UNKNOWN";
  return {format,repoPrefix,environmentSegment:tail.startsWith("environment:"),exactEnvironment:tail==="environment:"+EXPECTED.environment,exactSubject:sub===EXPECTED.sub};
 }
-function fetchToken(){
+function isAllowedOidcEndpoint(url){\n return url.protocol==="https:" && (url.hostname==="token.actions.githubusercontent.com" || url.hostname.endsWith(".actions.githubusercontent.com"));\n}\nfunction fetchToken(){
  return new Promise((resolve,reject)=>{
   const urlText=process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
   const bearer=process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
   if(!urlText||!bearer)return reject(Error("OIDC_CONTEXT_MISSING"));
   const url=new URL(urlText);
-  if(url.protocol!=="https:"||url.hostname!=="pipelines.actions.githubusercontent.com")return reject(Error("OIDC_ENDPOINT_REJECTED"));
+  if(!isAllowedOidcEndpoint(url))return reject(Error("OIDC_ENDPOINT_REJECTED"));
   url.searchParams.set("audience",AUDIENCE);
   const req=https.get(url,{headers:{Authorization:"Bearer "+bearer}},res=>{
    let body="";
@@ -52,4 +52,4 @@ async function main(){
  console.log("Phase 17.33: NO_RAW_SUBJECT_NO_TOKEN_NO_CLOUD_API_NO_WRITES");
 }
 if(require.main===module)main();
-module.exports={describeSubject};
+module.exports={describeSubject,isAllowedOidcEndpoint};
