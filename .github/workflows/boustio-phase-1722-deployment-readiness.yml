@@ -1,0 +1,31 @@
+name: Boustio Phase 17.22 Publishing Deployment Readiness
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type AUDIT_DEPLOYMENT_PLAN to run source-only safety checks'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: boustio-phase1722-deployment-plan
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: ${{ inputs.approval == 'AUDIT_DEPLOYMENT_PLAN' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit publishing source and Firebase configuration without deployment
+        run: |
+          node --check functions/index.js
+          node --check functions/phase1317PublicSlugMapping.js
+          node tests/phase1718_publishing_prerequisites.test.js
+          node tests/phase1722_deployment_readiness.test.js
