@@ -1,0 +1,45 @@
+name: Boustio Phase 17.28 Deployment Identity Read-Only Permissions Check
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type CHECK_DEPLOYMENT_PERMISSIONS (read-only metadata, no deployment)'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-phase1728-readonly-permissions
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: ${{ inputs.approval == 'CHECK_DEPLOYMENT_PERMISSIONS' && github.ref == 'refs/heads/milestone-customer-booking-experience' && github.repository == 'nathanboustead85-bit/SalonBook-Pro' }}
+    runs-on: ubuntu-latest
+    environment: boustio-function-deployment
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify read-only metadata guard tests
+        run: |
+          node --check scripts/phase1728_deployment_permissions.js
+          node tests/phase1728_deployment_permissions.test.js
+      - name: Authenticate deployment identity
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/107806967630/locations/global/workloadIdentityPools/boustio-github/providers/github-development-deploy
+          service_account: boustio-function-deployer@salonbook-pro-ad5ff.iam.gserviceaccount.com
+          project_id: salonbook-pro-ad5ff
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Read only Cloud Function metadata (no deployment)
+        env:
+          BOUSTIO_PHASE1728_APPROVAL: ${{ inputs.approval }}
+        run: node scripts/phase1728_deployment_permissions.js
