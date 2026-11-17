@@ -1,0 +1,41 @@
+name: Boustio Phase 17.27 Deployment Identity Authentication Only
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type VERIFY_DEPLOYMENT_IDENTITY (no deployment)'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-phase1727-auth-only
+  cancel-in-progress: false
+jobs:
+  authenticate-only:
+    if: ${{ inputs.approval == 'VERIFY_DEPLOYMENT_IDENTITY' && github.ref == 'refs/heads/milestone-customer-booking-experience' && github.repository == 'nathanboustead85-bit/SalonBook-Pro' }}
+    runs-on: ubuntu-latest
+    environment: boustio-function-deployment
+    timeout-minutes: 8
+    steps:
+      - name: Verify fixed identity configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = "refs/heads/milestone-customer-booking-experience"
+          test "${GITHUB_REPOSITORY}" = "nathanboustead85-bit/SalonBook-Pro"
+          echo 'Phase 17.27: REPOSITORY_BRANCH_ENVIRONMENT_GUARDS_PASSED'
+      - name: Authenticate deployment identity (no cloud API actions)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/107806967630/locations/global/workloadIdentityPools/boustio-github/providers/github-development-deploy
+          service_account: boustio-function-deployer@salonbook-pro-ad5ff.iam.gserviceaccount.com
+          project_id: salonbook-pro-ad5ff
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Confirm authentication step completed
+        shell: bash
+        run: |
+          echo 'Phase 17.27: AUTHENTICATION_SUCCEEDED'
+          echo 'Phase 17.27: NO_DEPLOYMENT_NO_FIRESTORE_ACCESS_NO_BOOKING_CHANGES'
