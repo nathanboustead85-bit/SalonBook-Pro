@@ -1,0 +1,30 @@
+name: Boustio Phase 17 Deployment Preflight
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/index.js'
+      - 'firebase.json'
+      - '.firebaserc'
+      - 'tests/phase17_deployment_preflight.test.js'
+      - '.github/workflows/boustio-phase17-deployment-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  preflight:
+    if: ${{ github.repository == 'nathanboustead85-bit/SalonBook-Pro' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check publication code and deployment configuration
+        run: |
+          node --check functions/index.js
+          node --check functions/phase1317PublicSlugMapping.js
+          node tests/publication_security_guard.test.js
+          node tests/phase17_deployment_preflight.test.js
