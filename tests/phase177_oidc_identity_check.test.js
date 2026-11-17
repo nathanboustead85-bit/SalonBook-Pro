@@ -1,0 +1,20 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {assess,run}=require("../scripts/phase177_oidc_identity_check");
+const provider="projects/107806967630/locations/global/workloadIdentityPools/boustio-github/providers/github-readonly";
+const env={BOUSTIO_PHASE177_APPROVED:"true",GITHUB_REPOSITORY:"nathanboustead85-bit/SalonBook-Pro",GITHUB_REF:"refs/heads/milestone-customer-booking-experience",ACTIONS_ID_TOKEN_REQUEST_URL:"https://pipelines.actions.githubusercontent.com/token",ACTIONS_ID_TOKEN_REQUEST_TOKEN:"test-only"};
+const claims={repository:env.GITHUB_REPOSITORY,ref:env.GITHUB_REF,sub:"repo:nathanboustead85-bit/SalonBook-Pro:environment:boustio-readonly-verification",environment:"boustio-readonly-verification",iss:"https://token.actions.githubusercontent.com",aud:provider};
+const jwt=c=>["test",Buffer.from(JSON.stringify(c)).toString("base64url"),"test"].join(".");
+(async()=>{
+ assert.ok(assess({env,claims}).every(x=>x.status==="MATCH"));
+ const ok=await run({env,request:async()=>jwt(claims)});
+ assert.equal(ok.status,"IDENTITY_MATCH");
+ assert.equal(ok.checks.length,7);
+ const bad=await run({env,request:async()=>jwt({...claims,sub:"unexpected"})});
+ assert.equal(bad.status,"IDENTITY_MISMATCH");
+ assert.ok(bad.checks.some(x=>x.name==="SUBJECT"&&x.status==="MISMATCH"));
+ assert.ok(!JSON.stringify(bad).includes("unexpected"));
+ assert.equal((await run({env:{},request:async()=>jwt(claims)})).status,"DISABLED");
+ assert.equal((await run({env,request:async()=>{throw Error("secret-value");}})).status,"DIAGNOSTIC_UNAVAILABLE");
+ console.log("PASS Phase 17.7 OIDC identity comparison and no-token-output safeguards");
+})().catch(e=>{console.error(e);process.exitCode=1;});
