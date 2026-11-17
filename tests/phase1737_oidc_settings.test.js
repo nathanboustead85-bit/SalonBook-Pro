@@ -1,0 +1,18 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const {classify}=require("../scripts/phase1737_oidc_settings.js");
+assert.deepEqual(classify(403,""),{result:"FORBIDDEN_OR_INSUFFICIENT_PERMISSIONS"});
+assert.deepEqual(classify(404,""),{result:"NOT_FOUND_OR_INACCESSIBLE"});
+assert.equal(classify(401,"").result,"UNAUTHORIZED");
+assert.equal(classify(200,'{"use_default":true,"include_claim_keys":["repo","context"]}').useDefault,true);
+assert.equal(classify(200,'{"use_default":false,"include_claim_keys":["repository_id","environment"]}').claimKeys,"repository_id,environment");
+assert.equal(classify(200,'{"use_default":false,"include_claim_keys":["private_value"]}').claimKeys,"OTHER");
+assert.equal(classify(200,'not json').result,"INVALID_RESPONSE");
+const y=fs.readFileSync(".github/workflows/boustio-phase-1737-oidc-settings.yml","utf8");
+assert.match(y,/environment: boustio-function-deployment/);
+assert.match(y,/READ_OIDC_SETTINGS/);
+assert.match(y,/actions: read/);
+assert.match(y,/github\.ref == 'refs\/heads\/milestone-customer-booking-experience'/);
+assert.doesNotMatch(y,/id-token: write|gcloud|firebase deploy|google-github-actions\/auth/);
+console.log("PASS Phase 17.37 read-only GitHub OIDC settings classification and guards");
