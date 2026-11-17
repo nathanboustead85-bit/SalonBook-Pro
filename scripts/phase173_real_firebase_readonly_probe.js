@@ -26,6 +26,10 @@ async function main(){
  }).verify(ownerId);
  console.log("Phase 17.3:",result.status,"documents present:",result.documentsPresent??"unavailable",
   "bookings enabled:",result.acceptingBookings,"failure category:",result.failureCode||"none");
+ if(result.documentStatus){
+  for(const label of ["publicBusiness","staff","bookings"])
+   console.log("Phase 17.16 document:",label,result.documentStatus[label]);
+ }
  if(result.status!=="REAL_FIREBASE_METADATA_READ_VERIFIED")process.exitCode=1;
 }
 main().catch(()=>{console.error("Phase 17.3 real Firebase probe failed safely");process.exitCode=1;});
