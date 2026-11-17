@@ -1,0 +1,45 @@
+name: Boustio Deployment Permissions (Read Only)
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type CHECK_DEPLOY_PERMISSIONS (read-only IAM test)'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-deployment-permissions-readonly
+  cancel-in-progress: false
+jobs:
+  check:
+    if: ${{ inputs.approval == 'CHECK_DEPLOY_PERMISSIONS' && github.repository == 'nathanboustead85-bit/SalonBook-Pro' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    environment: boustio-function-deployment
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check probe safety
+        run: |
+          node --check scripts/boustio_deploy_permissions.js
+          node tests/boustio_deploy_permissions.test.js
+      - name: Authenticate protected deployer
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/107806967630/locations/global/workloadIdentityPools/boustio-github/providers/github-development-deploy
+          service_account: boustio-function-deployer@salonbook-pro-ad5ff.iam.gserviceaccount.com
+          project_id: salonbook-pro-ad5ff
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Check project-level deployment permissions without changes
+        env:
+          BOUSTIO_PERMISSION_APPROVAL: ${{ inputs.approval }}
+        run: node scripts/boustio_deploy_permissions.js
