@@ -1,0 +1,18 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const {validate,decodePayload,EXPECTED}=require("../scripts/phase1732_oidc_claims.js");
+const valid={...EXPECTED,iss:"https://token.actions.githubusercontent.com",aud:"provider-audience"};
+assert.ok(Object.values(validate(valid)).every(Boolean));
+assert.equal(validate({...valid,sub:"wrong"}).sub,false);
+assert.equal(validate({...valid,environment:"production"}).environment,false);
+const fake="x."+Buffer.from(JSON.stringify(valid)).toString("base64url")+".y";
+assert.equal(decodePayload(fake).sub,EXPECTED.sub);
+assert.throws(()=>decodePayload("bad"),/OIDC_TOKEN_FORMAT_INVALID/);
+const workflow=fs.readFileSync(".github/workflows/boustio-phase-1732-oidc-claims.yml","utf8");
+assert.match(workflow,/environment: boustio-function-deployment/);
+assert.match(workflow,/VERIFY_OIDC_CLAIMS/);
+assert.match(workflow,/id-token: write/);
+assert.match(workflow,/github\.ref == 'refs\/heads\/milestone-customer-booking-experience'/);
+assert.doesNotMatch(workflow,/gcloud|firebase deploy|google-github-actions\/auth/);
+console.log("PASS Phase 17.32 OIDC claim comparison and safe workflow guard tests");
