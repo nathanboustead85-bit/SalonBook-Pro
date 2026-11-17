@@ -1,0 +1,23 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {categorize,run}=require("../scripts/phase178_subject_shape");
+const repository="nathanboustead85-bit/SalonBook-Pro",ref="refs/heads/milestone-customer-booking-experience",environment="boustio-readonly-verification";
+const expected="repo:"+repository+":environment:"+environment;
+const env={BOUSTIO_PHASE178_APPROVED:"true",GITHUB_REPOSITORY:repository,GITHUB_REF:ref,ACTIONS_ID_TOKEN_REQUEST_URL:"https://pipelines.actions.githubusercontent.com/test",ACTIONS_ID_TOKEN_REQUEST_TOKEN:"synthetic-secret"};
+const claims={sub:expected,repository,ref,environment,iss:"https://token.actions.githubusercontent.com",aud:"projects/107806967630/locations/global/workloadIdentityPools/boustio-github/providers/github-readonly"};
+const jwt=c=>["test",Buffer.from(JSON.stringify(c)).toString("base64url"),"test"].join(".");
+(async()=>{
+ assert.equal(categorize(claims),"EXPECTED_ENVIRONMENT_SUBJECT");
+ assert.equal(categorize({...claims,sub:"repo:"+repository+":ref:"+ref}),"BRANCH_REF_SUBJECT");
+ assert.equal(categorize({...claims,sub:"repo:"+repository+":environment:other"}),"DIFFERENT_ENVIRONMENT_SUBJECT");
+ assert.equal(categorize({...claims,sub:"custom-secret-subject"}),"UNRECOGNIZED_SUBJECT");
+ assert.equal((await run({env:{},request:async()=>jwt(claims)})).status,"DISABLED");
+ const good=await run({env,request:async()=>jwt(claims)});
+ assert.equal(good.status,"EXPECTED_SUBJECT");
+ const other=await run({env,request:async()=>jwt({...claims,sub:"repo:"+repository+":ref:"+ref})});
+ assert.equal(other.status,"SUBJECT_VARIATION_FOUND");
+ assert.equal(other.comparison.subjectCategory,"BRANCH_REF_SUBJECT");
+ assert.ok(!JSON.stringify(other).includes("synthetic-secret"));
+ assert.equal((await run({env,request:async()=>{throw Error("private-secret");}})).status,"DIAGNOSTIC_UNAVAILABLE");
+ console.log("PASS Phase 17.8 subject classification and redaction safeguards");
+})().catch(e=>{console.error(e);process.exitCode=1;});
