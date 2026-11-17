@@ -1,0 +1,35 @@
+name: Boustio Phase 17.8 OIDC Subject Shape Diagnostic
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type VERIFY_SUBJECT_SHAPE to classify OIDC identity without printing claims'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-phase178-subject-shape
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: ${{ inputs.approval == 'VERIFY_SUBJECT_SHAPE' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    environment: boustio-readonly-verification
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate subject classification and redaction tests
+        run: |
+          node --check scripts/phase178_subject_shape.js
+          node tests/phase178_subject_shape.test.js
+      - name: Classify GitHub OIDC subject without logging token or claims
+        env:
+          BOUSTIO_PHASE178_APPROVED: 'true'
+        run: node scripts/phase178_subject_shape.js
