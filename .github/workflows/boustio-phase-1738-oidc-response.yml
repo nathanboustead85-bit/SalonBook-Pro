@@ -1,0 +1,37 @@
+name: Boustio Phase 17.38 OIDC API Response Shape
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type INSPECT_OIDC_RESPONSE (read-only, no raw response)'
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: boustio-phase1738-oidc-response
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: ${{ inputs.approval == 'INSPECT_OIDC_RESPONSE' && github.ref == 'refs/heads/milestone-customer-booking-experience' && github.repository == 'nathanboustead85-bit/SalonBook-Pro' }}
+    runs-on: ubuntu-latest
+    environment: boustio-function-deployment
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify response parser and guards
+        run: |
+          node --check scripts/phase1738_oidc_response.js
+          node tests/phase1738_oidc_response.test.js
+      - name: Inspect OIDC API response structure safely
+        env:
+          BOUSTIO_PHASE1738_APPROVAL: ${{ inputs.approval }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/phase1738_oidc_response.js
