@@ -305,6 +305,7 @@ exports.publishBusiness = onCall(
 exports.unpublishBusiness = onCall(
   {
     region: "europe-west2",
+    serviceAccount: "boustio-business-publisher@salonbook-pro-ad5ff.iam.gserviceaccount.com",
     maxInstances: 10,
     enforceAppCheck: false
   },
