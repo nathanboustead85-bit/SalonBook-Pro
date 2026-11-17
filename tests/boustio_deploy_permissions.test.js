@@ -1,0 +1,10 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const {requested}=require("../scripts/boustio_deploy_permissions.js");
+assert.ok(requested.includes("cloudfunctions.functions.create"));
+assert.ok(requested.includes("iam.serviceAccounts.actAs"));
+assert.equal(new Set(requested).size,requested.length);
+const w=fs.readFileSync(".github/workflows/boustio-deploy-permissions-readonly.yml","utf8");
+for(const s of ["CHECK_DEPLOY_PERMISSIONS","boustio-function-deployment","milestone-customer-booking-experience","boustio-function-deployer@salonbook-pro-ad5ff"])assert.ok(w.includes(s));
+assert.ok(!/firebase deploy|gcloud functions deploy|gcloud run deploy/.test(w));
+console.log("PASS Boustio permission-probe safety checks");
