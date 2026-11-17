@@ -1,0 +1,38 @@
+name: Boustio Identity Root Cause (Read Only)
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type INSPECT_IDENTITY_ONCE (read-only, no tokens or raw subject)'
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+concurrency:
+  group: boustio-identity-root-cause
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: ${{ inputs.approval == 'INSPECT_IDENTITY_ONCE' && github.ref == 'refs/heads/milestone-customer-booking-experience' && github.repository == 'nathanboustead85-bit/SalonBook-Pro' }}
+    runs-on: ubuntu-latest
+    environment: boustio-function-deployment
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify identity diagnostic safeguards
+        run: |
+          node --check scripts/boustio_identity_root_cause.js
+          node tests/boustio_identity_root_cause.test.js
+      - name: Inspect GitHub identity and OIDC settings read only
+        env:
+          BOUSTIO_IDENTITY_APPROVAL: ${{ inputs.approval }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/boustio_identity_root_cause.js
