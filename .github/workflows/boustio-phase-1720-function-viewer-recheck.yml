@@ -1,0 +1,55 @@
+name: Boustio Phase 17.20 Cloud Functions Viewer Recheck
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 'Type VERIFY_FUNCTION_DEPLOYMENT to recheck read-only metadata access'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: boustio-phase1720-function-viewer-recheck
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: ${{ inputs.approval == 'VERIFY_FUNCTION_DEPLOYMENT' && github.ref == 'refs/heads/milestone-customer-booking-experience' }}
+    runs-on: ubuntu-latest
+    environment: boustio-readonly-verification
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify read-only inspection safeguards
+        run: |
+          node --check scripts/phase1719_function_deployment.js
+          node tests/phase1719_function_deployment.test.js
+      - name: Verify project allowlist
+        env:
+          PROJECT_ID: ${{ vars.BOUSTIO_FIREBASE_PROJECT_ID }}
+          PROVIDER: ${{ vars.BOUSTIO_WIF_PROVIDER }}
+        run: |
+          if [ "$PROJECT_ID" != 'salonbook-pro-ad5ff' ] || [ -z "$PROVIDER" ]; then
+            echo 'Phase 17.20: CONFIGURATION_REJECTED'
+            exit 1
+          fi
+      - name: Authenticate restricted read-only identity
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.BOUSTIO_WIF_PROVIDER }}
+          service_account: boustio-readonly-verifier@salonbook-pro-ad5ff.iam.gserviceaccount.com
+          project_id: salonbook-pro-ad5ff
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Recheck Cloud Function metadata without invoking it
+        env:
+          BOUSTIO_PHASE1719_APPROVAL: ${{ inputs.approval }}
+          BOUSTIO_FIREBASE_PROJECT_ID: salonbook-pro-ad5ff
+          GOOGLE_CLOUD_PROJECT: salonbook-pro-ad5ff
+        run: node scripts/phase1719_function_deployment.js
