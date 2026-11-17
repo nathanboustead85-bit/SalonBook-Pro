@@ -1,0 +1,20 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {classify,run}=require("../scripts/phase1710_repository_encoding");
+const repository="nathanboustead85-bit/SalonBook-Pro",environment="boustio-readonly-verification";
+const claims={repository,sub:"repo:"+repository+":environment:"+environment};
+const jwt=c=>["header",Buffer.from(JSON.stringify(c)).toString("base64url"),"signature"].join(".");
+const env={BOUSTIO_PHASE1710_APPROVED:"true",ACTIONS_ID_TOKEN_REQUEST_URL:"https://pipelines.actions.githubusercontent.com/token",ACTIONS_ID_TOKEN_REQUEST_TOKEN:"test-secret"};
+(async()=>{
+ assert.equal(classify(claims).repositoryFormat,"EXACT_REPOSITORY");
+ assert.equal(classify({...claims,sub:"repo:"+encodeURIComponent(repository)+":environment:"+environment}).repositoryFormat,"PERCENT_ENCODED_REPOSITORY");
+ assert.equal(classify({...claims,sub:"repo:"+repository.toUpperCase()+":environment:"+environment}).repositoryFormat,"CASE_ONLY_VARIATION");
+ assert.equal(classify({...claims,sub:"repo:some-private-value:environment:"+environment}).repositoryFormat,"OTHER_REPOSITORY_REPRESENTATION");
+ assert.ok(!JSON.stringify(classify({...claims,sub:"repo:some-private-value:environment:"+environment})).includes("some-private-value"));
+ assert.equal((await run({env:{},request:async()=>jwt(claims)})).status,"DISABLED");
+ const result=await run({env,request:async()=>jwt(claims)});
+ assert.equal(result.status,"INSPECTED");
+ assert.equal(result.report.repositoryFormat,"EXACT_REPOSITORY");
+ assert.equal((await run({env,request:async()=>{throw Error("secret-token");}})).status,"DIAGNOSTIC_UNAVAILABLE");
+ console.log("PASS Phase 17.10 repository encoding categories and safe output checks");
+})().catch(e=>{console.error(e);process.exitCode=1;});
