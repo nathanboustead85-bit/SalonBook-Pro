@@ -69,6 +69,8 @@ function createRealFirebaseReadOnlyProbe({db,projectId,allowedProjectId,enabled=
    return Object.freeze({
     status:result.every(Boolean)?"REAL_FIREBASE_METADATA_READ_VERIFIED":"REAL_FIREBASE_DOCUMENTS_MISSING",
     connected:true,documentsPresent:result.filter(Boolean).length,
+    // Fixed labels only; never expose owner ID, document paths or document contents.
+    documentStatus:Object.freeze({publicBusiness:result[0]?"PRESENT":"MISSING",staff:result[1]?"PRESENT":"MISSING",bookings:result[2]?"PRESENT":"MISSING"}),
     acceptingBookings:false,reservationCreated:false,productionReady:false
    });
   }catch(error){return Object.freeze({...deny("REAL_FIREBASE_PROBE_REVIEW_REQUIRED"),failureCode:safeFailureCode(error)});}
