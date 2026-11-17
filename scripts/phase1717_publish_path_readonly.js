@@ -1,5 +1,5 @@
 "use strict";
-// Phase 17.17: fixed-path existence checks only. No .data(), writes or identifiers in output.
+// Phase 17.17: fixed-path existence checks only; no document contents, writes or identifiers in output.
 const {initializeApp,applicationDefault}=require("firebase-admin/app");
 const {getFirestore}=require("firebase-admin/firestore");
 async function main(){
