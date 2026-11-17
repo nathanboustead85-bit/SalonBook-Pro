@@ -9,7 +9,7 @@ const end = source.indexOf("  async (request) => {", start);
 assert.ok(start !== -1 && end > start, "publishBusiness callable declaration must exist");
 const options = source.slice(start, end);
 assert.match(options, /region:\s*"europe-west2"/);
-assert.match(options, /serviceAccount:\s*"boustio-business-publisher@salonbook-pro-ad5ff\\.iam\\.gserviceaccount\\.com"/);
+assert.ok(options.includes('serviceAccount: "boustio-business-publisher@salonbook-pro-ad5ff.iam.gserviceaccount.com"'), "publishBusiness must use dedicated runtime identity");
 assert.match(options, /maxInstances:\s*10/);
 assert.match(options, /enforceAppCheck:\s*false/);
 assert.match(source, /acceptingBookings:\s*false/);
