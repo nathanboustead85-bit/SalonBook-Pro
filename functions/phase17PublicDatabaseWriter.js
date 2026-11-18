@@ -7,6 +7,7 @@
  */
 const {preparePublicListing}=require("./phase17PublicListingProjection");
 const {createHash}=require("node:crypto");
+const {compareRevisions}=require("./phase17FullPrecisionRevision");
 function commandDigest(command,listing){
  const ordered=listing?Object.keys(listing).sort().map(k=>[k,listing[k]]):null;
  return createHash("sha256").update(JSON.stringify([command.uid,command.operation,command.version,ordered])).digest("hex");
