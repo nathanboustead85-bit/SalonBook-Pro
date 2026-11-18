@@ -9,6 +9,23 @@
 const COLLECTION="publicationRecoveryJournal";
 const STATES=new Set(["PENDING","UNKNOWN","CONFIRMED","BLOCKED"]);
 const TERMINAL=new Set(["CONFIRMED","BLOCKED"]);
+const {preparePublicListing}=require("./phase17PublicListingProjection");
+function assertStrictEntry(entry){
+ const c=entry.command;
+ if(!c||!["publish","unpublish"].includes(c.operation)||
+    !Number.isSafeInteger(c.version)||c.version<1||
+    entry.key!==c.uid+":"+c.operation+":"+c.version)
+  throw Error("STRICT_RECOVERY_KEY_MISMATCH");
+ if(c.operation==="publish"){
+  const projected=preparePublicListing(c.uid,c.profile);
+  const allowed=Object.keys(projected);
+  if(Object.keys(c.profile).some(k=>!allowed.includes(k))||
+     allowed.some(k=>c.profile[k]!==projected[k]))
+   throw Error("PRIVATE_OR_UNCANONICAL_JOURNAL_PROFILE");
+ }else if(c.profile!==undefined&&c.profile!==null){
+  throw Error("UNPUBLISH_JOURNAL_PROFILE_FORBIDDEN");
+ }
+}
 function assertEntry(key,entry){
  if(typeof key!=="string"||!/^[-_A-Za-z0-9:]{1,300}$/.test(key)||
  !entry||entry.key!==key||!STATES.has(entry.state)||
@@ -19,7 +36,7 @@ function assertEntry(key,entry){
  if(entry.command.profile&&entry.command.profile.acceptingBookings!==false)
  throw Error("RECOVERY_BOOKINGS_MUST_BE_DISABLED");
 }
-function createRecoveryStore({db}){
+function createRecoveryStore({db,strict=false}){
  if(!db||typeof db.collection!=="function"||typeof db.runTransaction!=="function")
  throw Error("TRUSTED_TRANSACTIONAL_DATABASE_REQUIRED");
  const collection=db.collection(COLLECTION);
@@ -36,6 +53,10 @@ function createRecoveryStore({db}){
   put:async(key,entry,expectedRevision)=>{
    if(expectedRevision!==undefined&&(!Number.isSafeInteger(expectedRevision)||expectedRevision<0))throw Error("INVALID_EXPECTED_REVISION");
    assertEntry(key,entry);
+   if(strict){
+    if(expectedRevision===undefined)throw Error("RECOVERY_CAS_REQUIRED");
+    assertStrictEntry(entry);
+   }
    const ref=doc(key);
    return db.runTransaction(async tx=>{
     const snap=await tx.get(ref);
