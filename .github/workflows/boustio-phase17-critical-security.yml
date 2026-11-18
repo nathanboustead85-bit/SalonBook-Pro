@@ -8,6 +8,8 @@ on:
       - "functions/phase17ClaimedRecovery.js"
       - "functions/phase17DurableRecovery.js"
       - "tests/phase17_critical_security.test.js"
+      - "tests/phase17_recovery_cas.test.js"
+      - "functions/phase17RecoveryFirestoreStore.js"
       - ".github/workflows/boustio-phase17-critical-security.yml"
 permissions:
   contents: read
@@ -19,6 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - run: node tests/phase17_recovery_cas.test.js
       - run: node tests/phase17_critical_security.test.js
       - run: node tests/phase17_end_to_end_recovery.test.js
       - run: node tests/phase17_recovery_claim.test.js
