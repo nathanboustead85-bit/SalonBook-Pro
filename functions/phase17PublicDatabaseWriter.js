@@ -19,29 +19,51 @@ function validCommand(c){
  if(typeof c.uid!=="string"||!/^[A-Za-z0-9_-]{1,128}$/.test(c.uid))throw Error("INVALID_PUBLICATION_COMMAND");
  return null;
 }
-async function applyPublicListingCommand(publicDb,command){
+function validateFence(command,fence){
+ if(fence===undefined)return null;
+ if(!fence||typeof fence!=="object"||!Number.isSafeInteger(fence.generation)||fence.generation<1||
+ typeof fence.worker!=="string"||!/^[A-Za-z0-9_-]{1,128}$/.test(fence.worker)||
+ fence.key!==command.uid+":"+command.operation+":"+command.version)
+  throw Error("INVALID_DESTINATION_FENCE");
+ return {key:fence.key,worker:fence.worker,generation:fence.generation};
+}
+async function applyPublicListingCommand(publicDb,command,options={}){
+ const fence=validateFence(command,options.fence);
+ if(options.requireFence&&!fence)throw Error("DESTINATION_FENCE_REQUIRED");
  const listing=validCommand(command);
  const uid=command.uid;
  const digest=commandDigest(command,listing);
  const profileRef=publicDb.collection("publicBusinesses").doc(uid);
+ const fenceRef=fence?publicDb.collection("publicationDestinationFences").doc(fence.key):null;
  return publicDb.runTransaction(async tx=>{
   const existing=await tx.get(profileRef);
+  const fenceSnap=fenceRef?await tx.get(fenceRef):null;
+  const previousFence=fenceSnap?.exists?fenceSnap.data():null;
+  if(fence&&previousFence&&(
+    fence.generation<previousFence.generation||
+    (fence.generation===previousFence.generation&&fence.worker!==previousFence.worker)))
+   return {status:"FENCED"};
+  const finish=result=>{
+   if(fence&&(!previousFence||fence.generation>previousFence.generation))
+    tx.set(fenceRef,fence);
+   return result;
+  };
   const old=existing.exists?existing.data():null;
   const oldVersion=old&&Number.isSafeInteger(old.publicationVersion)?old.publicationVersion:0;
-  if(command.version<oldVersion)return {status:"STALE"};
-  if(command.version===oldVersion)return {status:old.publicationDigest===digest?"ALREADY_APPLIED":"VERSION_CONFLICT"};
+  if(command.version<oldVersion)return finish({status:"STALE"});
+  if(command.version===oldVersion)return finish({status:old.publicationDigest===digest?"ALREADY_APPLIED":"VERSION_CONFLICT"});
   if(command.operation==="unpublish"){
-   if(!old)return {status:"NOT_FOUND"};
+   if(!old)return finish({status:"NOT_FOUND"});
    const slug=old.slug;
    const reservationRef=publicDb.collection("businessSlugs").doc(slug);
    const mappingRef=publicDb.collection("publicSlugMappings").doc(slug);
    const [reservation,mapping]=await Promise.all([tx.get(reservationRef),tx.get(mappingRef)]);
    if(!reservation.exists||reservation.get("businessId")!==uid||
       !mapping.exists||mapping.get("businessId")!==uid)
-     return {status:"INCONSISTENT_RESERVATION"};
+     return finish({status:"INCONSISTENT_RESERVATION"});
    tx.set(profileRef,{...old,published:false,acceptingBookings:false,publicationVersion:command.version,publicationDigest:digest});
    tx.set(mappingRef,{slug,businessId:uid,published:false});
-   return {status:"UNPUBLISHED"};
+   return finish({status:"UNPUBLISHED"});
   }
   const slug=listing.slug;
   const slugRef=publicDb.collection("businessSlugs").doc(slug);
@@ -57,16 +79,16 @@ async function applyPublicListingCommand(publicDb,command){
   ]);
   if((reservation.exists&&reservation.get("businessId")!==uid)||
      (mapping.exists&&mapping.get("businessId")!==uid))
-    return {status:"SLUG_TAKEN"};
-  if(reservation.exists!==mapping.exists)return {status:"INCONSISTENT_RESERVATION"};
+    return finish({status:"SLUG_TAKEN"});
+  if(reservation.exists!==mapping.exists)return finish({status:"INCONSISTENT_RESERVATION"});
   if(oldSlug&&(!oldReservation?.exists||oldReservation.get("businessId")!==uid||
      !oldMapping?.exists||oldMapping.get("businessId")!==uid))
-    return {status:"INCONSISTENT_RESERVATION"};
+    return finish({status:"INCONSISTENT_RESERVATION"});
   tx.set(profileRef,{...listing,publicationVersion:command.version,publicationDigest:digest});
   tx.set(slugRef,{businessId:uid});
   tx.set(mappingRef,{slug,businessId:uid,published:true});
   if(oldSlug){tx.delete(oldSlugRef);tx.delete(oldMappingRef);}
-  return {status:"PUBLISHED",slug};
+  return finish({status:"PUBLISHED",slug});
  });
 }
 module.exports=Object.freeze({applyPublicListingCommand});
