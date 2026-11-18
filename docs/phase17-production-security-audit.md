@@ -1,57 +1,57 @@
-# Boustio Phase 17 — production-readiness security audit
+# Boustio Phase 17 — final offline security audit (revision 2)
 
 Date: 2026-11-18
 Branch: `milestone-customer-booking-experience`
-Scope: source review of Phase 17 public writer, trusted revision, service identity, recovery journal, transactional store and claim coordinator. **No live Firebase access, IAM change, deployment or customer-booking enablement.**
+Basis: direct source inspection of the public writer, service boundary, handler, trusted revision, recovery journal, coordinator, claim store and previous audit. GitHub Actions run 44325230156 passed 16/16 offline suites. **No emulator, live Firebase, IAM or deployment testing was performed.**
 
-## Verdict: NOT APPROVED FOR PRODUCTION
+## Decision: NOT APPROVED FOR PRODUCTION
 
-All seven offline test suites passed in GitHub Actions run 44272142094. Those suites use fake databases and do not establish real Firestore concurrency, IAM isolation, cross-database behaviour, or production readiness.
+The 16 passing offline suites demonstrate useful regression coverage, but do not prove real cross-process Firestore concurrency, authenticated freshness, IAM separation, production deployment or customer-booking safety.
 
-## Blocking findings
+## Finding register
 
-### P17-A01 — CRITICAL — Same-version conflicting publication silently accepted
-File: `functions/phase17PublicDatabaseWriter.js`
-The condition `command.version===oldVersion` returns `ALREADY_APPLIED` without verifying operation, listing content or an immutable command digest. A conflicting publish/unpublish command with the same version can be misclassified as successful. **Fix:** store a canonical operation+UID+allowlisted-listing digest with each publication and return a conflict on unequal same-version commands. Test same-version different slug, name, and operation.
+### P17-A01 — Same-version digest: MITIGATED in isolated writer, NOT fully closed end-to-end
+`phase17PublicDatabaseWriter.js` computes a SHA-256 digest over UID, operation, numeric version and sorted allowlisted listing fields. A conflicting same-version request returns `VERSION_CONFLICT`. The digest does **not** include `fullPrecisionRevision`, although current token validation requires exact correspondence with a microsecond-aligned numeric version. Any future migration permitting distinct submicrosecond revisions must update digest and key design together.
 
-### P17-A02 — CRITICAL — Recovery is not fenced by worker ownership
-Files: `functions/phase17DurableRecovery.js`, `functions/phase17RecoveryClaim.js`
-`reconcile()` does not accept or validate a claim generation before `send()` or before journal completion. A worker whose lease expired can still issue an external request. The offline integrated test invokes the claim coordinator and recovery function separately, not as an enforced boundary. **Fix:** design an orchestrator with generation checks, transactional state transitions and downstream idempotency/fencing; prove expired workers cannot change publication state. Do not rely on a lease check alone for an external side effect.
+### P17-A02 — CRITICAL: Recovery claim and destination write are not atomically fenced
+`phase17ClaimedRecovery.js` checks the claim before sending; `phase17ServiceIdentityBoundary.js` verifies it again before calling the public writer. However, a lease may expire or be superseded **between that verification and the public database transaction**. The destination fence records the greatest generation it has **seen**, not the current authoritative claim generation. Thus an expired worker can still be the first to reach the destination. Offline competing-worker tests do not cover this interleaving. Requires a production-safe protocol, authoritative fencing design and adversarial emulator/staging tests; do not claim expired workers can never publish.
 
-### P17-A03 — HIGH — Journal transitions allow concurrent stale writers
-File: `functions/phase17RecoveryFirestoreStore.js`
-`put()` checks command identity and some state transitions, but not an expected revision/generation. Two reconcilers can overwrite each other's nonterminal journal updates. **Fix:** enforce compare-and-set journal generation and claim ownership within a single trusted transactional boundary. Test stale writes after a newer claim.
+### P17-A03 — HIGH: Recovery journal CAS is optional and not consistently enforced
+`phase17RecoveryFirestoreStore.js` supports `expectedRevision`, but allows `put` without it. `phase17DurableRecovery.js` calls `store.put` without expected revisions, so concurrent reconcilers can overwrite nonterminal state. Require revision CAS and claim ownership in the production path, with explicit conflict handling and retry rules.
 
-### P17-A04 — HIGH — Trusted timestamp revision loses valid precision
-File: `functions/phase17TrustedRevision.js`
-The microsecond integer representation rejects Firestore timestamps with nanoseconds not divisible by 1000. This fails closed but may reject valid updates and disrupt publication. **Fix:** use a full-precision, lexicographically sortable seconds/nanoseconds revision or a server-assigned monotonic revision, and migrate writer, journal and boundary together. Do not silently truncate.
+### P17-A04 — HIGH: Full-precision revision migration is incomplete
+`phase17FullPrecisionRevision.js` preserves nanoseconds and `phase17TrustedRevision.js` can attach the token, but `versionFromSnapshot` rejects non-microsecond-aligned timestamps. `phase17PublicDatabaseWriter.js` still compares numeric versions and rejects submicrosecond precision. The `phase17ServiceIdentityBoundary.js` reconstructs a command containing only `uid`, `version`, `operation`, `profile`, **dropping `fullPrecisionRevision`** before the writer. The journal and claim key remain numeric. No full-precision end-to-end production path exists. Plan an atomic contract migration with mixed-version rules and rollback.
 
-### P17-A05 — HIGH — Server identity is not authorization for source freshness
-Files: `functions/phase17ServiceIdentityBoundary.js`, `functions/phase17PublicWriterHandler.js`
-The public writer verifies a specific service identity but accepts a caller-supplied numeric version and listing. It cannot independently verify that the command came from the latest private snapshot. **Fix:** restrict the private reader service to deriving immutable commands from verified owner/private snapshot state, protect the service's invocation path, and enforce replay/freshness controls. Service-account authentication alone does not prove freshness.
+### P17-A05 — HIGH: Caller identity does not prove source ownership or freshness
+`phase17ServiceIdentityBoundary.js` verifies a specific Google service account and re-projects public fields, but does not independently authenticate the profile snapshot, current ownership or freshness. A valid service identity could submit an outdated or invented but well-formed command. A trusted private-reader pipeline and replay/source-revision checks must be enforced and tested.
 
-### P17-A06 — HIGH — Publication/recovery paths are not production integrated
-Files: `functions/phase17PublicWriterHandler.js`, `functions/phase17RecoveryFirestoreStore.js`
-The handler is not an exported production endpoint, and the recovery store has no approved live database wiring. The isolated public database, IAM restrictions and trusted private reader are not deployed. **Fix:** obtain separate approval for provisioning, IAM and deployment, then validate using emulator and staged integration tests before any real customer use.
+### P17-A06 — HIGH: Production architecture and isolation unverified
+`phase17PublicWriterHandler.js` is not a deployed HTTP endpoint or Cloud Function. `phase17PublicDatabaseAdapter.js` only selects a named database through an injected SDK. There is no verified isolated database provisioning, IAM policy, live rules, protected endpoint or production claim store. Configuration flags are not evidence of enforced IAM isolation. Requires separate explicit approval before any cloud action.
 
-### P17-A07 — MEDIUM — Recovery key and fingerprint design need hardening
-File: `functions/phase17DurableRecovery.js`
-The key is UID+operation+numeric version, and fingerprint uses `JSON.stringify` of profile object order. Identical logical listings with different key insertion order may conflict, while the key does not itself authenticate the command. **Fix:** canonical allowlisted payload encoding, stable digest, source revision and authenticated owner binding. Do not store private profile fields in journal.
+### P17-A07 — MEDIUM/HIGH: Journal fingerprint and private-field protection incomplete
+`phase17DurableRecovery.js` fingerprints `JSON.stringify` of the entire profile object; insertion order changes fingerprints. `phase17RecoveryFirestoreStore.js` checks `acceptingBookings` but does not allowlist journal profile fields. A caller could persist private profile fields. Replace with canonical allowlisted projection and reject unknown fields before storage. Validate command ownership and key equality rather than only `startsWith(uid+":")`.
 
-### P17-A08 — MEDIUM — Transactional fake tests overstate production concurrency coverage
-Files: `tests/phase17_end_to_end_recovery.test.js`, `tests/phase17_recovery_claim.test.js`
-Fake transactions are serialized in-process and do not model Firestore retries, transaction conflicts, network partitions or independently scheduled workers. **Fix:** add Firebase emulator tests with independent clients, fault injection, crash/restart scenarios and Firestore security/IAM verification where possible.
+### P17-A08 — HIGH: Tests are serialized fakes, not production concurrency evidence
+`phase17_competing_workers.test.js` and other suites serialize transactions in one process. They do not simulate transaction retries, independently scheduled workers, network partitions, cross-database races, IAM denials or crash windows. Add independent-client Firebase emulator and fault-injection tests, then staged integration checks.
 
-## Required release gates
+### P17-A09 — MEDIUM: Production handler does not support unpublish
+`phase17ServiceIdentityBoundary.js` accepts only `publish`, while the writer supports `unpublish`. Production cancellation/unpublishing requires a separately authenticated, freshness-checked path with tests.
 
-1. Resolve A01 and A02 first; add regression tests demonstrating previously unsafe behaviour.
-2. Resolve A03–A05, including full-precision revision and source authenticity.
-3. Verify allowlisted public projection, privacy, booking-disabled invariants, slug ownership, publish/unpublish and rollback across realistic concurrent conditions.
-4. Add real Firestore emulator tests; audit Cloud Run authentication, IAM, Firestore database isolation and rules.
-5. Prepare rollback, audit logging, budget and monitoring controls.
-6. Request **separate explicit approval** before creating databases, changing IAM, reading/writing live Firebase data or deploying any service.
-7. Keep customer bookings disabled until a distinct, approved launch process.
+### P17-A10 — MEDIUM: Backward-compatible unsafe entry points remain
+`applyPublicListingCommand` defaults to `requireFence:false`; `acceptTrustedPublication` defaults to `requireFence:false`; `reconcile` can send without a claim; `store.put` accepts writes without CAS. The assembled handler requires a claim, but other exports remain callable. Do not expose these entry points to production until guarded or explicitly isolated to tests.
 
-## Existing data protection
+## Release gates (all required before production approval)
 
-The audit only reads repository source and writes this Markdown report to the development branch. It does not access or modify existing appointments or live Firebase resources.
+1. Resolve A02, A03, A05 and A07 with fail-closed, source-authenticated, claim-aware recovery and journal writes.
+2. Define and implement complete nanosecond revision contract across trusted reader, boundary, destination, journal, digest and fence keys; explicitly test legacy upgrade and rollback.
+3. Implement authenticated publish **and** unpublish; verify privacy, slug ownership, disabled bookings and conflict handling.
+4. Add realistic emulator concurrency, independent workers, crash/restart and network fault injection; test transaction retries and lease-expiry interleavings.
+5. Audit Cloud Run/Functions endpoint auth, service-account IAM, database/rules isolation, monitoring, budgets and rollback plan.
+6. Obtain separate explicit approval **before** database creation, IAM changes, any live Firebase reads/writes, deployment or migration.
+7. Keep real customer bookings disabled until a separate approved launch process.
+
+## Existing appointments and operational safety
+
+This review only reads repository source and updates this Markdown document on the development branch. It does not access live Firebase, alter appointments, deploy services or enable customer bookings.
+
+**Result: Phase 17 offline regression suite is green; Phase 17 production security remains blocked.**
