@@ -1,0 +1,22 @@
+name: Boustio Phase 17 integrated public writer tests
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "functions/phase17PublicWriterHandler.js"
+      - "tests/phase17_public_writer_handler.test.js"
+      - ".github/workflows/boustio-phase17-public-writer-handler.yml"
+permissions:
+  contents: read
+jobs:
+  integrated-public-writer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --prefix functions --no-save --package-lock=false
+      - run: node tests/phase17_public_writer_handler.test.js
+      - run: node tests/phase17_google_token_verifier.test.js
+      - run: node tests/phase17_public_database_writer.test.js
