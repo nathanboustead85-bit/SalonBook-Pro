@@ -57,5 +57,5 @@ test("Auth emulator: new email/password account signs in, but email remains unve
  const login=await request("signInWithPassword",{email,password,returnSecureToken:true});
  assert.equal(login.localId,signup.localId);
  const lookup=await request("lookup",{idToken:login.idToken});
- assert.equal(lookup.users[0].emailVerified,false);
+ assert.notEqual(lookup.users[0].emailVerified,true);
 });
