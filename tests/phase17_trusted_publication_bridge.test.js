@@ -41,7 +41,7 @@ const profile={businessId:uid,name:"Demo Salon",slug:"demo-salon",category:"Hair
  assert.equal(invalid.status,"INVALID_OWNER_PROFILE");
  await assert.rejects(()=>publishVerifiedOwner({...base,auth:{uid,emailVerified:true},version:2,loadPrivateProfile:async()=>{throw Error("PRIVATE_READ_FAILED");}}),/PRIVATE_READ_FAILED/);
  assert.equal(db.data.get("publicBusinesses/"+uid).publicationVersion,1);
- await assert.rejects(()=>publishVerifiedOwner({...base,auth:{uid,emailVerified:true},version:2,publicDb:{runTransaction:async()=>{throw Error("PUBLIC_WRITE_FAILED");}}}),/PUBLIC_WRITE_FAILED/);
+ await assert.rejects(()=>publishVerifiedOwner({...base,auth:{uid,emailVerified:true},version:2,publicDb:{collection:c=>({doc:id=>({key:c+"/"+id})}),runTransaction:async()=>{throw Error("PUBLIC_WRITE_FAILED");}}}),/PUBLIC_WRITE_FAILED/);
  assert.equal(db.data.get("publicBusinesses/"+uid).publicationVersion,1);
  console.log("PASS PHASE17_TRUSTED_PUBLICATION_BRIDGE: auth, ownership, data minimisation, idempotency and failure propagation");
  console.log("OFFLINE_ONLY_NO_DATABASE_CREATION_NO_DEPLOYMENT_NO_FIRESTORE_WRITES");
