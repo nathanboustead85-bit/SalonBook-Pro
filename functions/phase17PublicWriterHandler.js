@@ -13,9 +13,10 @@ function createPublicWriterHandler({app,getFirestore,audience,googleClient,confi
  if(config.databaseId!==PUBLIC_DATABASE_ID)throw Error("WRONG_DATABASE");
  const verifyIdToken=createGoogleServiceTokenVerifier({expectedAudience:audience,client:googleClient});
  const db=publicDatabase({app,getFirestore});
- return async function handle({authorization,command}={}){
+ return async function handle({authorization,command,fence}={}){
   // No direct client access, no dynamic audience, no default DB fallback.
-  return acceptTrustedPublication({authorization,audience,verifyIdToken,publicDb:db,command});
+  return acceptTrustedPublication({authorization,audience,verifyIdToken,publicDb:db,command,fence,requireFence:true,
+   verifyRecoveryFence:claim=>claims.verify(claim)});
  };
 }
 module.exports=Object.freeze({createPublicWriterHandler});
