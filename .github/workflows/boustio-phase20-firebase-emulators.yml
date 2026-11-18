@@ -11,6 +11,7 @@ on:
       - 'tests/phase20_dashboard_session_recovery.test.cjs'
       - 'tests/phase20_real_dashboard_emulator.test.cjs'
       - 'tests/phase20_network_recovery.test.cjs'
+      - 'tests/phase20_firestore_offline_emulator.test.cjs'
       - 'website/business/dashboard/network-recovery-foundation.mjs'
       - 'website/business/dashboard/session-integration-foundation.mjs'
       - 'tests/package.json'
@@ -22,6 +23,7 @@ on:
       - 'docs/PHASE20_4_DASHBOARD_SESSION_READINESS.md'
       - 'docs/PHASE20_5_REAL_DASHBOARD_READINESS.md'
       - 'docs/PHASE20_6_NETWORK_RECOVERY_READINESS.md'
+      - 'docs/PHASE20_7_FIRESTORE_OFFLINE_READINESS.md'
       - '.github/workflows/boustio-phase20-firebase-emulators.yml'
 permissions:
   contents: read
@@ -55,7 +57,8 @@ jobs:
           node --check tests/phase20_dashboard_session_recovery.test.cjs
           node --check tests/phase20_real_dashboard_emulator.test.cjs
           node --check tests/phase20_network_recovery.test.cjs
+          node --check tests/phase20_firestore_offline_emulator.test.cjs
           node --check website/business/dashboard/network-recovery-foundation.mjs
           node --check website/business/dashboard/session-integration-foundation.mjs
       - name: Run Auth and Firestore emulator security tests (demo project only)
-        run: tests/node_modules/.bin/firebase emulators:exec --project demo-boustio-phase20 --only auth,firestore "node --test tests/phase20_firebase_emulator_integration.test.cjs tests/phase20_auth_lifecycle_emulator.test.cjs tests/phase20_auth_firestore_sdk_emulator.test.cjs tests/phase20_dashboard_session_recovery.test.cjs tests/phase20_real_dashboard_emulator.test.cjs tests/phase20_network_recovery.test.cjs"
+        run: tests/node_modules/.bin/firebase emulators:exec --project demo-boustio-phase20 --only auth,firestore "node --test tests/phase20_firebase_emulator_integration.test.cjs tests/phase20_auth_lifecycle_emulator.test.cjs tests/phase20_auth_firestore_sdk_emulator.test.cjs tests/phase20_dashboard_session_recovery.test.cjs tests/phase20_real_dashboard_emulator.test.cjs tests/phase20_network_recovery.test.cjs tests/phase20_firestore_offline_emulator.test.cjs"
