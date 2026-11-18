@@ -12,6 +12,15 @@ function commandDigest(command,listing){
  return createHash("sha256").update(JSON.stringify([command.uid,command.operation,command.version,ordered])).digest("hex");
 }
 function validVersion(v){return Number.isSafeInteger(v)&&v>0&&v<=Number.MAX_SAFE_INTEGER;}
+function validatePrecision(c){
+ if(c.fullPrecisionRevision===undefined)return null;
+ const token=c.fullPrecisionRevision;
+ compareRevisions(token,token);
+ const [seconds,nanos]=token.split(":").map(Number);
+ if(nanos%1000!==0||!Number.isSafeInteger(seconds*1000000+nanos/1000)||seconds*1000000+nanos/1000!==c.version)
+  throw Error("PRECISION_VERSION_MISMATCH");
+ return token;
+}
 function validCommand(c){
  if(!c||typeof c!=="object"||Array.isArray(c)||!validVersion(c.version))throw Error("INVALID_PUBLICATION_COMMAND");
  if(c.operation!=="publish"&&c.operation!=="unpublish")throw Error("INVALID_PUBLICATION_COMMAND");
@@ -31,6 +40,7 @@ async function applyPublicListingCommand(publicDb,command,options={}){
  const fence=validateFence(command,options.fence);
  if(options.requireFence&&!fence)throw Error("DESTINATION_FENCE_REQUIRED");
  const listing=validCommand(command);
+ const precision=validatePrecision(command);
  const uid=command.uid;
  const digest=commandDigest(command,listing);
  const profileRef=publicDb.collection("publicBusinesses").doc(uid);
@@ -51,6 +61,14 @@ async function applyPublicListingCommand(publicDb,command,options={}){
   };
   const old=existing.exists?existing.data():null;
   const oldVersion=old&&Number.isSafeInteger(old.publicationVersion)?old.publicationVersion:0;
+  // Reject inconsistent stored precision without mutating destination state.
+  if(old?.fullPrecisionRevision!==undefined){
+   const stored=old.fullPrecisionRevision;
+   compareRevisions(stored,stored);
+   const [seconds,nanos]=stored.split(":").map(Number);
+   if(nanos%1000!==0||seconds*1000000+nanos/1000!==oldVersion)
+    throw Error("STORED_PRECISION_VERSION_MISMATCH");
+  }
   if(command.version<oldVersion)return finish({status:"STALE"});
   if(command.version===oldVersion)return finish({status:old.publicationDigest===digest?"ALREADY_APPLIED":"VERSION_CONFLICT"});
   if(command.operation==="unpublish"){
@@ -62,7 +80,7 @@ async function applyPublicListingCommand(publicDb,command,options={}){
    if(!reservation.exists||reservation.get("businessId")!==uid||
       !mapping.exists||mapping.get("businessId")!==uid)
      return finish({status:"INCONSISTENT_RESERVATION"});
-   tx.set(profileRef,{...old,published:false,acceptingBookings:false,publicationVersion:command.version,publicationDigest:digest});
+   tx.set(profileRef,{...old,published:false,acceptingBookings:false,publicationVersion:command.version,publicationDigest:digest,...(precision?{fullPrecisionRevision:precision}:{})});
    tx.set(mappingRef,{slug,businessId:uid,published:false});
    return finish({status:"UNPUBLISHED"});
   }
@@ -85,7 +103,7 @@ async function applyPublicListingCommand(publicDb,command,options={}){
   if(oldSlug&&(!oldReservation?.exists||oldReservation.get("businessId")!==uid||
      !oldMapping?.exists||oldMapping.get("businessId")!==uid))
     return finish({status:"INCONSISTENT_RESERVATION"});
-  tx.set(profileRef,{...listing,publicationVersion:command.version,publicationDigest:digest});
+  tx.set(profileRef,{...listing,publicationVersion:command.version,publicationDigest:digest,...(precision?{fullPrecisionRevision:precision}:{})});
   tx.set(slugRef,{businessId:uid});
   tx.set(mappingRef,{slug,businessId:uid,published:true});
   if(oldSlug){tx.delete(oldSlugRef);tx.delete(oldMappingRef);}
