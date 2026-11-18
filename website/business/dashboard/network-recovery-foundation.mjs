@@ -4,9 +4,9 @@
 export const PUBLIC_REGISTRATION_ENABLED=false;
 export const CUSTOMER_BOOKINGS_ENABLED=false;
 export const LIVE_NETWORK_RECOVERY_ENABLED=false;
-export function createDashboardNetworkRecovery({dashboard,subscribeConnectivity,onStatus}){
+export function createDashboardNetworkRecovery({dashboard,subscribeConnectivity,getCurrentUser,onStatus}){
  if(!dashboard||typeof dashboard.clear!=="function"||typeof dashboard.reconnect!=="function"||
-    typeof subscribeConnectivity!=="function"||typeof onStatus!=="function")
+    typeof subscribeConnectivity!=="function"||typeof getCurrentUser!=="function"||typeof dashboard.resume!=="function"||typeof onStatus!=="function")
   throw Error("Dashboard, connectivity subscription and status callback required");
  let online=null,closed=false,stop=null,epoch=0;
  const report=(status)=>onStatus(Object.freeze({status,online,epoch}));
@@ -19,7 +19,7 @@ export function createDashboardNetworkRecovery({dashboard,subscribeConnectivity,
   if(!isOnline){report("offline");return;}
   report("reconnecting");
   // Reconnect is deliberately opt-in and never performs writes.
-  const accepted=dashboard.reconnect();
+  const accepted=dashboard.resume(getCurrentUser());
   report(accepted?"awaiting-fresh-snapshot":"awaiting-authentication");
  }
  return {
