@@ -1,0 +1,38 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {prepare,reconcile,fingerprint}=require("../functions/phase17DurableRecovery");
+const command={operation:"publish",uid:"owner_1",version:99,profile:{businessId:"owner_1",acceptingBookings:false,slug:"demo"}};
+const persisted=new Map();
+const store={get:async key=>persisted.get(key),put:async(key,value)=>{persisted.set(key,structuredClone(value));}};
+const current=()=>({version:99,operation:"publish",fingerprint:fingerprint(command)});
+(async()=>{
+ const first=await prepare({store,command});
+ assert.equal(first.state,"PENDING");
+ assert.equal((await prepare({store,command})).key,first.key);
+ await assert.rejects(()=>prepare({store,command:{...command,profile:{...command.profile,slug:"different"}}}),/RECOVERY_VERSION_CONFLICT/);
+ let calls=0;
+ const uncertain=await reconcile({store,key:first.key,readCurrent:async()=>current(),send:async()=>{calls++;throw Error("lost response");}});
+ assert.equal(uncertain.state,"UNKNOWN");
+ assert.equal((await store.get(first.key)).state,"UNKNOWN");
+ // Simulate a fresh process by reloading module and reusing durable store.
+ delete require.cache[require.resolve("../functions/phase17DurableRecovery")];
+ const recovered=require("../functions/phase17DurableRecovery");
+ const done=await recovered.reconcile({store,key:first.key,readCurrent:async()=>current(),send:async()=>{calls++;return {status:"ALREADY_APPLIED"};}});
+ assert.equal(done.state,"CONFIRMED");assert.equal(calls,2);
+ const again=await recovered.reconcile({store,key:first.key,readCurrent:async()=>current(),send:async()=>{calls++;}});
+ assert.equal(again.state,"CONFIRMED");assert.equal(calls,2);
+ const newer={...command,version:100};
+ const entry=await recovered.prepare({store,command:newer});
+ let unsafeSends=0;
+ const blocked=await recovered.reconcile({store,key:entry.key,readCurrent:async()=>current(),send:async()=>{unsafeSends++;}});
+ assert.equal(blocked.state,"BLOCKED");assert.equal(unsafeSends,0);
+ const missing={...command,version:101};
+ const m=await recovered.prepare({store,command:missing});
+ assert.equal((await recovered.reconcile({store,key:m.key,readCurrent:async()=>null,send:async()=>{unsafeSends++;}})).state,"BLOCKED");
+ assert.equal(unsafeSends,0);
+ const unknown={...command,version:102};
+ const u=await recovered.prepare({store,command:unknown});
+ assert.equal((await recovered.reconcile({store,key:u.key,readCurrent:async()=>({version:102,operation:"publish",fingerprint:fingerprint(unknown)}),send:async()=>({status:"MYSTERY"})})).state,"UNKNOWN");
+ console.log("PASS PHASE17_DURABLE_RECOVERY: journal before send, restart replay, idempotency, source freshness, fail closed");
+ console.log("OFFLINE_ONLY_INJECTED_STORE_NO_PRODUCTION_STORAGE_NO_FIRESTORE_NO_DEPLOYMENT");
+})().catch(e=>{console.error(e);process.exitCode=1;});
