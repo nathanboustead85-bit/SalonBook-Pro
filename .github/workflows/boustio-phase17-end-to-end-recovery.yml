@@ -1,0 +1,24 @@
+name: Boustio Phase 17 end-to-end recovery tests
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "tests/phase17_end_to_end_recovery.test.js"
+      - ".github/workflows/boustio-phase17-end-to-end-recovery.yml"
+permissions:
+  contents: read
+jobs:
+  end-to-end-recovery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node tests/phase17_end_to_end_recovery.test.js
+      - run: node tests/phase17_recovery_claim.test.js
+      - run: node tests/phase17_recovery_firestore_store.test.js
+      - run: node tests/phase17_durable_recovery.test.js
+      - run: node tests/phase17_publication_recovery.test.js
+      - run: node tests/phase17_trusted_revision.test.js
+      - run: node tests/phase17_public_database_writer.test.js
