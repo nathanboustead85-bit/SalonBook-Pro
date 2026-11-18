@@ -52,8 +52,9 @@ test("Auth emulator: registration remains unverified until explicit emulator-onl
  const before=await refresh(account.refreshToken);
  assert.notEqual((await lookup(before.id_token)).emailVerified,true);
  // Auth emulator's account update endpoint simulates the verified-email lifecycle.
- const verified=await api("accounts:update",{idToken:account.idToken,emailVerified:true,returnSecureToken:true});
- assert.equal((await lookup(verified.idToken)).emailVerified,true);
+ await api("accounts:update",{idToken:account.idToken,emailVerified:true,returnSecureToken:true});
+ // The update endpoint does not guarantee a returned ID token. Refresh the original
+ // session and inspect the new token rather than assuming update response shape.
  const after=await refresh(account.refreshToken);
  assert.equal((await lookup(after.id_token)).emailVerified,true);
 });
