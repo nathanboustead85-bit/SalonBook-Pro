@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Business registration preview | Boustio</title>
+<style>
+:root{font-family:system-ui,Arial,sans-serif;color:#163c3d;background:#f5faf9}*{box-sizing:border-box}body{margin:0}header{padding:20px 6%;background:#087f80;color:white}header a{color:white;text-decoration:none;font-weight:800;font-size:24px}main{max-width:650px;margin:35px auto;padding:0 18px}section{background:white;border:1px solid #d9e9e6;border-radius:20px;padding:28px;box-shadow:0 8px 24px #113d3d0a}h1{margin-top:0}p{line-height:1.55}.notice{background:#fff4d6;padding:14px;border-radius:10px}label{display:block;font-weight:650;margin:18px 0 6px}input,select{width:100%;padding:13px;border:1px solid #9db7b5;border-radius:9px;font:inherit}button{margin-top:24px;width:100%;padding:14px;background:#dce6e5;color:#385453;border:0;border-radius:10px;font-weight:700}small{display:block;margin-top:10px;color:#4b6262}
+</style></head><body><header><a href="/">boustio</a></header><main><section><h1>Set up your business</h1><p>Salon, barber, nail and beauty business onboarding.</p><p class="notice" role="status"><strong>Development preview only.</strong> Account registration is not active. Nothing entered here is sent or saved. Customer bookings remain disabled.</p>
+<form id="business-preview" autocomplete="off" novalidate>
+<label for="businessName">Business name</label><input id="businessName" name="businessName" maxlength="100" placeholder="e.g. Kody Blends">
+<label for="category">Business type</label><select id="category" name="category"><option value="">Choose a business type</option><option value="salon">Hair salon</option><option value="barber">Barbershop</option><option value="nails">Nails</option><option value="beauty">Beauty</option><option value="wellness">Wellness</option></select>
+<label for="email">Business email</label><input id="email" name="email" type="email" maxlength="254" placeholder="you@example.com">
+<button type="button" disabled aria-disabled="true">Registration coming soon — preview only</button>
+<small>Email verification, secure Firebase authentication, owner-specific profiles and consent checks must be completed before registration is enabled.</small>
+</form></section></main>
+<script type="module" src="/business/register/preview.js"></script>
+</body></html>
