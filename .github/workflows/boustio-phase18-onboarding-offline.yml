@@ -1,0 +1,32 @@
+name: Boustio Phase 18 Offline Business Onboarding
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'website/business/register/**'
+      - 'tests/phase18_business_onboarding_foundation.test.js'
+      - 'firestore.rules'
+      - 'functions/index.js'
+      - '.github/workflows/boustio-phase18-onboarding-offline.yml'
+permissions:
+  contents: read
+jobs:
+  onboarding-offline:
+    if: github.repository == 'nathanboustead85-bit/SalonBook-Pro'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate onboarding source and offline safety
+        run: |
+          node --check tests/phase18_business_onboarding_foundation.test.js
+          node --test tests/phase18_business_onboarding_foundation.test.js
+          node --test tests/phase17_release_auth_booking_lock.test.js
+          node --test tests/phase17_customer_preview_safety.test.js
