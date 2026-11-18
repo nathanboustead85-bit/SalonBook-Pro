@@ -15,7 +15,7 @@ function canonical(command){
  }
  const profile=preparePublicListing(c.uid,c.profile);
  if(Object.keys(c.profile).some(k=>!Object.hasOwn(profile,k))||
-    Object.keys(profile).some(k=>c.profile[k]!==profile[k]))
+    Object.keys(c.profile).some(k=>c.profile[k]!==profile[k]))
   throw Error("PRIVATE_OR_UNCANONICAL_JOURNAL_PROFILE");
  return {uid:c.uid,version:c.version,operation:c.operation,profile};
 }
