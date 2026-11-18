@@ -1,0 +1,21 @@
+name: Boustio Phase 17 isolated public writer tests
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "functions/phase17PublicDatabaseWriter.js"
+      - "functions/phase17PublicListingProjection.js"
+      - "tests/phase17_public_database_writer.test.js"
+      - ".github/workflows/boustio-phase17-public-database-writer.yml"
+permissions:
+  contents: read
+jobs:
+  public-writer-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node tests/phase17_public_listing_projection.test.js
+      - run: node tests/phase17_public_database_writer.test.js
