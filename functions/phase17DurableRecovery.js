@@ -51,7 +51,7 @@ async function reconcile({store,key,readCurrent,send}){
    const confirmed={...unknown,state:"CONFIRMED",result:result.status};
    await store.put(key,confirmed);return confirmed;
   }
-  if(result&&["STALE","SLUG_TAKEN","INCONSISTENT_RESERVATION"].includes(result.status)){
+  if(result&&["STALE","SLUG_TAKEN","INCONSISTENT_RESERVATION","VERSION_CONFLICT"].includes(result.status)){
    const blocked={...unknown,state:"BLOCKED",reason:result.status};
    await store.put(key,blocked);return blocked;
   }
