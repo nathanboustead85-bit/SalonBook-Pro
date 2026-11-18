@@ -15,6 +15,7 @@ on:
       - "tests/phase17_trusted_precision_command.test.js"
       - "tests/phase17_precision_destination.test.js"
       - "tests/phase17_competing_workers.test.js"
+      - "tests/phase17_strict_journal.test.js"
       - "tests/phase17_destination_fence.test.js"
       - "tests/phase17_trusted_fence_boundary.test.js"
       - "functions/phase17ServiceIdentityBoundary.js"
@@ -39,6 +40,7 @@ jobs:
       - run: node tests/phase17_precision_destination.test.js
       - run: node tests/phase17_trusted_precision_command.test.js
       - run: node tests/phase17_full_precision_revision.test.js
+      - run: node tests/phase17_strict_journal.test.js
       - run: node tests/phase17_recovery_cas.test.js
       - run: node tests/phase17_critical_security.test.js
       - run: node tests/phase17_end_to_end_recovery.test.js
