@@ -1,0 +1,20 @@
+name: Boustio Phase 17 public database design guard
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "docs/phase17-public-database-isolation.md"
+      - "tests/phase17_public_database_design_guard.test.js"
+      - "functions/index.js"
+      - ".github/workflows/boustio-phase17-public-database-design-guard.yml"
+permissions:
+  contents: read
+jobs:
+  design-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node tests/phase17_public_database_design_guard.test.js
