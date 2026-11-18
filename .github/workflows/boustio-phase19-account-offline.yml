@@ -1,0 +1,35 @@
+name: Boustio Phase 19 Account Isolation Offline
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'website/business/account/**'
+      - 'tests/phase19_verified_owner_foundation.test.js'
+      - 'docs/PHASE19_ACCOUNT_INTEGRATION_READINESS.md'
+      - '.github/workflows/boustio-phase19-account-offline.yml'
+permissions:
+  contents: read
+jobs:
+  account-isolation-offline:
+    if: github.repository == 'nathanboustead85-bit/SalonBook-Pro'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check and offline owner isolation tests
+        run: |
+          node --check website/business/account/verified-owner-foundation.mjs
+          node --check tests/phase19_verified_owner_foundation.test.js
+          node --test tests/phase19_verified_owner_foundation.test.js
+          node --test tests/phase18_firebase_auth_foundation.test.js
+          node --test tests/phase18_private_business_profile.test.js
+          node --test tests/phase18_save_resume_foundation.test.js
+          node --test tests/phase18_onboarding_completion.test.js
+          node --test tests/phase18_final_integration_audit.test.js
