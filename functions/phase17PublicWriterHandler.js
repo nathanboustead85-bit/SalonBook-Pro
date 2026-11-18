@@ -8,7 +8,8 @@
 const {createGoogleServiceTokenVerifier}=require("./phase17GoogleTokenVerifier");
 const {acceptTrustedPublication}=require("./phase17ServiceIdentityBoundary");
 const {publicDatabase,assertIsolatedPublicWriterConfig,PUBLIC_DATABASE_ID}=require("./phase17PublicDatabaseAdapter");
-function createPublicWriterHandler({app,getFirestore,audience,googleClient,config}){
+function createPublicWriterHandler({app,getFirestore,audience,googleClient,config,claims}){
+ if(!claims||typeof claims.verify!=="function")throw Error("TRUSTED_RECOVERY_CLAIMS_REQUIRED");
  assertIsolatedPublicWriterConfig(config);
  if(config.databaseId!==PUBLIC_DATABASE_ID)throw Error("WRONG_DATABASE");
  const verifyIdToken=createGoogleServiceTokenVerifier({expectedAudience:audience,client:googleClient});
