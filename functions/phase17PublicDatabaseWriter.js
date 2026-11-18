@@ -44,7 +44,8 @@ async function applyPublicListingCommand(publicDb,command,options={}){
     (fence.generation===previousFence.generation&&fence.worker!==previousFence.worker)))
    return {status:"FENCED"};
   const finish=result=>{
-   if(fence&&(!previousFence||fence.generation>previousFence.generation))
+   if(fence&&["PUBLISHED","UNPUBLISHED","ALREADY_APPLIED"].includes(result.status)&&
+      (!previousFence||fence.generation>previousFence.generation))
     tx.set(fenceRef,fence);
    return result;
   };
