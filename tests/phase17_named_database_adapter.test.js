@@ -1,0 +1,21 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const {PUBLIC_DATABASE_ID,publicDatabase,assertIsolatedPublicWriterConfig}=require("../functions/phase17PublicDatabaseAdapter");
+assert.equal(PUBLIC_DATABASE_ID,"boustio-public");
+const app={name:"server-app"};
+const db={collection:()=>({}),runTransaction:async()=>{}};
+let args;
+assert.equal(publicDatabase({app,getFirestore:(...values)=>{args=values;return db;}}),db);
+assert.deepEqual(args,[app,"boustio-public"]);
+assert.throws(()=>publicDatabase({app,getFirestore:()=>({})}),/INVALID_PUBLIC_DATABASE_ADAPTER/);
+assert.throws(()=>publicDatabase({app,getFirestore:null}),/MISSING_TRUSTED_FIREBASE_ADAPTER/);
+const config={databaseId:"boustio-public",runtimeRole:"public-writer",privateDatabaseAccess:false,customerBookingsEnabled:false};
+assert.equal(assertIsolatedPublicWriterConfig(config),true);
+for(const patch of [{databaseId:"(default)"},{runtimeRole:"private-reader"},{privateDatabaseAccess:true},{customerBookingsEnabled:true}])
+ assert.throws(()=>assertIsolatedPublicWriterConfig({...config,...patch}),/PUBLIC_WRITER_CONFIG_NOT_APPROVED/);
+const index=fs.readFileSync("functions/index.js","utf8");
+assert.match(index,/const db = getFirestore\(\)/);
+assert.doesNotMatch(index,/phase17PublicDatabaseAdapter/);
+console.log("PASS PHASE17_NAMED_DATABASE_ADAPTER: explicit database, fail-closed config, legacy endpoints unchanged");
+console.log("PREPARATION_ONLY_NO_DATABASE_CREATION_NO_IAM_NO_DEPLOYMENT_NO_FIRESTORE_WRITES");
