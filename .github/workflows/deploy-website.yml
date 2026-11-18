@@ -2,6 +2,11 @@ name: Deploy SalonBook Pro Website
 
 on:
   workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type DEPLOY-BOUSTIO-WEBSITE to explicitly authorize a production website deployment'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -9,11 +14,18 @@ permissions:
 jobs:
   deploy:
     name: Deploy to Firebase Hosting
+    if: >-
+      github.repository == 'nathanboustead85-bit/SalonBook-Pro' &&
+      github.ref == 'refs/heads/production-release' &&
+      inputs.confirmation == 'DEPLOY-BOUSTIO-WEBSITE'
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - name: Checkout website files
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install Node.js
         uses: actions/setup-node@v4
