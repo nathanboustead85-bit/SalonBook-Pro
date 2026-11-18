@@ -21,6 +21,8 @@ on:
       - "functions/phase17ExactPublicationIdentity.js"
       - "functions/phase17ExactRecoveryJournal.js"
       - "functions/phase17ExactRecoveryClaim.js"
+      - "functions/phase17ExactDestinationGate.js"
+      - "tests/phase17_exact_destination_gate.test.js"
       - "tests/phase17_exact_recovery_claim.test.js"
       - "tests/phase17_exact_recovery_journal.test.js"
       - "tests/phase17_exact_publication_identity.test.js"
@@ -61,6 +63,7 @@ jobs:
       - run: node tests/phase17_exact_publication_identity.test.js
       - run: node tests/phase17_exact_recovery_journal.test.js
       - run: node tests/phase17_exact_recovery_claim.test.js
+      - run: node tests/phase17_exact_destination_gate.test.js
       - run: node tests/phase17_strict_journal.test.js
       - run: node tests/phase17_strict_recovery.test.js
       - run: node tests/phase17_strict_claimed_recovery.test.js
