@@ -14,6 +14,7 @@ on:
       - "functions/phase17TrustedRevision.js"
       - "tests/phase17_trusted_precision_command.test.js"
       - "tests/phase17_precision_destination.test.js"
+      - "tests/phase17_competing_workers.test.js"
       - "tests/phase17_destination_fence.test.js"
       - "tests/phase17_trusted_fence_boundary.test.js"
       - "functions/phase17ServiceIdentityBoundary.js"
@@ -34,6 +35,7 @@ jobs:
       - run: node tests/phase17_handler_fence_wiring.test.js
       - run: node tests/phase17_trusted_fence_boundary.test.js
       - run: node tests/phase17_destination_fence.test.js
+      - run: node tests/phase17_competing_workers.test.js
       - run: node tests/phase17_precision_destination.test.js
       - run: node tests/phase17_trusted_precision_command.test.js
       - run: node tests/phase17_full_precision_revision.test.js
