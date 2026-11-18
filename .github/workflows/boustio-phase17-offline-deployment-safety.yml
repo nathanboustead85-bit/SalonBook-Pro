@@ -12,6 +12,8 @@ on:
       - 'tests/phase17_customer_data_protection.test.js'
       - 'tests/phase17_business_account_readiness.test.js'
       - 'tests/phase17_booking_conflict_readiness.test.js'
+      - 'tests/phase17_final_release_audit.test.js'
+      - 'docs/PHASE17_RELEASE_READINESS.md'
       - 'functions/bookingEngine.js'
       - 'functions/trustedBooking.js'
       - 'website/index.html'
@@ -56,6 +58,7 @@ jobs:
           node --check tests/phase17_customer_data_protection.test.js
           node --check tests/phase17_business_account_readiness.test.js
           node --check tests/phase17_booking_conflict_readiness.test.js
+          node --check tests/phase17_final_release_audit.test.js
       - name: Run offline deployment safety regression
         run: node tests/phase17_readonly_deployment_regression.test.js
       - name: Run offline authentication, configuration and booking lock tests
@@ -70,3 +73,5 @@ jobs:
         run: node --test tests/phase17_business_account_readiness.test.js
       - name: Verify booking conflicts and transaction safety offline
         run: node --test tests/phase17_booking_conflict_readiness.test.js
+      - name: Final Phase 17 release-readiness safety audit (offline)
+        run: node --test tests/phase17_final_release_audit.test.js
