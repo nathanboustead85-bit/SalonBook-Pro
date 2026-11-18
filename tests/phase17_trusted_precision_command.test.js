@@ -1,0 +1,17 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {buildTrustedPrecisionCommand}=require("../functions/phase17TrustedRevision");
+const {preparePublicListing}=require("../functions/phase17PublicListingProjection");
+const uid="owner_1",profile={businessId:uid,name:"Demo Salon",slug:"demo-salon",category:"Hair",acceptingBookings:false};
+const snapshot=n=>({exists:true,updateTime:{seconds:1763450000,nanoseconds:n},data:()=>profile});
+const a=buildTrustedPrecisionCommand({uid,snapshot:snapshot(123456000),preparePublicListing});
+const b=buildTrustedPrecisionCommand({uid,snapshot:snapshot(123457000),preparePublicListing});
+assert.ok(a.fullPrecisionRevision<b.fullPrecisionRevision);
+assert.ok(a.version<b.version);
+assert.equal(a.profile.acceptingBookings,false);
+assert.equal(a.fullPrecisionRevision,"0000001763450000:123456000");
+assert.throws(()=>buildTrustedPrecisionCommand({uid,snapshot:snapshot(123456001),preparePublicListing}),/SUBMICROSECOND_REVISION_NOT_REPRESENTABLE/);
+assert.throws(()=>buildTrustedPrecisionCommand({uid,snapshot:{...snapshot(123456000),exists:false},preparePublicListing}),/MISSING_TRUSTED_PROFILE_SNAPSHOT/);
+assert.throws(()=>buildTrustedPrecisionCommand({uid,snapshot:{...snapshot(123456000),updateTime:{seconds:1763450000,nanoseconds:-1}},preparePublicListing}),/INVALID_TRUSTED_UPDATE_TIME/);
+console.log("PASS PHASE17_TRUSTED_PRECISION_COMMAND: exact revision carried, numeric compatibility, submicrosecond fail-closed");
+console.log("OFFLINE_ONLY_NO_FIRESTORE_NO_DEPLOYMENT_NO_REVISION_MIGRATION");
