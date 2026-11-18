@@ -1,0 +1,21 @@
+name: Boustio Phase 17 Google token verifier tests
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "functions/phase17GoogleTokenVerifier.js"
+      - "tests/phase17_google_token_verifier.test.js"
+      - ".github/workflows/boustio-phase17-google-token-verifier.yml"
+permissions:
+  contents: read
+jobs:
+  google-token-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --prefix functions
+      - run: node tests/phase17_google_token_verifier.test.js
+      - run: node tests/phase17_service_identity_boundary.test.js
