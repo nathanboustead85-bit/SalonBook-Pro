@@ -1,0 +1,21 @@
+name: Boustio Phase 17 service identity boundary tests
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "functions/phase17ServiceIdentityBoundary.js"
+      - "tests/phase17_service_identity_boundary.test.js"
+      - ".github/workflows/boustio-phase17-service-identity-boundary.yml"
+permissions:
+  contents: read
+jobs:
+  service-identity-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node tests/phase17_service_identity_boundary.test.js
+      - run: node tests/phase17_trusted_publication_bridge.test.js
+      - run: node tests/phase17_named_database_adapter.test.js
