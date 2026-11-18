@@ -38,7 +38,7 @@ class FakeDb{
  assert.equal(JSON.stringify(saved).includes("SECRET"),false);
  const unpublishKey=uid+":unpublish:43";
  const unpublish={key:unpublishKey,fingerprint:"fixture2",state:"PENDING",command:{uid,version:43,operation:"unpublish"}};
- await assert.rejects(()=>store.put(unpublishKey,{...unpublish,command:{...unpublish.command,profile:{privateNotes:"SECRET"}}},0),/UNPUBLISH_JOURNAL_PROFILE_FORBIDDEN/);
+ await assert.rejects(()=>store.put(unpublishKey,{...unpublish,command:{...unpublish.command,profile:{acceptingBookings:false,privateNotes:"SECRET"}}},0),/UNPUBLISH_JOURNAL_PROFILE_FORBIDDEN/);
  assert.equal((await store.put(unpublishKey,unpublish,0)).revision,1);
  console.log("PASS PHASE17_STRICT_JOURNAL: mandatory CAS, concurrent revision conflict, private-field rejection, exact keys, unpublish privacy");
  console.log("OFFLINE_FAKE_DATABASE_ONLY_NO_FIREBASE_NO_DEPLOYMENT");
