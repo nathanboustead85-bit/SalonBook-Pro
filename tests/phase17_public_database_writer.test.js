@@ -26,7 +26,7 @@ const command=(version,operation="publish",p=profile)=>({uid,version,operation,p
  assert.equal(db.docs.get("publicBusinesses/"+uid).acceptingBookings,false);
  assert.equal(JSON.stringify([...db.docs]).includes("PRIVATE"),false);
  assert.equal((await applyPublicListingCommand(db,command(1))).status,"ALREADY_APPLIED");
- assert.rejects(()=>applyPublicListingCommand(db,command(0)),/INVALID_PUBLICATION_COMMAND/);
+ await assert.rejects(()=>applyPublicListingCommand(db,command(0)),/INVALID_PUBLICATION_COMMAND/);
  assert.equal((await applyPublicListingCommand(db,command(2,"publish",{...profile,slug:"new-salon"}))).status,"PUBLISHED");
  assert.equal(db.docs.has("businessSlugs/demo-salon"),false);
  assert.equal(db.docs.get("businessSlugs/new-salon").businessId,uid);
