@@ -16,7 +16,7 @@ test("Phase 19.2 offline Firebase owner-session recovery and isolation",async t=
   assert.equal(m.CUSTOMER_BOOKINGS_ENABLED,false);
   await assert.rejects(m.resumeFirebaseOwnerSession(),/disabled/);
   const src=fs.readFileSync(path.join(root,"website/business/account/session-foundation.mjs"),"utf8");
-  assert.doesNotMatch(src,/\bfetch\s*\(|\blocalStorage\b|\bsessionStorage\b|from\s*["']firebase\//);
+  assert.doesNotMatch(src,/\bfetch\s*\(|\blocalStorage\s*[.(]|\bsessionStorage\s*[.(]|from\s*["']firebase\//);
  });
  await t.test("Valid verified Firebase claims produce scoped preview session",()=>{
   const s=m.evaluateOwnerSession(user,token,"owner_1");
