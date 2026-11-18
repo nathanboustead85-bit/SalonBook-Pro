@@ -1,0 +1,19 @@
+name: Boustio Phase 17 public listing projection tests
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "functions/phase17PublicListingProjection.js"
+      - "tests/phase17_public_listing_projection.test.js"
+      - ".github/workflows/boustio-phase17-public-listing-projection.yml"
+permissions:
+  contents: read
+jobs:
+  projection-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node tests/phase17_public_listing_projection.test.js
