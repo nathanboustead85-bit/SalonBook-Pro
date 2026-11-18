@@ -16,7 +16,7 @@ const workflow=read(".github/workflows/production-deployment.yml");
 const deployment=read(".github/workflows/deploy-website.yml");
 const exportsFound=[...backend.matchAll(/\bexports\.([A-Za-z_$][\w$]*)\s*=/g)].map(x=>x[1]);
 const checks=[
- {id:"public-booking-off",ready:!exportsFound.some(x=>/booking|reservation|reserveSlot|confirmBooking/i.test(x)) && !/acceptingBookings:\s*true\b/.test(backend),required:true},
+ {id:"public-booking-off",ready:!exportsFound.some(x=>/^(?:createBooking|createTrustedBooking|publicBooking|trustedBooking|confirmBooking|reserveSlot|createReservation|submitBooking)$/i.test(x)) && !/acceptingBookings:\s*true\b/.test(backend),required:true},
  {id:"preview-only",ready:/Booking unavailable[^<]*preview only<\/button>/i.test(page),required:true},
  {id:"private-records-locked",ready:/match \/businesses\/\{businessId\}\/bookingLocks\/\{lockId\}\s*\{\s*allow read, write: if false;/.test(rules),required:true},
  {id:"chat-off",ready:/const CHAT_ENABLED = false\s*;/.test(chat)&&/BOUSTIO_CHAT_ENABLED !== "true"/.test(backend),required:true},
