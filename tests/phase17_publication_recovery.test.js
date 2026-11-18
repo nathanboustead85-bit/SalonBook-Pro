@@ -23,7 +23,7 @@ const command={uid:"owner_1",operation:"publish",version:123,profile:{businessId
  const e=await executeWithRecovery({command,maxAttempts:2,send:async()=>{exhausted++;throw Object.assign(Error("offline"),{code:14});}});
  assert.equal(e.status,"RETRY_EXHAUSTED_REQUIRES_RECONCILIATION");assert.equal(exhausted,2);
  assert.equal((await executeWithRecovery({command,send:async()=>({status:"UNEXPECTED"})})).status,"UNKNOWN_RESULT_REQUIRES_RECONCILIATION");
- assert.throws(()=>executeWithRecovery({command:{...command,profile:{...command.profile,acceptingBookings:true}},send:async()=>({status:"PUBLISHED"})}),/UNSAFE_RECOVERY_COMMAND/);
+ await assert.rejects(()=>executeWithRecovery({command:{...command,profile:{...command.profile,acceptingBookings:true}},send:async()=>({status:"PUBLISHED"})}),/UNSAFE_RECOVERY_COMMAND/);
  console.log("PASS PHASE17_PUBLICATION_RECOVERY: bounded transient retries, immutable revision, semantic stop, reconciliation required");
  console.log("OFFLINE_ONLY_NO_DURABLE_QUEUE_NO_DEPLOYMENT_NO_LIVE_FIRESTORE_WRITES");
 })().catch(e=>{console.error(e);process.exitCode=1;});
