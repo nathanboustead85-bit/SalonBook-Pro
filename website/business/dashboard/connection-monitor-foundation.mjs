@@ -53,7 +53,7 @@ export function createDashboardConnectionMonitor({
   }else if(view.status==="interrupted"||view.status==="invalid"){
    clearTimer();epoch++;attempt=0;dashboard.clear();
    retry();
-  }else if(view.status==="unverified"||view.status==="signed-out"){
+  }else if(view.status==="unverified"){
    clearTimer();epoch++;dashboard.clear();emit("awaiting-authentication");
   }
  }
