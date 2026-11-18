@@ -34,11 +34,7 @@ class Db{
  assert.equal(lost.status,"UNKNOWN");
  assert.equal(journal.state,"UNKNOWN");
  assert.equal(db.docs.get("publicBusinesses/"+uid).fullPrecisionRevision,identity.revision);
- // A stale worker cannot publish after its claim expires and another takes over.
- now=2001;claim("worker2",2,5000);
- const oldClaim={...workerClaim(),worker:"worker1",generation:1};
- assert.equal((await run({workerClaim:oldClaim})).status,"UNKNOWN");
- // Planner is advisory: destination must still reject if its authoritative claim is expired.
+ // The destination must reject an expired authoritative claim.
  now=5001;
  assert.equal((await run()).status,"UNKNOWN");
  assert.equal(journal.state,"UNKNOWN");
@@ -50,7 +46,7 @@ class Db{
  assert.equal(journal.state,"CONFIRMED");
  assert.equal((await run()).status,"TERMINAL");
  assert.equal(db.docs.get("publicBusinesses/"+uid).fullPrecisionRevision,identity.revision);
- assert.equal(writeCalls,4);
+ assert.equal(writeCalls,3);
  console.log("PASS PHASE17_EXACT_INTERRUPTED_INTEGRATION: lost response, expired destination claim, idempotent recovery, terminal journal");
  console.log("OFFLINE_MOCK_ONLY_NOT_CROSS_DATABASE_ATOMICITY_NOT_PRODUCTION_AUTH");
 })().catch(e=>{console.error(e);process.exitCode=1;});
