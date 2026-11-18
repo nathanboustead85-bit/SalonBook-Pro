@@ -1,0 +1,10 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const source=fs.readFileSync(require.resolve("../functions/phase17PublicWriterHandler"),"utf8");
+assert.match(source,/TRUSTED_RECOVERY_CLAIMS_REQUIRED/);
+assert.match(source,/requireFence:true/);
+assert.match(source,/verifyRecoveryFence:claim=>claims\.verify\(claim\)/);
+assert.match(source,/handle\(\{authorization,command,fence\}/);
+console.log("PASS PHASE17_HANDLER_FENCE_WIRING: source contract requires trusted claims and guarded publish");
+console.log("STATIC_OFFLINE_CHECK_NOT_RUNTIME_INTEGRATION_NO_FIREBASE_NO_DEPLOYMENT");
