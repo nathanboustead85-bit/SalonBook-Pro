@@ -1,0 +1,30 @@
+name: Boustio Phase 21 Staging Readiness (Planning Only)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'docs/PHASE21_1_STAGING_READINESS.md'
+      - 'tests/phase21_staging_readiness.test.cjs'
+      - '.github/workflows/boustio-phase21-staging-readiness.yml'
+      - 'website/business/dashboard/session-integration-foundation.mjs'
+      - 'website/business/dashboard/session-recovery-foundation.mjs'
+permissions:
+  contents: read
+jobs:
+  staging-readiness-static:
+    if: github.repository == 'nathanboustead85-bit/SalonBook-Pro'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check staging plan and disabled feature flags
+        run: |
+          node --check tests/phase21_staging_readiness.test.cjs
+          node --test tests/phase21_staging_readiness.test.cjs
