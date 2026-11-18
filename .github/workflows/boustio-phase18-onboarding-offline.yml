@@ -17,6 +17,8 @@ on:
       - 'tests/phase18_onboarding_completion.test.js'
       - 'tests/phase18_business_dashboard.test.js'
       - 'tests/phase18_dashboard_management.test.js'
+      - 'tests/phase18_final_integration_audit.test.js'
+      - 'docs/PHASE18_ONBOARDING_READINESS.md'
       - 'firestore.rules'
       - 'functions/index.js'
       - '.github/workflows/boustio-phase18-onboarding-offline.yml'
@@ -45,6 +47,7 @@ jobs:
           node --check tests/phase18_onboarding_completion.test.js
           node --check tests/phase18_business_dashboard.test.js
           node --check tests/phase18_dashboard_management.test.js
+          node --check tests/phase18_final_integration_audit.test.js
           node --check website/business/dashboard/editor.mjs
           node --check website/business/dashboard/manage.mjs
           node --check website/business/dashboard/dashboard.mjs
@@ -64,5 +67,6 @@ jobs:
           node --test tests/phase18_onboarding_completion.test.js
           node --test tests/phase18_business_dashboard.test.js
           node --test tests/phase18_dashboard_management.test.js
+          node --test tests/phase18_final_integration_audit.test.js
           node --test tests/phase17_release_auth_booking_lock.test.js
           node --test tests/phase17_customer_preview_safety.test.js
