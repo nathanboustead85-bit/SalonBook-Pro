@@ -9,6 +9,7 @@
  * rather than silently collapsing distinct revisions. This does not
  * replace production verification of Firestore updateTime uniqueness.
  */
+const {fullPrecisionRevision}=require("./phase17FullPrecisionRevision");
 const MAX_SECONDS=Math.floor(Number.MAX_SAFE_INTEGER/1000000); // safe integer microseconds
 function versionFromSnapshot(snapshot){
  if(!snapshot||snapshot.exists!==true||!snapshot.updateTime)
@@ -31,4 +32,15 @@ function buildTrustedPublishCommand({uid,snapshot,preparePublicListing}){
  const listing=preparePublicListing(uid,profile);
  return Object.freeze({operation:"publish",uid,version,profile:listing});
 }
-module.exports=Object.freeze({versionFromSnapshot,buildTrustedPublishCommand});
+/**
+ * Migration-safe command preparation. Never silently round a source revision:
+ * the existing numeric writer can only accept microsecond-aligned timestamps.
+ * A full-precision token is also carried for future destination migration.
+ * Submicrosecond timestamps fail closed until the destination accepts them.
+ */
+function buildTrustedPrecisionCommand({uid,snapshot,preparePublicListing}){
+ const revision=fullPrecisionRevision(snapshot);
+ const command=buildTrustedPublishCommand({uid,snapshot,preparePublicListing});
+ return Object.freeze({...command,fullPrecisionRevision:revision});
+}
+module.exports=Object.freeze({versionFromSnapshot,buildTrustedPublishCommand,buildTrustedPrecisionCommand});
