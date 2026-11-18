@@ -1,0 +1,80 @@
+"use strict";
+const test=require("node:test");
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const path=require("node:path");
+const {pathToFileURL}=require("node:url");
+const root=path.resolve(__dirname,"..");
+const read=p=>fs.readFileSync(path.join(root,p),"utf8");
+test("Phase 18.9 dashboard management preview",async t=>{
+ const m=await import(pathToFileURL(path.join(root,"website/business/dashboard/editor.mjs")).href);
+ const html=read("website/business/dashboard/manage.html");
+ const js=read("website/business/dashboard/manage.mjs");
+ await t.test("Demo edits are validated and isolated from original data",()=>{
+  const initial=m.demoEditableDraft();const editor=m.createEditor(initial);
+  assert.equal(editor.state().dirty,false);
+  editor.addService({name:"Colour",price:"45.00",duration:60});
+  editor.addStaff({name:"Jordan"});
+  editor.updateProfile({name:"Demo Salon",email:"salon@example.com"});
+  editor.updateDay("Saturday",{closed:false,open:"10:00",close:"14:00"});
+  assert.equal(editor.state().draft.services.length,3);
+  assert.equal(editor.state().draft.staff.length,3);
+  assert.equal(editor.state().draft.week.Saturday.closed,false);
+  assert.equal(editor.state().dirty,true);
+  assert.equal(initial.services.length,2);
+  const copy=editor.state().draft;copy.services[0].name="Mutated";
+  assert.equal(editor.state().draft.services[0].name,"Haircut");
+ });
+ await t.test("Edit and remove operations reject invalid data atomically",()=>{
+  const editor=m.createEditor();
+  assert.throws(()=>editor.addService({name:"Bad",price:"-5",duration:30}),/Invalid/);
+  assert.throws(()=>editor.addStaff({name:"Kody (demo)"}),/Invalid/);
+  assert.throws(()=>editor.editService(100,{name:"Nope"}),/Unknown/);
+  assert.throws(()=>editor.editStaff(-1,{name:"Nope"}),/Unknown/);
+  assert.throws(()=>editor.removeService(100),/Unknown/);
+  assert.throws(()=>editor.removeStaff(100),/Unknown/);
+  assert.throws(()=>editor.updateProfile({email:"invalid"}),/Invalid/);
+  assert.throws(()=>editor.updateDay("Monday",{closed:false,open:"18:00",close:"09:00"}),/Invalid/);
+  assert.throws(()=>editor.updateDay("Someday",{closed:true}),/Unknown/);
+  editor.editService(0,{name:"Premium Cut",price:"30.00",duration:45});
+  editor.editStaff(0,{name:"Taylor"});
+  editor.removeService(1);
+  editor.removeStaff(1);
+  assert.equal(editor.state().draft.services.length,1);
+  assert.equal(editor.state().draft.staff.length,1);
+  assert.throws(()=>editor.removeService(0),/Invalid/);
+  assert.throws(()=>editor.removeStaff(0),/Invalid/);
+  assert.equal(editor.state().draft.services.length,1);
+ });
+ await t.test("Discard, accept in memory and reset prevent accidental loss",()=>{
+  const editor=m.createEditor();
+  editor.updateProfile({name:"Unsaved"});
+  assert.equal(editor.state().dirty,true);
+  editor.discard();
+  assert.equal(editor.state().dirty,false);
+  assert.equal(editor.state().draft.profile.name,"Kody Blends (demo)");
+  editor.updateProfile({name:"Accepted preview"});
+  editor.acceptPreview();
+  assert.equal(editor.state().dirty,false);
+  editor.updateProfile({name:"Discard this"});
+  editor.discard();
+  assert.equal(editor.state().draft.profile.name,"Accepted preview");
+  editor.reset();
+  assert.equal(editor.state().draft.profile.name,"Kody Blends (demo)");
+ });
+ await t.test("No real writes, bookings, registration or deployment",async()=>{
+  assert.equal(m.DASHBOARD_EDIT_PREVIEW_ONLY,true);
+  assert.equal(m.DASHBOARD_WRITES_ENABLED,false);
+  assert.equal(m.CUSTOMER_BOOKINGS_ENABLED,false);
+  assert.equal(m.PUBLIC_REGISTRATION_ENABLED,false);
+  await assert.rejects(m.persistDashboardChanges(),/disabled/);
+  for(const src of [html,js,read("website/business/dashboard/editor.mjs")]){
+   assert.doesNotMatch(src,/\bfetch\s*\(|localStorage|sessionStorage|indexedDB|setDoc\s*\(|addDoc\s*\(/);
+  }
+  assert.match(html,/Development preview only/);
+  assert.match(js,/beforeunload/);
+  assert.match(js,/\.textContent=/);
+  assert.doesNotMatch(js,/innerHTML|outerHTML/);
+  assert.match(read("website/business/dashboard/index.html"),/dashboard\/manage\.html/);
+ });
+});
