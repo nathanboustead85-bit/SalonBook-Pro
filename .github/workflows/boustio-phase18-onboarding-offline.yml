@@ -7,6 +7,7 @@ on:
     paths:
       - 'website/business/register/**'
       - 'website/business/setup/**'
+      - 'website/business/dashboard/**'
       - 'tests/phase18_business_onboarding_foundation.test.js'
       - 'tests/phase18_firebase_auth_foundation.test.js'
       - 'tests/phase18_private_business_profile.test.js'
@@ -14,6 +15,7 @@ on:
       - 'tests/phase18_enhanced_setup.test.js'
       - 'tests/phase18_save_resume_foundation.test.js'
       - 'tests/phase18_onboarding_completion.test.js'
+      - 'tests/phase18_business_dashboard.test.js'
       - 'firestore.rules'
       - 'functions/index.js'
       - '.github/workflows/boustio-phase18-onboarding-offline.yml'
@@ -40,6 +42,9 @@ jobs:
           node --check tests/phase18_enhanced_setup.test.js
           node --check tests/phase18_save_resume_foundation.test.js
           node --check tests/phase18_onboarding_completion.test.js
+          node --check tests/phase18_business_dashboard.test.js
+          node --check website/business/dashboard/dashboard.mjs
+          node --check website/business/dashboard/view.mjs
           node --check website/business/setup/completion-foundation.mjs
           node --check website/business/setup/save-resume-foundation.mjs
           node --check website/business/setup/enhanced-draft.mjs
@@ -53,5 +58,6 @@ jobs:
           node --test tests/phase18_enhanced_setup.test.js
           node --test tests/phase18_save_resume_foundation.test.js
           node --test tests/phase18_onboarding_completion.test.js
+          node --test tests/phase18_business_dashboard.test.js
           node --test tests/phase17_release_auth_booking_lock.test.js
           node --test tests/phase17_customer_preview_safety.test.js
