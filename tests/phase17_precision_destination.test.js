@@ -12,7 +12,7 @@ class Db{
  const cmd={uid,operation:"publish",version:base+123456,fullPrecisionRevision:"0000001763450000:123456000",profile};
  assert.equal((await applyPublicListingCommand(db,cmd)).status,"PUBLISHED");
  assert.equal(db.docs.get("publicBusinesses/"+uid).fullPrecisionRevision,cmd.fullPrecisionRevision);
- for(const bad of ["0000001763450000:123456001","0000001763450000:123457000","invalid"]){
+ for(const bad of ["0000001763450000:123456001","0000001763450000:123458000","invalid"]){
   await assert.rejects(()=>applyPublicListingCommand(db,{...cmd,version:base+123457,fullPrecisionRevision:bad}),/PRECISION_VERSION_MISMATCH|INVALID_FULL_PRECISION_REVISION/);
  }
  assert.equal(db.docs.get("publicBusinesses/"+uid).publicationVersion,cmd.version);
