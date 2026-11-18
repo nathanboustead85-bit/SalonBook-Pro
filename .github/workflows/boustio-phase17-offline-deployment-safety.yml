@@ -6,6 +6,10 @@ on:
       - milestone-customer-booking-experience
     paths:
       - 'tests/phase17_readonly_deployment_regression.test.js'
+      - 'tests/phase17_release_auth_booking_lock.test.js'
+      - 'functions/index.js'
+      - '.firebaserc'
+      - 'firebase.json'
       - 'scripts/boustio_deploy_permissions.js'
       - 'scripts/phase1728_deployment_permissions.js'
       - '.github/workflows/boustio-deploy-permissions-readonly.yml'
@@ -35,5 +39,8 @@ jobs:
           node --check scripts/boustio_deploy_permissions.js
           node --check scripts/phase1728_deployment_permissions.js
           node --check tests/phase17_readonly_deployment_regression.test.js
+          node --check tests/phase17_release_auth_booking_lock.test.js
       - name: Run offline deployment safety regression
         run: node tests/phase17_readonly_deployment_regression.test.js
+      - name: Run offline authentication, configuration and booking lock tests
+        run: node --test tests/phase17_release_auth_booking_lock.test.js
