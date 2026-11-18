@@ -212,6 +212,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // PHASE 18.6: Future owner-specific onboarding drafts.
+    // No client read/write access until separate rules review, emulator tests
+    // and explicit release approval. Prevents premature draft persistence.
+    match /users/{userId}/onboardingDrafts/{draftId} {
+      allow read, write: if false;
+    }
+
     // ===================================
     // PHASE 7C: PUBLIC BUSINESS DIRECTORY
     // ===================================
