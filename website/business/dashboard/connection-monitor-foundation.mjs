@@ -50,9 +50,12 @@ export function createDashboardConnectionMonitor({
   if(closed||online!==true||!view)return;
   if(view.status==="ready"||view.status==="empty"){
    clearTimer();attempt=0;emit("connected");
-  }else if(view.status==="interrupted"||view.status==="invalid"){
-   clearTimer();epoch++;attempt=0;dashboard.clear();
-   retry();
+  }else if(view.status==="interrupted"){
+   // Initial cached snapshots are normal during reconnect. Do not reset
+   // the retry budget or detach a listener awaiting server confirmation.
+   if(pending===null&&attempt===0)retry();
+  }else if(view.status==="invalid"){
+   clearTimer();epoch++;dashboard.clear();emit("invalid");
   }else if(view.status==="unverified"){
    clearTimer();epoch++;dashboard.clear();emit("awaiting-authentication");
   }
