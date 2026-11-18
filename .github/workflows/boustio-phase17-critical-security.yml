@@ -19,6 +19,8 @@ on:
       - "functions/phase17FullPrecisionRevision.js"
       - "functions/phase17PrecisionMigrationGate.js"
       - "functions/phase17ExactPublicationIdentity.js"
+      - "functions/phase17ExactRecoveryJournal.js"
+      - "tests/phase17_exact_recovery_journal.test.js"
       - "tests/phase17_exact_publication_identity.test.js"
       - "tests/phase17_precision_migration_gate.test.js"
       - "functions/phase17TrustedRevision.js"
@@ -55,6 +57,7 @@ jobs:
       - run: node tests/phase17_full_precision_revision.test.js
       - run: node tests/phase17_precision_migration_gate.test.js
       - run: node tests/phase17_exact_publication_identity.test.js
+      - run: node tests/phase17_exact_recovery_journal.test.js
       - run: node tests/phase17_strict_journal.test.js
       - run: node tests/phase17_strict_recovery.test.js
       - run: node tests/phase17_strict_claimed_recovery.test.js
