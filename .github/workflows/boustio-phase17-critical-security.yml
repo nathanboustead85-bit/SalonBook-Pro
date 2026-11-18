@@ -25,6 +25,8 @@ on:
       - "functions/phase17ExactPublicWriter.js"
       - "functions/phase17ExactUnpublishWriter.js"
       - "functions/phase17ExactRecoveryPlanner.js"
+      - "functions/phase17ExactRecoverySequence.js"
+      - "tests/phase17_exact_recovery_sequence.test.js"
       - "tests/phase17_exact_recovery_planner.test.js"
       - "tests/phase17_exact_unpublish_writer.test.js"
       - "tests/phase17_exact_public_writer.test.js"
@@ -73,6 +75,7 @@ jobs:
       - run: node tests/phase17_exact_public_writer.test.js
       - run: node tests/phase17_exact_unpublish_writer.test.js
       - run: node tests/phase17_exact_recovery_planner.test.js
+      - run: node tests/phase17_exact_recovery_sequence.test.js
       - run: node tests/phase17_strict_journal.test.js
       - run: node tests/phase17_strict_recovery.test.js
       - run: node tests/phase17_strict_claimed_recovery.test.js
