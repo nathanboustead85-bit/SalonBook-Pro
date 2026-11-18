@@ -45,7 +45,7 @@ function dashboard(c){
   onAuthStateChanged,onIdTokenChanged,getIdTokenResult,
   doc:uid=>doc(c.db,"users/"+uid+"/business/profile"),
   onSnapshot:(ref,success,error)=>{
-   const stop=onSnapshot(ref,success,error,{includeMetadataChanges:true});
+   const stop=onSnapshot(ref,{includeMetadataChanges:true},success,error);
    const record={active:true};subs.push(record);
    return()=>{record.active=false;stop();};
   },
