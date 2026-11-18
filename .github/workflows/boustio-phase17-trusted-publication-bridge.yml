@@ -1,0 +1,23 @@
+name: Boustio Phase 17 trusted publication bridge tests
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "functions/phase17TrustedPublicationBridge.js"
+      - "functions/phase17PublicDatabaseWriter.js"
+      - "functions/phase17PublicListingProjection.js"
+      - "tests/phase17_trusted_publication_bridge.test.js"
+      - ".github/workflows/boustio-phase17-trusted-publication-bridge.yml"
+permissions:
+  contents: read
+jobs:
+  bridge-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node tests/phase17_public_listing_projection.test.js
+      - run: node tests/phase17_public_database_writer.test.js
+      - run: node tests/phase17_trusted_publication_bridge.test.js
