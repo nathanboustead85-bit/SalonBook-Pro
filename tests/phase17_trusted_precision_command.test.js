@@ -2,7 +2,7 @@
 const assert=require("node:assert/strict");
 const {buildTrustedPrecisionCommand}=require("../functions/phase17TrustedRevision");
 const {preparePublicListing}=require("../functions/phase17PublicListingProjection");
-const uid="owner_1",profile={businessId:uid,name:"Demo Salon",slug:"demo-salon",category:"Hair",acceptingBookings:false};
+const uid="owner_1",profile={businessId:uid,name:"Demo Salon",slug:"demo-salon",category:"Hair",phone:"",address:"",description:"",acceptingBookings:false};
 const snapshot=n=>({exists:true,updateTime:{seconds:1763450000,nanoseconds:n},data:()=>profile});
 const a=buildTrustedPrecisionCommand({uid,snapshot:snapshot(123456000),preparePublicListing});
 const b=buildTrustedPrecisionCommand({uid,snapshot:snapshot(123457000),preparePublicListing});
