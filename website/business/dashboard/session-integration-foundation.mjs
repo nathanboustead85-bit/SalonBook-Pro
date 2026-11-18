@@ -58,6 +58,7 @@ export function createDashboardSessionController({onAuthStateChanged,onIdTokenCh
    });
   },
   reconnect,
+  resume(user){if(closed)return false;void attach(user??null);return Boolean(user);},
   clear:clearProfile,
   stop(){
    if(closed)return;
