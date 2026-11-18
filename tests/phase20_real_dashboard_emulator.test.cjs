@@ -51,7 +51,7 @@ function dashboard(c){
  const controller=createDashboardSessionController({
   onAuthStateChanged,onIdTokenChanged,getIdTokenResult,
   onSnapshot:(ref,success,error)=>{
-   const stop=onSnapshot(ref,success,error);let active=true;
+   const stop=onSnapshot(ref,{includeMetadataChanges:true},success,error);let active=true;
    const wrapped=()=>{active=false;stop();};
    unsubs.push({get active(){return active;},stop:wrapped});
    return wrapped;
