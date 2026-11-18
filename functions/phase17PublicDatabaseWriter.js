@@ -80,7 +80,8 @@ async function applyPublicListingCommand(publicDb,command,options={}){
    if(!reservation.exists||reservation.get("businessId")!==uid||
       !mapping.exists||mapping.get("businessId")!==uid)
      return finish({status:"INCONSISTENT_RESERVATION"});
-   tx.set(profileRef,{...old,published:false,acceptingBookings:false,publicationVersion:command.version,publicationDigest:digest,...(precision?{fullPrecisionRevision:precision}:{})});
+   const {fullPrecisionRevision:discardedOldPrecision,...oldWithoutPrecision}=old;
+   tx.set(profileRef,{...oldWithoutPrecision,published:false,acceptingBookings:false,publicationVersion:command.version,publicationDigest:digest,...(precision?{fullPrecisionRevision:precision}:{})});
    tx.set(mappingRef,{slug,businessId:uid,published:false});
    return finish({status:"UNPUBLISHED"});
   }
