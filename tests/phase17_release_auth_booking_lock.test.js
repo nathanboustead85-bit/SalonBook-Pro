@@ -20,7 +20,11 @@ test("Phase 17 release configuration and booking lock (offline)",async t=>{
  await t.test("Public booking functions are not exported",()=>{
   const src=source("functions/index.js");
   const exported=[...src.matchAll(/\bexports\.([A-Za-z_$][\w$]*)\s*=/g)].map(m=>m[1]);
-  assert.deepEqual(exported.sort(),["publishBusiness","unpublishBusiness"].sort());
+  const expected=["publishBusiness","unpublishBusiness","sendBusinessChatReply","startCustomerChat","sendCustomerChatMessage","getCustomerChatMessages","inspectLegacyBookingMigration","getPublicBusinessProfile","publishPublicCatalogue"];
+  assert.deepEqual(exported.sort(),expected.sort(),"Unexpected backend export requires security review");
+  for(const forbidden of ["createBooking","publicBooking","trustedBooking","confirmBooking","reserveSlot","executeMigration","migrateBookings"]){
+   assert.ok(!exported.includes(forbidden),forbidden+" must not be exported");
+  }
   assert.ok((src.match(/acceptingBookings:\s*false\b/g)||[]).length>=2);
   assert.doesNotMatch(src,/acceptingBookings:\s*true\b/);
  });
