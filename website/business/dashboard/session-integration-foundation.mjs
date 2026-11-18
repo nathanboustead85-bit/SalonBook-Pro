@@ -27,6 +27,8 @@ export function createDashboardSessionController({onAuthStateChanged,onIdTokenCh
    emit("connecting",uid);
    profileStop=onSnapshot(doc(uid),snapshot=>{
     if(closed||epoch!==generation||current?.uid!==uid)return;
+    // Firestore may deliver cached data while offline; never present it as fresh.
+    if(snapshot.metadata?.fromCache===true){emit("interrupted",uid);return;}
     const data=snapshot.exists()?snapshot.data():null;
     if(data&& (data.businessId!==uid||data.acceptingBookings!==false||data.published===true)){
      emit("invalid",uid);return;
