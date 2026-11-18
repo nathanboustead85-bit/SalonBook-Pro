@@ -1,4 +1,4 @@
-name: Boustio Phase 20.1 Firebase Emulator Security
+name: Boustio Phase 20 Firebase Emulator Security
 on:
   workflow_dispatch:
   push:
@@ -6,10 +6,12 @@ on:
       - milestone-customer-booking-experience
     paths:
       - 'tests/phase20_firebase_emulator_integration.test.cjs'
+      - 'tests/phase20_auth_lifecycle_emulator.test.cjs'
       - 'tests/package.json'
       - 'firestore.rules'
       - 'firebase.json'
       - 'docs/PHASE20_FIREBASE_EMULATOR_READINESS.md'
+      - 'docs/PHASE20_2_AUTH_LIFECYCLE_READINESS.md'
       - '.github/workflows/boustio-phase20-firebase-emulators.yml'
 permissions:
   contents: read
@@ -36,6 +38,8 @@ jobs:
         working-directory: tests
         run: npm install --no-audit --no-fund
       - name: Syntax check
-        run: node --check tests/phase20_firebase_emulator_integration.test.cjs
+        run: |
+          node --check tests/phase20_firebase_emulator_integration.test.cjs
+          node --check tests/phase20_auth_lifecycle_emulator.test.cjs
       - name: Run Auth and Firestore emulator security tests (demo project only)
-        run: tests/node_modules/.bin/firebase emulators:exec --project demo-boustio-phase20 --only auth,firestore "node --test tests/phase20_firebase_emulator_integration.test.cjs"
+        run: tests/node_modules/.bin/firebase emulators:exec --project demo-boustio-phase20 --only auth,firestore "node --test tests/phase20_firebase_emulator_integration.test.cjs tests/phase20_auth_lifecycle_emulator.test.cjs"
