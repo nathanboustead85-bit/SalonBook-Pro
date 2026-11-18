@@ -14,6 +14,8 @@ on:
       - "tests/phase17_destination_fence.test.js"
       - "tests/phase17_trusted_fence_boundary.test.js"
       - "functions/phase17ServiceIdentityBoundary.js"
+      - "functions/phase17PublicWriterHandler.js"
+      - "tests/phase17_handler_fence_wiring.test.js"
       - "functions/phase17RecoveryFirestoreStore.js"
       - ".github/workflows/boustio-phase17-critical-security.yml"
 permissions:
@@ -26,6 +28,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - run: node tests/phase17_handler_fence_wiring.test.js
       - run: node tests/phase17_trusted_fence_boundary.test.js
       - run: node tests/phase17_destination_fence.test.js
       - run: node tests/phase17_full_precision_revision.test.js
