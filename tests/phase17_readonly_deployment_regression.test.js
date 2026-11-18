@@ -39,4 +39,11 @@ assert.ok(production.includes("No Firebase deployment commands executed."),"Prod
 assert.ok(!/firebase deploy --only|gcloud functions deploy|gcloud run deploy/.test(production),"Production verification must not contain deploy commands");
 const website=read(".github/workflows/deploy-website.yml");
 assert.ok(website.includes("firebase deploy --only hosting"),"Website deploy workflow should be recognized as a real deploy path");
+assert.ok(website.includes("workflow_dispatch:"),"Website deployment must be manually triggered");
+assert.ok(website.includes("github.repository == 'nathanboustead85-bit/SalonBook-Pro'"),"Website deployment must be repository restricted");
+assert.ok(website.includes("github.ref == 'refs/heads/production-release'"),"Website deployment must require production-release branch");
+assert.ok(website.includes("inputs.confirmation == 'DEPLOY-BOUSTIO-WEBSITE'"),"Website deployment must require explicit typed confirmation");
+assert.ok(website.includes("environment: production"),"Website deployment must use production environment");
+assert.ok(website.includes("persist-credentials: false"),"Website checkout must not retain credentials");
+assert.ok(!/\bpush\s*:/i.test(website),"Website deployment must not run automatically on push");
 console.log("PASS Phase 17 offline deployment safety regression: protected read-only probes; website deployment excluded");
