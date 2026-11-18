@@ -46,9 +46,22 @@ async function applyPublicListingCommand(publicDb,command,options={}){
  const digest=commandDigest(command,listing);
  const profileRef=publicDb.collection("publicBusinesses").doc(uid);
  const fenceRef=fence?publicDb.collection("publicationDestinationFences").doc(fence.key):null;
+ const authoritativeRef=options.requireAuthoritativeClaim&&fence?publicDb.collection("publicationRecoveryClaims").doc(fence.key):null;
+ if(options.requireAuthoritativeClaim&&(!fence||typeof options.nowMs!=="function"))throw Error("AUTHORITATIVE_CLAIM_REQUIRED");
  return publicDb.runTransaction(async tx=>{
   const existing=await tx.get(profileRef);
   const fenceSnap=fenceRef?await tx.get(fenceRef):null;
+  // Co-located claim read is in the SAME destination transaction as the write.
+  // Never substitute a cross-database or preflight lease check here.
+  const authoritativeSnap=authoritativeRef?await tx.get(authoritativeRef):null;
+  if(authoritativeRef){
+   const now=options.nowMs();
+   if(!Number.isSafeInteger(now)||now<1)throw Error("INVALID_TRUSTED_CLOCK");
+   const claim=authoritativeSnap.exists?authoritativeSnap.data():null;
+   if(!claim||claim.key!==fence.key||claim.worker!==fence.worker||
+      claim.generation!==fence.generation||claim.state!=="HELD"||claim.expiresAt<=now)
+    return {status:"FENCED"};
+  }
   const previousFence=fenceSnap?.exists?fenceSnap.data():null;
   if(fence&&previousFence&&(
     fence.generation<previousFence.generation||
