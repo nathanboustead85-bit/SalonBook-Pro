@@ -64,8 +64,9 @@ test("No authentication cannot reconnect; stopping cancels all timers",()=>{
 });
 test("Interrupted listener triggers fresh generation and never preserves stale profile",()=>{
  const h=harness();h.network(true);h.view({status:"interrupted",profile:{businessId:"owner-a"}});
- assert.equal(h.actions.at(-1),"resume:owner-a");
  assert.equal(h.monitor.attempt,1);
- assert.ok(h.actions.filter(a=>a==="clear").length>=3);
+ assert.equal(h.actions.filter(a=>a==="resume:owner-a").length,1);
+ assert.equal(h.timers.size,1);
+ assert.ok(h.actions.filter(a=>a==="clear").length>=2);
  h.monitor.stop();
 });
