@@ -27,7 +27,7 @@ class FakeDb{
  const command={operation:"publish",uid:"owner_1",version:1,profile:{businessId:"owner_1",name:"Demo Salon",slug:"demo-salon",category:"Hair",phone:"",address:"",description:"",secret:"NEVER_PUBLIC"}};
  const authorization="Bearer signed.header.payload";
  assert.equal((await handler({authorization,command,fence})).status,"PUBLISHED");
- assert.equal((await handler({authorization,command})).status,"ALREADY_APPLIED");
+ assert.equal((await handler({authorization,command,fence})).status,"ALREADY_APPLIED");
  assert.equal(db.docs.get("publicBusinesses/owner_1").acceptingBookings,false);
  assert.equal(JSON.stringify([...db.docs]).includes("NEVER_PUBLIC"),false);
  const before=JSON.stringify([...db.docs]);
@@ -37,7 +37,7 @@ class FakeDb{
  await assert.rejects(()=>handler({authorization,command}),/INVALID_RECOVERY_FENCE/);
  await assert.rejects(()=>handler({authorization,command,fence:{...fence,worker:"intruder"}}),/RECOVERY_FENCE_NOT_AUTHORISED/);
  assert.equal(tokenCalls,5);
- assert.throws(()=>createPublicWriterHandler({app,getFirestore:()=>db,audience,googleClient:client,config:{...config,privateDatabaseAccess:true}}),/PUBLIC_WRITER_CONFIG_NOT_APPROVED/);
+ assert.throws(()=>createPublicWriterHandler({app,claims,getFirestore:()=>db,audience,googleClient:client,config:{...config,privateDatabaseAccess:true}}),/PUBLIC_WRITER_CONFIG_NOT_APPROVED/);
  console.log("PASS PHASE17_PUBLIC_WRITER_HANDLER: authenticated fenced offline publication, retries, private-field exclusion, fail-closed config");
  console.log("NO_DEPLOYMENT_NO_IAM_NO_LIVE_FIRESTORE_WRITES_REAL_REVISION_SOURCE_PENDING");
 })().catch(e=>{console.error(e);process.exitCode=1;});
