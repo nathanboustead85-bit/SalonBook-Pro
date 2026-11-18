@@ -219,6 +219,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // PHASE 18.7: completion markers are reserved for a future trusted
+    // transactional backend. Client reads/writes must remain denied.
+    match /users/{userId}/onboardingCompletion/{completionId} {
+      allow read, write: if false;
+    }
+
     // ===================================
     // PHASE 7C: PUBLIC BUSINESS DIRECTORY
     // ===================================
