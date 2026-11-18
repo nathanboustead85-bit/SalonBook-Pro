@@ -16,7 +16,12 @@ function client(){
  const auth=initializeAuth(app,{persistence:inMemoryPersistence});connectAuthEmulator(auth,"http://"+authHost,{disableWarnings:true});
  const db=getFirestore(app);connectFirestoreEmulator(db,host,Number(port));return {app,auth,db};
 }
-async function cleanup(c){await enableNetwork(c.db).catch(()=>{});await signOut(c.auth);await terminate(c.db);await deleteApp(c.app);}
+async function cleanup(c){
+ // Termination must not wait on a disconnected Firestore stream.
+ await terminate(c.db);
+ await signOut(c.auth);
+ await deleteApp(c.app);
+}
 async function api(endpoint,body){
  const response=await fetch("http://"+authHost+"/identitytoolkit.googleapis.com/v1/"+endpoint+"?key=fake-api-key",{
  method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
@@ -61,7 +66,7 @@ test.before(async()=>{
  env=await initializeTestEnvironment({projectId,firestore:{host,port:Number(port),rules:fs.readFileSync("firestore.rules","utf8")}});
 });
 test.after(async()=>{if(env)await env.cleanup();});
-test("Real SDK disableNetwork hides cached dashboard profile; enableNetwork and fresh listener recover",async()=>{
+test("Real SDK disableNetwork hides cached dashboard profile; enableNetwork and fresh listener recover",{timeout:30000},async()=>{
  const c=client();let d;
  try{
   const uid=await owner(c,"offline");await seed(uid,"Before outage");
@@ -79,7 +84,7 @@ test("Real SDK disableNetwork hides cached dashboard profile; enableNetwork and 
   assert.equal(d.subs[0].active,false);
  }finally{d?.controller.stop();await cleanup(c);}
 });
-test("Real SDK offline owner switch clears stale profile and reconnect reads only new owner",async()=>{
+test("Real SDK offline owner switch clears stale profile and reconnect reads only new owner",{timeout:30000},async()=>{
  const c=client(),other=client();let d;
  try{
   const a=await owner(c,"switch-a"),b=await owner(other,"switch-b");
