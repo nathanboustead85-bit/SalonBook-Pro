@@ -38,7 +38,7 @@ test("Phase 18.10 integration and release gate audit",async t=>{
   assert.deepEqual(drafts.ownerDraftPath(owner),["users",owner.uid,"onboardingDrafts","setup-v1"]);
   assert.notDeepEqual(drafts.ownerDraftPath(owner),drafts.ownerDraftPath(other));
  });
- await t.test("Five-step setup, draft recovery and completion are owner-bound",()=>{
+ await t.test("Five-step setup, draft recovery and completion are owner-bound",async()=>{
   assert.equal(wizard.STEPS.length,5);
   assert.equal(setup.validateSetup(business),true);
   assert.equal(drafts.recoverDraft(owner,envelope).completedStep,4);
