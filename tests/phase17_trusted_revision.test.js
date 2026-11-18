@@ -1,0 +1,24 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {versionFromSnapshot,buildTrustedPublishCommand}=require("../functions/phase17TrustedRevision");
+const {preparePublicListing}=require("../functions/phase17PublicListingProjection");
+const uid="owner_1";
+const profile={businessId:uid,name:"Demo Salon",slug:"demo-salon",category:"Hair",phone:"",address:"",description:"",privateNotes:"DO_NOT_COPY"};
+const snap=(seconds,nanoseconds)=>({exists:true,updateTime:{seconds,nanoseconds},data:()=>profile});
+const first=snap(1763450000,1000000),second=snap(1763450000,2000000);
+assert.ok(versionFromSnapshot(second)>versionFromSnapshot(first));
+assert.equal(versionFromSnapshot(first),versionFromSnapshot(first));
+assert.equal(versionFromSnapshot(first),1763450000001000);
+for(const s of [null,{exists:false,updateTime:{seconds:1,nanoseconds:0}},snap(1,-1),snap(1,1000000000),snap(9007199255,0),snap(1.5,0)])
+ assert.throws(()=>versionFromSnapshot(s));
+const command=buildTrustedPublishCommand({uid,snapshot:first,preparePublicListing});
+assert.equal(command.operation,"publish");
+assert.equal(command.version,versionFromSnapshot(first));
+assert.equal(command.profile.acceptingBookings,false);
+assert.equal(JSON.stringify(command).includes("DO_NOT_COPY"),false);
+assert.equal(Object.isFrozen(command),true);
+assert.throws(()=>buildTrustedPublishCommand({uid,snapshot:{...first,data:()=>({...profile,businessId:"other"})},preparePublicListing}));
+assert.equal(versionFromSnapshot(snap(1763450000,1000001)),versionFromSnapshot(first),"submicrosecond update ambiguity documented");
+console.log("PASS PHASE17_TRUSTED_REVISION: server snapshot updateTime, ordering, deterministic retries, private data exclusion");
+console.log("WARNING submicrosecond revisions collide; resolve before production");
+console.log("OFFLINE_ONLY_NO_FIRESTORE_READS_OR_WRITES_NO_DEPLOYMENT");
