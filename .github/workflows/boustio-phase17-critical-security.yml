@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - "functions/phase17PublicDatabaseWriter.js"
+      - "functions/phase17CrossDatabaseSafetyGate.js"
+      - "tests/phase17_cross_database_gate.test.js"
       - "functions/phase17RecoveryClaim.js"
       - "functions/phase17ClaimedRecovery.js"
       - "functions/phase17DurableRecovery.js"
@@ -42,6 +44,7 @@ jobs:
       - run: node tests/phase17_trusted_fence_boundary.test.js
       - run: node tests/phase17_destination_fence.test.js
       - run: node tests/phase17_authoritative_destination.test.js
+      - run: node tests/phase17_cross_database_gate.test.js
       - run: node tests/phase17_competing_workers.test.js
       - run: node tests/phase17_precision_destination.test.js
       - run: node tests/phase17_trusted_precision_command.test.js
