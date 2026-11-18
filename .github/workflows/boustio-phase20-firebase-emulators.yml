@@ -17,6 +17,7 @@ on:
       - 'tests/phase20_browser_connectivity.test.cjs'
       - 'tests/phase20_playwright_browser.test.cjs'
       - 'tests/phase20_playwright_session_recovery.test.cjs'
+      - 'tests/phase20_playwright_multidevice.test.cjs'
       - 'website/business/dashboard/session-recovery-foundation.mjs'
       - 'website/business/dashboard/browser-connectivity-foundation.mjs'
       - 'website/business/dashboard/connection-monitor-foundation.mjs'
@@ -37,6 +38,7 @@ on:
       - 'docs/PHASE20_10_BROWSER_CONNECTIVITY_READINESS.md'
       - 'docs/PHASE20_11_PLAYWRIGHT_READINESS.md'
       - 'docs/PHASE20_12_BROWSER_SESSION_READINESS.md'
+      - 'docs/PHASE20_13_MULTIDEVICE_READINESS.md'
       - '.github/workflows/boustio-phase20-firebase-emulators.yml'
 permissions:
   contents: read
@@ -104,8 +106,9 @@ jobs:
         run: |
           node --check tests/phase20_playwright_browser.test.cjs
           node --check tests/phase20_playwright_session_recovery.test.cjs
+          node --check tests/phase20_playwright_multidevice.test.cjs
           node --check website/business/dashboard/session-recovery-foundation.mjs
           node --check website/business/dashboard/browser-connectivity-foundation.mjs
           node --check website/business/dashboard/connection-monitor-foundation.mjs
       - name: Run real Chromium offline recovery tests (no production services)
-        run: timeout --signal=TERM --kill-after=10s 180s node --test tests/phase20_playwright_browser.test.cjs tests/phase20_playwright_session_recovery.test.cjs
+        run: timeout --signal=TERM --kill-after=10s 180s node --test tests/phase20_playwright_browser.test.cjs tests/phase20_playwright_session_recovery.test.cjs tests/phase20_playwright_multidevice.test.cjs
