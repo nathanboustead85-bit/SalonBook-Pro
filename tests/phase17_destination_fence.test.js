@@ -19,6 +19,6 @@ class Db{
  assert.equal((await applyPublicListingCommand(db,command,fence("worker_b",2))).status,"ALREADY_APPLIED");
  assert.equal(db.docs.get("publicationDestinationFences/"+key).generation,2);
  assert.equal(db.docs.get("publicBusinesses/"+uid).acceptingBookings,false);
- console.log("PASS PHASE17_DESTINATION_FENCE: newer generation persisted; stale worker and same-generation impersonation blocked");
+ console.log("PASS PHASE17_DESTINATION_FENCE: newer generation persisted; stale worker blocked; rejected requests cannot advance fence");
  console.log("OFFLINE_ONLY_FAKE_DATABASE_NO_FIRESTORE_NO_DEPLOYMENT");
 })().catch(e=>{console.error(e);process.exitCode=1;});
