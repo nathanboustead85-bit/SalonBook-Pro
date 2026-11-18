@@ -9,6 +9,8 @@ on:
       - 'tests/phase17_release_auth_booking_lock.test.js'
       - 'tests/phase17_customer_preview_safety.test.js'
       - 'tests/phase17_website_recovery.test.js'
+      - 'tests/phase17_customer_data_protection.test.js'
+      - 'website/book/customer-chat.js'
       - 'website/book/index.html'
       - 'firestore.rules'
       - 'functions/index.js'
@@ -46,6 +48,7 @@ jobs:
           node --check tests/phase17_release_auth_booking_lock.test.js
           node --check tests/phase17_customer_preview_safety.test.js
           node --check tests/phase17_website_recovery.test.js
+          node --check tests/phase17_customer_data_protection.test.js
       - name: Run offline deployment safety regression
         run: node tests/phase17_readonly_deployment_regression.test.js
       - name: Run offline authentication, configuration and booking lock tests
@@ -54,3 +57,5 @@ jobs:
         run: node --test tests/phase17_customer_preview_safety.test.js
       - name: Verify website failure handling and safe retry
         run: node --test tests/phase17_website_recovery.test.js
+      - name: Verify customer data access and messaging safeguards
+        run: node --test tests/phase17_customer_data_protection.test.js
