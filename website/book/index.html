@@ -171,11 +171,29 @@ function slugFromPath() {
   if (parts.length === 2 && parts[0] === "book" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(parts[1])) return parts[1];
   return null;
 }
-function showError(title, description) {
+function showError(title, description, retryable = false) {
+  // Clear stale catalogue and selection state before showing a failed load.
+  catalogue = null;
   ui.businessName.textContent = title;
   ui.businessDescription.textContent = description;
   ui.bookingContent.classList.add("hidden");
-  ui.error.classList.add("hidden");
+  const previousCatalogue = document.getElementById("livePublicCatalogue");
+  if (previousCatalogue) previousCatalogue.remove();
+  ui.error.replaceChildren();
+  if (retryable) {
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.textContent = "Try loading again";
+    retry.setAttribute("aria-label", "Retry loading business information");
+    retry.addEventListener("click", () => {
+      retry.disabled = true;
+      loadCatalogue();
+    }, {once:true});
+    ui.error.append(retry);
+    ui.error.classList.remove("hidden");
+  } else {
+    ui.error.classList.add("hidden");
+  }
   document.title = title + " | Boustio";
 }
 function localDateString(date) {
@@ -318,6 +336,7 @@ function updateSummary() {
     "Preview only — not a confirmed or reserved appointment.";
 }
 async function loadCatalogue() {
+  ui.error.classList.add("hidden");
   const slug = slugFromPath();
   if (!slug) {
     showError("Business not found","This booking link is not available."); return;
@@ -883,7 +902,7 @@ async function loadCatalogue() {
       }
       document.title = payload.business.name + " | Boustio";
     } catch {
-      showError("Business unavailable","This published business could not be loaded.");
+      showError("Business unavailable","This published business could not be loaded.", true);
     }
     return;
   }
@@ -910,7 +929,7 @@ async function loadCatalogue() {
     ui.date.max = localDateString(lastDate);
     updateStaff();
   } catch (error) {
-    showError("Booking preview unavailable","We couldn't load this business. Please try again later.");
+    showError("Booking preview unavailable","We couldn't load this business. Please try again later.", true);
     console.error("Catalogue loading error:",error);
   }
 }
