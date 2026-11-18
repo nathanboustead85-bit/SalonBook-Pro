@@ -13,6 +13,8 @@ on:
       - 'tests/phase19_session_lifecycle_foundation.test.js'
       - 'website/business/dashboard/owner-connection-foundation.mjs'
       - 'tests/phase19_dashboard_connection_foundation.test.js'
+      - 'website/business/dashboard/sync-foundation.mjs'
+      - 'tests/phase19_dashboard_sync_foundation.test.js'
       - 'docs/PHASE19_ACCOUNT_INTEGRATION_READINESS.md'
       - '.github/workflows/boustio-phase19-account-offline.yml'
 permissions:
@@ -43,12 +45,15 @@ jobs:
           node --check tests/phase19_session_lifecycle_foundation.test.js
           node --check website/business/dashboard/owner-connection-foundation.mjs
           node --check tests/phase19_dashboard_connection_foundation.test.js
+          node --check website/business/dashboard/sync-foundation.mjs
+          node --check tests/phase19_dashboard_sync_foundation.test.js
           node --test tests/phase19_verified_owner_foundation.test.js
           node --test tests/phase19_session_foundation.test.js
           node --test tests/phase19_profile_read_foundation.test.js
           node --test tests/phase19_profile_update_foundation.test.js
           node --test tests/phase19_session_lifecycle_foundation.test.js
           node --test tests/phase19_dashboard_connection_foundation.test.js
+          node --test tests/phase19_dashboard_sync_foundation.test.js
           node --test tests/phase18_firebase_auth_foundation.test.js
           node --test tests/phase18_private_business_profile.test.js
           node --test tests/phase18_save_resume_foundation.test.js
