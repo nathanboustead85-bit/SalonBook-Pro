@@ -6,6 +6,11 @@
  * All references and the transaction belong to ONE isolated public database.
  */
 const {preparePublicListing}=require("./phase17PublicListingProjection");
+const {createHash}=require("node:crypto");
+function commandDigest(command,listing){
+ const ordered=listing?Object.keys(listing).sort().map(k=>[k,listing[k]]):null;
+ return createHash("sha256").update(JSON.stringify([command.uid,command.operation,command.version,ordered])).digest("hex");
+}
 function validVersion(v){return Number.isSafeInteger(v)&&v>0&&v<=Number.MAX_SAFE_INTEGER;}
 function validCommand(c){
  if(!c||typeof c!=="object"||Array.isArray(c)||!validVersion(c.version))throw Error("INVALID_PUBLICATION_COMMAND");
@@ -17,13 +22,14 @@ function validCommand(c){
 async function applyPublicListingCommand(publicDb,command){
  const listing=validCommand(command);
  const uid=command.uid;
+ const digest=commandDigest(command,listing);
  const profileRef=publicDb.collection("publicBusinesses").doc(uid);
  return publicDb.runTransaction(async tx=>{
   const existing=await tx.get(profileRef);
   const old=existing.exists?existing.data():null;
   const oldVersion=old&&Number.isSafeInteger(old.publicationVersion)?old.publicationVersion:0;
   if(command.version<oldVersion)return {status:"STALE"};
-  if(command.version===oldVersion)return {status:"ALREADY_APPLIED"};
+  if(command.version===oldVersion)return {status:old.publicationDigest===digest?"ALREADY_APPLIED":"VERSION_CONFLICT"};
   if(command.operation==="unpublish"){
    if(!old)return {status:"NOT_FOUND"};
    const slug=old.slug;
@@ -33,7 +39,7 @@ async function applyPublicListingCommand(publicDb,command){
    if(!reservation.exists||reservation.get("businessId")!==uid||
       !mapping.exists||mapping.get("businessId")!==uid)
      return {status:"INCONSISTENT_RESERVATION"};
-   tx.set(profileRef,{...old,published:false,acceptingBookings:false,publicationVersion:command.version});
+   tx.set(profileRef,{...old,published:false,acceptingBookings:false,publicationVersion:command.version,publicationDigest:digest});
    tx.set(mappingRef,{slug,businessId:uid,published:false});
    return {status:"UNPUBLISHED"};
   }
@@ -56,7 +62,7 @@ async function applyPublicListingCommand(publicDb,command){
   if(oldSlug&&(!oldReservation?.exists||oldReservation.get("businessId")!==uid||
      !oldMapping?.exists||oldMapping.get("businessId")!==uid))
     return {status:"INCONSISTENT_RESERVATION"};
-  tx.set(profileRef,{...listing,publicationVersion:command.version});
+  tx.set(profileRef,{...listing,publicationVersion:command.version,publicationDigest:digest});
   tx.set(slugRef,{businessId:uid});
   tx.set(mappingRef,{slug,businessId:uid,published:true});
   if(oldSlug){tx.delete(oldSlugRef);tx.delete(oldMappingRef);}
