@@ -11,6 +11,7 @@ on:
       - 'tests/phase18_firebase_auth_foundation.test.js'
       - 'tests/phase18_private_business_profile.test.js'
       - 'tests/phase18_setup_wizard.test.js'
+      - 'tests/phase18_enhanced_setup.test.js'
       - 'firestore.rules'
       - 'functions/index.js'
       - '.github/workflows/boustio-phase18-onboarding-offline.yml'
@@ -34,6 +35,8 @@ jobs:
           node --check tests/phase18_firebase_auth_foundation.test.js
           node --check tests/phase18_private_business_profile.test.js
           node --check tests/phase18_setup_wizard.test.js
+          node --check tests/phase18_enhanced_setup.test.js
+          node --check website/business/setup/enhanced-draft.mjs
           node --check website/business/setup/wizard.mjs
           node --check website/business/register/business-profile-foundation.mjs
           node --check website/business/register/firebase-auth-foundation.mjs
@@ -41,5 +44,6 @@ jobs:
           node --test tests/phase18_firebase_auth_foundation.test.js
           node --test tests/phase18_private_business_profile.test.js
           node --test tests/phase18_setup_wizard.test.js
+          node --test tests/phase18_enhanced_setup.test.js
           node --test tests/phase17_release_auth_booking_lock.test.js
           node --test tests/phase17_customer_preview_safety.test.js
