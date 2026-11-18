@@ -33,7 +33,10 @@ for (const {workflow,script,approval} of probes) {
   }
 }
 const production=read(".github/workflows/production-deployment.yml");
-assert.ok(production.includes("This workflow does NOT deploy Firebase."));
+assert.ok(production.includes("github.ref == 'refs/heads/production-release'"),"Production workflow must be restricted to production-release");
+assert.ok(production.includes("inputs.confirmation == 'PREPARE-BOUSTIO'"),"Production workflow must require explicit confirmation");
+assert.ok(production.includes("No Firebase deployment commands executed."),"Production workflow must explicitly state no deployment");
+assert.ok(!/firebase deploy --only|gcloud functions deploy|gcloud run deploy/.test(production),"Production verification must not contain deploy commands");
 const website=read(".github/workflows/deploy-website.yml");
 assert.ok(website.includes("firebase deploy --only hosting"),"Website deploy workflow should be recognized as a real deploy path");
 console.log("PASS Phase 17 offline deployment safety regression: protected read-only probes; website deployment excluded");
