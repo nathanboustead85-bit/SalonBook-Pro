@@ -1,0 +1,21 @@
+name: Boustio Phase 17 publication recovery tests
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "functions/phase17PublicationRecovery.js"
+      - "tests/phase17_publication_recovery.test.js"
+      - ".github/workflows/boustio-phase17-publication-recovery.yml"
+permissions:
+  contents: read
+jobs:
+  publication-recovery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node tests/phase17_publication_recovery.test.js
+      - run: node tests/phase17_trusted_revision.test.js
+      - run: node tests/phase17_public_database_writer.test.js
