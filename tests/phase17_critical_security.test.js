@@ -11,7 +11,7 @@ class Db{
  runTransaction(fn){const job=this.queue.then(async()=>{const w=[];const tx={get:async r=>this.snap(r.key),set:(r,v)=>w.push(["set",r.key,structuredClone(v)]),update:(r,v)=>w.push(["set",r.key,structuredClone(v)]),create:(r,v)=>w.push(["set",r.key,structuredClone(v)]),delete:r=>w.push(["delete",r.key])};const res=await fn(tx);for(const [op,k,v] of w){if(op==="delete")this.docs.delete(k);else this.docs.set(k,v);}return res;});this.queue=job.catch(()=>{});return job;}
 }
 const uid="owner_1",profile={businessId:uid,name:"Demo Salon",slug:"demo-salon",category:"Hair",phone:"",address:"",description:"",privateNotes:"PRIVATE"};
-const command={uid,version:1,operation:"publish",profile};
+const command={uid,version:1,operation:"publish",profile:{...profile,acceptingBookings:false}};
 (async()=>{
  const publicDb=new Db();
  assert.equal((await applyPublicListingCommand(publicDb,command)).status,"PUBLISHED");
