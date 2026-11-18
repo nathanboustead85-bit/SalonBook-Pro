@@ -33,17 +33,22 @@ function createRecoveryStore({db}){
    const snap=await doc(key).get();
    return snap.exists?snap.data():null;
   },
-  put:async(key,entry)=>{
+  put:async(key,entry,expectedRevision)=>{
+   if(expectedRevision!==undefined&&(!Number.isSafeInteger(expectedRevision)||expectedRevision<0))throw Error("INVALID_EXPECTED_REVISION");
    assertEntry(key,entry);
    const ref=doc(key);
    return db.runTransaction(async tx=>{
     const snap=await tx.get(ref);
     if(!snap.exists){
+     if(expectedRevision!==undefined&&expectedRevision!==0)throw Error("RECOVERY_REVISION_CONFLICT");
      if(entry.state!=="PENDING")throw Error("RECOVERY_MUST_START_PENDING");
-     tx.create(ref,entry);
-     return entry;
+     const created={...entry,revision:1};
+     tx.create(ref,created);
+     return created;
     }
     const previous=snap.data();
+    const revision=previous.revision===undefined?1:previous.revision;
+    if(expectedRevision!==undefined&&expectedRevision!==revision)throw Error("RECOVERY_REVISION_CONFLICT");
     if(previous.fingerprint!==entry.fingerprint||
        previous.command.uid!==entry.command.uid||
        previous.command.version!==entry.command.version||
@@ -57,8 +62,9 @@ function createRecoveryStore({db}){
      throw Error("RECOVERY_STATE_REGRESSION");
     if(previous.state==="PENDING"&&!["PENDING","UNKNOWN","BLOCKED"].includes(entry.state))
      throw Error("RECOVERY_INVALID_TRANSITION");
-    tx.update(ref,entry);
-    return entry;
+    const next={...entry,revision:revision+1};
+    tx.update(ref,next);
+    return next;
    });
   }
  });
