@@ -55,6 +55,15 @@ function createClaimCoordinator({db,nowMs}){
    return {status:"COMPLETED",state:outcome};
   });
  }
- return Object.freeze({acquire,complete});
+ async function verify({key,worker,generation}){
+  workerId(worker);
+  if(!Number.isSafeInteger(generation)||generation<1)throw Error("INVALID_CLAIM_GENERATION");
+  const ref=refFor(key),now=clock();
+  return db.runTransaction(async tx=>{
+   const snap=await tx.get(ref),old=snap.exists?snap.data():null;
+   return !!old&&old.state==="HELD"&&old.worker===worker&&old.generation===generation&&old.expiresAt>now;
+  });
+ }
+ return Object.freeze({acquire,complete,verify});
 }
 module.exports=Object.freeze({createClaimCoordinator,COLLECTION});
