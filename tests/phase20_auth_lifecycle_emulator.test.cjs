@@ -51,11 +51,15 @@ test("Auth emulator: registration remains unverified until explicit emulator-onl
  assert.notEqual((await lookup(account.idToken)).emailVerified,true);
  const before=await refresh(account.refreshToken);
  assert.notEqual((await lookup(before.id_token)).emailVerified,true);
- // Set verified state through the Auth emulator's admin-only endpoint.
- // This is test infrastructure, not an application verification bypass.
- const adminResponse=await fetch("http://"+authHost+"/emulator/v1/projects/"+projectId+"/accounts/"+account.localId,{
-  method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({emailVerified:true})});
- assert.equal(adminResponse.ok,true,await adminResponse.text());
+ // Request a verification email through the emulator. The emulator stores
+ // the out-of-band code locally instead of sending an actual email.
+ await api("accounts:sendOobCode",{requestType:"VERIFY_EMAIL",idToken:account.idToken});
+ const oobResponse=await fetch("http://"+authHost+"/emulator/v1/projects/"+projectId+"/oobCodes");
+ assert.equal(oobResponse.ok,true,"Auth emulator OOB-code listing must be available");
+ const codes=await oobResponse.json();
+ const matching=codes.oobCodes.filter(item=>item.email===account.email&&item.requestType==="VERIFY_EMAIL");
+ assert.equal(matching.length,1,"Expected exactly one synthetic verification email");
+ await api("accounts:update",{oobCode:matching[0].oobCode});
  const after=await refresh(account.refreshToken);
  assert.equal((await lookup(after.id_token)).emailVerified,true);
 });
