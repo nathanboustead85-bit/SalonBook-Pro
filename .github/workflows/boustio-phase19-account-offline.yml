@@ -18,6 +18,8 @@ on:
       - 'website/business/dashboard/recovery-foundation.mjs'
       - 'tests/phase19_dashboard_recovery_foundation.test.js'
       - 'docs/PHASE19_ACCOUNT_INTEGRATION_READINESS.md'
+      - 'docs/PHASE19_FINAL_INTEGRATION_AUDIT.md'
+      - 'tests/phase19_final_integration_audit.test.js'
       - '.github/workflows/boustio-phase19-account-offline.yml'
 permissions:
   contents: read
@@ -51,6 +53,7 @@ jobs:
           node --check tests/phase19_dashboard_sync_foundation.test.js
           node --check website/business/dashboard/recovery-foundation.mjs
           node --check tests/phase19_dashboard_recovery_foundation.test.js
+          node --check tests/phase19_final_integration_audit.test.js
           node --test tests/phase19_verified_owner_foundation.test.js
           node --test tests/phase19_session_foundation.test.js
           node --test tests/phase19_profile_read_foundation.test.js
@@ -59,6 +62,7 @@ jobs:
           node --test tests/phase19_dashboard_connection_foundation.test.js
           node --test tests/phase19_dashboard_sync_foundation.test.js
           node --test tests/phase19_dashboard_recovery_foundation.test.js
+          node --test tests/phase19_final_integration_audit.test.js
           node --test tests/phase18_firebase_auth_foundation.test.js
           node --test tests/phase18_private_business_profile.test.js
           node --test tests/phase18_save_resume_foundation.test.js
