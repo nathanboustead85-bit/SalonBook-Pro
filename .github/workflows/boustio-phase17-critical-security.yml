@@ -8,6 +8,8 @@ on:
       - "functions/phase17ClaimedRecovery.js"
       - "functions/phase17DurableRecovery.js"
       - "functions/phase17StrictRecovery.js"
+      - "functions/phase17StrictClaimedRecovery.js"
+      - "tests/phase17_strict_claimed_recovery.test.js"
       - "tests/phase17_strict_recovery.test.js"
       - "tests/phase17_critical_security.test.js"
       - "tests/phase17_recovery_cas.test.js"
@@ -44,6 +46,7 @@ jobs:
       - run: node tests/phase17_full_precision_revision.test.js
       - run: node tests/phase17_strict_journal.test.js
       - run: node tests/phase17_strict_recovery.test.js
+      - run: node tests/phase17_strict_claimed_recovery.test.js
       - run: node tests/phase17_recovery_cas.test.js
       - run: node tests/phase17_critical_security.test.js
       - run: node tests/phase17_end_to_end_recovery.test.js
