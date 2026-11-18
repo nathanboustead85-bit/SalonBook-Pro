@@ -1,0 +1,39 @@
+name: Boustio Phase 17 Offline Deployment Safety Regression
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'tests/phase17_readonly_deployment_regression.test.js'
+      - 'scripts/boustio_deploy_permissions.js'
+      - 'scripts/phase1728_deployment_permissions.js'
+      - '.github/workflows/boustio-deploy-permissions-readonly.yml'
+      - '.github/workflows/boustio-phase-1728-deployment-permissions.yml'
+      - '.github/workflows/production-deployment.yml'
+      - '.github/workflows/deploy-website.yml'
+      - '.github/workflows/boustio-phase17-offline-deployment-safety.yml'
+permissions:
+  contents: read
+concurrency:
+  group: boustio-phase17-offline-safety-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  offline-regression:
+    if: github.repository == 'nathanboustead85-bit/SalonBook-Pro'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check read-only probes and regression test
+        run: |
+          node --check scripts/boustio_deploy_permissions.js
+          node --check scripts/phase1728_deployment_permissions.js
+          node --check tests/phase17_readonly_deployment_regression.test.js
+      - name: Run offline deployment safety regression
+        run: node tests/phase17_readonly_deployment_regression.test.js
