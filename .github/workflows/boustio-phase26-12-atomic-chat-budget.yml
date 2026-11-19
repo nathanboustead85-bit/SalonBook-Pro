@@ -1,0 +1,37 @@
+name: Boustio Phase 26.12 Atomic Messaging Abuse Integration
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/index.js'
+      - 'functions/chatAbuseBudgetAtomic.js'
+      - 'tests/phase26_12_atomic_chat_budget.test.cjs'
+      - '.github/workflows/boustio-phase26-12-atomic-chat-budget.yml'
+permissions:
+  contents: read
+jobs:
+  atomic-chat-budget:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+      BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate backend syntax
+        run: |
+          node --check functions/index.js
+          node --check functions/chatAbuseBudgetAtomic.js
+          node --check tests/phase26_12_atomic_chat_budget.test.cjs
+      - name: Test disabled atomic integration
+        run: node --test tests/phase26_12_atomic_chat_budget.test.cjs
+      - name: Confirm no deployment
+        run: echo 'PHASE26_12=FLAG_OFF_NO_DEPLOYMENT'
