@@ -1,0 +1,52 @@
+name: Boustio Phase 28.12 Samsung Visual Review
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'scripts/phase28-12-visual-review.cjs'
+      - '.github/workflows/boustio-phase28-12-samsung-visual-review.yml'
+      - 'docs/PHASE28_12_SAMSUNG_VISUAL_REVIEW.md'
+permissions:
+  contents: read
+jobs:
+  samsung-visual-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser tools
+        working-directory: tests
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Verify all 37 existing preview tests
+        run: |
+          node --test tests/phase28_6_samsung_preview.test.cjs
+          node --test tests/phase28_7_preview_experience.test.cjs
+          node --test tests/phase28_8_premium_booking_details.test.cjs
+          node --test tests/phase28_9_customer_details.test.cjs
+          node --test tests/phase28_10_booking_review.test.cjs
+          node --test tests/phase28_11_premium_redesign.test.cjs
+      - name: Capture Samsung and desktop visual review
+        run: node scripts/phase28-12-visual-review.cjs
+      - name: Upload offline HTML and six screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase28-12-Samsung-Visual-Review
+          path: |
+            preview-dist/Boustio-Website-Preview.html
+            preview-dist/*-Landing.png
+            preview-dist/*-Review.png
+            preview-dist/README-SAMSUNG.txt
+          retention-days: 14
+          if-no-files-found: error
+      - name: Confirm no deployment
+        run: echo 'VISUAL_REVIEW_ARTIFACT_ONLY_NO_DEPLOYMENT'
