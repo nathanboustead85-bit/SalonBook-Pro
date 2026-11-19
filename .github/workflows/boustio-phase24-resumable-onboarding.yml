@@ -1,0 +1,48 @@
+name: Boustio Phase 24.2 Synthetic Owner and Resumable Onboarding
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'website/business/onboarding/phase24-resume.mjs'
+      - 'tests/fixtures/phase24_resume.html'
+      - 'tests/phase24_resume_entry.mjs'
+      - 'tests/phase24_resume_browser.test.cjs'
+      - 'tests/phase24_resume.rules'
+      - 'docs/PHASE24_2_RESUMABLE_ONBOARDING.md'
+      - '.github/workflows/boustio-phase24-resumable-onboarding.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-resumable-onboarding:
+    if: github.repository == 'nathanboustead85-bit/SalonBook-Pro'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      GCLOUD_PROJECT: demo-boustio-phase21
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated test dependencies
+        working-directory: tests
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund playwright@1.56.1 esbuild@0.25.12
+          npx playwright install --with-deps chromium
+      - name: Syntax checks
+        run: |
+          node --check website/business/onboarding/phase24-resume.mjs
+          node --check tests/phase24_resume_entry.mjs
+          node --check tests/phase24_resume_browser.test.cjs
+      - name: Run Chromium and Firebase security tests
+        run: timeout --signal=TERM --kill-after=10s 420s tests/node_modules/.bin/firebase emulators:exec --project demo-boustio-phase21 --only auth,firestore "node --test tests/phase24_resume_browser.test.cjs"
