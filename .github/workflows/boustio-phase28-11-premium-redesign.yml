@@ -1,0 +1,52 @@
+name: Boustio Phase 28.11 Premium Website Redesign
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'web/phase28/index.html'
+      - 'web/phase28/app.js'
+      - 'web/phase28/style.css'
+      - 'tests/phase28_11_premium_redesign.test.cjs'
+      - '.github/workflows/boustio-phase28-11-premium-redesign.yml'
+permissions:
+  contents: read
+jobs:
+  premium-website-redesign:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser dependencies
+        working-directory: tests
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Validate browser source
+        run: |
+          node --check web/phase28/app.js
+          node --check tests/phase28_11_premium_redesign.test.cjs
+      - name: Run 37 offline preview tests
+        run: |
+          node --test tests/phase28_6_samsung_preview.test.cjs
+          node --test tests/phase28_7_preview_experience.test.cjs
+          node --test tests/phase28_8_premium_booking_details.test.cjs
+          node --test tests/phase28_9_customer_details.test.cjs
+          node --test tests/phase28_10_booking_review.test.cjs
+          node --test tests/phase28_11_premium_redesign.test.cjs
+      - name: Upload premium Samsung preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Samsung-Website-Preview-28-11
+          path: preview-dist/Boustio-Website-Preview.html
+          retention-days: 14
+          if-no-files-found: error
+      - name: Confirm no deployment
+        run: echo 'OFFLINE_PREVIEW_ONLY_NO_DEPLOYMENT'
