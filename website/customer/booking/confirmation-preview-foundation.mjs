@@ -38,12 +38,12 @@ export function mountAdvancedBookingPreview(root,fixture){
   priceSummary.textContent=svc?"Example total · £"+svc.price.toFixed(2):"Example total · Select a service";
   summary.replaceChildren();for(const line of lines){const li=root.createElement("li");li.textContent=line;summary.append(li);}
   if(reviewVisible){const details=[...lines,"Customer · "+sample.name,"Preference · "+options[preference],svc?"Example total · £"+svc.price.toFixed(2):"Example total · Select a service"];review.replaceChildren();for(const detail of details){const item=root.createElement("li");item.textContent=detail;review.append(item);}}else review.replaceChildren();
-  review.hidden=!reviewVisible;
+  q("[data-review-panel]").hidden=!reviewVisible;
   reviewStatus.textContent=reviewVisible?"Demonstration review only — no booking created or confirmation sent.":"Choose Review example to inspect your demonstration appointment.";
   notice.textContent="Preview only — example dates and times are not live availability. No appointment can be booked.";
  }
  function changeMonth(delta){const target=activeMonth+delta;if(target<0||target>1)return;activeMonth=target;selected.day=null;selected.time=null;render();}
  previous.addEventListener("click",()=>changeMonth(-1));next.addEventListener("click",()=>changeMonth(1));
  renderPreferences();render();
- return Object.freeze({get selection(){return {...selected};},get activeMonth(){return activeMonth;},get bookingsEnabled(){return false;},get reviewVisible(){return reviewVisible;},get preference(){return preference;},get syntheticCustomer(){return {...sample};},stop(){selected={service:null,staff:null,day:null,time:null};Object.values(boxes).forEach(x=>x.replaceChildren());summary.replaceChildren();review.replaceChildren();review.hidden=true;customer.replaceChildren();preferences.replaceChildren();customerSummary.textContent="";priceSummary.textContent="";business.textContent="";}});
+ return Object.freeze({get selection(){return {...selected};},get activeMonth(){return activeMonth;},get bookingsEnabled(){return false;},get reviewVisible(){return reviewVisible;},get preference(){return preference;},get syntheticCustomer(){return {...sample};},stop(){selected={service:null,staff:null,day:null,time:null};Object.values(boxes).forEach(x=>x.replaceChildren());summary.replaceChildren();review.replaceChildren();q("[data-review-panel]").hidden=true;customer.replaceChildren();preferences.replaceChildren();customerSummary.textContent="";priceSummary.textContent="";business.textContent="";}});
 }
