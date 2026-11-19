@@ -1,0 +1,39 @@
+name: Boustio Phase 26.14 App Check Preparation and Abuse Audit
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/chatLaunchReadiness.js'
+      - 'tests/phase26_14_launch_blockers.test.cjs'
+      - 'docs/PHASE26_14_APP_CHECK_PREPARATION.md'
+      - '.github/workflows/boustio-phase26-14-appcheck-audit.yml'
+permissions:
+  contents: read
+jobs:
+  appcheck-prelaunch-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+      BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate security audit syntax
+        run: |
+          node --check functions/chatLaunchReadiness.js
+          node --check tests/phase26_14_launch_blockers.test.cjs
+      - name: Test App Check and anonymous rotation launch blockers
+        run: node --test tests/phase26_14_launch_blockers.test.cjs
+      - name: Verify disabled production flags
+        run: |
+          test "$BOUSTIO_CHAT_ENABLED" = false
+          test "$BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED" = false
+          echo 'AUDIT_ONLY_NO_DEPLOYMENT'
