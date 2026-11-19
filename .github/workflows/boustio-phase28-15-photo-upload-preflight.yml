@@ -1,0 +1,26 @@
+name: Boustio Phase 28.15 Isolated Photo Upload Preflight
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'functions/phase2815PhotoUploadPolicy.js'
+      - 'tests/phase28_15_photo_upload_preflight.test.cjs'
+      - '.github/workflows/boustio-phase28-15-photo-upload-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-photo-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run isolated photo upload policy tests
+        run: node --test tests/phase28_15_photo_upload_preflight.test.cjs
+      - name: Confirm no live upload or deployment
+        run: echo 'POLICY_SIMULATION_ONLY_NO_STORAGE_NO_DEPLOYMENT'
