@@ -1,0 +1,39 @@
+name: Boustio Phase 27.2 App Check Staging Verification Tests
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/stagingAppCheckVerification.js'
+      - 'tests/phase27_2_staging_appcheck.test.cjs'
+      - 'docs/PHASE27_2_APP_CHECK_STAGING.md'
+      - '.github/workflows/boustio-phase27-2-appcheck-staging.yml'
+permissions:
+  contents: read
+jobs:
+  appcheck-staging-verifier:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+      BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate verifier syntax
+        run: |
+          node --check functions/stagingAppCheckVerification.js
+          node --check tests/phase27_2_staging_appcheck.test.cjs
+      - name: Run staging verifier negative and replay tests
+        run: node --test tests/phase27_2_staging_appcheck.test.cjs
+      - name: Verify messaging remains disabled
+        run: |
+          test "$BOUSTIO_CHAT_ENABLED" = false
+          test "$BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED" = false
+          echo 'STAGING_TEST_ONLY_NO_DEPLOYMENT'
