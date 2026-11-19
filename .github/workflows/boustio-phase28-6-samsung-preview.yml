@@ -1,0 +1,45 @@
+name: Boustio Phase 28.6 Samsung Website Preview
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'scripts/build-phase28-preview.cjs'
+      - 'tests/phase28_6_samsung_preview.test.cjs'
+      - 'docs/PHASE28_6_SAMSUNG_PREVIEW.md'
+      - '.github/workflows/boustio-phase28-6-samsung-preview.yml'
+permissions:
+  contents: read
+jobs:
+  build-offline-samsung-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser test tools
+        working-directory: tests
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Validate preview builder and browser tests
+        run: |
+          node --check scripts/build-phase28-preview.cjs
+          node --check tests/phase28_6_samsung_preview.test.cjs
+      - name: Test Samsung offline preview
+        run: node --test tests/phase28_6_samsung_preview.test.cjs
+      - name: Upload downloadable Samsung HTML preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Samsung-Website-Preview
+          path: preview-dist/Boustio-Website-Preview.html
+          retention-days: 14
+          if-no-files-found: error
+      - name: Confirm no deployment
+        run: echo 'DOWNLOADABLE_OFFLINE_PREVIEW_ONLY_NO_DEPLOYMENT'
