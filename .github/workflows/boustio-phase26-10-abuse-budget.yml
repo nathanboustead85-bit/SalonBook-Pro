@@ -1,0 +1,35 @@
+name: Boustio Phase 26.10 Abuse Budget Prototype
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/chatAbuseBudget.js'
+      - 'tests/phase26_10_abuse_budget.test.cjs'
+      - 'docs/PHASE26_10_ABUSE_BUDGET.md'
+      - '.github/workflows/boustio-phase26-10-abuse-budget.yml'
+permissions:
+  contents: read
+jobs:
+  abuse-budget:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax
+        run: |
+          node --check functions/chatAbuseBudget.js
+          node --check tests/phase26_10_abuse_budget.test.cjs
+      - name: Run isolated abuse budget safety tests
+        run: node --test tests/phase26_10_abuse_budget.test.cjs
+      - name: Confirm no deployment
+        run: echo 'PHASE26_10=UNWIRED_PROTOTYPE_NO_DEPLOYMENT'
