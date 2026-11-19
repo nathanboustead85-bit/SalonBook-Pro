@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "phase": "21.5",
+  "releaseDecision": "NO-GO",
+  "deploymentEnabled": false,
+  "publicRegistrationEnabled": false,
+  "customerBookingsEnabled": false,
+  "liveDashboardEnabled": false,
+  "approval": {
+    "required": true,
+    "granted": false,
+    "environment": "boustio-staging",
+    "separateHumanApprovalRequired": true
+  },
+  "target": {
+    "projectId": null,
+    "hostname": null,
+    "productionProjectForbidden": true,
+    "requiresDistinctFirebaseProject": true
+  },
+  "rollback": {
+    "required": true,
+    "validated": false,
+    "backupVerified": false,
+    "restoreDrillCompleted": false
+  },
+  "checks": {
+    "authAndFirestoreRulesReview": false,
+    "physicalDeviceAcceptance": false,
+    "stagingBudgetAlerts": false,
+    "accessControlsReviewed": false,
+    "stagingCredentialsConfigured": false
+  },
+  "dataPolicy": {
+    "syntheticOnly": true,
+    "existingAndroidAppointmentsUntouched": true
+  },
+  "note": "Static approval specification only. Not an executable deployment configuration."
+}
