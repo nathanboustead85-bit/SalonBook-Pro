@@ -1,0 +1,32 @@
+name: Boustio Phase 28.14 Business Photo Contract
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase28/businessPhotos.js'
+      - 'tests/phase28_14_business_photos.test.cjs'
+      - '.github/workflows/boustio-phase28-14-business-photo-contract.yml'
+permissions:
+  contents: read
+jobs:
+  photo-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate business photo metadata and safe fallbacks
+        run: node --test tests/phase28_14_business_photos.test.cjs
+      - name: Verify no upload or deployment code
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const s=fs.readFileSync('web/phase28/businessPhotos.js','utf8');
+          assert.doesNotMatch(s,/fetch\s*\(|XMLHttpRequest|firebase|uploadBytes|writeFile|https?:\/\//i);
+          console.log('READ_ONLY_CONTRACT_NO_UPLOAD_NO_DEPLOYMENT');
+          NODE
