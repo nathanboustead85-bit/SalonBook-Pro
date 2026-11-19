@@ -17,8 +17,7 @@ export function mountAdvancedBookingPreview(root,fixture){
  const sample=Object.freeze({name:"Alex Example",email:"alex@example.invalid",phone:"07000 000000"});
  let preference=0,reviewVisible=false;
  customer.replaceChildren();for(const [label,value] of [["Name",sample.name],["Email",sample.email],["Phone",sample.phone]]){const line=root.createElement("p");line.className="sample-field";const strong=root.createElement("strong");strong.textContent=label;const span=root.createElement("span");span.textContent=value;line.append(strong,span);customer.append(line);}
- const options=["No preference","Quiet appointment","Styling advice"];function renderPreferences(){preferences.replaceChildren();options.forEach((option,i)=>{const button=root.createElement("button");button.type="button";button.className="choice preference-card";button.textContent=option;button.setAttribute("aria-pressed",String(preference===i));button.addEventListener("click",()=>{preference=i;reviewButton.addEventListener("click",()=>{reviewVisible=!reviewVisible;reviewButton.textContent=reviewVisible?"Hide example review":"Review example appointment";render();});
- renderPreferences();render();});preferences.append(button);});}
+ const options=["No preference","Quiet appointment","Styling advice"];function renderPreferences(){preferences.replaceChildren();options.forEach((option,i)=>{const button=root.createElement("button");button.type="button";button.className="choice preference-card";button.textContent=option;button.setAttribute("aria-pressed",String(preference===i));button.addEventListener("click",()=>{preference=i;renderPreferences();render();});preferences.append(button);});}
  function addButton(box,label,key,index,extraClass="",description=""){
   const button=root.createElement("button");button.type="button";button.className="choice choice-"+key+" "+extraClass;
   button.textContent=label;if(description){const detail=root.createElement("small");detail.className="choice-detail";detail.textContent=clean(description,180);button.append(detail);}button.setAttribute("aria-pressed",String(selected[key]===index));
@@ -43,6 +42,7 @@ export function mountAdvancedBookingPreview(root,fixture){
   notice.textContent="Preview only — example dates and times are not live availability. No appointment can be booked.";
  }
  function changeMonth(delta){const target=activeMonth+delta;if(target<0||target>1)return;activeMonth=target;selected.day=null;selected.time=null;render();}
+ reviewButton.addEventListener("click",()=>{reviewVisible=!reviewVisible;reviewButton.textContent=reviewVisible?"Hide example review":"Review example appointment";render();});
  previous.addEventListener("click",()=>changeMonth(-1));next.addEventListener("click",()=>changeMonth(1));
  renderPreferences();render();
  return Object.freeze({get selection(){return {...selected};},get activeMonth(){return activeMonth;},get bookingsEnabled(){return false;},get reviewVisible(){return reviewVisible;},get preference(){return preference;},get syntheticCustomer(){return {...sample};},stop(){selected={service:null,staff:null,day:null,time:null};Object.values(boxes).forEach(x=>x.replaceChildren());summary.replaceChildren();review.replaceChildren();q("[data-review-panel]").hidden=true;customer.replaceChildren();preferences.replaceChildren();customerSummary.textContent="";priceSummary.textContent="";business.textContent="";}});
