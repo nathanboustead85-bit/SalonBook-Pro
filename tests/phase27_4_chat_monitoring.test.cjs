@@ -1,0 +1,18 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const {evaluateChatAbuseMetrics, METRICS}=require("../functions/chatAbuseMonitoring");
+const run=counts=>evaluateChatAbuseMetrics({counts});
+test("Empty window is safe and generates no alert",()=>{assert.equal(run({}).status,"NO_ALERT");});
+test("Normal aggregate traffic does not alert",()=>{assert.deepEqual(run({attempts:100,accepted:98,rateLimited:2}).alerts,[]);});
+test("Large rate-limit ratio alerts",()=>{assert.ok(run({attempts:100,accepted:70,rateLimited:30}).alerts.includes("HIGH_RATE_LIMIT_RATIO"));});
+test("Low-volume rate limiting does not alert",()=>{assert.ok(!run({attempts:4,rateLimited:4}).alerts.includes("HIGH_RATE_LIMIT_RATIO"));});
+test("App Check rejection spike alerts",()=>{assert.ok(run({attempts:100,appCheckRejected:10}).alerts.includes("APP_CHECK_REJECTION_SPIKE"));});
+test("Authentication rejection spike alerts",()=>{assert.ok(run({attempts:100,authRejected:20}).alerts.includes("AUTH_REJECTION_SPIKE"));});
+test("Server error rate alerts",()=>{assert.ok(run({attempts:100,serverErrors:5}).alerts.includes("SERVER_ERROR_RATE"));});
+test("Inconsistent totals alert rather than claiming healthy",()=>{assert.ok(run({attempts:1,accepted:2}).alerts.includes("INCONSISTENT_METRICS"));});
+test("Reject unknown fields including customer identifiers and message text",()=>{for(const field of ["uid","message","ip","token","customerName"])assert.throws(()=>run({[field]:"private"}));});
+test("Reject negative, fractional and non-finite counts",()=>{for(const value of [-1,1.5,Infinity,NaN])assert.throws(()=>run({attempts:value}));});
+test("Reject overlarge counters",()=>{assert.throws(()=>run({attempts:1000001}));});
+test("Reject invalid monitoring windows",()=>{for(const n of [0,1,1441,3.5])assert.throws(()=>evaluateChatAbuseMetrics({windowMinutes:n}));});
+test("All output fields are aggregate and immutable",()=>{const r=run({attempts:2,accepted:2});assert.deepEqual(Object.keys(r.counts),[...METRICS]);assert.equal(Object.isFrozen(r),true);assert.equal(Object.isFrozen(r.counts),true);});
+test("Monitoring does not enable or modify live messaging",()=>{const index=fs.readFileSync(path.resolve(__dirname,"../functions/index.js"),"utf8");assert.ok(!index.includes('require("./chatAbuseMonitoring")'));assert.match(index,/function requireChatEnabled\(\)/);});
