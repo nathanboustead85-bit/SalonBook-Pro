@@ -1,0 +1,39 @@
+name: Boustio Phase 27.7 Firebase TTL Migration Planning Audit
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/chatTtlMigrationPlan.js'
+      - 'tests/phase27_7_ttl_migration.test.cjs'
+      - 'docs/PHASE27_7_TTL_MIGRATION_PLAN.md'
+      - '.github/workflows/boustio-phase27-7-ttl-migration.yml'
+permissions:
+  contents: read
+jobs:
+  ttl-migration-plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+      BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check migration planner syntax
+        run: |
+          node --check functions/chatTtlMigrationPlan.js
+          node --check tests/phase27_7_ttl_migration.test.cjs
+      - name: Run offline TTL migration safeguards
+        run: node --test tests/phase27_7_ttl_migration.test.cjs
+      - name: Confirm production features disabled
+        run: |
+          test "$BOUSTIO_CHAT_ENABLED" = false
+          test "$BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED" = false
+          echo 'PHASE27_7=OFFLINE_PLAN_ONLY_NO_DEPLOYMENT'
