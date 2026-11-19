@@ -1,0 +1,13 @@
+import {createMatchingDemo} from "../website/customer/phase25-matching.mjs";
+import {createProfileDemo} from "../website/business/onboarding/phase24-profile.mjs";
+import {createServicesDemo} from "../website/business/onboarding/phase24-services.mjs";
+import {createStaffScheduleDemo} from "../website/business/onboarding/phase24-staff.mjs";
+import {createPoliciesDemo} from "../website/business/onboarding/phase24-policies.mjs";
+const owner="demo-kody",q=s=>document.querySelector(s);
+function seed(){if(sessionStorage.getItem("boustio-phase25-2:seeded"))return;const p=createProfileDemo(sessionStorage,owner);p.update({name:"Kody Blends"});p.save();const s=createServicesDemo(sessionStorage,owner);const haircut=s.addService({name:"Haircut",category:"Haircuts",pricePence:2000,durationMinutes:30,staffIds:[]});const beard=s.addService({name:"Beard trim",category:"Beard",pricePence:1200,durationMinutes:20,staffIds:[]});s.save();const st=createStaffScheduleDemo(sessionStorage,owner);const barber=st.addStaff({name:"Demo Barber",role:"Barber"});st.addStaff({name:"Demo Stylist",role:"Stylist"});st.save();createPoliciesDemo(sessionStorage,owner).save();const m=createMatchingDemo(sessionStorage,owner);m.assign(haircut,barber);m.assign(beard,barber);m.save();sessionStorage.setItem("boustio-phase25-2:seeded","1");}
+seed();const demo=createMatchingDemo(sessionStorage,owner);demo.recover();window.__phase25matching=demo;
+function option(select,id,label){const o=document.createElement("option");o.value=id;o.textContent=label;select.append(o);}
+for(const s of demo.services)option(q("[data-service]"),s.id,s.name+" — £"+(s.pricePence/100).toFixed(2));
+function renderStaff(){const select=q("[data-staff]");select.replaceChildren();for(const s of demo.matches(q("[data-service]").value))option(select,s.id,s.name);q("[data-check]").disabled=select.options.length===0;q("[data-slots]").replaceChildren();q("[data-message]").textContent=select.options.length?"Explicitly matched demonstration professionals":"No assigned professionals for this service";}
+q("[data-service]").onchange=renderStaff;
+q("[data-check]").onclick=()=>{const area=q("[data-slots]");area.replaceChildren();try{const result=demo.slots(q("[data-date]").value,q("[data-service]").value,q("[data-staff]").value);for(const slot of result){const div=document.createElement("div");div.className="slot";div.textContent=slot.time+"–"+slot.end+" · "+slot.staffName;area.append(div);}q("[data-message]").textContent=result.length+" illustrative times; no reservations possible";}catch(e){q("[data-message]").textContent=e.message;}};renderStaff();
