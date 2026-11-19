@@ -1,0 +1,39 @@
+name: Boustio Phase 27.3 Anonymous Account Correlation Audit
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/chatTrustedCorrelation.js'
+      - 'tests/phase27_3_trusted_correlation.test.cjs'
+      - 'docs/PHASE27_3_ANONYMOUS_ABUSE_CORRELATION.md'
+      - '.github/workflows/boustio-phase27-3-trusted-correlation.yml'
+permissions:
+  contents: read
+jobs:
+  anonymous-correlation-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+      BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate syntax
+        run: |
+          node --check functions/chatTrustedCorrelation.js
+          node --check tests/phase27_3_trusted_correlation.test.cjs
+      - name: Test rotation correlation and fail-closed budgets
+        run: node --test tests/phase27_3_trusted_correlation.test.cjs
+      - name: Confirm disabled live messaging
+        run: |
+          test "$BOUSTIO_CHAT_ENABLED" = false
+          test "$BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED" = false
+          echo 'STAGING_ONLY_NO_DEPLOYMENT'
