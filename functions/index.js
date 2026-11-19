@@ -1,3 +1,7 @@
+
+// Phase 26.12: opt-in atomic abuse budgets. Never trust a client-provided risk signal.
+const {consumeBudgetWithinTransaction}=require("./chatAbuseBudgetAtomic");
+const chatAbuseBudgetEnabled=()=>process.env.BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED==="true";
 "use strict";
 
 /**
@@ -526,6 +530,10 @@ exports.startCustomerChat = onCall(
       if (existing.exists) {
         throw new HttpsError("already-exists", "Conversation already started. Continue it instead.");
       }
+      if (chatAbuseBudgetEnabled()) {
+        const budget=await consumeBudgetWithinTransaction(tx,db,{businessId,uid,now});
+        if (!budget.allowed) throw new HttpsError("resource-exhausted","Messaging rate limit reached.");
+      }
       tx.create(conversationRef, {
         businessId, customerUid: uid, customerName: name.trim(),
         status: "open", lastMessage: message.trim().slice(0, 180),
@@ -569,6 +577,10 @@ exports.sendCustomerChatMessage = onCall(
       }
       if (now - (snap.get("lastCustomerMessageMs") || 0) < 5000) {
         throw new HttpsError("resource-exhausted", "Please wait before sending another message.");
+      }
+      if (chatAbuseBudgetEnabled()) {
+        const budget=await consumeBudgetWithinTransaction(tx,db,{businessId,uid,now});
+        if (!budget.allowed) throw new HttpsError("resource-exhausted","Messaging rate limit reached.");
       }
       tx.create(msgRef, {
         businessId, conversationId, senderType: "customer", senderId: uid,
