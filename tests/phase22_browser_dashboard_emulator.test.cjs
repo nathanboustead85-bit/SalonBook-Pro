@@ -59,9 +59,9 @@ test("Verified owner renders actual DOM from Phase 22.1 foundation",{timeout:450
  const a=await owner("22-verified");await seed(a.uid);const {context,tab}=await page();
  try{
   await tab.evaluate(x=>window.__phase22.signIn(x.email,x.password),a);await status(tab,"ready");
-  assert.equal(await tab.locator("#business-name").text(),"Synthetic Chromium Salon");
-  assert.equal(await tab.locator("#owner").text(),a.uid);
-  assert.equal(await tab.locator("#booking").text(),"Bookings disabled");
+  assert.equal(await tab.locator("#business-name").textContent(),"Synthetic Chromium Salon");
+  assert.equal(await tab.locator("#owner").textContent(),a.uid);
+  assert.equal(await tab.locator("#booking").textContent(),"Bookings disabled");
   assert.equal(await tab.evaluate(()=>window.__phase22State.bookingsEnabled),false);
  }finally{await context.close();}
 });
@@ -69,8 +69,8 @@ test("Unverified owner cannot render private business DOM",{timeout:45000},async
  const a=await owner("22-unverified",false);const {context,tab}=await page();
  try{
   await tab.evaluate(x=>window.__phase22.signIn(x.email,x.password),a);await status(tab,"unverified");
-  assert.equal(await tab.locator("#business-name").text(),"");
-  assert.equal(await tab.locator("#owner").text(),"");
+  assert.equal(await tab.locator("#business-name").textContent(),"");
+  assert.equal(await tab.locator("#owner").textContent(),"");
  }finally{await context.close();}
 });
 test("Sign-out clears previously rendered business details",{timeout:45000},async()=>{
@@ -78,8 +78,8 @@ test("Sign-out clears previously rendered business details",{timeout:45000},asyn
  try{
   await tab.evaluate(x=>window.__phase22.signIn(x.email,x.password),a);await status(tab,"ready");
   await tab.evaluate(()=>window.__phase22.signOut());await status(tab,"signed-out");
-  assert.equal(await tab.locator("#business-name").text(),"");
-  assert.equal(await tab.locator("#owner").text(),"");
+  assert.equal(await tab.locator("#business-name").textContent(),"");
+  assert.equal(await tab.locator("#owner").textContent(),"");
  }finally{await context.close();}
 });
 test("Independent browser contexts cannot display other owner's business",{timeout:65000},async()=>{
@@ -89,10 +89,10 @@ test("Independent browser contexts cannot display other owner's business",{timeo
   await Promise.all([first.tab.evaluate(x=>window.__phase22.signIn(x.email,x.password),a),
    second.tab.evaluate(x=>window.__phase22.signIn(x.email,x.password),b)]);
   await Promise.all([status(first.tab,"ready"),status(second.tab,"ready")]);
-  assert.equal(await first.tab.locator("#owner").text(),a.uid);
-  assert.equal(await second.tab.locator("#owner").text(),b.uid);
+  assert.equal(await first.tab.locator("#owner").textContent(),a.uid);
+  assert.equal(await second.tab.locator("#owner").textContent(),b.uid);
   await first.tab.evaluate(()=>window.__phase22.signOut());await status(first.tab,"signed-out");
-  assert.equal(await second.tab.locator("#owner").text(),b.uid);
+  assert.equal(await second.tab.locator("#owner").textContent(),b.uid);
  }finally{await first.context.close();await second.context.close();}
 });
 test("Browser reload restores verified owner without enabling bookings",{timeout:60000},async()=>{
@@ -100,7 +100,7 @@ test("Browser reload restores verified owner without enabling bookings",{timeout
  try{
   await tab.evaluate(x=>window.__phase22.signIn(x.email,x.password),a);await status(tab,"ready");
   await tab.reload();await status(tab,"ready");
-  assert.equal(await tab.locator("#owner").text(),a.uid);
+  assert.equal(await tab.locator("#owner").textContent(),a.uid);
   assert.equal(await tab.evaluate(()=>window.__phase22State.registrationEnabled),false);
  }finally{await context.close();}
 });
