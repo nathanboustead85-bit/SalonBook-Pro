@@ -13,7 +13,7 @@ page.staff.filter(s=>state.service&&s.serviceIds.includes(state.service)).forEac
 if(!staff.childNodes.length)staff.textContent="Choose a service first.";
 if(state.service&&state.staff&&state.date){["09:00","10:30","14:00","15:30"].forEach(t=>times.append(choice(t,"",state.time===t,()=>{state.time=t;render();})));}else times.textContent="Choose your service, professional and sample date first.";
 const service=page.services.find(s=>s.id===state.service),person=page.staff.find(s=>s.id===state.staff);
-if(service)summary.append(line("Service",service.title),line("Price",service.priceLabel));if(person)summary.append(line("Professional",person.name));if(state.date)summary.append(line("Date",state.date==="demo-friday"?"Friday (demo)":"Saturday (demo)"));if(state.time)summary.append(line("Time",state.time));if(!service)summary.textContent="Select a service to begin.";
+if(service)summary.append(line("Service",service.title),line("Duration",service.durationLabel),line("Total (demo)",service.priceLabel));if(person)summary.append(line("Professional",person.name));if(state.date)summary.append(line("Date",state.date==="demo-friday"?"Friday (demo)":"Saturday (demo)"));if(state.time)summary.append(line("Time",state.time));if(!service)summary.textContent="Select a service to begin.";const hint=$("summaryHint");if(hint)hint.textContent=state.service&&state.staff&&state.date&&state.time?"Your demo selection is complete. No booking or payment will be made.":"Select a service, professional, sample date and time to complete the preview.";
 }
 if(page.status==="PREVIEW_READY")$("business").textContent=page.businessName;
 $("resetPreview").addEventListener("click",()=>{state.service=null;state.staff=null;state.date="";state.time="";$("date").value="";render();});
