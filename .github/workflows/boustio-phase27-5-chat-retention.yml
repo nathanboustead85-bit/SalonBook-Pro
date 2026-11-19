@@ -1,0 +1,39 @@
+name: Boustio Phase 27.5 Messaging Monitoring Retention Audit
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/chatRetentionReliability.js'
+      - 'tests/phase27_5_chat_retention.test.cjs'
+      - 'docs/PHASE27_5_MONITORING_RETENTION.md'
+      - '.github/workflows/boustio-phase27-5-chat-retention.yml'
+permissions:
+  contents: read
+jobs:
+  monitoring-retention-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+      BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate syntax
+        run: |
+          node --check functions/chatRetentionReliability.js
+          node --check tests/phase27_5_chat_retention.test.cjs
+      - name: Run monitoring reliability and retention tests
+        run: node --test tests/phase27_5_chat_retention.test.cjs
+      - name: Confirm live features remain disabled
+        run: |
+          test "$BOUSTIO_CHAT_ENABLED" = false
+          test "$BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED" = false
+          echo 'PHASE27_5=OFFLINE_POLICY_ONLY_NO_DEPLOYMENT'
