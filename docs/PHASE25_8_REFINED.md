@@ -1,0 +1,3 @@
+# Phase 25.8 — Refined synthetic booking interface
+
+Adds polished service cards with duration, category and GBP price; professional cards with roles; illustrative time cards showing finish times; enhanced summary presentation, mobile/desktop layout, keyboard focus and reduced-motion styling. All preview data is fictional. Uses existing Phase 25.7 step navigation and Phase 25.6/25.5 synthetic availability; no real customer data, live booking, registration, payments, publishing, deployment or production Firebase changes. Includes Node tests, real Chromium mobile/desktop tests, and isolated Firebase emulator denial checks. Do not interpret this as a production booking website.
