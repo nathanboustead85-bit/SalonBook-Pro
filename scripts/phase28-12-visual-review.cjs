@@ -1,5 +1,8 @@
 "use strict";
-const fs=require("node:fs"),path=require("node:path"),assert=require("node:assert/strict"),{execFileSync}=require("node:child_process"),{chromium}=require("playwright");
+const fs=require("node:fs"),path=require("node:path"),assert=require("node:assert/strict"),{execFileSync}=require("node:child_process"),{createRequire}=require("node:module");
+// Playwright is installed under tests/node_modules in the isolated CI workflow.
+const testRequire=createRequire(path.resolve(__dirname,"../tests/package.json"));
+const {chromium}=testRequire("playwright");
 (async()=>{
 const root=path.resolve(__dirname,".."),dir=path.join(root,"preview-dist"),file=path.join(dir,"Boustio-Website-Preview.html");
 execFileSync(process.execPath,[path.join(root,"scripts/build-phase28-preview.cjs")],{cwd:root,stdio:"inherit"});
