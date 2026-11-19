@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  match /phase24DemoOnboarding/{ownerId} {
+   allow read, write: if request.auth != null
+     && request.auth.uid == ownerId
+     && ownerId.matches('demo-[a-z0-9-]{3,40}')
+     && request.auth.token.email_verified == true
+     && (request.method == 'get' || request.method == 'list' || request.method == 'delete'
+         || (request.resource.data.keys().hasOnly(['version','owner','progress'])
+             && request.resource.data.version == 1
+             && request.resource.data.owner == ownerId));
+  }
+ }
+}
