@@ -7,11 +7,12 @@ const overlaps=(a,b,c,d)=>a<d&&c<b;
 export function createBufferedConflictPreview(storage,owner){
  const conflicts=createConflictPreview(storage,owner);
  const policy=createPoliciesDemo(storage,owner);
- let policyValid=false;
+ let policyValid=false,appointmentsValid=true;
+ try{conflicts.recover();}catch{appointmentsValid=false;}
  try{policyValid=policy.load();}catch{}
  function slots(date,serviceId,staffId,nowDate="2026-11-19"){
   // Fail closed if policies cannot be recovered. Never show times based on guessed buffers.
-  if(!policyValid)return [];
+  if(!policyValid||!appointmentsValid)return [];
   const {bufferBeforeMinutes:before,bufferAfterMinutes:after}=policy.state;
   const base=conflicts.matching.slots(date,serviceId,staffId,nowDate);
   return base.filter(slot=>{
@@ -27,7 +28,7 @@ export function createBufferedConflictPreview(storage,owner){
   get services(){return conflicts.services;},
   get staff(){return conflicts.staff;},
   get buffers(){return policyValid?{before:policy.state.bufferBeforeMinutes,after:policy.state.bufferAfterMinutes}:null;},
-  get ready(){return policyValid&&conflicts.matching.ready;},
+  get ready(){return policyValid&&appointmentsValid&&conflicts.matching.ready;},
   get canBook(){return false;},get canRegister(){return false;},get canPay(){return false;},get canPublish(){return false;}
  });
 }
