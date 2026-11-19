@@ -1,0 +1,39 @@
+name: Boustio Phase 27.4 Messaging Abuse Monitoring Audit
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/chatAbuseMonitoring.js'
+      - 'tests/phase27_4_chat_monitoring.test.cjs'
+      - 'docs/PHASE27_4_MESSAGING_MONITORING.md'
+      - '.github/workflows/boustio-phase27-4-chat-monitoring.yml'
+permissions:
+  contents: read
+jobs:
+  aggregate-monitoring-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+      BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate monitoring syntax
+        run: |
+          node --check functions/chatAbuseMonitoring.js
+          node --check tests/phase27_4_chat_monitoring.test.cjs
+      - name: Run privacy and abuse alert tests
+        run: node --test tests/phase27_4_chat_monitoring.test.cjs
+      - name: Confirm no production deployment
+        run: |
+          test "$BOUSTIO_CHAT_ENABLED" = false
+          test "$BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED" = false
+          echo 'PHASE27_4=ISOLATED_TEST_ONLY'
