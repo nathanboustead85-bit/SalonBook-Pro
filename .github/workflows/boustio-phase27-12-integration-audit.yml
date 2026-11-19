@@ -1,0 +1,39 @@
+name: Boustio Phase 27.12 Messaging Integration Readiness Audit
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/chatIntegrationReadinessAudit.js'
+      - 'tests/phase27_12_chat_integration_audit.test.cjs'
+      - 'docs/PHASE27_12_CHAT_INTEGRATION_READINESS.md'
+      - '.github/workflows/boustio-phase27-12-integration-audit.yml'
+permissions:
+  contents: read
+jobs:
+  integration-readiness-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+      BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax
+        run: |
+          node --check functions/chatIntegrationReadinessAudit.js
+          node --check tests/phase27_12_chat_integration_audit.test.cjs
+      - name: Run integration readiness audit
+        run: node --test tests/phase27_12_chat_integration_audit.test.cjs
+      - name: Confirm no deployment and disabled chat
+        run: |
+          test "$BOUSTIO_CHAT_ENABLED" = false
+          test "$BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED" = false
+          echo 'PHASE27_12=SOURCE_AUDIT_ONLY_LAUNCH_BLOCKED'
