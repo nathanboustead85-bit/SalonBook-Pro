@@ -1,0 +1,20 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const {deriveTrustedCorrelation,consumeCorrelatedBudgetWithinTransaction}=require("../functions/chatTrustedCorrelation");
+const secret="test-only-32-character-secret-value-not-real";
+const base={businessId:"salonA",attestedAppId:"1:123:web:abc",serverEvidence:"trusted-opaque-actor-123",secret};
+const derive=x=>deriveTrustedCorrelation({...base,...x});
+function mock(count=0){let written=null;const ref={path:"mock"};const db={collection:()=>({doc:()=>({collection:()=>({doc:()=>ref})})})};const tx={get:async()=>({exists:count!==null,get:()=>count}),set:(_r,v)=>{written=v;}};return {db,tx,get written(){return written;}};}
+test("Same trusted evidence correlates across rotated UIDs",()=>{assert.equal(derive({uid:"one"}),derive({uid:"two"}));});
+test("Distinct server evidence is isolated",()=>{assert.notEqual(derive({serverEvidence:"trusted-opaque-actor-456"}),derive());});
+test("Businesses are isolated",()=>{assert.notEqual(derive({businessId:"salonB"}),derive());});
+test("Secret rotation changes opaque identifier",()=>{assert.notEqual(derive({secret:"another-32-character-server-secret-value"}),derive());});
+test("Missing or weak server-only secret rejected",()=>{for(const s of [undefined,"short"])assert.throws(()=>derive({secret:s}));});
+test("Missing verified app identity rejected",()=>{assert.throws(()=>derive({attestedAppId:"fake"}));});
+test("Missing trusted server evidence rejected",()=>{assert.throws(()=>derive({serverEvidence:""}));});
+test("Invalid business ID rejected",()=>{assert.throws(()=>derive({businessId:"../other"}));});
+test("Below correlated limit increments in transaction",async()=>{const m=mock(2);const r=await consumeCorrelatedBudgetWithinTransaction(m.tx,m.db,{businessId:"salonA",correlation:derive(),now:0});assert.equal(r.allowed,true);assert.equal(m.written.count,3);});
+test("At correlated limit blocks without writing",async()=>{const m=mock(40);const r=await consumeCorrelatedBudgetWithinTransaction(m.tx,m.db,{businessId:"salonA",correlation:derive(),now:0});assert.equal(r.allowed,false);assert.equal(m.written,null);});
+test("Corrupt counter fails closed",async()=>{const m=mock(-1);await assert.rejects(consumeCorrelatedBudgetWithinTransaction(m.tx,m.db,{businessId:"salonA",correlation:derive(),now:0}));});
+test("Malformed correlation rejected",async()=>{const m=mock();await assert.rejects(consumeCorrelatedBudgetWithinTransaction(m.tx,m.db,{businessId:"salonA",correlation:"client-controlled",now:0}));});
+test("Live callable handlers remain unchanged and disabled",()=>{const src=fs.readFileSync(path.resolve(__dirname,"../functions/index.js"),"utf8");assert.ok(!src.includes('require("./chatTrustedCorrelation")'));assert.match(src,/function requireChatEnabled\(\)/);for(const name of ["startCustomerChat","sendCustomerChatMessage"]){const start=src.indexOf("exports."+name+" = onCall(");assert.ok(start>=0);assert.match(src.slice(start,start+180),/enforceAppCheck: false/);}});
