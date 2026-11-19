@@ -1,0 +1,11 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const {execFileSync}=require("node:child_process");const {chromium}=require("playwright");
+const root=path.resolve(__dirname,".."),file=path.join(root,"preview-dist/Boustio-Website-Preview.html");
+test.before(()=>execFileSync(process.execPath,[path.join(root,"scripts/build-phase28-preview.cjs")],{cwd:root}));
+let browser;test.before(async()=>{browser=await chromium.launch({headless:true});});test.after(async()=>browser?.close());
+async function open(width=390){const context=await browser.newContext({viewport:{width,height:850},isMobile:width<600,hasTouch:width<600});const page=await context.newPage();await page.goto("file://"+file);return {page,context};}
+test("Single-file preview opens on Samsung width without network",async()=>{const {page,context}=await open(360);try{assert.match(await page.title(),/Boustio/);assert.equal(await page.locator("#business").textContent(),"Kody Blends");assert.equal(await page.locator("#services button").count(),3);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}finally{await context.close();}});
+test("Demo selection updates summary and never enables booking",async()=>{const {page,context}=await open();try{await page.locator("#services button").first().click();await page.locator("#staff button").first().click();await page.locator("#date").selectOption("demo-friday");await page.locator("#times button").first().click();assert.match(await page.locator("#summary").textContent(),/09:00/);assert.equal(await page.locator("#confirm").isDisabled(),true);}finally{await context.close();}});
+test("No network calls, Firebase connection, form or submission",async()=>{const {page,context}=await open();try{assert.equal(await page.locator("form,button[type=submit]").count(),0);assert.equal(await page.locator("#confirm").isDisabled(),true);assert.equal(/https?:\/\//.test(fs.readFileSync(file,"utf8")),false);}finally{await context.close();}});
+test("Desktop preview fits",async()=>{const {page,context}=await open(1280);try{assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}finally{await context.close();}});
