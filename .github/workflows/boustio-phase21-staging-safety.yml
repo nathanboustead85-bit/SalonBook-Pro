@@ -1,0 +1,31 @@
+name: Boustio Phase 21.5 Staging Safety Checks Only
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'config/phase21-staging-release-gates.json'
+      - 'tests/phase21_staging_safety.test.cjs'
+      - 'docs/PHASE21_5_STAGING_SAFETY.md'
+      - 'website/business/dashboard/firebase-browser-sdk-adapter.mjs'
+      - 'website/business/dashboard/session-integration-foundation.mjs'
+      - '.github/workflows/boustio-phase21-staging-safety.yml'
+permissions:
+  contents: read
+jobs:
+  staging-safety-no-deploy:
+    if: github.repository == 'nathanboustead85-bit/SalonBook-Pro'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate fail-closed staging manifest and safety tests
+        run: |
+          node --check tests/phase21_staging_safety.test.cjs
+          node --test tests/phase21_staging_safety.test.cjs
