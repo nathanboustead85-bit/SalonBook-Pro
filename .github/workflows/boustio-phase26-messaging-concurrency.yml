@@ -1,0 +1,38 @@
+name: Boustio Phase 26.6 Messaging Concurrency and Media Audit
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'tests/phase26_messaging_concurrency.test.cjs'
+      - 'docs/PHASE26_6_MESSAGING_CONCURRENCY.md'
+      - '.github/workflows/boustio-phase26-messaging-concurrency.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-concurrency-audit:
+    if: github.repository == 'nathanboustead85-bit/SalonBook-Pro'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+      GCLOUD_PROJECT: demo-boustio-phase266
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate isolated test and release gate
+        run: |
+          node --check tests/phase26_messaging_concurrency.test.cjs
+          node --check functions/index.js
+          test "$BOUSTIO_CHAT_ENABLED" = false
+          test "$GCLOUD_PROJECT" = demo-boustio-phase266
+      - name: Run concurrency-aware in-memory callable tests
+        run: node --test tests/phase26_messaging_concurrency.test.cjs
+      - name: Confirm no deployment
+        run: echo 'PHASE26_6=IN_MEMORY_ONLY_NO_DEPLOYMENT_NO_LIVE_WRITES'
