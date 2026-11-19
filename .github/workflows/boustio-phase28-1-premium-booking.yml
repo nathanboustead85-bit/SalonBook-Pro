@@ -1,0 +1,33 @@
+name: Boustio Phase 28.1 Premium Booking Website
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'web/phase28/**'
+      - 'tests/phase28_1_premium_booking.test.cjs'
+      - 'docs/PHASE28_1_PREMIUM_BOOKING.md'
+      - '.github/workflows/boustio-phase28-1-premium-booking.yml'
+permissions:
+  contents: read
+jobs:
+  premium-booking-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate preview scripts
+        run: |
+          node --check web/phase28/bookingExperience.js
+          node --check web/phase28/app.js
+          node --check tests/phase28_1_premium_booking.test.cjs
+      - name: Run premium booking contract tests
+        run: node --test tests/phase28_1_premium_booking.test.cjs
+      - name: Confirm preview-only
+        run: echo 'PHASE28_1=NO_LIVE_BOOKINGS_NO_DEPLOYMENT'
