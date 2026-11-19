@@ -346,7 +346,7 @@ test("Management screens remain read-only on mobile and never offer edit actions
   await tab.goto(base);await tab.waitForFunction(()=>Boolean(window.__phase22));
   for(const section of ["services","staff"]){
    await tab.locator('[data-nav-target="'+section+'"]').click();
-   assert.equal(await tab.locator('[data-nav-panel="'+section+'"] .readonly-tag').textContent(),"Read-only");
+   assert.equal(await tab.locator('[data-nav-panel="'+section+'"] .readonly-tag').first().textContent(),"Read-only");
    assert.equal(await tab.locator('[data-nav-panel="'+section+'"] input, [data-nav-panel="'+section+'"] form, [data-nav-panel="'+section+'"] button').count(),0);
   }
   assert.equal(await tab.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
