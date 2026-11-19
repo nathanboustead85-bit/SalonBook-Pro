@@ -1,0 +1,5 @@
+# Boustio Phase 24.2 — Synthetic ownership and resumable onboarding
+
+This phase adds a strictly **demonstration-only** owner selector (demo-kody / demo-alex), profile/service/staff progress tracking, sessionStorage save/recovery, and example booking link. Data is scoped to a browser session; it is not an authenticated account, durable cloud backup or production registration. Session storage is not a security boundary; users can edit their own browser data. The separate Firestore rules fixture is for **emulator-only** authorization testing and is **not deployed** or added to production rules.
+
+17 automated tests cover recovery, isolation, tamper rejection, mobile/desktop, keyboard, disabled actions, external network requests, anonymous/verified/unverified owner and cross-owner Firebase security. Real bookings, payments, registration, publishing and deployment remain disabled. Existing Android appointments untouched. Future work must implement real authentication, server-validated ownership and secure persistence before production use.
