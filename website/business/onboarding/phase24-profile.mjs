@@ -4,7 +4,7 @@ const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunda
 const trim=(v,n)=>typeof v==="string"?v.trim().slice(0,n):"";
 const validTime=v=>typeof v==="string"&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v);
 const minute=v=>Number(v.slice(0,2))*60+Number(v.slice(3));
-const defaultHours=()=>Object.fromEntries(days.map(d=>[d,{closed:d==="Sunday",open:"09:00",close:"17:00"}]));
+const defaultHours=()=>Object.fromEntries(days.map(d=>[d,{closed:d==="Sunday",open:d==="Sunday"?"":"09:00",close:d==="Sunday"?"":"17:00"}]));
 export function createProfileDemo(store,owner){
  if(!/^demo-[a-z0-9-]{3,40}$/.test(owner||""))throw Error("Synthetic demo owner required");
  const key="boustio-phase24-3:"+owner;
