@@ -1,0 +1,38 @@
+name: Boustio Phase 26.5 Messaging Abuse Security Audit
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'tests/phase26_messaging_abuse.test.cjs'
+      - 'docs/PHASE26_5_MESSAGING_SECURITY.md'
+      - '.github/workflows/boustio-phase26-messaging-audit.yml'
+permissions:
+  contents: read
+jobs:
+  messaging-abuse-audit:
+    if: github.repository == 'nathanboustead85-bit/SalonBook-Pro'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+      GCLOUD_PROJECT: demo-boustio-phase265
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate source and tests
+        run: |
+          node --check functions/index.js
+          node --check tests/phase26_messaging_abuse.test.cjs
+          test "$BOUSTIO_CHAT_ENABLED" = false
+          test "$GCLOUD_PROJECT" = demo-boustio-phase265
+      - name: Run isolated messaging handler security tests
+        run: node --test tests/phase26_messaging_abuse.test.cjs
+      - name: Confirm no production access
+        run: echo 'PHASE26_5=IN_MEMORY_ONLY_NO_DEPLOYMENT_NO_LIVE_MESSAGING'
