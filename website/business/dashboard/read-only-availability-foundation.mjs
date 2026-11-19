@@ -58,7 +58,7 @@ export function createDashboardReadOnlySummaries({firestore,firestoreSdk,root}){
   }
  }
  const weekdays=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
- function validTime(v){return typeof v==="string"&&/^([01]\\d|2[0-3]):[0-5]\\d$/.test(v);}
+ function validTime(v){return typeof v==="string"&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v);}
  function renderAvailability(result){
   const list=els["hours-items"];list.replaceChildren();
   els["hours-summary"].textContent=result.status==="ready"?"Staff availability preview":result.status==="empty"?"No staff availability found":"Staff availability unavailable";
