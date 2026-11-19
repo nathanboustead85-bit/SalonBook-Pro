@@ -1,0 +1,13 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const {evaluateMessagingRelease,CONTROL_NAMES}=require("../functions/chatReleasePreflight");
+const index=fs.readFileSync(path.resolve(__dirname,"../functions/index.js"),"utf8");
+test("Default environment remains blocked",()=>{const r=evaluateMessagingRelease();assert.equal(r.decision,"BLOCKED");assert.equal(r.mayEnableMessaging,false);assert.ok(r.blockers.includes("configuration:BOUSTIO_CHAT_ENABLED"));});
+test("App Check environment flag is not proof of attestation",()=>{const r=evaluateMessagingRelease({environment:{BOUSTIO_CHAT_APP_CHECK_ENFORCED:"true"}});assert.ok(r.blockers.includes("evidence:appCheckVerified"));});
+test("Anonymous rotation requires independent trusted correlation evidence",()=>{const r=evaluateMessagingRelease({environment:{BOUSTIO_CHAT_TRUSTED_ABUSE_SIGNAL:"true"}});assert.ok(r.blockers.includes("evidence:trustedAbuseCorrelationVerified"));});
+test("All self-reported flags and evidence still cannot approve launch",()=>{const env=Object.fromEntries(["BOUSTIO_CHAT_ENABLED","BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED","BOUSTIO_CHAT_APP_CHECK_ENFORCED","BOUSTIO_CHAT_TRUSTED_ABUSE_SIGNAL","BOUSTIO_CHAT_OPERATIONAL_MONITORING"].map(k=>[k,"true"]));const evidence=Object.fromEntries(CONTROL_NAMES.map(k=>[k,true]));const r=evaluateMessagingRelease({environment:env,evidence});assert.equal(r.mayEnableMessaging,false);assert.ok(r.blockers.includes("manual:explicitProductionLaunchApproval"));});
+test("No caller-provided launch approval bypasses mandatory signoff",()=>{const r=evaluateMessagingRelease({evidence:{independentSecuritySignoff:true,explicitProductionLaunchApproval:true}});assert.equal(r.decision,"BLOCKED");});
+test("Missing monitoring and transport verification are explicit",()=>{const r=evaluateMessagingRelease();assert.ok(r.blockers.includes("evidence:monitoringVerified"));assert.ok(r.blockers.includes("evidence:authTransportVerified"));});
+test("Photo and voice attachments remain unapproved",()=>{const r=evaluateMessagingRelease();assert.ok(r.blockers.includes("evidence:storageAttachmentsDisabled"));});
+test("Preflight does not change existing chat handler configuration",()=>{assert.match(index,/exports\.startCustomerChat = onCall\(\s*\{[^}]*enforceAppCheck: false/);assert.match(index,/function requireChatEnabled\(\)/);});
+test("Readiness result is immutable",()=>{const r=evaluateMessagingRelease();assert.equal(Object.isFrozen(r),true);assert.equal(Object.isFrozen(r.blockers),true);});
