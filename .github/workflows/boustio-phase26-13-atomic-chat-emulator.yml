@@ -1,0 +1,50 @@
+name: Boustio Phase 26.13 Real Firestore Atomic Messaging Tests
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'tests/phase26_13_atomic_chat_emulator.test.cjs'
+      - 'docs/PHASE26_13_ATOMIC_CHAT_EMULATOR.md'
+      - '.github/workflows/boustio-phase26-13-atomic-chat-emulator.yml'
+permissions:
+  contents: read
+jobs:
+  atomic-chat-emulator:
+    if: github.repository == 'nathanboustead85-bit/SalonBook-Pro'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+      GCLOUD_PROJECT: demo-boustio-phase2613
+      GOOGLE_CLOUD_PROJECT: demo-boustio-phase2613
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+      BOUSTIO_CHAT_ENABLED: 'false'
+      BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated emulator dependencies
+        run: |
+          npm install --prefix tests --no-audit --no-fund
+          npm install --prefix functions --no-audit --no-fund
+      - name: Validate test isolation and syntax
+        run: |
+          node --check tests/phase26_13_atomic_chat_emulator.test.cjs
+          test "$GCLOUD_PROJECT" = demo-boustio-phase2613
+          test "$BOUSTIO_CHAT_ENABLED" = false
+          test "$BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED" = false
+      - name: Run real Firestore emulator integration tests
+        run: timeout --signal=TERM --kill-after=10s 900s tests/node_modules/.bin/firebase emulators:exec --project demo-boustio-phase2613 --only auth,firestore "node --test --test-concurrency=1 tests/phase26_13_atomic_chat_emulator.test.cjs"
+      - name: Confirm no production deployment
+        run: echo 'PHASE26_13=REAL_EMULATOR_ONLY_NO_DEPLOYMENT'
