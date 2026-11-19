@@ -1,0 +1,3 @@
+# Phase 25.10 — Final synthetic booking integration and reliability
+
+Isolated, additive verification of the complete Phase 25 customer booking demonstration. Covers service/staff matching, date/slot selection, conflict rejection, in-memory-only review, reset/reload safety, keyboard and focus accessibility regressions, responsive Chromium 320/390/768/1440, no external network requests, disabled real actions, and denied isolated Firestore emulator operations. Uses the existing Phase 25.9 UI and synthetic data. This is not a production deployment, accessibility certification or approval to enable bookings. Registration, real bookings, payments and publishing remain disabled. Existing Android appointments are not accessed or modified.
