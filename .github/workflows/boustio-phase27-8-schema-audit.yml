@@ -1,0 +1,42 @@
+name: Boustio Phase 27.8 Actual Chat Retention Schema Audit
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/chatRetentionSchemaAudit.js'
+      - 'functions/chatAbuseBudgetAtomic.js'
+      - 'functions/chatTrustedCorrelation.js'
+      - 'functions/chatAbuseBudget.js'
+      - 'tests/phase27_8_chat_schema_audit.test.cjs'
+      - 'docs/PHASE27_8_CHAT_SCHEMA_AUDIT.md'
+      - '.github/workflows/boustio-phase27-8-schema-audit.yml'
+permissions:
+  contents: read
+jobs:
+  schema-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+      BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate audit syntax
+        run: |
+          node --check functions/chatRetentionSchemaAudit.js
+          node --check tests/phase27_8_chat_schema_audit.test.cjs
+      - name: Run actual source schema audit tests
+        run: node --test tests/phase27_8_chat_schema_audit.test.cjs
+      - name: Confirm no production deployment
+        run: |
+          test "$BOUSTIO_CHAT_ENABLED" = false
+          test "$BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED" = false
+          echo 'PHASE27_8=READ_ONLY_SOURCE_AUDIT_NO_DEPLOYMENT'
