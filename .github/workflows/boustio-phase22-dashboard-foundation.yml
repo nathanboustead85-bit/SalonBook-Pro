@@ -1,0 +1,32 @@
+name: Boustio Phase 22.1 Dashboard Firebase Foundation
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'website/business/dashboard/firebase-integration-foundation.mjs'
+      - 'website/business/dashboard/firebase-browser-sdk-adapter.mjs'
+      - 'website/business/dashboard/session-integration-foundation.mjs'
+      - 'tests/phase22_dashboard_firebase_foundation.test.cjs'
+      - 'docs/PHASE22_1_DASHBOARD_FIREBASE_FOUNDATION.md'
+      - '.github/workflows/boustio-phase22-dashboard-foundation.yml'
+permissions:
+  contents: read
+jobs:
+  dashboard-foundation-no-deploy:
+    if: github.repository == 'nathanboustead85-bit/SalonBook-Pro'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify opt-in Firebase dashboard integration
+        run: |
+          node --check website/business/dashboard/firebase-integration-foundation.mjs
+          node --check tests/phase22_dashboard_firebase_foundation.test.cjs
+          node --test tests/phase22_dashboard_firebase_foundation.test.cjs
