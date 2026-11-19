@@ -1,0 +1,18 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const {auditChatRetentionSchema}=require("../functions/chatRetentionSchemaAudit");
+const audit=auditChatRetentionSchema();
+test("Audit is read-only and cannot authorize migration",()=>{assert.equal(audit.auditOnly,true);assert.equal(audit.productionMigrationAuthorized,false);});
+test("Real nested identity path is detected",()=>assert.ok(audit.observedPaths.includes("chatAbuseBudgets/{bucket}/identity/{uidHash}")));
+test("Real nested business path is detected",()=>assert.ok(audit.observedPaths.includes("chatAbuseBudgets/{bucket}/business/all")));
+test("Legacy signal path detected",()=>assert.ok(audit.observedPaths.includes("chatAbuseBudgets/{bucket}/signal/{signalHash}")));
+test("Trusted correlation path detected",()=>assert.ok(audit.observedPaths.includes("chatTrustedCorrelationBudgets/{bucket}/signals/{correlation}")));
+test("Numeric expiry field detected",()=>assert.equal(audit.observedExpiryField,"expiresAtMs"));
+test("Creation timestamp missing is a blocker",()=>assert.ok(audit.blockers.includes("CREATION_TIMESTAMP_NOT_WRITTEN")));
+test("Firestore TTL timestamp field missing is a blocker",()=>assert.ok(audit.blockers.includes("FIRESTORE_TIMESTAMP_TTL_FIELD_NOT_WRITTEN")));
+test("Nested collection policy review required",()=>assert.ok(audit.blockers.includes("NESTED_SUBCOLLECTION_TTL_POLICY_REQUIRED")));
+test("Production TTL unverified",()=>assert.ok(audit.blockers.includes("REAL_FIRESTORE_TTL_POLICY_UNVERIFIED")));
+test("Migration compatibility correctly blocked",()=>assert.equal(audit.migrationCompatible,false));
+test("Audit output is immutable",()=>{assert.equal(Object.isFrozen(audit),true);assert.equal(Object.isFrozen(audit.blockers),true);assert.equal(Object.isFrozen(audit.observedPaths),true);});
+test("No production Firebase credentials or API calls required",()=>{const src=fs.readFileSync(path.resolve(__dirname,"../functions/chatRetentionSchemaAudit.js"),"utf8");assert.equal(src.includes("firebase-admin"),false);assert.equal(src.includes("runTransaction"),false);});
+test("Live functions do not import audit",()=>{const src=fs.readFileSync(path.resolve(__dirname,"../functions/index.js"),"utf8");assert.equal(src.includes('require("./chatRetentionSchemaAudit")'),false);});
