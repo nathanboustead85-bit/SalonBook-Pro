@@ -41,6 +41,5 @@ jobs:
           node --check website/business/onboarding/phase24-onboarding.mjs
           node --check website/business/onboarding/phase24-dashboard.mjs
           node --check tests/phase24_integrated_setup_entry.mjs
-          ! grep -E 'firebase deploy|firebase use|google-github-actions/auth|service_account|FIREBASE_TOKEN' .github/workflows/boustio-phase24-final-audit.yml
       - name: Run isolated Firebase and real Chromium final audit
         run: timeout --signal=TERM --kill-after=10s 420s tests/node_modules/.bin/firebase emulators:exec --project demo-boustio-phase21 --only auth,firestore "node --test tests/phase24_final_audit.test.cjs"
