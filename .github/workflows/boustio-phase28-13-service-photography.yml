@@ -1,0 +1,54 @@
+name: Boustio Phase 28.13 Service Photography Concept
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase28/photo-preview.html'
+      - 'web/phase28/photo-preview.css'
+      - 'web/phase28/app.js'
+      - 'tests/phase28_13_service_photos.test.cjs'
+      - '.github/workflows/boustio-phase28-13-service-photography.yml'
+permissions:
+  contents: read
+jobs:
+  service-photography:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test tools
+        working-directory: tests
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run Phase 28.13 photo concept tests
+        run: node --test tests/phase28_13_service_photos.test.cjs
+      - name: Recheck original offline premium preview
+        run: node --test tests/phase28_11_premium_redesign.test.cjs
+      - name: Build review package
+        run: |
+          mkdir -p preview-dist/photo
+          cp web/phase28/photo-preview.html web/phase28/photo-preview.css web/phase28/style.css web/phase28/app.js web/phase28/bookingExperience.js preview-dist/photo/
+          cp web/phase1280/catalogueContract.js preview-dist/photo/
+          cp web/phase1281/cataloguePresentation.js preview-dist/photo/
+          cp web/phase131/publicBusinessProfile.js preview-dist/photo/
+          node - <<'NODE'
+          const fs=require('fs'),p='preview-dist/photo/photo-preview.html';
+          let s=fs.readFileSync(p,'utf8');
+          s=s.replaceAll('../phase1280/catalogueContract.js','./catalogueContract.js').replaceAll('../phase1281/cataloguePresentation.js','./cataloguePresentation.js').replaceAll('../phase131/publicBusinessProfile.js','./publicBusinessProfile.js');
+          fs.writeFileSync(p,s);
+          NODE
+      - name: Upload private photo concept
+        uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase28-13-Service-Photo-Concept
+          path: preview-dist/photo/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Confirm no deployment
+        run: echo 'PHOTO_CONCEPT_ONLY_NO_DEPLOYMENT'
