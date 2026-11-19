@@ -5,9 +5,12 @@ const validOwner=id=>typeof id==="string"&&/^demo-[a-z0-9-]{3,40}$/.test(id);
 export function createResumableDemo(storage,ownerId){
  if(!validOwner(ownerId))throw Error("Invalid synthetic owner");
  const key="boustio-phase24-2:"+ownerId,engine=createDemoOnboarding();
+ const read=k=>storage.getItem?storage.getItem(k):storage.get(k);
+ const write=(k,v)=>storage.setItem?storage.setItem(k,v):storage.set(k,v);
+ const remove=k=>storage.removeItem?storage.removeItem(k):storage.delete(k);
  const snapshot=()=>engine.state;
- function load(){const raw=storage.getItem(key);if(!raw)return false;const data=JSON.parse(raw);if(data.version!==1||data.owner!==ownerId||!data.state)throw Error("Invalid demo recovery");const s=data.state;engine.reset();if(s.business?.name)engine.setBusiness(s.business.name,s.business.category);for(const v of s.services||[])engine.addService(v.name,v.pricePence,v.durationMinutes);for(const v of s.staff||[])engine.addStaff(v.name);return true;}
- function save(){storage.setItem(key,JSON.stringify({version:1,owner:ownerId,state:snapshot()}));return progress();}
+ function load(){const raw=read(key);if(!raw)return false;const data=JSON.parse(raw);if(data.version!==1||data.owner!==ownerId||!data.state)throw Error("Invalid demo recovery");const s=data.state;engine.reset();if(s.business?.name)engine.setBusiness(s.business.name,s.business.category);for(const v of s.services||[])engine.addService(v.name,v.pricePence,v.durationMinutes);for(const v of s.staff||[])engine.addStaff(v.name);return true;}
+ function save(){write(key,JSON.stringify({version:1,owner:ownerId,state:snapshot()}));return progress();}
  function progress(){const s=snapshot();return Object.freeze({profile:!!s.business.slug,services:s.services.length>0,staff:s.staff.length>0,complete:!!s.business.slug&&s.services.length>0&&s.staff.length>0});}
- return Object.freeze({ownerId,get state(){return snapshot();},get previewLink(){return engine.previewLink;},get progress(){return progress();},setBusiness:(...a)=>engine.setBusiness(...a),addService:(...a)=>engine.addService(...a),addStaff:(...a)=>engine.addStaff(...a),save,load,clear(){storage.removeItem(key);engine.reset();},get canRegister(){return false;},get canPublish(){return false;}});
+ return Object.freeze({ownerId,get state(){return snapshot();},get previewLink(){return engine.previewLink;},get progress(){return progress();},setBusiness:(...a)=>engine.setBusiness(...a),addService:(...a)=>engine.addService(...a),addStaff:(...a)=>engine.addStaff(...a),save,load,clear(){remove(key);engine.reset();},get canRegister(){return false;},get canPublish(){return false;}});
 }
