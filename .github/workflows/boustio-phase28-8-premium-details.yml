@@ -1,0 +1,49 @@
+name: Boustio Phase 28.8 Premium Booking Details
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'web/phase28/index.html'
+      - 'web/phase28/app.js'
+      - 'web/phase28/style.css'
+      - 'tests/phase28_8_premium_booking_details.test.cjs'
+      - '.github/workflows/boustio-phase28-8-premium-details.yml'
+permissions:
+  contents: read
+jobs:
+  premium-booking-details:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser tools
+        working-directory: tests
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Check browser source and tests
+        run: |
+          node --check web/phase28/app.js
+          node --check tests/phase28_8_premium_booking_details.test.cjs
+      - name: Run previous and new browser tests
+        run: |
+          node --test tests/phase28_6_samsung_preview.test.cjs
+          node --test tests/phase28_7_preview_experience.test.cjs
+          node --test tests/phase28_8_premium_booking_details.test.cjs
+      - name: Upload refreshed offline preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Samsung-Website-Preview-28-8
+          path: preview-dist/Boustio-Website-Preview.html
+          retention-days: 14
+          if-no-files-found: error
+      - name: Confirm no deployment
+        run: echo 'OFFLINE_PREVIEW_ONLY_NO_DEPLOYMENT'
