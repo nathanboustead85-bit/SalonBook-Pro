@@ -1,0 +1,15 @@
+"use strict";const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");const {prepareBookingPage,getRequestedSlug}=require("../web/phase28/bookingExperience");const fixture={schemaVersion:1,slug:"demo-salon",published:true,businessName:"Demo Salon",services:[{id:"cut",name:"Cut",pricePence:2000,durationMinutes:30,published:true}],staff:[{id:"stylist",name:"Stylist",active:true,serviceIds:["cut"]}]};
+test("Published catalogue maps to premium page",()=>{const r=prepareBookingPage(fixture,"demo-salon");assert.equal(r.status,"PREVIEW_READY");assert.equal(r.businessName,"Demo Salon");});
+test("Bookings remain disabled",()=>assert.equal(prepareBookingPage(fixture,"demo-salon").bookingEnabled,false));
+test("Prices come from public catalogue",()=>assert.match(prepareBookingPage(fixture,"demo-salon").services[0].priceLabel,/20/));
+test("Professionals come from public catalogue",()=>assert.equal(prepareBookingPage(fixture,"demo-salon").staff[0].name,"Stylist"));
+test("Unpublished catalogue rejected",()=>assert.equal(prepareBookingPage({...fixture,published:false},"demo-salon").status,"UNAVAILABLE"));
+test("Slug mismatch rejected",()=>assert.equal(prepareBookingPage(fixture,"other-salon").status,"UNAVAILABLE"));
+test("Missing catalogue rejected",()=>assert.equal(prepareBookingPage(null,"demo-salon").status,"UNAVAILABLE"));
+test("Invalid slug rejected",()=>assert.equal(prepareBookingPage(fixture,"../../secrets").status,"UNAVAILABLE"));
+test("Slug query parsed",()=>assert.equal(getRequestedSlug("?business=demo-salon"),"demo-salon"));
+test("Invalid slug query ignored",()=>assert.equal(getRequestedSlug("?business=%2E%2E%2F"),null));
+test("Page labels itself preview only",()=>assert.match(fs.readFileSync(path.resolve(__dirname,"../web/phase28/index.html"),"utf8"),/BOOKINGS DISABLED/));
+test("Confirm action disabled",()=>assert.match(fs.readFileSync(path.resolve(__dirname,"../web/phase28/index.html"),"utf8"),/id="confirm" disabled/));
+test("No network or Firestore SDK in preview app",()=>{const s=fs.readFileSync(path.resolve(__dirname,"../web/phase28/app.js"),"utf8");assert.doesNotMatch(s,/fetch\(|getFirestore\(|addDoc\(|setDoc\(/);});
+test("No production deployments in workflow",()=>assert.doesNotMatch(fs.readFileSync(path.resolve(__dirname,"../.github/workflows/boustio-phase28-1-premium-booking.yml"),"utf8"),/firebase deploy|hosting:channel:deploy/));
