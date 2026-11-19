@@ -1,0 +1,3 @@
+# Phase 25.9 — Accessibility and usability
+
+Additive test-only customer preview, building on Phase 25.8. Includes skip link, semantic labelled groups, active step announcement, focus transfer after step changes, date input label/help, accessible invalid-date feedback, live region for availability, keyboard-first slot selection, 44px touch targets, visible focus indicators, reduced-motion and forced-colour support, responsive layouts. Node, real Chromium and isolated Firebase emulator tests run in GitHub Actions. This is not a certified WCAG audit or production deployment. All real bookings, payments, registration and publishing remain disabled; no production Firebase operations or Android appointment changes.
