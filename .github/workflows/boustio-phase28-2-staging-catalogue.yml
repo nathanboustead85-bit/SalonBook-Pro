@@ -1,0 +1,32 @@
+name: Boustio Phase 28.2 Readonly Staging Catalogue
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'web/phase28/stagingCatalogue.js'
+      - 'tests/phase28_2_staging_catalogue.test.cjs'
+      - 'docs/PHASE28_2_STAGING_CATALOGUE.md'
+      - '.github/workflows/boustio-phase28-2-staging-catalogue.yml'
+permissions:
+  contents: read
+jobs:
+  staging-catalogue-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          node --check web/phase28/stagingCatalogue.js
+          node --check tests/phase28_2_staging_catalogue.test.cjs
+      - name: Run integration contract tests
+        run: node --test tests/phase28_2_staging_catalogue.test.cjs
+      - name: Verify no deployment
+        run: echo 'READ_ONLY_STAGING_CONTRACT_NO_DEPLOYMENT'
