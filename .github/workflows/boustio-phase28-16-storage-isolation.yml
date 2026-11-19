@@ -1,0 +1,27 @@
+name: Boustio Phase 28.16 Storage Isolation Audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'functions/phase2816StoragePolicy.js'
+      - 'tests/phase28_16.storage.rules'
+      - 'tests/phase28_16_storage_policy.test.cjs'
+      - '.github/workflows/boustio-phase28-16-storage-isolation.yml'
+permissions:
+  contents: read
+jobs:
+  storage-isolation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test storage isolation and simulated abuse controls
+        run: node --test tests/phase28_16_storage_policy.test.cjs
+      - name: Confirm no deployment
+        run: echo 'STORAGE_RULES_NOT_CONNECTED_NO_UPLOAD_NO_DEPLOYMENT'
