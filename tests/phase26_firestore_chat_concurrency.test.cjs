@@ -3,8 +3,10 @@
 // Callable handlers are invoked directly; transport/auth tokens are simulated.
 const test=require("node:test"),assert=require("node:assert/strict"),path=require("node:path"),Module=require("node:module"),crypto=require("node:crypto");
 if(process.env.GCLOUD_PROJECT!=="demo-boustio-phase267"||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:8080"||process.env.BOUSTIO_CHAT_ENABLED==="true")throw Error("Isolated emulator configuration required");
-const {initializeApp,deleteApp}=require("../functions/node_modules/firebase-admin/app");
-const {getFirestore}=require("../functions/node_modules/firebase-admin/firestore");
+const {createRequire}=require("node:module");
+const fromFunctions=createRequire(path.resolve(__dirname,"../functions/package.json"));
+const {initializeApp,deleteApp}=fromFunctions("firebase-admin/app");
+const {getFirestore,FieldValue}=fromFunctions("firebase-admin/firestore");
 const app=initializeApp({projectId:"demo-boustio-phase267"},"phase267");
 const db=getFirestore(app);
 class HttpsError extends Error{constructor(code,message){super(message);this.code=code;}}
@@ -14,7 +16,7 @@ try{
  Module._load=function(request,parent,isMain){
   if(parent?.filename===indexPath&&request==="firebase-functions/v2/https")return {onCall:(_options,handler)=>handler,onRequest:(_options,handler)=>handler,HttpsError};
   if(parent?.filename===indexPath&&request==="firebase-admin/app")return {initializeApp:()=>app};
-  if(parent?.filename===indexPath&&request==="firebase-admin/firestore")return {getFirestore:()=>db,FieldValue:require("../functions/node_modules/firebase-admin/firestore").FieldValue};
+  if(parent?.filename===indexPath&&request==="firebase-admin/firestore")return {getFirestore:()=>db,FieldValue};
   if(parent?.filename===indexPath&&request==="./phase1318PublicBusinessProfile")return {createPublicBusinessHttpHandler:()=>()=>{}};
   return original.apply(this,arguments);
  };
