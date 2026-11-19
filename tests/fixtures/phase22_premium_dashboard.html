@@ -15,6 +15,14 @@ h1{font-size:30px;letter-spacing:-.8px;margin:0 0 8px}.muted{color:#65817b}.stat
 .lock{background:#f1f5f4;border-radius:12px;padding:14px;margin-top:14px}.status{font-weight:700;text-transform:capitalize}
 .management-list{list-style:none;padding:0;margin:16px 0;display:grid;gap:12px}.management-list li{padding:16px 18px;border:1px solid #d9eae5;background:#f9fdfc;border-radius:14px;font-weight:700;overflow-wrap:anywhere}.management-meta{display:block;font-size:13px;font-weight:500;color:#567a72;margin-top:7px}.readonly-tag{display:inline-block;border:1px solid #acd8cd;border-radius:99px;padding:5px 10px;color:#087d7b;font-size:12px;font-weight:700}[hidden]{display:none!important}
 @media(max-width:720px){.layout{grid-template-columns:1fr}.sidebar{display:flex;gap:8px;overflow:auto;padding:12px}.sidebar h2{display:none}.sidebar button{width:auto;flex:0 0 auto;white-space:nowrap}.stats{grid-template-columns:1fr}header{padding:18px 20px}h1{font-size:25px}}
+
+/* Phase 22.11 mobile usability: readable content, large tap targets and accessible focus. */
+:root{color-scheme:light}button{touch-action:manipulation}main,.layout,.panel,.sidebar{min-width:0}
+.sidebar button{min-height:44px}.sidebar button:focus-visible{outline:3px solid #075f5d;outline-offset:2px}
+.panel{overflow-wrap:anywhere}.panel h1{line-height:1.2}.profile dd{min-width:0;overflow-wrap:anywhere}
+@media(max-width:720px){main{margin:16px auto;padding:0 14px}.layout{gap:14px;margin-top:16px}.panel{padding:20px 16px;border-radius:18px}.sidebar{scrollbar-width:thin;overscroll-behavior-x:contain;scroll-snap-type:x proximity}.sidebar button{scroll-snap-align:start;min-height:48px;padding:12px 16px}.warning{padding:14px;font-size:14px}.profile{padding:14px}.profile dl{grid-template-columns:minmax(0,1fr);gap:4px}.profile dt{margin-top:8px}.profile dd{margin-bottom:6px}.brand{font-size:26px}.chip{font-size:11px;padding:7px 9px}.management-list li{padding:15px}}
+@media(max-width:380px){header{gap:8px}.chip{max-width:140px;text-align:center}.panel{padding:18px 14px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:0s!important;animation-duration:0s!important}}
 </style></head><body>
 <header><div class="brand"><span class="cloud" aria-hidden="true">☁</span>boustio</div><span class="chip">Isolated dashboard test</span></header>
 <main><div class="warning" role="note"><strong>Development test only.</strong> Synthetic emulator accounts only. This is not the live dashboard. Registration and customer bookings remain disabled.</div>
