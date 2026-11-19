@@ -1,0 +1,7 @@
+# Phase 25.1 — Customer booking and illustrative availability
+
+Synthetic, read-only customer-facing preview that consumes validated Phase 24 business profile, service, staff schedule and policy drafts, scoped to demo owners. It displays service names/prices, synthetic professionals and illustrative times based on intersecting opening hours, working hours, breaks, service durations, buffer minutes and the advance booking window.
+
+**Not actual bookable availability.** The earlier Phase 24 service and staff editors use independent service IDs; this phase deliberately does not assert staff-service eligibility. There are no existing appointment/conflict reads, capacity holds, real-time concurrency checks, real customer records, server-side reservations, payment handling or booking submissions. Phase 25.1 uses a fixed demonstration clock (2026-11-19) for deterministic examples; it must not be mistaken for current availability. The minimum notice hours policy is not applied to same-day times, because this preview excludes the entire same day. Illustrative slots are not offered as real reservations.
+
+Tests cover module integration, closed days, staff breaks, booking buffers, date boundaries, owner isolation, invalid drafts, non-mutation, real Chromium mobile/desktop/keyboard tests and isolated Firebase emulator denial. No production Firebase access, deployment or Android appointment changes. Registration, bookings, payments and publishing remain disabled.
