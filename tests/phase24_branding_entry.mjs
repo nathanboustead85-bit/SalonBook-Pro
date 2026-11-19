@@ -1,0 +1,7 @@
+import {createBrandingDemo,readDemoImage} from "../website/business/onboarding/phase24-branding.mjs";
+const q=s=>document.querySelector(s),demo=createBrandingDemo(sessionStorage,"demo-kody");window.__phase24branding=demo;
+function render(){const s=demo.state;q("[data-name]").value=s.name;q("[data-tagline]").value=s.tagline;q("[data-colour]").value=s.colour;q("[data-preview-name]").textContent=s.name;q("[data-preview-tagline]").textContent=s.tagline;q("[data-preview]").style.setProperty("--brand",s.colour);for(const type of ["logo","cover"]){const img=q("[data-"+type+"-image]");img.hidden=!s[type];if(s[type])img.src=s[type];else img.removeAttribute("src");}q("[data-cover-placeholder]").hidden=!!s.cover;}
+async function action(fn){try{await fn();q("[data-message]").textContent="Demonstration updated";render();}catch(e){q("[data-message]").textContent=e.message;}}
+q("[data-apply]").onclick=()=>action(async()=>{const fields={name:q("[data-name]").value,tagline:q("[data-tagline]").value,colour:q("[data-colour]").value};for(const type of ["logo","cover"]){const file=q("[data-"+type+"]").files[0];if(file)fields[type]=await readDemoImage(file);}demo.update(fields);});
+q("[data-save]").onclick=()=>action(()=>demo.save());q("[data-recover]").onclick=()=>action(()=>demo.load());q("[data-clear]").onclick=()=>action(()=>demo.clear());
+try{demo.load();}catch(e){q("[data-message]").textContent="Recovery rejected: "+e.message;}render();
