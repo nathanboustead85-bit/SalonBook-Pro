@@ -1,0 +1,5 @@
+# Phase 28.4 — Emulator-backed premium website browser preview
+
+Adds `web/phase28/emulator-preview.html` and `emulatorPreview.js`, a **separate, noindex, preview-only** website view. An isolated Playwright test harness injects a synthetic trusted slug mapping and a public-document getter backed by **real Firestore emulator rules** and client SDK reads. Two synthetic businesses show different prices and names. Unpublished and missing businesses fail closed. Tests verify no private data is rendered, booking buttons remain disabled, and Samsung/desktop viewport widths fit.
+
+This is a **real browser + Firestore emulator integration test**, but **not** a deployed Firebase staging website, real trusted slug endpoint, real availability engine or production release. The injected harness is test-only; the preview cannot load data outside that harness. No production project, credentials, live bookings, chat, or existing appointments are accessed. The public catalogue renderer displays services and staff only; booking selection is a later milestone.
