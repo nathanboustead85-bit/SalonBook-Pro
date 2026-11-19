@@ -1,0 +1,7 @@
+# Phase 27.10 — Atomic v2 budget counters (emulator only)
+
+This phase introduces a **separate, staging-only** Firestore transaction writer with native timestamp expiry and counter increments. Its collection-group names are `boustioV2IdentityCounters` and `boustioV2BusinessCounters` beneath `chatAbuseBudgetsV2/{bucket}`. Unlike the Phase 27.9 create-only prototype, this supports concurrent increments and enforces the existing identity and business limits in one transaction. Tests verify contention, identity caps, malformed state, timestamp compatibility, and preservation of booking sentinels.
+
+**Limitations and blockers:** This code is not wired to live callable handlers. Its demo-project guard checks the supplied string and is **not** an independent verification of the Firestore client's actual project; therefore it must never be exposed as a production endpoint. It has not been subjected to real App Check or authentic client transport testing. No TTL policy is configured, no automatic deletion is tested, and no migration of legacy data occurs. Existing counters in `chatAbuseBudgets` are not dual-written; a cutover needs a separately reviewed compatibility plan. Under heavy contention, the Firestore SDK can still fail after its transaction retry limit; such errors must be handled fail-closed in any future integration.
+
+No production deployment or changes to appointments or messaging settings.
