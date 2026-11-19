@@ -1,0 +1,8 @@
+import {createProfileDemo} from "../website/business/onboarding/phase24-profile.mjs";
+const q=s=>document.querySelector(s),demo=createProfileDemo(sessionStorage,"demo-kody");window.__phase24profile=demo;
+function render(){const p=demo.profile,c=demo.completeness;q("[data-completeness]").textContent=c.percent+"% complete · "+Object.entries(c.checks).map(([k,v])=>k+": "+(v?"complete":"pending")).join(" · ");q("[data-summary]").textContent=[p.name,p.email,p.phone,p.address1,p.town,p.postcode,p.website].filter(Boolean).join(" · ");q("[data-hours-summary]").replaceChildren();for(const [day,h] of Object.entries(p.hours)){const li=document.createElement("li");li.textContent=day+": "+(h.closed?"Closed":h.open+"–"+h.close);q("[data-hours-summary]").append(li);}}
+function action(fn){try{fn();q("[data-message]").textContent="Demonstration updated";render();}catch(e){q("[data-message]").textContent=e.message;}}
+q("[data-update]").onclick=()=>action(()=>demo.update({name:q("[data-name]").value,category:q("[data-category]").value,email:q("[data-email]").value,phone:q("[data-phone]").value,address1:q("[data-address]").value,town:q("[data-town]").value,postcode:q("[data-postcode]").value,website:q("[data-website]").value}));
+q("[data-hours]").onclick=()=>action(()=>demo.setHours(q("[data-day]").value,{closed:q("[data-closed]").checked,open:q("[data-open]").value,close:q("[data-close]").value}));
+q("[data-save]").onclick=()=>action(()=>demo.save());q("[data-recover]").onclick=()=>action(()=>demo.load());q("[data-clear]").onclick=()=>action(()=>demo.clear());
+try{demo.load();}catch(e){q("[data-message]").textContent="Recovery rejected: "+e.message;}render();
