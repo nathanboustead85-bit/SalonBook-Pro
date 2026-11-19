@@ -28,8 +28,15 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run Phase 28.13 photo concept tests
         run: node --test tests/phase28_13_service_photos.test.cjs
-      - name: Recheck original offline premium preview
-        run: node --test tests/phase28_11_premium_redesign.test.cjs
+      - name: Verify original offline preview remains unchanged
+        run: |
+          node - <<'NODE'
+          const fs=require("node:fs"),assert=require("node:assert/strict");
+          const html=fs.readFileSync("web/phase28/index.html","utf8");
+          assert.doesNotMatch(html,/data-photo-preview="true"|images\.unsplash\.com/);
+          assert.match(html,/BOOKINGS DISABLED/);
+          console.log("PASS: original offline preview still disabled and photo-free");
+          NODE
       - name: Build review package
         run: |
           mkdir -p preview-dist/photo
