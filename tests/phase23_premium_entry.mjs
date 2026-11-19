@@ -1,0 +1,2 @@
+import {mountPremiumBookingPreview} from "../website/customer/booking/premium-design-foundation.mjs";
+window.__phase23premium=mountPremiumBookingPreview(document,{business:"Kody Blends",services:[{name:"Classic haircut",price:20,duration:30},{name:"Skin fade",price:25,duration:45},{name:"Beard trim",price:12,duration:20},{name:"Cut & beard",price:30,duration:60}],staff:["Kody","Any professional"],days:["Mon 23 Nov","Tue 24 Nov","Wed 25 Nov","Thu 26 Nov","Fri 27 Nov","Sat 28 Nov"],times:["09:00","10:30","12:00","14:00","15:30","17:00"]});
