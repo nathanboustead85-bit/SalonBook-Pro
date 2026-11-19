@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Boustio | Isolated business dashboard test</title>
+<style>
+:root{font-family:system-ui,-apple-system,Arial,sans-serif;color:#153e3c;background:#f3faf8}*{box-sizing:border-box}
+body{margin:0;min-height:100vh}header{background:#087d7b;color:white;padding:22px max(22px,calc((100vw - 1120px)/2));display:flex;justify-content:space-between;align-items:center}
+.brand{font-size:30px;font-weight:800;letter-spacing:-1.3px}.cloud{font-size:22px;margin-right:7px}.chip{border:1px solid #a4e1d8;padding:8px 12px;border-radius:100px;font-size:12px}
+main{max-width:1120px;margin:30px auto;padding:0 20px}.warning{background:#fff3d5;border:1px solid #f1dba7;border-radius:14px;padding:16px;color:#5f4c20}
+.layout{display:grid;grid-template-columns:230px 1fr;gap:22px;margin-top:24px}.sidebar,.panel{background:white;border:1px solid #d9eae5;border-radius:20px;padding:22px;box-shadow:0 12px 28px #0a57580b}
+.sidebar h2{font-size:14px;color:#64827c;text-transform:uppercase;letter-spacing:1px}.sidebar p{padding:12px;border-radius:12px;margin:5px 0}.sidebar .selected{background:#e2f5f0;color:#087d7b;font-weight:750}
+h1{font-size:30px;letter-spacing:-.8px;margin:0 0 8px}.muted{color:#65817b}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0}
+.stat{border-radius:15px;background:#edf8f5;padding:18px}.stat strong{display:block;font-size:22px;color:#087d7b;margin-bottom:7px}
+.label{font-size:13px;color:#5e7d76}.profile{background:#fff;border:1px solid #d6e8e3;border-radius:16px;padding:18px;margin-top:16px}
+.profile dl{display:grid;grid-template-columns:110px 1fr;gap:12px;overflow-wrap:anywhere}.profile dt{color:#68837d}.profile dd{margin:0;font-weight:650}
+.lock{background:#f1f5f4;border-radius:12px;padding:14px;margin-top:14px}.status{font-weight:700;text-transform:capitalize}
+[hidden]{display:none!important}
+@media(max-width:720px){.layout{grid-template-columns:1fr}.sidebar{display:flex;gap:8px;overflow:auto;padding:12px}.sidebar h2{display:none}.sidebar p{white-space:nowrap}.stats{grid-template-columns:1fr}header{padding:18px 20px}h1{font-size:25px}}
+</style></head><body>
+<header><div class="brand"><span class="cloud" aria-hidden="true">☁</span>boustio</div><span class="chip">Isolated dashboard test</span></header>
+<main><div class="warning" role="note"><strong>Development test only.</strong> Synthetic emulator accounts only. This is not the live dashboard. Registration and customer bookings remain disabled.</div>
+<div class="layout"><aside class="sidebar" aria-label="Dashboard navigation"><h2>Workspace</h2><p class="selected">Overview</p><p>Services</p><p>Staff</p><p>Settings</p></aside>
+<section class="panel"><h1>Business overview</h1><p class="muted">Secure owner-scoped information in an isolated test environment.</p>
+<p role="status" aria-live="polite">Account status: <span class="status" id="status" data-dashboard="status">initializing</span></p>
+<div class="stats"><div class="stat"><strong>Preview</strong><span class="label">Workspace mode</span></div><div class="stat"><strong>Off</strong><span class="label" id="booking" data-dashboard="booking">Customer bookings disabled</span></div><div class="stat"><strong>Off</strong><span class="label" id="registration" data-dashboard="registration">Public registration disabled</span></div></div>
+<section class="profile" id="private-panel" data-dashboard="private-panel" hidden aria-label="Verified business profile">
+<h2>Business profile</h2><dl><dt>Business</dt><dd id="business-name" data-dashboard="business-name"></dd>
+<dt>Category</dt><dd id="category" data-dashboard="category"></dd>
+<dt>Owner ID</dt><dd id="owner" data-dashboard="owner"></dd></dl></section>
+<div class="lock">🔒 Private business details are only displayed after verified sign-in and a server-confirmed profile.</div>
+</section></div></main><script src="/bundle.js"></script></body></html>
