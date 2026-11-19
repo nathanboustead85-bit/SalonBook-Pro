@@ -1,0 +1,15 @@
+import {createBookingJourney} from "../website/customer/phase25-journey.mjs";
+import {createConflictPreview} from "../website/customer/phase25-conflicts.mjs";
+import {createProfileDemo} from "../website/business/onboarding/phase24-profile.mjs";
+import {createServicesDemo} from "../website/business/onboarding/phase24-services.mjs";
+import {createStaffScheduleDemo} from "../website/business/onboarding/phase24-staff.mjs";
+import {createPoliciesDemo} from "../website/business/onboarding/phase24-policies.mjs";
+const owner="demo-kody",q=s=>document.querySelector(s);
+function seed(){if(sessionStorage.getItem("boustio-phase25-6:seeded"))return;const p=createProfileDemo(sessionStorage,owner);p.update({name:"Kody Blends"});p.save();const s=createServicesDemo(sessionStorage,owner),service=s.addService({name:"Haircut",category:"Haircuts",pricePence:2000,durationMinutes:30,staffIds:[]});s.save();const st=createStaffScheduleDemo(sessionStorage,owner),barber=st.addStaff({name:"Demo Barber",role:"Barber"});st.save();const pol=createPoliciesDemo(sessionStorage,owner);pol.update({bufferBeforeMinutes:10,bufferAfterMinutes:15});pol.save();const c=createConflictPreview(sessionStorage,owner);c.matching.assign(service,barber);c.matching.save();c.add({id:"demo-appt-first",date:"2026-11-20",start:"10:00",end:"10:30",staffId:barber});c.save();sessionStorage.setItem("boustio-phase25-6:seeded","1");}
+seed();const journey=createBookingJourney(sessionStorage,owner);window.__phase25journey=journey;
+function option(el,id,label){const o=document.createElement("option");o.value=id;o.textContent=label;el.append(o);}
+for(const s of journey.list())option(q("[data-service]"),s.id,s.name+" — £"+(s.pricePence/100).toFixed(2));
+function staff(){const el=q("[data-staff]");el.replaceChildren();for(const s of journey.professionals(q("[data-service]").value))option(el,s.id,s.name);}
+function reset(){journey.clear();q("[data-summary]").textContent="Choose an illustrative time to see your demonstration summary.";q("[data-slots]").replaceChildren();}
+q("[data-service]").onchange=()=>{staff();reset();};q("[data-staff]").onchange=reset;q("[data-date]").onchange=reset;q("[data-clear]").onclick=()=>{reset();q("[data-message]").textContent="Selection cleared";};staff();
+q("[data-find]").onclick=()=>{reset();try{const serviceId=q("[data-service]").value,staffId=q("[data-staff]").value,date=q("[data-date]").value;const result=journey.availability(date,serviceId,staffId);for(const s of result.slots){const b=document.createElement("button");b.className="slot";b.textContent=s.time;b.onclick=()=>{try{const summary=journey.choose({serviceId,staffId,date,time:s.time});q("[data-summary]").textContent=summary.serviceName+" · "+summary.staffName+" · "+summary.date+" · "+summary.time+"–"+summary.end+" · "+summary.priceLabel+" · "+summary.status;}catch(e){q("[data-message]").textContent=e.message;}};q("[data-slots]").append(b);}q("[data-message]").textContent=result.count+" illustrative times; nothing is reserved";}catch(e){q("[data-message]").textContent=e.message;}};
