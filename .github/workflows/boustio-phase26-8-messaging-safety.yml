@@ -1,0 +1,34 @@
+name: Boustio Phase 26.8 Messaging Launch Safety Audit
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'tests/phase26_8_messaging_launch_safety.test.cjs'
+      - 'docs/PHASE26_8_MESSAGING_LAUNCH_SAFETY.md'
+      - '.github/workflows/boustio-phase26-8-messaging-safety.yml'
+permissions:
+  contents: read
+jobs:
+  messaging-launch-safety:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      GCLOUD_PROJECT: demo-boustio-phase267
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      BOUSTIO_CHAT_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate isolated messaging safety tests
+        run: node --check tests/phase26_8_messaging_launch_safety.test.cjs
+      - name: Verify messaging remains gated and audit blockers
+        run: node --test tests/phase26_8_messaging_launch_safety.test.cjs
+      - name: Confirm no production deployment
+        run: echo 'PHASE26_8=STATIC_LAUNCH_SAFETY_AUDIT_ONLY_NO_DEPLOYMENT'
