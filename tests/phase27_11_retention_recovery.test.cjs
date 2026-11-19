@@ -1,0 +1,40 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),path=require("node:path"),fs=require("node:fs");
+if(process.env.GCLOUD_PROJECT!=="demo-boustio-phase2711"||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:8080"||process.env.BOUSTIO_CHAT_ENABLED==="true")throw Error("Demo emulator required");
+const {createRequire}=require("node:module"),fromFunctions=createRequire(path.resolve(__dirname,"../functions/package.json"));
+const {initializeApp,deleteApp}=fromFunctions("firebase-admin/app"),{getFirestore}=fromFunctions("firebase-admin/firestore");
+const app=initializeApp({projectId:"demo-boustio-phase2711"},"phase2711"),db=getFirestore(app);
+const {consumeV2Staging}=require("../functions/chatRetentionV2Atomic");
+const {consumeFailClosed,classifyTransactionFailure}=require("../functions/chatRetentionRecovery");
+const {LIMITS}=require("../functions/chatAbuseBudget");
+const base={projectId:"demo-boustio-phase2711",businessId:"recoverySalon",uid:"recoveryUid",nowMs:1700000000000};
+test.after(async()=>deleteApp(app));
+test("Successful budget transaction accepted",async()=>assert.equal((await consumeFailClosed(consumeV2Staging,db,base)).allowed,true));
+test("Unavailable transaction fails closed",async()=>{const r=await consumeFailClosed(async()=>{throw Object.assign(new Error("down"),{code:14});},db,base);assert.equal(r.allowed,false);assert.equal(r.retryable,true);});
+test("Aborted transaction fails closed",async()=>{const r=await consumeFailClosed(async()=>{throw Object.assign(new Error("abort"),{code:10});},db,base);assert.equal(r.allowed,false);assert.equal(r.retryable,true);});
+test("Deadline exceeded fails closed",()=>assert.equal(classifyTransactionFailure({code:"deadline-exceeded"}).retryable,true));
+test("Unexpected error fails closed without leaking details",async()=>{const r=await consumeFailClosed(async()=>{throw new Error("sensitive-secret");},db,base);assert.equal(r.allowed,false);assert.equal(JSON.stringify(r).includes("sensitive-secret"),false);});
+test("Malformed success response fails closed",async()=>assert.equal((await consumeFailClosed(async()=>({allowed:"yes"}),db,base)).allowed,false));
+test("Null response fails closed",async()=>assert.equal((await consumeFailClosed(async()=>null,db,base)).reason,"invalid-result"));
+test("Rate limited result is never turned into success",async()=>assert.equal((await consumeFailClosed(async()=>({allowed:false}),db,base)).reason,"rate-limited"));
+test("Retry after transient failure can succeed once",async()=>{let calls=0;const fn=async(d,a)=>{calls++;if(calls===1)throw Object.assign(new Error("retry"),{code:14});return consumeV2Staging(d,a);};const a={...base,businessId:"retrySalon"};assert.equal((await consumeFailClosed(fn,db,a)).allowed,false);assert.equal((await consumeFailClosed(fn,db,a)).allowed,true);});
+test("Concurrent retry requests preserve identity quota",async()=>{
+ const a={...base,businessId:"parallelRecovery",uid:"sameUid"};
+ const results=await Promise.all(Array.from({length:LIMITS.identity+3},()=>consumeFailClosed(consumeV2Staging,db,a)));
+ assert.ok(results.filter(r=>r.allowed).length<=LIMITS.identity);
+ assert.ok(results.every(r=>typeof r.allowed==="boolean"));
+});
+test("Corrupt counter rejects without overwriting",async()=>{
+ const crypto=require("node:crypto"),hash=s=>crypto.createHash("sha256").update(s).digest("hex");
+ const a={...base,businessId:"corruptRecovery",uid:"badUid"},window=Math.floor(a.nowMs/3600000);
+ const ref=db.collection("chatAbuseBudgetsV2").doc(hash(a.businessId+":"+window)).collection("boustioV2IdentityCounters").doc(hash(a.uid));
+ await ref.set({count:-5});const r=await consumeFailClosed(consumeV2Staging,db,a);
+ assert.equal(r.allowed,false);assert.equal((await ref.get()).get("count"),-5);
+});
+test("Invalid project rejected by fail-closed adapter",async()=>assert.equal((await consumeFailClosed(consumeV2Staging,db,{...base,projectId:"production"})).allowed,false));
+test("Booking sentinel unchanged after failed transaction",async()=>{
+ const ref=db.collection("bookings").doc("originalAppointment");await ref.set({service:"Haircut",client:"Test"});
+ await consumeFailClosed(async()=>{throw new Error("failure");},db,base);
+ assert.equal((await ref.get()).get("service"),"Haircut");
+});
+test("No live callable integration",()=>{const src=fs.readFileSync(path.resolve(__dirname,"../functions/index.js"),"utf8");assert.equal(src.includes('require("./chatRetentionRecovery")'),false);});
