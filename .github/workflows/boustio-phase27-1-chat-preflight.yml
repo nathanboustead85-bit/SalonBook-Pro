@@ -1,0 +1,41 @@
+name: Boustio Phase 27.1 Messaging Release Preflight
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'functions/chatReleasePreflight.js'
+      - 'tests/phase27_1_chat_preflight.test.cjs'
+      - 'docs/PHASE27_1_MESSAGING_RELEASE_PREFLIGHT.md'
+      - '.github/workflows/boustio-phase27-1-chat-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  fail-closed-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      BOUSTIO_CHAT_ENABLED: 'false'
+      BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax
+        run: |
+          node --check functions/chatReleasePreflight.js
+          node --check tests/phase27_1_chat_preflight.test.cjs
+      - name: Verify fail-closed security preflight
+        run: node --test tests/phase27_1_chat_preflight.test.cjs
+      - name: Require blocked release decision
+        run: node -e 'const r=require("./functions/chatReleasePreflight").evaluateMessagingRelease();console.log(JSON.stringify(r,null,2));if(r.decision!=="BLOCKED"||r.mayEnableMessaging)process.exit(1)'
+      - name: Confirm no production deployment
+        run: |
+          test "$BOUSTIO_CHAT_ENABLED" = false
+          test "$BOUSTIO_CHAT_ABUSE_BUDGET_ENABLED" = false
+          echo 'PHASE27_1=NO_DEPLOYMENT'
