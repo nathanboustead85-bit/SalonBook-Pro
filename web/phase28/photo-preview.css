@@ -1,0 +1,12 @@
+/* Phase 28.13 optional photo concept. Existing offline preview remains unchanged. */
+.service-card{padding:0!important;overflow:hidden;min-height:245px!important;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start}
+.service-photo{display:block!important;position:relative;width:100%;height:142px;margin:0!important;background:linear-gradient(135deg,#164e49,#91bdb2);overflow:hidden}
+.service-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+.service-photo:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#063e3e24,transparent 60%);pointer-events:none}
+.service-photo-fallback{display:grid!important;place-items:center;width:100%;height:100%;font-size:30px!important;color:white!important}
+.service-card .service-tag{margin:15px 17px 9px!important}
+.service-card strong{margin:0 17px;font-size:17px}
+.service-card>span:not(.service-tag):not(.service-photo){margin:8px 17px 18px!important}
+.service-card[aria-pressed=true]:after{top:154px}
+.photo-credit{font-size:11px;color:#62807a;margin:12px 0 0;line-height:1.5}
+@media(max-width:760px){.service-photo{height:180px}.service-card{min-height:285px!important}.service-card[aria-pressed=true]:after{top:191px}}
