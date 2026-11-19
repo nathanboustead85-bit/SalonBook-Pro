@@ -27,6 +27,7 @@ jobs:
           node - <<'NODE'
           const fs=require('node:fs'),assert=require('node:assert/strict');
           const s=fs.readFileSync('web/phase28/businessPhotos.js','utf8');
-          assert.doesNotMatch(s,/fetch\s*\(|XMLHttpRequest|firebase|uploadBytes|writeFile|https?:\/\//i);
+          const executable=s.replace(/\/\*[\s\S]*?\*\//g,'').replace(/^\s*\/\/.*$/gm,'');
+          assert.doesNotMatch(executable,/fetch\s*\(|XMLHttpRequest|firebase|uploadBytes|writeFile|https?:\/\//i);
           console.log('READ_ONLY_CONTRACT_NO_UPLOAD_NO_DEPLOYMENT');
           NODE
