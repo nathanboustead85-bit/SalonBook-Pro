@@ -1,0 +1,7 @@
+# Phase 25.3 — Synthetic existing appointment conflict detection
+
+Local-only demonstration. The new owner-scoped `boustio-phase25-3:demo-*` storage record holds **fictional** appointments, validated by date, start/end time, synthetic staff ID and unique synthetic appointment ID. A read-only filter removes illustrative Phase 25.2 matched staff/service slots that overlap a synthetic appointment on the same date and for the same professional. Adjacent non-overlapping slots remain eligible. Synthetic records can be added, cancelled, saved, recovered and cleared without changing Phase 24 business drafts, Phase 25.2 matching drafts or real Android appointments.
+
+This phase does **not** read actual Android appointments or production Firestore bookings. The Phase 25.1 time-slot generator uses service duration and buffers to produce times, but this filter checks displayed appointment start/end against synthetic appointments; full buffer-aware conflict semantics and concurrency-safe reservations are not yet implemented. There are no live bookings, booking holds, payment operations or customer writes. Demo time defaults to 2026-11-19 for deterministic tests.
+
+The dedicated GitHub Actions workflow runs Node integration tests, real Chromium mobile/desktop and keyboard tests, and isolated Firebase Auth/Firestore emulator denial tests. It has read-only repository permissions, no deployment credentials and no production Firebase access. Session storage is not authenticated production security.
