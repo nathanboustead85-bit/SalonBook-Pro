@@ -1,0 +1,33 @@
+name: Boustio Phase 26.9 Abuse and App Check Launch Gate
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone-customer-booking-experience
+    paths:
+      - 'tests/phase26_9_abuse_appcheck.test.cjs'
+      - 'docs/PHASE26_9_ABUSE_APPCHECK.md'
+      - '.github/workflows/boustio-phase26-9-abuse-appcheck.yml'
+permissions:
+  contents: read
+jobs:
+  abuse-appcheck-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      GCLOUD_PROJECT: demo-boustio-phase269
+      BOUSTIO_CHAT_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Phase 26.9 tests
+        run: node --check tests/phase26_9_abuse_appcheck.test.cjs
+      - name: Audit abuse protections and App Check blockers
+        run: node --test tests/phase26_9_abuse_appcheck.test.cjs
+      - name: Confirm no deployment
+        run: echo 'PHASE26_9=ISOLATED_AUDIT_NO_DEPLOYMENT_NO_LIVE_MESSAGING'
