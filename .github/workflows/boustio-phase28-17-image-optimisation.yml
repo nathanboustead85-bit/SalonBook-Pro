@@ -1,0 +1,34 @@
+name: Boustio Phase 28.17 Image Optimisation
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'scripts/phase28-17-image-processor.cjs'
+      - 'tests/phase28_17_image_optimisation.test.cjs'
+      - '.github/workflows/boustio-phase28-17-image-optimisation.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-image-optimisation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run image optimisation policy and processor tests
+        run: node --test tests/phase28_17_image_optimisation.test.cjs
+      - name: Verify no production wiring or deployment
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const config=JSON.parse(fs.readFileSync('firebase.json','utf8'));
+          assert.equal(config.storage,undefined);
+          const s=fs.readFileSync('scripts/phase28-17-image-processor.cjs','utf8');
+          assert.doesNotMatch(s,/firebase-admin|uploadBytes|createWriteStream|\.save\s*\(/);
+          console.log('ISOLATED_PROCESSOR_NO_STORAGE_NO_DEPLOYMENT');
+          NODE
