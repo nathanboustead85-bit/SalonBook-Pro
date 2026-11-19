@@ -11,7 +11,7 @@ const modulePath="../website/business/onboarding/phase24-profile.mjs";
 const full={name:"Kody Blends",category:"Barber",email:"hello@example.invalid",phone:"07000 000000",address1:"12 Example Street",town:"Torquay",postcode:"TQ1 1AA",website:"https://example.invalid"};
 test("All live features disabled",async()=>{const {LIVE_FEATURES}=await import(modulePath);assert.deepEqual({...LIVE_FEATURES},{registration:false,bookings:false,payments:false,publishing:false});});
 test("Reject real owner identifier",async()=>{const {createProfileDemo}=await import(modulePath);assert.throws(()=>createProfileDemo(new Map(),"real-kody"));});
-test("Initial profile completeness is zero",async()=>{const {createProfileDemo}=await import(modulePath);assert.equal(createProfileDemo(new Map(),"demo-kody").completeness.percent,0);});
+test("Initial profile completeness reflects default opening hours",async()=>{const {createProfileDemo}=await import(modulePath);assert.equal(createProfileDemo(new Map(),"demo-kody").completeness.percent,25);});
 test("Complete profile reaches 100 percent",async()=>{const {createProfileDemo}=await import(modulePath);const d=createProfileDemo(new Map(),"demo-kody");d.update(full);assert.equal(d.completeness.percent,100);});
 test("Partial contact details not marked complete",async()=>{const {createProfileDemo}=await import(modulePath);const d=createProfileDemo(new Map(),"demo-kody");d.update({email:"hello@example.invalid"});assert.equal(d.completeness.checks.contact,false);});
 test("Reject malformed email",async()=>{const {createProfileDemo}=await import(modulePath);assert.throws(()=>createProfileDemo(new Map(),"demo-kody").update({email:"bad"}));});
