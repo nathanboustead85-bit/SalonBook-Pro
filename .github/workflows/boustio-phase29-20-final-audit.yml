@@ -1,0 +1,36 @@
+name: Boustio Phase 29.20 Final Onboarding Audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase29/onboarding-29-20.html'
+      - 'tests/phase29_20_final_audit.test.cjs'
+      - 'docs/phase29/phase29-20-final-audit.md'
+      - '.github/workflows/boustio-phase29-20-final-audit.yml'
+permissions:
+  contents: read
+jobs:
+  final-offline-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Phase 29.20 audit tests
+        run: node --test tests/phase29_20_final_audit.test.cjs
+      - name: Run full Phase 29 regression suite
+        run: node --test tests/phase29*.test.cjs
+      - name: Verify offline-only artifact
+        run: |
+          test -s web/phase29/onboarding-29-20.html
+          test -s docs/phase29/phase29-20-final-audit.md
+          echo "OFFLINE_PREVIEW_ONLY_NO_DEPLOYMENT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase29-20-Final-Audit
+          path: |
+            web/phase29/onboarding-29-20.html
+            docs/phase29/phase29-20-final-audit.md
+          retention-days: 30
