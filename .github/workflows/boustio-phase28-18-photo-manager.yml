@@ -1,0 +1,35 @@
+name: Boustio Phase 28.18 Photo Manager Preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase28/photo-manager*'
+      - 'tests/phase28_18_photo_manager.test.cjs'
+      - '.github/workflows/boustio-phase28-18-photo-manager.yml'
+permissions:
+  contents: read
+jobs:
+  photo-manager-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run in-memory photo manager tests
+        run: node --test tests/phase28_18_photo_manager.test.cjs
+      - name: Build Samsung-friendly static preview
+        run: |
+          mkdir -p preview-dist
+          cp web/phase28/photo-manager.html web/phase28/photo-manager.css web/phase28/photo-manager.js web/phase28/photo-manager-model.js preview-dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase28-18-Photo-Manager-Preview
+          path: preview-dist/
+          retention-days: 14
+      - name: Confirm no deployment
+        run: echo 'DEMO_ONLY_NO_UPLOAD_NO_DEPLOYMENT'
