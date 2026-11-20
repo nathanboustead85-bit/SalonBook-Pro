@@ -1,0 +1,32 @@
+name: Boustio Phase 29.13 Safe Onboarding Recovery QA
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase29/onboarding-29-13.html'
+      - 'tests/phase29_13_safe_recovery.test.cjs'
+      - '.github/workflows/boustio-phase29-13-safe-recovery.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test safe recovery
+        run: node --test tests/phase29_13_safe_recovery.test.cjs
+      - name: Run Phase 29 regression tests
+        run: node --test tests/phase29*.test.cjs
+      - name: Verify offline-only preview
+        run: |
+          test -s web/phase29/onboarding-29-13.html
+          echo "OFFLINE_ONLY_NO_DEPLOYMENT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase29-13-Samsung-HTML
+          path: web/phase29/onboarding-29-13.html
+          retention-days: 14
