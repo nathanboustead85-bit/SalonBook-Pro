@@ -1,0 +1,44 @@
+name: Boustio Phase 28.20 Final Website QA
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'tests/phase28_20_final_website_qa.test.cjs'
+      - 'docs/PHASE28_20_FINAL_WEBSITE_QA.md'
+      - '.github/workflows/boustio-phase28-20-final-website-qa.yml'
+permissions:
+  contents: read
+jobs:
+  final-website-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Final Phase 28 static accessibility, responsive and isolation checks
+        run: node --test tests/phase28_20_final_website_qa.test.cjs
+      - name: Regression - photo manager
+        run: node --test tests/phase28_18_photo_manager.test.cjs
+      - name: Regression - staff portfolios
+        run: node --test tests/phase28_19_portfolio_gallery.test.cjs
+      - name: Regression - image policy
+        run: node --test tests/phase28_17_image_optimisation.test.cjs
+      - name: Package offline Samsung previews
+        run: |
+          mkdir -p preview-dist/booking preview-dist/owner-photo-manager preview-dist/portfolios
+          cp web/phase28/photo-manager.html web/phase28/photo-manager.css web/phase28/photo-manager.js web/phase28/photo-manager-model.js preview-dist/owner-photo-manager/
+          cp web/phase28/portfolio-preview.html web/phase28/portfolio-preview.css web/phase28/portfolio-preview.js web/phase28/portfolio-model.js preview-dist/portfolios/
+          cp docs/PHASE28_20_FINAL_WEBSITE_QA.md preview-dist/
+          printf '%s\n' 'Owner photo manager: owner-photo-manager/photo-manager.html' 'Staff portfolios: portfolios/portfolio-preview.html' 'Customer booking page needs its original parent-directory dependencies; use source checkout or existing Phase 28.12 artifact.' > preview-dist/README.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase28-20-Final-QA-Samsung-Previews
+          path: preview-dist/
+          retention-days: 14
+      - name: Verify no deployment
+        run: echo 'PHASE28_FINAL_QA_NO_PRODUCTION_DEPLOYMENT_NO_LIVE_UPLOADS'
