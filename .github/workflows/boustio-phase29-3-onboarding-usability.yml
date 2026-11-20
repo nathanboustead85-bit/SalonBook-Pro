@@ -1,0 +1,36 @@
+name: Boustio Phase 29.3 Onboarding Usability (Offline)
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase29/**'
+      - 'tests/phase29_3_onboarding_usability.test.cjs'
+      - '.github/workflows/boustio-phase29-3-onboarding-usability.yml'
+permissions:
+  contents: read
+jobs:
+  usability-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Phase 29.1, 29.2 and 29.3 tests
+        run: node --test tests/phase29_1_onboarding.test.cjs tests/phase29_2_onboarding_ui.test.cjs tests/phase29_3_onboarding_usability.test.cjs
+      - name: Package isolated Samsung preview
+        run: |
+          mkdir -p phase29-3-samsung
+          cp web/phase29/onboarding.html web/phase29/onboarding.css web/phase29/onboarding-model.js web/phase29/onboarding-usability.js web/phase29/onboarding-ui.js phase29-3-samsung/
+          echo 'Extract all files together and open onboarding.html. Fictional offline preview only.' > phase29-3-samsung/README.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase29-3-Onboarding-Usability-Samsung
+          path: phase29-3-samsung/
+          retention-days: 14
+      - name: No deployment
+        run: echo 'OFFLINE_ONLY_NO_DEPLOYMENT_NO_LIVE_FEATURES'
