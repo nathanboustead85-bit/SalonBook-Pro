@@ -1,0 +1,36 @@
+name: Boustio Phase 29.4 Premium Onboarding (Offline)
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase29/**'
+      - 'tests/phase29_4_premium_onboarding.test.cjs'
+      - '.github/workflows/boustio-phase29-4-premium-onboarding.yml'
+permissions:
+  contents: read
+jobs:
+  premium-onboarding-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run all Phase 29 regression tests
+        run: node --test tests/phase29_1_onboarding.test.cjs tests/phase29_2_onboarding_ui.test.cjs tests/phase29_3_onboarding_usability.test.cjs tests/phase29_4_premium_onboarding.test.cjs
+      - name: Package offline Samsung preview
+        run: |
+          mkdir -p phase29-4-samsung
+          cp web/phase29/onboarding.html web/phase29/onboarding.css web/phase29/onboarding-model.js web/phase29/onboarding-usability.js web/phase29/onboarding-premium.js web/phase29/onboarding-ui.js phase29-4-samsung/
+          echo 'Offline demo only. Extract together and open onboarding.html. Nothing is saved or published.' > phase29-4-samsung/README.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase29-4-Premium-Onboarding-Samsung
+          path: phase29-4-samsung/
+          retention-days: 14
+      - name: Confirm no deployment
+        run: echo 'OFFLINE_ONLY_NO_DEPLOYMENT_NO_LIVE_FEATURES'
