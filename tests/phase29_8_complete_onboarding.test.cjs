@@ -1,0 +1,17 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
+const html=fs.readFileSync(path.join(__dirname,"../web/phase29/onboarding-29-8.html"),"utf8");
+test("standalone inline CSS and JavaScript",()=>{assert.match(html,/<style>/);assert.match(html,/<script>/);assert.doesNotMatch(html,/<script[^>]+src=/);assert.doesNotMatch(html,/<link[^>]+stylesheet/);});
+test("seven complete setup steps",()=>{assert.equal((html.match(/data-panel="/g)||[]).length,7);assert.equal((html.match(/data-step="/g)||[]).length,7);});
+test("all business setup sections included",()=>{for(const x of ["Business identity","Services and prices","Your team","Opening hours","Contact and location","Booking preferences","Review your complete setup"])assert.ok(html.includes(x),x);});
+test("service price and duration validation",()=>{for(const x of ["price<0","price>10000","Number.isInteger(price*100)","services.length>=20","Add at least one service."])assert.ok(html.includes(x),x);});
+test("staff uniqueness and required minimum",()=>{for(const x of ["staff.length>=20","Add at least one staff member.","staff.some"])assert.ok(html.includes(x),x);});
+test("weekly opening hours and closed day handling",()=>{for(const x of ["Monday","Sunday","h.open","h.start>=h.end","Open at least one day.","Closed"])assert.ok(html.includes(x),x);});
+test("contact and booking validation",()=>{for(const x of ["Enter a valid UK postcode.","Enter a valid business email.","Enter a valid phone number.","Enter a valid website URL.","Check booking preferences."])assert.ok(html.includes(x),x);});
+test("review has editable sections and safe text output",()=>{for(const x of ["Edit "+'"'+"+title","textContent=String(content)","show(target)"])assert.ok(html.includes(x),x);assert.doesNotMatch(html,/innerHTML\s*=/);});
+test("progress accessible and full journey",()=>{for(const x of ['role="progressbar"',"aria-valuenow","Math.round((step+1)/7*100)"])assert.ok(html.includes(x),x);});
+test("invalid finish blocked",()=>{assert.ok(html.includes('if(review().length)'));assert.ok(html.includes("Please correct the highlighted details before finishing."));});
+test("offline completion and restart",()=>{for(const x of ["Nothing was saved, published or sent.","Start a fresh demo","resetData();","show(0)"])assert.ok(html.includes(x),x);});
+test("publishing button disabled",()=>{assert.match(html,/disabled[^>]*>Publish business · Disabled/);});
+test("no network storage Firebase or external dependencies",()=>{for(const x of ["fetch(","XMLHttpRequest","localStorage.","sessionStorage.","indexedDB.","firebase.initializeApp","navigator.geolocation","<iframe","<link ","<img "])assert.equal(html.includes(x),false,x);});
+test("JavaScript parses",()=>{const m=html.match(/<script>([\s\S]*?)<\/script>/);assert.ok(m);new vm.Script(m[1]);});
