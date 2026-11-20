@@ -1,7 +1,7 @@
 "use strict";const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm"),path=require("node:path");const html=fs.readFileSync(path.join(__dirname,"../web/phase29/onboarding-29-9.html"),"utf8");const script=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 test("standalone HTML",()=>{assert.ok(html.startsWith("<!doctype html>"));assert.ok(script)});
 test("valid JavaScript",()=>{new vm.Script(script)});
-test("seven panels and navigation",()=>{assert.equal((html.match(/data-panel="/g)||[]).length,7);assert.equal((html.match(/data-step="/g)||[]).length,7)});
+test("seven panels and navigation",()=>{assert.equal((html.match(/<section data-panel="/g)||[]).length,7);assert.equal((html.match(/data-step="/g)||[]).length,7)});
 test("seven guided steps",()=>{for(const s of ["Tell customers who you are","Add at least one service","Add at least one team member","Set your opening times","best contact details","how far ahead","Check everything together"])assert.ok(html.includes(s),s)});
 test("accessible live guidance",()=>{assert.ok(html.includes('id="stepHelp" aria-live="polite"'));assert.ok(script.includes('$("stepHelp").textContent=guides[step]'))});
 test("review error routing",()=>{for(const s of ["return 1","return 2","return 3","return 4","return 5","return 0"])assert.ok(script.includes(s))});
