@@ -1,0 +1,7 @@
+"use strict";
+(function(root,factory){const api=factory();if(typeof module==="object"&&module.exports)module.exports=api;else root.BoustioPhase29Usability=api;})(typeof globalThis!=="undefined"?globalThis:this,function(){
+const MESSAGES=Object.freeze({INVALID_DRAFT:"Please complete your business details.",BUSINESS_NAME_REQUIRED:"Enter a business name (up to 80 characters).",INVALID_SLUG:"Use lowercase letters, numbers and hyphens for your booking address.",INVALID_BUSINESS_TYPE:"Choose your business type.",INVALID_DESCRIPTION:"Keep your description under 300 characters and remove special control characters.",INVALID_SERVICES:"You can add up to 20 services.",INVALID_SERVICE:"Give every service a name, a price between £0 and £10,000, and a duration of 5–480 minutes.",INVALID_STAFF:"You can add up to 20 professionals.",INVALID_STAFF_MEMBER:"Check each professional's name and assigned services."});
+function slugify(value){return String(value||"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,48).replace(/-+$/g,"");}
+function friendlyErrors(codes){return [...new Set((codes||[]).map(code=>MESSAGES[code]||"Please check your setup details."))];}
+function progress(step){const current=Math.min(3,Math.max(0,Number.isFinite(step)?Math.floor(step):0));return {current:current+1,total:4,percent:(current+1)*25,label:"Step "+(current+1)+" of 4"};}
+return Object.freeze({slugify,friendlyErrors,progress,MESSAGES});});
