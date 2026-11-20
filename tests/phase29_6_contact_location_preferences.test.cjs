@@ -1,0 +1,11 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
+const html=fs.readFileSync(path.join(__dirname,"../web/phase29/onboarding-29-6.html"),"utf8");
+test("standalone preview has inline CSS and JavaScript",()=>{assert.match(html,/<style>/);assert.match(html,/<script>/);assert.doesNotMatch(html,/<script[^>]+src=/);assert.doesNotMatch(html,/<link[^>]+stylesheet/);});
+test("premium contact, location, preferences, review screens present",()=>{for(const s of ["Contact","Location","Preferences","Review","email","phone","website","address","town","postcode","locationType","notice","window","approval","cancellation"])assert.ok(html.includes(s),s);});
+test("offline isolation",()=>{for(const s of ["Firebase","Nothing saved or published","Publish business · Coming soon","disabled","No Firebase, network requests, storage"])assert.ok(html.includes(s));for(const s of ["fetch(","XMLHttpRequest","localStorage","sessionStorage","firebase.initializeApp","navigator.geolocation"])assert.equal(html.includes(s),false,s);});
+test("UK postcode, email, phone, website and booking preferences validation exist",()=>{for(const s of ["postcode.test(v.postcode)","v.email.length>254","v.phone.replace","new URL(v.website)","v.locationType","v.notice","v.window"])assert.ok(html.includes(s),s);});
+test("review uses textContent, not HTML injection",()=>{assert.match(html,/b.textContent=safe\(value\)/);assert.doesNotMatch(html,/innerHTML\s*=/);});
+test("invalid completion blocked and valid completion stays offline",()=>{assert.ok(html.includes('errors.length?"Please correct the highlighted details.":"Demo completed. Nothing saved or published."'));});
+test("inline script parses in Node without running browser",()=>{const match=html.match(/<script>([\s\S]*?)<\/script>/);assert.ok(match);new vm.Script(match[1]);});
+test("all four panels and four navigation steps",()=>{assert.equal((html.match(/data-panel="/g)||[]).length,4);assert.equal((html.match(/data-step="/g)||[]).length,4);});
