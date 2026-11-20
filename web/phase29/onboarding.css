@@ -15,3 +15,17 @@
 .review-entry:last-child{border-bottom:0}.review-entry span:last-child{text-align:right}
 .review-summary{font-size:13px;color:#54796e}
 @media(max-width:600px){.review-entry{flex-direction:column;gap:3px}.review-entry span:last-child{text-align:left}.item{padding:14px}.actions button{min-height:46px}}
+
+/* Phase 29.5 availability controls */
+.steps{grid-template-columns:repeat(5,minmax(0,1fr))}
+.hours-group{background:#fbfdfc;border:1px solid #dceae6;border-radius:16px;padding:16px;margin:14px 0}
+.hours-group h3{color:#087d74;font-size:16px;margin:0 0 12px}
+.hours-row{display:grid;grid-template-columns:105px 76px minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;border-top:1px solid #e4eee9;padding:11px 0}
+.hours-row label{margin:0;font-size:13px}
+.hours-row .day-name{font-weight:750}
+.hours-row .open-toggle{display:flex;align-items:center;gap:7px}
+.hours-row input[type=checkbox]{width:19px;height:19px;flex:none;accent-color:#087d74}
+.hours-row input[type=time]{padding:9px 6px;min-width:0;min-height:44px}
+.hours-row input:disabled{background:#f1f4f2}
+.hours-note{font-size:12px;color:#57766e}
+@media(max-width:650px){.steps{grid-template-columns:repeat(3,minmax(0,1fr))}.hours-group{padding:12px}.hours-row{grid-template-columns:minmax(75px,1fr) 80px;gap:8px}.hours-row .day-name{grid-column:1}.hours-row .open-toggle{grid-column:2}.hours-row .start-time{grid-column:1}.hours-row .end-time{grid-column:2}}
