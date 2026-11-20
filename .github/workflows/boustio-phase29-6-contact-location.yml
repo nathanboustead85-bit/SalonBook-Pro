@@ -1,0 +1,32 @@
+name: Boustio Phase 29.6 Offline Onboarding QA
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase29/onboarding-29-6.html'
+      - 'tests/phase29_6_contact_location_preferences.test.cjs'
+      - '.github/workflows/boustio-phase29-6-contact-location.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Phase 29.6 safety and preview tests
+        run: node --test tests/phase29_6_contact_location_preferences.test.cjs
+      - name: Run existing Phase 29 regressions
+        run: node --test tests/phase29*.test.cjs
+      - name: Confirm preview is standalone and offline
+        run: |
+          test -s web/phase29/onboarding-29-6.html
+          echo "OFFLINE_ONLY_NO_DEPLOYMENT_NO_LIVE_FEATURES"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase29-6-Samsung-Single-HTML
+          path: web/phase29/onboarding-29-6.html
+          retention-days: 14
