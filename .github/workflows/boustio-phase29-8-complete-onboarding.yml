@@ -1,0 +1,32 @@
+name: Boustio Phase 29.8 Complete Offline Onboarding QA
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase29/onboarding-29-8.html'
+      - 'tests/phase29_8_complete_onboarding.test.cjs'
+      - '.github/workflows/boustio-phase29-8-complete-onboarding.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Phase 29.8 isolated onboarding tests
+        run: node --test tests/phase29_8_complete_onboarding.test.cjs
+      - name: Run Phase 29 regression suite
+        run: node --test tests/phase29*.test.cjs
+      - name: Verify isolated HTML and no deployment
+        run: |
+          test -s web/phase29/onboarding-29-8.html
+          echo "OFFLINE_ONLY_NO_DEPLOYMENT_NO_LIVE_FEATURES"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase29-8-Samsung-Single-HTML
+          path: web/phase29/onboarding-29-8.html
+          retention-days: 14
