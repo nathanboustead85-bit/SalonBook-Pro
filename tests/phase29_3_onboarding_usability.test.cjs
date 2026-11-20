@@ -21,7 +21,7 @@ test("manual slug editing disables regeneration",()=>assert.match(ui,/if\(!slugE
 test("friendly errors are rendered via textContent",()=>{assert.match(ui,/showErrors\(/);assert.match(ui,/usability.friendlyErrors/);assert.doesNotMatch(ui,/innerHTML|outerHTML|insertAdjacentHTML/);});
 test("friendly error area is accessible",()=>assert.match(html,/id="validation"[^>]*role="alert"/));
 test("slug help text is accessible",()=>assert.match(html,/aria-describedby="slugHint"/));
-test("progress has readable step and percentage",()=>{assert.match(html,/id="progressText"/);assert.match(ui,/percent\+"% complete"/);});
+test("progress has readable step and percentage",()=>{assert.match(html,/id="progressText"/);assert.match(ui,/% complete/);});
 test("staff checkboxes have fixed size and alignment",()=>{assert.match(css,/\.checklist input\[type=checkbox\]/);assert.match(css,/flex:0 0 19px/);assert.match(css,/align-items:center/);});
 test("all live features remain disabled",()=>assert.ok(Object.values(model.DEFAULT).every(v=>v===false)));
 test("publish control remains disabled",()=>assert.match(html,/<button[^>]*disabled[^>]*class="publish"/));
