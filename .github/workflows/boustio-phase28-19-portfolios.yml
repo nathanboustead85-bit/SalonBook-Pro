@@ -1,0 +1,35 @@
+name: Boustio Phase 28.19 Staff Portfolios and Galleries
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase28/portfolio-*'
+      - 'tests/phase28_19_portfolio_gallery.test.cjs'
+      - '.github/workflows/boustio-phase28-19-portfolios.yml'
+permissions:
+  contents: read
+jobs:
+  portfolio-gallery-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test gallery policy, filtering and safety
+        run: node --test tests/phase28_19_portfolio_gallery.test.cjs
+      - name: Prepare Samsung-friendly offline preview
+        run: |
+          mkdir -p preview-dist
+          cp web/phase28/portfolio-preview.html web/phase28/portfolio-preview.css web/phase28/portfolio-preview.js web/phase28/portfolio-model.js preview-dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase28-19-Portfolios-Galleries
+          path: preview-dist/
+          retention-days: 14
+      - name: Verify deployment remains disabled
+        run: echo 'ISOLATED_DEMO_ONLY_NO_BOOKINGS_NO_UPLOAD_NO_DEPLOYMENT'
