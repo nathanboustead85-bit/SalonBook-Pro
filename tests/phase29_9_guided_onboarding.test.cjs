@@ -1,0 +1,15 @@
+"use strict";const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm"),path=require("node:path");const html=fs.readFileSync(path.join(__dirname,"../web/phase29/onboarding-29-9.html"),"utf8");const script=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+test("standalone HTML",()=>{assert.ok(html.startsWith("<!doctype html>"));assert.ok(script)});
+test("valid JavaScript",()=>{new vm.Script(script)});
+test("seven panels and navigation",()=>{assert.equal((html.match(/data-panel="/g)||[]).length,7);assert.equal((html.match(/data-step="/g)||[]).length,7)});
+test("seven guided steps",()=>{for(const s of ["Tell customers who you are","Add at least one service","Add at least one team member","Set your opening times","best contact details","how far ahead","Check everything together"])assert.ok(html.includes(s),s)});
+test("accessible live guidance",()=>{assert.ok(html.includes('id="stepHelp" aria-live="polite"'));assert.ok(script.includes('$("stepHelp").textContent=guides[step]'))});
+test("review error routing",()=>{for(const s of ["return 1","return 2","return 3","return 4","return 5","return 0"])assert.ok(script.includes(s))});
+test("review issue links and focus",()=>{for(const s of ['jumps.replaceChildren()','"Fix "+sectionNames[target]','show(target)','first.focus()'])assert.ok(script.includes(s));assert.ok(!script.includes("innerHTML"))});
+test("publishing disabled",()=>assert.match(html,/disabled[^>]*>Publish business · Disabled/));
+test("invalid finish blocked",()=>assert.ok(script.includes("if(review().length)")));
+test("offline completion and reset",()=>{assert.ok(html.includes("Nothing was saved, published or sent."));assert.ok(script.includes('resetData();$("completion").hidden=true'))});
+test("no network or storage",()=>{for(const x of ["fetch(","XMLHttpRequest","localStorage.","sessionStorage.","indexedDB.","firebase.","<script src=","<iframe","<link "])assert.equal(html.includes(x),false,x)});
+test("service and staff validation",()=>{for(const s of ["Add at least one service.","Add at least one staff member.","price>10000","staff.length>=20"])assert.ok(html.includes(s))});
+test("hours validation",()=>{assert.ok(script.includes("h.start>=h.end"));assert.ok(script.includes("Open at least one day."))});
+test("responsive progress",()=>{for(const s of ['role="progressbar"','aria-valuenow','@media(max-width:460px)'])assert.ok(html.includes(s))});
