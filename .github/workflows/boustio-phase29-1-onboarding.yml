@@ -1,0 +1,26 @@
+name: Boustio Phase 29.1 Onboarding Contract (Offline Only)
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase29/onboarding-model.js'
+      - 'tests/phase29_1_onboarding.test.cjs'
+      - '.github/workflows/boustio-phase29-1-onboarding.yml'
+permissions:
+  contents: read
+jobs:
+  onboarding-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate offline onboarding draft contract and launch guards
+        run: node --test tests/phase29_1_onboarding.test.cjs
+      - name: Confirm no deployment
+        run: echo 'PHASE29_ONBOARDING_OFFLINE_ONLY_NO_DEPLOYMENT_NO_BOOKINGS'
