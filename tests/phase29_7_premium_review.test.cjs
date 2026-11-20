@@ -1,0 +1,15 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
+const html=fs.readFileSync(path.join(__dirname,"../web/phase29/onboarding-29-7.html"),"utf8");
+test("standalone HTML with inline styles and script",()=>{assert.match(html,/<style>/);assert.match(html,/<script>/);assert.doesNotMatch(html,/<script[^>]+src=/);assert.doesNotMatch(html,/<link[^>]+stylesheet/);});
+test("four setup screens and navigation steps",()=>{assert.equal((html.match(/data-panel="/g)||[]).length,4);assert.equal((html.match(/data-step="/g)||[]).length,4);});
+test("premium progress and accessible controls",()=>{for(const s of ["role=\"progressbar\"","aria-valuenow","progressFill","aria-live=\"polite\"","25%","100%"])assert.ok(html.includes(s),s);});
+test("full review has editable sections",()=>{for(const s of ["Everything in one place.","Edit ","Business","Contact","Booking","show(target)"])assert.ok(html.includes(s),s);});
+test("missing and invalid business fields are checked",()=>{for(const s of ["Business name is required.","Enter a valid address.","Enter a valid UK postcode.","Enter a valid business email.","Enter a valid phone number.","Enter a valid website URL.","Check booking preferences."])assert.ok(html.includes(s),s);});
+test("review and completion use safe text insertion",()=>{assert.match(html,/b.textContent=String\(value\)/);assert.match(html,/li.textContent=e/);assert.doesNotMatch(html,/innerHTML\s*=/);});
+test("finish is guarded by validation",()=>{assert.ok(html.includes("if(errors.length)"));assert.ok(html.includes("Please correct the highlighted details before finishing."));});
+test("completion confirms nothing published",()=>{assert.ok(html.includes("Nothing was saved, published or sent."));assert.ok(html.includes("Start a fresh demo"));});
+test("restart resets in-memory defaults",()=>{assert.ok(html.includes('$("restart").addEventListener'));assert.ok(html.includes("defaults[id]"));});
+test("publishing disabled",()=>{assert.match(html,/disabled class="secondary"[^>]*>Publish business · Disabled/);});
+test("no network, storage, Firebase, uploads or external assets",()=>{for(const s of ["fetch(","XMLHttpRequest","localStorage.","sessionStorage.","indexedDB.","firebase.initializeApp","navigator.geolocation","<iframe","<img ","<link "])assert.equal(html.includes(s),false,s);});
+test("inline JavaScript parses",()=>{const m=html.match(/<script>([\s\S]*?)<\/script>/);assert.ok(m);new vm.Script(m[1]);});
