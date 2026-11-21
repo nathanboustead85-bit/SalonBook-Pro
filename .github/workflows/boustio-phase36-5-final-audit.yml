@@ -1,0 +1,60 @@
+name: Boustio Phase 36.5 Final Isolated Security Audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase36/final-integration-audit-36-5.js'
+      - 'tests/phase36_5_final_integration_audit.test.cjs'
+      - 'web/phase36/README-36-5.md'
+      - '.github/workflows/boustio-phase36-5-final-audit.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-security-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase36-5
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:19099
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated Firebase test dependencies
+        run: npm install --no-save --no-package-lock firebase@11 firebase-admin@13 @firebase/rules-unit-testing@4 firebase-tools@14
+      - name: Phase 36.5 real Auth and Firestore emulator security audit
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase36-5 --config firebase.phase32-4.json "node --test tests/phase36_5_final_integration_audit.test.cjs"
+      - name: Phase 36.4 emulator regression
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase36-4 --config firebase.phase32-4.json "node --test tests/phase36_4_secure_dashboard_session.test.cjs"
+        env:
+          GCLOUD_PROJECT: demo-boustio-phase36-4
+      - name: Phase 36.3 emulator regression
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase36-3 --config firebase.phase32-4.json "node --test tests/phase36_3_auth_listener.test.cjs"
+        env:
+          GCLOUD_PROJECT: demo-boustio-phase36-3
+      - name: Phase 36.2 emulator regression
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase36-2 --config firebase.phase32-4.json "node --test tests/phase36_2_verified_owner_session.test.cjs"
+        env:
+          GCLOUD_PROJECT: demo-boustio-phase36-2
+      - name: Phase 36.1 emulator regression
+        run: npx firebase-tools emulators:exec --only firestore --project demo-boustio-phase36-1 --config firebase.phase32-4.json "node --test tests/phase36_1_android_adapter.test.cjs"
+        env:
+          GCLOUD_PROJECT: demo-boustio-phase36-1
+      - name: Phase 34 regression
+        run: node --test tests/phase34_*.test.cjs
+      - name: Phase 33 regression
+        run: node --test tests/phase33_*.test.cjs
+      - name: Phase 35.5 final audit regression
+        run: node --test tests/phase35_5_final_audit.test.cjs
+      - name: No deployment verification
+        run: |
+          test -s firestore.rules
+          test -s firebase.phase32-4.json
+          echo "PHASE36_5_ISOLATED_FINAL_AUDIT_NO_DEPLOYMENT"
