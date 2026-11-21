@@ -1,0 +1,34 @@
+name: Boustio Phase 30.17 Date Availability Preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase30/booking-30-17.html'
+      - 'tests/phase30_17_date_availability.test.cjs'
+      - '.github/workflows/boustio-phase30-17-date-availability.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test date availability badges
+        run: node --test tests/phase30_17_date_availability.test.cjs
+      - name: Full Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Preserve Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: Verify offline preview
+        run: |
+          test -s web/phase30/booking-30-17.html
+          echo "OFFLINE_PREVIEW_NO_BOOKINGS_NO_DEPLOYMENT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase30-17-Samsung-HTML
+          path: web/phase30/booking-30-17.html
+          retention-days: 30
