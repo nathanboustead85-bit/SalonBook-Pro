@@ -1,0 +1,39 @@
+name: Boustio Phase 35.4 Isolated Network and Retry Recovery
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase35/network-recovery-35-4.js'
+      - 'tests/phase35_4_network_recovery.test.cjs'
+      - 'web/phase35/README-35-4.md'
+      - '.github/workflows/boustio-phase35-4-network-recovery.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-network-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase35-4
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated Firebase test dependencies
+        run: npm install --no-save --no-package-lock firebase@11 @firebase/rules-unit-testing@4 firebase-tools@14
+      - name: Real Firestore emulator and injected network failure tests
+        run: npx firebase-tools emulators:exec --only firestore --project demo-boustio-phase35-4 --config firebase.phase32-4.json "node --test tests/phase35_4_network_recovery.test.cjs"
+      - name: Phase 34 regression
+        run: node --test tests/phase34_*.test.cjs
+      - name: No deployment verification
+        run: |
+          test -s firestore.rules
+          test -s firebase.phase32-4.json
+          echo "PHASE35_4_EMULATOR_ONLY_NO_DEPLOYMENT"
