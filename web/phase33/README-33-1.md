@@ -1,0 +1,5 @@
+# Phase 33.1 — Read-only business dashboard adapter foundation
+
+A pure, isolated adapter accepts **already fetched, owner-authorized** business snapshots and emits immutable dashboard states: LOADING, UNAVAILABLE or READ_ONLY_READY. It checks verified owner identity, business ownership, disabled booking flag, snapshot expiry and matching service owner/revision. It uses Phase 32.9's strict service preview validator and fails closed on corrupt records. All states set bookingEnabled=false; no editing API exists.
+
+This is **not a production Firebase data reader, dashboard UI integration or permission enforcement boundary**. Caller identity and expiry are inputs supplied by a trusted future integration; production authorization must still be enforced by Firestore rules and trusted auth. The Phase 32.9 proposed pricePence schema may not match actual stored services, requiring a separately tested mapping before live dashboard wiring. No Android data, production Firebase rules, appointments, payments, messaging or deployment are modified.
