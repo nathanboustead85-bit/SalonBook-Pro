@@ -1,6 +1,6 @@
 "use strict";
 // Phase 32.9: isolated, read-only business data integrity gate.
-// No Firestore writes, storage, network calls, or live booking activation.
+// Pure data transformation; no external services, persistence or booking activation.
 const MAX_JSON_CHARS=500000,MAX_RECORDS=500;
 const unavailable=reason=>Object.freeze({status:"UNAVAILABLE",reason,bookingEnabled:false,services:Object.freeze([])});
 const isObject=v=>v!==null&&typeof v==="object"&&!Array.isArray(v);
