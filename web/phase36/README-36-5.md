@@ -1,0 +1,5 @@
+# Phase 36.5 — Final isolated Auth and business dashboard audit
+
+Composes Phases 36.1–36.4 in an isolated read-only dashboard audit facade. The audit verifies all display states disable booking, editing, messaging and payments, and that signed-out, loading, recovery and unavailable states never retain private business information. Real Firebase Auth and Firestore emulator tests cover verified login, unverified account rejection, cross-owner rules, sign-out, account switch, expired token, stale async refresh, network recovery and retry.
+
+CI re-runs all Phase 36.1–36.4 emulator suites plus Phase 33/34 and Phase 35.5 regressions. No Firebase production project is initialized, no rules or config deployed, no Android appointments read, no production writes, no live bookings/payments/messaging. The Firestore security contexts are synthetic rules-unit-testing contexts, not real Auth ID tokens attached to a Firestore client. Emulator success is **not** production readiness; real browser/Android integration, App Check, token revocation and deployment gates remain outstanding.
