@@ -1,0 +1,30 @@
+name: Boustio Phase 31.1 Read Only Business Data
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase31/**'
+      - 'tests/phase31_1_read_only_business.test.cjs'
+      - '.github/workflows/boustio-phase31-1-read-only-business.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-read-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 31.1 read-only contract and safety tests
+        run: node --test tests/phase31_1_read_only_business.test.cjs
+      - name: Preserve Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Preserve Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: Verify no deployment and read-only fixture
+        run: |
+          test -s web/phase31/read-only-business-data-31-1.js
+          test -s web/phase31/fixtures/business-snapshot-31-1.json
+          echo "NO_FIREBASE_NO_BOOKING_WRITES_NO_DEPLOYMENT"
