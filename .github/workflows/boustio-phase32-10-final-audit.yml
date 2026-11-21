@@ -1,0 +1,52 @@
+name: Boustio Phase 32.10 Final Isolated Firebase Security and Data Recovery Audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'tests/phase32_10_final_audit.test.cjs'
+      - 'web/phase32/README-32-10.md'
+      - '.github/workflows/boustio-phase32-10-final-audit.yml'
+      - 'firestore.rules'
+      - 'firebase.phase32-4.json'
+      - 'web/phase32/**'
+      - 'tests/phase32*'
+permissions:
+  contents: read
+jobs:
+  final-phase32-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated Firebase test dependencies
+        run: npm install --no-save --no-package-lock --ignore-scripts firebase@11 @firebase/rules-unit-testing@4
+      - name: Phase 32.1 and 32.2 static staging guards and 32.9 corruption recovery
+        run: node --test tests/phase32_1_staging_preparation.test.cjs tests/phase32_2_emulator_validation.test.cjs tests/phase32_9_content_recovery.test.cjs tests/phase32_10_final_audit.test.cjs
+      - name: Phase 32.3 isolated deny-all Firestore and Auth emulator smoke tests
+        run: |
+          npx --yes firebase-tools@14 emulators:exec --non-interactive --only firestore,auth --project demo-boustio-phase32-staging --config web/phase32/firebase.emulator-32-3.json "node --test tests/phase32_3_emulator_runtime.test.cjs"
+      - name: Phase 32.4 through 32.8 real Firestore rules security and integrity emulator suites
+        run: |
+          npx --yes firebase-tools@14 emulators:exec --non-interactive --only firestore,auth --project demo-boustio-phase32-staging --config firebase.phase32-4.json "node --test tests/phase32_4_owner_rules.test.cjs tests/phase32_5_multi_owner_rules.test.cjs tests/phase32_6_concurrent_booking_rules.test.cjs tests/phase32_7_booking_mode_migration.test.cjs tests/phase32_8_business_payload_integrity.test.cjs"
+      - name: Phase 31 complete regression
+        run: node --test tests/phase31_*.test.cjs
+      - name: Phase 30 complete regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Phase 29 complete regression
+        run: node --test tests/phase29*.test.cjs
+      - name: Verify no deployment and isolated demo-only configuration
+        run: |
+          test -s firestore.rules
+          test -s firebase.phase32-4.json
+          test -s web/phase32/firestore-deny-all-32-3.rules
+          echo "PHASE32_10_AUDIT_DEMO_EMULATORS_ONLY_NO_DEPLOYMENT"
