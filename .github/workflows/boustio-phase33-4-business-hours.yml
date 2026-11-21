@@ -1,0 +1,37 @@
+name: Boustio Phase 33.4 Read-Only Business Hours Compatibility
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase33/opening-hours-33-4.js'
+      - 'tests/phase33_4_opening_hours.test.cjs'
+      - 'web/phase33/README-33-4.md'
+      - '.github/workflows/boustio-phase33-4-business-hours.yml'
+permissions:
+  contents: read
+jobs:
+  business-hours:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 33.4 business hours and closed day tests
+        run: node --test tests/phase33_4_opening_hours.test.cjs
+      - name: Phase 33.1 through 33.3 regression
+        run: node --test tests/phase33_1_dashboard_adapter.test.cjs tests/phase33_2_legacy_services.test.cjs tests/phase33_3_staff_mapping.test.cjs
+      - name: Phase 32 offline safety regression
+        run: node --test tests/phase32_9_content_recovery.test.cjs tests/phase32_1_staging_preparation.test.cjs tests/phase32_2_emulator_validation.test.cjs tests/phase32_10_final_audit.test.cjs
+      - name: Phase 31 regression
+        run: node --test tests/phase31_*.test.cjs
+      - name: Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: No deployment verification
+        run: |
+          test -s firestore.rules
+          echo "PHASE33_4_OFFLINE_READ_ONLY_NO_DEPLOYMENT"
