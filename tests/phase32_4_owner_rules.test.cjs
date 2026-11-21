@@ -3,12 +3,12 @@ const test=require("node:test"),assert=require("node:assert/strict"),fs=require(
 const {initializeTestEnvironment,assertSucceeds,assertFails}=require("@firebase/rules-unit-testing");
 const {doc,getDoc,setDoc,deleteDoc,collection,getDocs,Timestamp}=require("firebase/firestore");
 const root=path.resolve(__dirname,".."),projectId="demo-boustio-phase32-staging";
-const cfg=JSON.parse(fs.readFileSync(path.join(root,"web/phase32/firebase.emulator-32-4.json"),"utf8"));
+const cfg=JSON.parse(fs.readFileSync(path.join(root,"firebase.phase32-4.json"),"utf8"));
 const rules=fs.readFileSync(path.join(root,"firestore.rules"),"utf8");
 test("Phase 32.4 real production rules: isolated business-owner authorization",async t=>{
  assert.equal(process.env.FIRESTORE_EMULATOR_HOST,"127.0.0.1:18080");
  assert.equal(process.env.GCLOUD_PROJECT,projectId);
- assert.equal(cfg.firestore.rules,"../../firestore.rules");
+ assert.equal(cfg.firestore.rules,"firestore.rules");
  assert.equal(cfg.emulators.firestore.host,"127.0.0.1");
  assert.equal(cfg.emulators.auth.host,"127.0.0.1");
  assert(!JSON.stringify(cfg).includes("salonbook-pro-ad5ff"));
