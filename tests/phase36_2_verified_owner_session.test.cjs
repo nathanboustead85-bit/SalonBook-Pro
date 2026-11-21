@@ -15,11 +15,17 @@ const seed=async(uid,name)=>env.withSecurityRulesDisabled(async c=>{const db=c.f
 const context=(uid,verified)=>env.authenticatedContext(uid,{email_verified:verified}).firestore();
 const bridge=(db=context(owner.uid,true),sdkAuth=auth)=>createVerifiedOwnerSession({auth:sdkAuth,db,doc,runTransaction,getIdTokenResult});
 async function verifyInAuthEmulator(user){
- const r=await fetch("http://127.0.0.1:19099/emulator/v1/projects/"+PROJECT+"/accounts:lookup",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({localId:user.uid})});
- // Emulator admin API lookup shape differs across versions; use accounts:update instead.
- const response=await fetch("http://127.0.0.1:19099/identitytoolkit.googleapis.com/v1/accounts:update?key=fake-api-key",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({idToken:await user.getIdToken(),emailVerified:true,returnSecureToken:true})});
- assert.equal(response.status,200,await response.text().catch(()=>""));
- await reload(user);await user.getIdToken(true);
+ // Firebase Auth emulator privileged admin API; localhost demo project only.
+ // The regular Identity Toolkit accounts:update endpoint does not elevate emailVerified.
+ const response=await fetch("http://127.0.0.1:19099/emulator/v1/projects/"+PROJECT+"/accounts",{
+  method:"PATCH",headers:{"content-type":"application/json"},
+  body:JSON.stringify({users:[{localId:user.uid,emailVerified:true}]})
+ });
+ assert.equal(response.status,200,"emulator verification update failed: "+await response.text().catch(()=>""));
+ await reload(user);
+ const token=await getIdTokenResult(user,true);
+ assert.equal(user.emailVerified,true,"emulator account must be verified");
+ assert.equal(token.claims.email_verified,true,"refreshed token must reflect verification");
 }
 test.before(async()=>{
  env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:"127.0.0.1",port:18080,rules:fs.readFileSync("firestore.rules","utf8")}});
