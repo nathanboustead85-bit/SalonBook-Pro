@@ -5,6 +5,7 @@ on:
     branches: [milestone-customer-booking-experience]
     paths:
       - 'web/phase36/final-integration-audit-36-5.js'
+      - 'tests/phase36_3_auth_listener.test.cjs'
       - 'tests/phase36_5_final_integration_audit.test.cjs'
       - 'web/phase36/README-36-5.md'
       - '.github/workflows/boustio-phase36-5-final-audit.yml'
