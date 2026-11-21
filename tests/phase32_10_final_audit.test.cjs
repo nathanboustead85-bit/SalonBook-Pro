@@ -1,0 +1,13 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const root=path.resolve(__dirname,"..");
+const read=p=>fs.readFileSync(path.join(root,p),"utf8");
+const wf=read(".github/workflows/boustio-phase32-10-final-audit.yml");
+test("audit workflow is manually runnable and branch scoped",()=>{assert.match(wf,/workflow_dispatch:/);assert.match(wf,/milestone-customer-booking-experience/);assert.match(wf,/contents: read/)});
+for(const name of ["phase32_1_staging_preparation","phase32_2_emulator_validation","phase32_3_emulator_runtime","phase32_4_owner_rules","phase32_5_multi_owner_rules","phase32_6_concurrent_booking_rules","phase32_7_booking_mode_migration","phase32_8_business_payload_integrity","phase32_9_content_recovery","phase32_10_final_audit"])test("workflow includes "+name,()=>{assert(wf.includes(name+".test.cjs"));assert(fs.existsSync(path.join(root,"tests",name+".test.cjs")))});
+test("both isolated emulators use demo project and explicit configs",()=>{assert.equal((wf.match(/--project demo-boustio-phase32-staging/g)||[]).length,2);assert(wf.includes("--config firebase.phase32-4.json"));assert(wf.includes("--config web/phase32/firebase.emulator-32-3.json"));assert(wf.includes("--only firestore,auth"))});
+test("all earlier regression suites run",()=>{for(const p of ["phase31_*.test.cjs","phase30*.test.cjs","phase29*.test.cjs"])assert(wf.includes(p))});
+test("audit workflow contains no deployment, cloud writes or secret injection",()=>{assert.doesNotMatch(wf,/firebase deploy|gcloud deploy|actions\/deploy|secrets\.|service.account|GOOGLE_APPLICATION_CREDENTIALS|--project salonbook-pro-ad5ff/i)});
+test("real rules emulator config uses production rules path only inside local emulator",()=>{const c=JSON.parse(read("firebase.phase32-4.json"));assert.equal(c.firestore.rules,"firestore.rules");assert.equal(c.emulators.firestore.host,"127.0.0.1");assert.equal(c.emulators.auth.host,"127.0.0.1");assert.equal(c.emulators.ui.enabled,false)});
+test("Phase 32.9 validation remains pure and never writes",()=>{const s=read("web/phase32/content-validation-32-9.js");assert.doesNotMatch(s,/\bfetch\s*\(|XMLHttpRequest|localStorage|sessionStorage|\.setDoc\s*\(|\.updateDoc\s*\(|deploy\s*\(/i);assert.match(s,/bookingEnabled:false/)});
+test("audit does not mutate production rules or Android appointments",()=>{assert(wf.includes("node --test"));assert.doesNotMatch(wf,/gradlew|adb |firestore:delete|firebase deploy|git push|curl .*POST/i)});
