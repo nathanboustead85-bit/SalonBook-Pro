@@ -1,0 +1,39 @@
+name: Boustio Phase 31.10 Final Offline Booking Safety Audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'tests/phase31_10_final_offline_audit.test.cjs'
+      - 'web/phase31/README-31-10.md'
+      - '.github/workflows/boustio-phase31-10-final-offline-audit.yml'
+permissions:
+  contents: read
+jobs:
+  offline-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 31.10 integration and safety audit
+        run: node --test tests/phase31_10_final_offline_audit.test.cjs
+      - name: Full Phase 31 regression
+        run: node --test tests/phase31_*.test.cjs
+      - name: Existing availability compatibility
+        run: |
+          node tests/phase1238_availability_preview.test.js
+          node tests/phase1239_catalogue_adapter.test.js
+          node tests/phase1280_catalogue_contract.test.js
+          node tests/phase1240_public_availability_projection.test.js
+      - name: Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: Offline-only safety and report guard
+        run: |
+          test -s web/phase31/README-31-10.md
+          test -s tests/phase31_10_final_offline_audit.test.cjs
+          echo "OFFLINE_AUDIT_ONLY_NO_LIVE_BOOKINGS_NO_PAYMENTS_NO_MESSAGING_NO_DEPLOYMENT"
