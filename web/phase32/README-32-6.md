@@ -1,0 +1,5 @@
+# Phase 32.6 — Concurrent client booking security tests
+
+Runs the repository's actual `firestore.rules` against local Firestore/Auth emulators with the fictional `demo-boustio-phase32-staging` project. Tests concurrently attempt direct client creates, updates, deletes and reads against server-only customer booking reservations, requests, guards, locks, migration markers, booking mode and appointments using verified, unverified, other-owner and anonymous contexts. Tests also reject a multi-document write batch and an unauthorised appointment transaction, then confirm synthetic server-only records were not altered. A verified owner appointment read is a positive control.
+
+These tests validate **Firestore client SDK rule enforcement** only. They do not establish that trusted Admin SDK backend transactions prevent double bookings, because Admin SDK bypasses Firestore rules. No production credentials, customer data, live bookings, payments, messaging or deployment are used. Existing Android appointments and production rules are not modified.
