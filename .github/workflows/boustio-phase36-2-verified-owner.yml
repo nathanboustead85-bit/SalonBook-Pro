@@ -28,7 +28,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Install isolated Firebase test dependencies
-        run: npm install --no-save --no-package-lock firebase@11 @firebase/rules-unit-testing@4 firebase-tools@14
+        run: npm install --no-save --no-package-lock firebase@11 firebase-admin@13 @firebase/rules-unit-testing@4 firebase-tools@14
       - name: Real Auth and Firestore emulator verified owner session tests
         run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase36-2 --config firebase.phase32-4.json "node --test tests/phase36_2_verified_owner_session.test.cjs"
       - name: Phase 34 regression suite
