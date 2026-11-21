@@ -1,0 +1,37 @@
+name: Boustio Phase 33.2 Legacy Services Read-Only Compatibility
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase33/legacy-services-map-33-2.js'
+      - 'tests/phase33_2_legacy_services.test.cjs'
+      - 'web/phase33/README-33-2.md'
+      - '.github/workflows/boustio-phase33-2-legacy-compatibility.yml'
+permissions:
+  contents: read
+jobs:
+  legacy-schema-compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 33.2 Android service compatibility tests
+        run: node --test tests/phase33_2_legacy_services.test.cjs
+      - name: Phase 33.1 dashboard security regression
+        run: node --test tests/phase33_1_dashboard_adapter.test.cjs
+      - name: Phase 32 corruption and staging regressions
+        run: node --test tests/phase32_9_content_recovery.test.cjs tests/phase32_1_staging_preparation.test.cjs tests/phase32_2_emulator_validation.test.cjs tests/phase32_10_final_audit.test.cjs
+      - name: Phase 31 regression
+        run: node --test tests/phase31_*.test.cjs
+      - name: Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: No deployment verification
+        run: |
+          test -s firestore.rules
+          echo "PHASE33_2_OFFLINE_READ_ONLY_NO_DEPLOYMENT"
