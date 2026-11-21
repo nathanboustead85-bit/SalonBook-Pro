@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "mode": "PREPARATION_ONLY",
+  "projectId": "demo-boustio-phase32-staging",
+  "networkEnabled": false,
+  "deployEnabled": false,
+  "liveBookings": false,
+  "paymentsEnabled": false,
+  "messagingEnabled": false
+}
