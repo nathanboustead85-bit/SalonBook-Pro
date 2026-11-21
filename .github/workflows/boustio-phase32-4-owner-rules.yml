@@ -4,7 +4,7 @@ on:
   push:
     branches: [milestone-customer-booking-experience]
     paths:
-      - 'web/phase32/firebase.emulator-32-4.json'
+      - 'firebase.phase32-4.json'
       - 'tests/phase32_4_owner_rules.test.cjs'
       - 'web/phase32/README-32-4.md'
       - '.github/workflows/boustio-phase32-4-owner-rules.yml'
@@ -32,7 +32,7 @@ jobs:
         run: node --test tests/phase32_1_staging_preparation.test.cjs tests/phase32_2_emulator_validation.test.cjs
       - name: Run actual repository Firestore rules against local demo emulator
         run: |
-          npx --yes firebase-tools@14 emulators:exec --non-interactive --only firestore,auth --project demo-boustio-phase32-staging --config web/phase32/firebase.emulator-32-4.json "node --test tests/phase32_4_owner_rules.test.cjs"
+          npx --yes firebase-tools@14 emulators:exec --non-interactive --only firestore,auth --project demo-boustio-phase32-staging --config firebase.phase32-4.json "node --test tests/phase32_4_owner_rules.test.cjs"
       - name: Phase 31 regression
         run: node --test tests/phase31_*.test.cjs
       - name: Phase 30 regression
