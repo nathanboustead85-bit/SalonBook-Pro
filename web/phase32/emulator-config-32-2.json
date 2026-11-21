@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "mode": "PREPARATION_ONLY",
+  "projectId": "demo-boustio-phase32-staging",
+  "networkEnabled": false,
+  "deployEnabled": false,
+  "liveBookings": false,
+  "paymentsEnabled": false,
+  "messagingEnabled": false,
+  "emulators": {
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 18080
+    },
+    "auth": {
+      "host": "127.0.0.1",
+      "port": 19099
+    },
+    "uiEnabled": false,
+    "singleProjectMode": true
+  }
+}
