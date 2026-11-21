@@ -1,0 +1,40 @@
+name: Boustio Phase 35.3 Isolated Auth Lifecycle and Recovery
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase35/auth-lifecycle-35-3.js'
+      - 'tests/phase35_3_auth_lifecycle.test.cjs'
+      - 'web/phase35/README-35-3.md'
+      - '.github/workflows/boustio-phase35-3-auth-lifecycle.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-auth-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase35-3
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:19099
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated Firebase test dependencies
+        run: npm install --no-save --no-package-lock firebase@11 @firebase/rules-unit-testing@4 firebase-tools@14
+      - name: Real Auth and Firestore emulator lifecycle tests
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase35-3 --config firebase.phase32-4.json "node --test tests/phase35_3_auth_lifecycle.test.cjs"
+      - name: Phase 34 offline regression
+        run: node --test tests/phase34_*.test.cjs
+      - name: No deployment verification
+        run: |
+          test -s firestore.rules
+          test -s firebase.phase32-4.json
+          echo "PHASE35_3_AUTH_FIRESTORE_EMULATORS_ONLY_NO_DEPLOYMENT"
