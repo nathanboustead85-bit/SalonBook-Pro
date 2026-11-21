@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "businessId": "demo-kody-blends",
+  "profile": {
+    "name": "Kody Blends",
+    "category": "Barbering",
+    "location": "Torquay · illustrative location",
+    "description": "Offline illustrative business snapshot, not a live Firebase record."
+  },
+  "services": [
+    {
+      "id": "cut",
+      "name": "Signature Haircut",
+      "description": "Precision cut and finish",
+      "durationMinutes": 30,
+      "pricePence": 2000,
+      "active": true
+    },
+    {
+      "id": "fade",
+      "name": "Skin Fade",
+      "description": "Clean fade",
+      "durationMinutes": 45,
+      "pricePence": 2500,
+      "active": true
+    },
+    {
+      "id": "beard",
+      "name": "Beard Shape & Trim",
+      "description": "Beard tidy",
+      "durationMinutes": 20,
+      "pricePence": 1200,
+      "active": true
+    }
+  ],
+  "staff": [
+    {
+      "id": "sam",
+      "name": "Sam",
+      "serviceIds": [
+        "cut",
+        "fade"
+      ],
+      "active": true
+    },
+    {
+      "id": "alex",
+      "name": "Alex",
+      "serviceIds": [
+        "cut",
+        "beard"
+      ],
+      "active": true
+    }
+  ],
+  "openingHours": {
+    "mon": {
+      "closed": false,
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "tue": {
+      "closed": false,
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "wed": {
+      "closed": false,
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "thu": {
+      "closed": false,
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "fri": {
+      "closed": false,
+      "open": "09:00",
+      "close": "17:00"
+    },
+    "sat": {
+      "closed": true
+    },
+    "sun": {
+      "closed": true
+    }
+  }
+}
