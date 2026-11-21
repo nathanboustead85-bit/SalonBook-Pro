@@ -1,0 +1,42 @@
+name: Boustio Phase 32.1 Isolated Staging Preparation
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase32/staging-guard-32-1.js'
+      - 'web/phase32/staging-config-32-1.json'
+      - 'web/phase32/README-32-1.md'
+      - 'tests/phase32_1_staging_preparation.test.cjs'
+      - '.github/workflows/boustio-phase32-1-staging-preparation.yml'
+permissions:
+  contents: read
+jobs:
+  offline-staging-preparation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BOUSTIO_STAGING_MODE: PREPARATION_ONLY
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 32.1 isolated staging guard tests
+        run: node --test tests/phase32_1_staging_preparation.test.cjs
+      - name: Phase 31 full regression
+        run: node --test tests/phase31_*.test.cjs
+      - name: Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: Existing availability compatibility
+        run: |
+          node tests/phase1238_availability_preview.test.js
+          node tests/phase1239_catalogue_adapter.test.js
+          node tests/phase1280_catalogue_contract.test.js
+          node tests/phase1240_public_availability_projection.test.js
+      - name: Explicit no-deployment check
+        run: |
+          test -s web/phase32/README-32-1.md
+          echo "NO_CREDENTIALS_NO_NETWORK_NO_FIREBASE_DEPLOY_NO_LIVE_BOOKINGS_NO_PAYMENTS_NO_MESSAGING"
