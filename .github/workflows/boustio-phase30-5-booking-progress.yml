@@ -1,0 +1,34 @@
+name: Boustio Phase 30.5 Booking Progress Preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase30/booking-30-5.html'
+      - 'tests/phase30_5_booking_progress.test.cjs'
+      - '.github/workflows/boustio-phase30-5-booking-progress.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test booking progress and navigation
+        run: node --test tests/phase30_5_booking_progress.test.cjs
+      - name: Full Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Preserve Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: Verify standalone preview
+        run: |
+          test -s web/phase30/booking-30-5.html
+          echo "OFFLINE_PREVIEW_NO_BOOKINGS_NO_DEPLOYMENT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase30-5-Samsung-HTML
+          path: web/phase30/booking-30-5.html
+          retention-days: 30
