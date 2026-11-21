@@ -1,0 +1,7 @@
+# Phase 31.4 — Read-only unavailable states and explicit retry policy
+
+The pure state machine accepts **already-authorized** read outcomes. It does not perform network reads, wait, schedule timers, save caches or contact Firebase. `startRead` transitions IDLE to LOADING; `settleRead` accepts only fresh, valid Phase 31.3 envelopes and returns READY. All errors remove display data and disable booking. `invalidateRead` removes display data immediately.
+
+Only `network_unavailable`, `timeout` and `temporarily_unavailable` allow an **explicit caller-initiated retry**, with at most three total attempts. No automatic retries, no exponential loop, no cache fallback. Unknown, authorization, missing, unpublished, malformed, stale or cross-business data fail closed. Raw errors and private records are never reflected in public results. Retry requires a fresh new outcome and still passes full schema/freshness validation. The caller must not treat retry eligibility as authorization to access private Firestore records.
+
+This is a **staging-only contract**: no real Firestore reader or public catalogue publisher has been connected. The supplied clock and read result are inputs, not trusted browser security controls. Server-side authorization and atomic publication are still prerequisites for production. No Android, original appointments, Firestore rules, live bookings, payments, messaging or deployment changed.
