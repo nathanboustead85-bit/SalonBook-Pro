@@ -4,7 +4,7 @@ const html=fs.readFileSync(path.join(__dirname,"../web/phase30/booking-30-17.htm
 const elements=new Map();function el(id){if(!elements.has(id))elements.set(id,{value:id==="visitType"?"regular":"",textContent:"",hidden:true,disabled:true,style:{},attributes:{},children:[],listeners:{},replaceChildren(){this.children=[]},append(...x){this.children.push(...x)},setAttribute(k,v){this.attributes[k]=v},addEventListener(k,fn){this.listeners[k]=fn},scrollIntoView(){this.scrolled=true}});return elements.get(id)}
 const sandbox={document:{getElementById:el,createElement:()=>({textContent:"",className:"",attributes:{},children:[],listeners:{},setAttribute(k,v){this.attributes[k]=v},addEventListener(k,fn){this.listeners[k]=fn},append(...x){this.children.push(...x)}})}};vm.createContext(sandbox);vm.runInContext(js,sandbox);const run=s=>vm.runInContext(s,sandbox);
 const checks=[
-["standalone HTML",/^<!doctype html>/i.test(html)],["phase 30.16",html.includes("Phase 30.16")],
+["standalone HTML",/^<!doctype html>/i.test(html)],["phase 30.17",html.includes("Phase 30.17")],
 ["quick booking wrapper",html.includes('class="quick-book"')],["quick booking button",html.includes('id="findNextAvailable"')],
 ["quick booking feedback",html.includes('id="quickBookFeedback" role="status" aria-live="polite"')],
 ["shortcut function",html.includes("function findNextAvailable()")],["search feedback",html.includes("No illustrative ")],
@@ -110,7 +110,7 @@ test("evening badge zero",()=>{run('selectTimePeriod("evening")');assert.equal(e
 test("Sam filter date badges",()=>{run('selectTimePeriod("afternoon")');run('chooseStylist("sam")');assert.equal(el("dates").children[2].children[0].textContent,"1 time")});
 test("Sam first date badge",()=>assert.equal(el("dates").children[0].children[0].textContent,"0 times"));
 test("date badge accessible label",()=>assert.match(el("dates").children[2].attributes["aria-label"],/matching illustrative time/));
-test("Alex date badge",()=>{run('chooseStylist("alex")');assert.equal(el("dates").children[0].children[0].textContent,"1 time")});
+test("Alex date badge",()=>{run('chooseStylist("alex")');assert.equal(el("dates").children[0].children[0].textContent,"2 times")});
 test("date counts don't select time",()=>assert.equal(run("state.time"),null));
 test("date counts don't select date",()=>assert.equal(run("state.date"),null));
 test("later dates have counts",()=>{run('changeDatePage(1)');assert.equal(el("dates").children.length,4)});
