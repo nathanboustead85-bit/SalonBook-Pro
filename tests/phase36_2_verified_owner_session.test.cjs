@@ -19,7 +19,7 @@ async function verifyInAuthEmulator(user){
  // The regular Identity Toolkit accounts:update endpoint does not elevate emailVerified.
  const response=await fetch("http://127.0.0.1:19099/emulator/v1/projects/"+PROJECT+"/accounts",{
   method:"PATCH",headers:{"content-type":"application/json"},
-  body:JSON.stringify({users:[{localId:user.uid,emailVerified:true}]})
+  body:JSON.stringify({emailVerified:true})
  });
  assert.equal(response.status,200,"emulator verification update failed: "+await response.text().catch(()=>""));
  await reload(user);
