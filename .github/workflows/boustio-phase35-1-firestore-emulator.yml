@@ -1,0 +1,39 @@
+name: Boustio Phase 35.1 Isolated Firestore Read-Only Emulator
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'tests/phase35_1_firestore_emulator.test.cjs'
+      - 'web/phase35/README-35-1.md'
+      - '.github/workflows/boustio-phase35-1-firestore-emulator.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-firestore-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase35-1
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+      FIREBASE_CLI_EXPERIMENTS: webframeworks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated test dependencies
+        run: npm install --no-save --no-package-lock firebase@11 @firebase/rules-unit-testing@4 firebase-tools@14
+      - name: Run real Firestore emulator rules and mapping tests
+        run: npx firebase-tools emulators:exec --only firestore --project demo-boustio-phase35-1 --config firebase.phase32-4.json "node --test tests/phase35_1_firestore_emulator.test.cjs"
+      - name: Phase 34 offline regression
+        run: node --test tests/phase34_*.test.cjs
+      - name: No deployment verification
+        run: |
+          test -s firestore.rules
+          test -s firebase.phase32-4.json
+          echo "PHASE35_1_EMULATOR_ONLY_NO_PRODUCTION_NO_DEPLOYMENT"
