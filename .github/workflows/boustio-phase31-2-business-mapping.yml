@@ -1,0 +1,37 @@
+name: Boustio Phase 31.2 Secure Business Data Mapping
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase31/business-data-mapper-31-2.js'
+      - 'web/phase31/SCHEMA-REVIEW-31-2.md'
+      - 'tests/phase31_2_business_data_mapping.test.cjs'
+      - '.github/workflows/boustio-phase31-2-business-mapping.yml'
+permissions:
+  contents: read
+jobs:
+  offline-mapping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Secure Phase 31.2 mapping tests
+        run: node --test tests/phase31_2_business_data_mapping.test.cjs
+      - name: Phase 31.1 regression
+        run: node --test tests/phase31_1_read_only_business.test.cjs
+      - name: Existing catalogue and public availability compatibility
+        run: |
+          node tests/phase1239_catalogue_adapter.test.js
+          node tests/phase1280_catalogue_contract.test.js
+          node tests/phase1240_public_availability_projection.test.js
+      - name: Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: Verify no deployment or live features
+        run: |
+          test -s web/phase31/business-data-mapper-31-2.js
+          echo "READ_ONLY_NO_FIREBASE_NO_BOOKING_WRITES_NO_DEPLOYMENT"
