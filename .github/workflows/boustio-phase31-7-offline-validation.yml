@@ -1,0 +1,37 @@
+name: Boustio Phase 31.7 Offline Staff Availability Validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase31/offline-validation-31-7.js'
+      - 'tests/phase31_7_offline_validation.test.cjs'
+      - '.github/workflows/boustio-phase31-7-offline-validation.yml'
+permissions:
+  contents: read
+jobs:
+  offline-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 31.7 validation
+        run: node --test tests/phase31_7_offline_validation.test.cjs
+      - name: Phase 31 regression
+        run: node --test tests/phase31_*.test.cjs
+      - name: Existing availability compatibility
+        run: |
+          node tests/phase1238_availability_preview.test.js
+          node tests/phase1239_catalogue_adapter.test.js
+          node tests/phase1280_catalogue_contract.test.js
+          node tests/phase1240_public_availability_projection.test.js
+      - name: Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: Offline-only guard
+        run: |
+          test -s web/phase31/offline-validation-31-7.js
+          echo "NO_FIREBASE_NO_LIVE_BOOKINGS_NO_PAYMENTS_NO_MESSAGING_NO_DEPLOYMENT"
