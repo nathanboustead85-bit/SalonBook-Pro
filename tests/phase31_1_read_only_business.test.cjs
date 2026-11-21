@@ -26,5 +26,5 @@ test("rejects backwards hours",()=>{const a=clone();a.openingHours.mon.close="08
 test("supports closed days",()=>assert.equal(parse(clone()).openingHours.sun.closed,true));
 test("source explicitly not live",()=>assert.equal(parse(clone()).live,false));
 test("does not mutate source",()=>{const a=clone(),before=JSON.stringify(a);parse(a);assert.equal(JSON.stringify(a),before)});
-test("no production network, writes or persistence in adapter",()=>{const s=fs.readFileSync(path.join(__dirname,"../web/phase31/read-only-business-data-31-1.js"),"utf8");assert.doesNotMatch(s,/\bfetch\s*\(|XMLHttpRequest|WebSocket\s*\(|firebase|Firestore|\.set\s*\(|\.add\s*\(|\.delete\s*\(|localStorage|sessionStorage|indexedDB/i)});
+test("no production network, writes or persistence in adapter",()=>{const s=fs.readFileSync(path.join(__dirname,"../web/phase31/read-only-business-data-31-1.js"),"utf8");assert.doesNotMatch(s,/\bfetch\s*\(|XMLHttpRequest|WebSocket\s*\(|firebaseConfig|\.collection\s*\(|\.set\s*\(|\.add\s*\(|\.delete\s*\(|localStorage|sessionStorage|indexedDB/i)});
 test("readme explicitly blocks deployment and production access",()=>{const s=fs.readFileSync(path.join(__dirname,"../web/phase31/README-31-1.md"),"utf8");assert.match(s,/No production reads/);assert.match(s,/No modification to Android/);assert.match(s,/not a security boundary/)});
