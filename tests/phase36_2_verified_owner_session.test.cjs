@@ -15,13 +15,12 @@ const seed=async(uid,name)=>env.withSecurityRulesDisabled(async c=>{const db=c.f
 const context=(uid,verified)=>env.authenticatedContext(uid,{email_verified:verified}).firestore();
 const bridge=(db=context(owner.uid,true),sdkAuth=auth)=>createVerifiedOwnerSession({auth:sdkAuth,db,doc,runTransaction,getIdTokenResult});
 async function verifyInAuthEmulator(user){
- // Firebase Auth emulator privileged admin API; localhost demo project only.
- // The regular Identity Toolkit accounts:update endpoint does not elevate emailVerified.
- const response=await fetch("http://127.0.0.1:19099/emulator/v1/projects/"+PROJECT+"/accounts",{
-  method:"PATCH",headers:{"content-type":"application/json"},
-  body:JSON.stringify({emailVerified:true})
- });
- assert.equal(response.status,200,"emulator verification update failed: "+await response.text().catch(()=>""));
+ // Admin SDK talks exclusively to the isolated Auth emulator via FIREBASE_AUTH_EMULATOR_HOST.
+ const {initializeApp:initializeAdminApp,deleteApp:deleteAdminApp}=require("firebase-admin/app");
+ const {getAuth:getAdminAuth}=require("firebase-admin/auth");
+ const admin=initializeAdminApp({projectId:PROJECT},"phase36-2-emulator-admin");
+ try{await getAdminAuth(admin).updateUser(user.uid,{emailVerified:true})}
+ finally{await deleteAdminApp(admin)}
  await reload(user);
  const token=await getIdTokenResult(user,true);
  assert.equal(user.emailVerified,true,"emulator account must be verified");
