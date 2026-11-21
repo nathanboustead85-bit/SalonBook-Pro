@@ -1,6 +1,6 @@
 {
   "firestore": {
-    "rules": "web/phase32/firestore-deny-all-32-3.rules"
+    "rules": "firestore-deny-all-32-3.rules"
   },
   "emulators": {
     "firestore": {
