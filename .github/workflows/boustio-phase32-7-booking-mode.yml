@@ -1,0 +1,46 @@
+name: Boustio Phase 32.7 Real Booking Mode Migration Security Emulator Tests
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'tests/phase32_7_booking_mode_migration.test.cjs'
+      - 'web/phase32/README-32-7.md'
+      - '.github/workflows/boustio-phase32-7-booking-mode.yml'
+      - 'firestore.rules'
+      - 'firebase.phase32-4.json'
+permissions:
+  contents: read
+jobs:
+  booking-mode-migration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated Firebase test dependencies
+        run: npm install --no-save --no-package-lock --ignore-scripts firebase@11 @firebase/rules-unit-testing@4
+      - name: Real emulator security and migration regressions
+        run: |
+          npx --yes firebase-tools@14 emulators:exec --non-interactive --only firestore,auth --project demo-boustio-phase32-staging --config firebase.phase32-4.json "node --test tests/phase32_4_owner_rules.test.cjs tests/phase32_5_multi_owner_rules.test.cjs tests/phase32_6_concurrent_booking_rules.test.cjs tests/phase32_7_booking_mode_migration.test.cjs"
+      - name: Phase 32 offline safety tests
+        run: node --test tests/phase32_1_staging_preparation.test.cjs tests/phase32_2_emulator_validation.test.cjs
+      - name: Phase 31 regression
+        run: node --test tests/phase31_*.test.cjs
+      - name: Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: No deployment verification
+        run: |
+          test -s firestore.rules
+          test -s firebase.phase32-4.json
+          echo "DEMO_ONLY_BOOKING_MODE_MIGRATION_NO_DEPLOYMENT"
