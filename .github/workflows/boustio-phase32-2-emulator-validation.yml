@@ -1,0 +1,36 @@
+name: Boustio Phase 32.2 Isolated Emulator Environment Validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase32/emulator-guard-32-2.js'
+      - 'web/phase32/emulator-config-32-2.json'
+      - 'web/phase32/README-32-2.md'
+      - 'tests/phase32_2_emulator_validation.test.cjs'
+      - '.github/workflows/boustio-phase32-2-emulator-validation.yml'
+permissions:
+  contents: read
+jobs:
+  emulator-config-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 32.2 emulator configuration and isolation tests
+        run: node --test tests/phase32_2_emulator_validation.test.cjs
+      - name: Phase 32 regression
+        run: node --test tests/phase32_*.test.cjs
+      - name: Phase 31 regression
+        run: node --test tests/phase31_*.test.cjs
+      - name: Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: No-deployment confirmation
+        run: |
+          test -s web/phase32/README-32-2.md
+          echo "STATIC_EMULATOR_CONFIG_ONLY_NO_NETWORK_NO_CREDENTIALS_NO_DEPLOYMENT"
