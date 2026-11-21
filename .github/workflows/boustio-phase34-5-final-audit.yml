@@ -1,0 +1,40 @@
+name: Boustio Phase 34.5 Final Isolated Dashboard Audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase34/final-audit-34-5.js'
+      - 'tests/phase34_5_final_audit.test.cjs'
+      - 'web/phase34/README-34-5.md'
+      - '.github/workflows/boustio-phase34-5-final-audit.yml'
+permissions:
+  contents: read
+jobs:
+  final-isolated-dashboard-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 34.5 integration audit
+        run: node --test tests/phase34_5_final_audit.test.cjs
+      - name: All Phase 34 regression tests
+        run: node --test tests/phase34_*.test.cjs
+      - name: Phase 33 regression
+        run: node --test tests/phase33_*.test.cjs
+      - name: Phase 32 offline safety regression
+        run: node --test tests/phase32_9_content_recovery.test.cjs tests/phase32_1_staging_preparation.test.cjs tests/phase32_2_emulator_validation.test.cjs tests/phase32_10_final_audit.test.cjs
+      - name: Phase 31 regression
+        run: node --test tests/phase31_*.test.cjs
+      - name: Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: No deployment verification
+        run: |
+          test -s firestore.rules
+          test -s firebase.json
+          echo "PHASE34_5_OFFLINE_AUDIT_NO_DEPLOYMENT"
