@@ -52,8 +52,23 @@ jobs:
         run: node --test tests/phase34_*.test.cjs
       - name: Phase 33 regression suite
         run: node --test tests/phase33_*.test.cjs
-      - name: Phase 32 offline regression suite
-        run: node --test tests/phase32_*.test.cjs
+      - name: Phase 32 static and offline regression
+        run: |
+          files=$(find tests -maxdepth 1 -name 'phase32_*.test.cjs' ! -name 'phase32_3_emulator_runtime.test.cjs' ! -name 'phase32_[4-8]_*.test.cjs' | sort)
+          test -n "$files"
+          node --test $files
+      - name: Phase 32.3 deny-all Firestore and Auth emulator runtime tests
+        env:
+          GCLOUD_PROJECT: demo-boustio-phase32-staging
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:19099
+        run: npx firebase-tools emulators:exec --only firestore,auth --project demo-boustio-phase32-staging --config web/phase32/firebase.emulator-32-3.json "node --test tests/phase32_3_emulator_runtime.test.cjs"
+      - name: Phase 32.4-32.8 real Firestore security rule regressions
+        env:
+          GCLOUD_PROJECT: demo-boustio-phase32-staging
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:19099
+        run: npx firebase-tools emulators:exec --only firestore,auth --project demo-boustio-phase32-staging --config firebase.phase32-4.json "node --test tests/phase32_[4-8]_*.test.cjs"
       - name: Phase 31 regression suite
         run: node --test tests/phase31_*.test.cjs
       - name: Phase 30 regression suite
