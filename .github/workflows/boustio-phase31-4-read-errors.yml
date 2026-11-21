@@ -1,0 +1,38 @@
+name: Boustio Phase 31.4 Read Error and Retry Safety
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase31/business-read-errors-31-4.js'
+      - 'web/phase31/README-31-4.md'
+      - 'tests/phase31_4_read_errors.test.cjs'
+      - '.github/workflows/boustio-phase31-4-read-errors.yml'
+permissions:
+  contents: read
+jobs:
+  offline-error-handling:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 31.4 error handling and retry tests
+        run: node --test tests/phase31_4_read_errors.test.cjs
+      - name: Phase 31.1 through 31.3 regression
+        run: |
+          node --test tests/phase31_1_read_only_business.test.cjs tests/phase31_2_business_data_mapping.test.cjs tests/phase31_3_freshness_recovery.test.cjs
+      - name: Existing catalogue compatibility
+        run: |
+          node tests/phase1239_catalogue_adapter.test.js
+          node tests/phase1280_catalogue_contract.test.js
+          node tests/phase1240_public_availability_projection.test.js
+      - name: Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: Read-only safety guard
+        run: |
+          test -s web/phase31/business-read-errors-31-4.js
+          echo "OFFLINE_NO_FIREBASE_NO_BOOKING_WRITES_NO_DEPLOYMENT"
