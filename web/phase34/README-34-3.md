@@ -1,0 +1,7 @@
+# Phase 34.3 — Isolated Firestore document freshness and consistency
+
+This offline adapter validates Firestore Timestamp-shaped `{seconds,nanoseconds}` values for the **actual** three Android document paths from Phase 34.2: private profile, services and staff. It enforces owner/email verification, session expiration, timestamp validity, no future dates, a conservative **24-hour maximum age**, and **five-minute maximum timestamp skew**. These thresholds are *provisional policy choices*, not existing Firebase rules or proof that independent updates are inconsistent. Older legitimate records will be hidden until a refresh or policy review.
+
+The `consistentRead:true` flag is a **caller assertion only**. This module cannot verify that Firebase provided an atomic multi-document snapshot; a future trusted adapter must establish consistency or use versioned manifests. Timestamp proximity is not transaction atomicity. The actual Firestore rules do not expose a shared revision field. This module does not use the provisional Phase 34.1 `businesses/{uid}` path and does not authorize any live Firebase access.
+
+Tests cover malformed timestamps, stale/future values, skew, missing/extra documents, owner mismatch, invalid JSON, and no-write safeguards. No production Firebase credentials, rules, deployment, bookings or Android appointment data are accessed or changed. Live bookings, payments and messaging remain disabled.
