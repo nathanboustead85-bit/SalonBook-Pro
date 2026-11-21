@@ -1,0 +1,39 @@
+name: Boustio Phase 31.3 Freshness and Recovery
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase31/business-data-freshness-31-3.js'
+      - 'web/phase31/README-31-3.md'
+      - 'tests/phase31_3_freshness_recovery.test.cjs'
+      - '.github/workflows/boustio-phase31-3-freshness-recovery.yml'
+permissions:
+  contents: read
+jobs:
+  offline-freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 31.3 freshness and recovery tests
+        run: node --test tests/phase31_3_freshness_recovery.test.cjs
+      - name: Phase 31.2 and 31.1 regressions
+        run: |
+          node --test tests/phase31_2_business_data_mapping.test.cjs
+          node --test tests/phase31_1_read_only_business.test.cjs
+      - name: Existing catalogue and availability contract tests
+        run: |
+          node tests/phase1239_catalogue_adapter.test.js
+          node tests/phase1280_catalogue_contract.test.js
+          node tests/phase1240_public_availability_projection.test.js
+      - name: Phase 30 regression
+        run: node --test tests/phase30*.test.cjs
+      - name: Phase 29 regression
+        run: node --test tests/phase29*.test.cjs
+      - name: No deployment or live booking
+        run: |
+          test -s web/phase31/business-data-freshness-31-3.js
+          echo "STAGING_OFFLINE_ONLY_NO_FIREBASE_NO_DEPLOYMENT"
