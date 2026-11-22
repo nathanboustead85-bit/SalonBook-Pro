@@ -1,0 +1,5 @@
+# Phase 39.3 — Isolated secure dashboard view-model
+
+A new opt-in read-only presentation projection exposes **LOADING**, **READY**, and **UNAVAILABLE** states, accessibility-oriented `ariaBusy` and `liveMessage` fields, and minimal business/service/staff labels. It never produces HTML, never writes to Firestore and never enables booking, editing, messaging, payments or deployment. Invalid/malformed records and unsafe text fail closed. Session boundary methods synchronously clear private data; generation fencing prevents late refresh results from repopulating a signed-out view.
+
+Unit tests exercise loading announcements, private-data flash prevention, malformed labels, cross-request ordering, sign-out and network transitions. Emulator tests cover verified owner, cross-owner denial and malformed synthetic business profile. Accessibility is tested at the view-model contract level; actual DOM/screen-reader/browser accessibility and real Samsung testing remain outstanding. No public dashboard is connected. No production access, deployment or appointment changes.
