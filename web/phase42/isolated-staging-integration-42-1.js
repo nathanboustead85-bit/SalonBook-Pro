@@ -8,12 +8,12 @@ function createIsolatedStagingIntegration({environment,sdk,db,verifyRevocation,n
  if(validateStagingEnvironment(environment).status!=="EMULATOR_CONTRACT_VALID"||validateSdkContract(sdk).status!=="INJECTED_SDK_CONTRACT_VALID"||!db||typeof verifyRevocation!=="function"||typeof now!=="function")throw TypeError("emulator_only_dependencies_required");
  const readAtomic=createAndroidBusinessReader({db,doc:sdk.doc,runTransaction:sdk.runTransaction});
  const recovery=createMultiDeviceRecovery({readAtomic,now});
- let active=true,online=true,epoch=0,state=unavailable("signed_out"),user=null;
+ let active=true,online=true,epoch=0,state=unavailable("signed_out"),user=null,pending=null;
  const listeners=new Set();
  const emit=x=>{state=x;for(const fn of [...listeners]){try{fn(x)}catch{}}return state};
  const clear=reason=>{epoch++;return emit(unavailable(reason))};
  const same=(seq,u)=>active&&online&&seq===epoch&&user===u&&sdk.auth.currentUser===u;
- async function refresh(){
+ async function performRefresh(){
   if(!active||!online)return state;
   const u=sdk.auth.currentUser;
   if(!u||typeof u.uid!=="string"||u.emailVerified!==true||typeof u.getIdTokenResult!=="function"){user=null;recovery.signOut();return clear("unverified_or_signed_out")}
@@ -29,6 +29,13 @@ function createIsolatedStagingIntegration({environment,sdk,db,verifyRevocation,n
    if(!same(seq,u))return state;
    return emit(result?.state==="READY"?result:unavailable(result?.reason||"dashboard_unavailable"));
   }catch{if(same(seq,u)){recovery.signOut();return clear("verification_or_read_failed")}return state}
+ }
+ function refresh(){
+  if(pending&&pending.user===sdk.auth.currentUser)return pending.promise;
+  const current=sdk.auth.currentUser,promise=performRefresh();
+  const entry={user:current,promise};pending=entry;
+  void promise.then(()=>{if(pending===entry)pending=null},()=>{if(pending===entry)pending=null});
+  return promise;
  }
  function observed(next){if(!active)return;user=null;recovery.signOut();clear(next?"auth_changed":"signed_out");if(next)void refresh()}
  const detach=sdk.onAuthStateChanged(sdk.auth,observed,()=>{if(active){user=null;recovery.signOut();clear("auth_observer_failed")}});
