@@ -1,0 +1,13 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {reviewStagingAccess}=require("../web/phase49/access-review-49-2");
+test("four IAM principal roles remain unapproved",()=>{const r=reviewStagingAccess();assert.equal(r.status,"PHASE49_2_ACCESS_REVIEW_ONLY_NOT_APPROVED");assert.equal(r.iamPrincipalCount,4);assert.ok(r.matrix.every(x=>x.approved===false&&x.status==="UNAPPROVED"))});
+test("CI emulator has no cloud roles",()=>{const r=reviewStagingAccess();assert.equal(r.matrix.find(x=>x.principal==="ci-emulator-runner").access,"no-cloud-roles")});
+test("future staging service is not provisioned",()=>{const r=reviewStagingAccess();assert.match(r.matrix.find(x=>x.principal==="future-staging-service").scope,/after-approval/);assert.equal(r.iamApproved,false)});
+test("six independent controls remain missing",()=>{const r=reviewStagingAccess();assert.equal(r.controlCount,6);assert.ok(r.controls.every(x=>x.status==="MISSING"&&!x.approved))});
+test("seven launch blockers remain open",()=>{const r=reviewStagingAccess();assert.equal(r.openCount,7);assert.ok(r.evidence.every(x=>x.status==="OPEN"&&!x.approved))});
+test("approval claims cannot grant IAM access",()=>{const r=reviewStagingAccess({claims:{iamApproved:true,stagingApproved:true}});assert.equal(r.iamApproved,false);assert.equal(r.stagingApproved,false)});
+test("real inventory denied",()=>{assert.equal(reviewStagingAccess({inventory:{projectId:"production"}}).status,"DENIED")});
+test("explicit credential environment denied",()=>{assert.equal(reviewStagingAccess({environment:{FIREBASE_TOKEN:"secret"}}).status,"DENIED")});
+test("malformed evidence denied",()=>{assert.equal(reviewStagingAccess({claims:[]}).status,"DENIED");assert.equal(reviewStagingAccess({inventory:[]}).status,"DENIED")});
+test("all live features disabled and original appointments untouched",()=>{const r=reviewStagingAccess();for(const k of ["accessGranted","stagingApproved","securityApproved","iamApproved","credentialsApproved","productionReady","canBook","canPay","canMessage","canDeploy"])assert.equal(r[k],false);assert.equal(r.originalAppointments,"NOT_ACCESSED_OR_VERIFIED")});
