@@ -1,0 +1,29 @@
+name: Boustio Phase 40.1 Isolated Dashboard Readiness Gap Audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase40/**'
+      - 'tests/phase40_1_*'
+      - '.github/workflows/boustio-phase40-1-readiness-gap-audit.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-readiness-gap-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Phase 40.1 source-grounded negative regression
+        run: node --test tests/phase40_1_negative.test.cjs
+      - name: Phase 39.2-39.5 security regression
+        run: node --test tests/phase39_2_session.test.cjs tests/phase39_3_view.test.cjs tests/phase39_4_compatibility.test.cjs tests/phase39_5_audit.test.cjs
+      - name: NO_DEPLOYMENT safety gate
+        run: |
+          test -s web/phase40/README-40-1.md
+          test -s firestore.rules
+          echo "PHASE40_1_NO_PRODUCTION_NO_LIVE_FEATURES_NO_DEPLOYMENT"
