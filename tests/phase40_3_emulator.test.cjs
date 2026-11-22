@@ -1,0 +1,18 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs");
+const {initializeTestEnvironment,assertFails}=require("@firebase/rules-unit-testing");
+const {doc,setDoc,getDoc,runTransaction}=require("firebase/firestore");
+const {paths}=require("../web/phase34/android-firestore-map-34-2");
+const {createAndroidBusinessReader}=require("../web/phase36/android-business-adapter-36-1");
+const {inspectAndroidCompatibility}=require("../web/phase39/android-compatibility-39-4");
+const {inspectSharedRevision}=require("../web/phase40/hours-revision-contract-40-3");
+const PROJECT="demo-boustio-phase40-3";
+if(process.env.GCLOUD_PROJECT!==PROJECT||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:18080"||process.env.FIREBASE_AUTH_EMULATOR_HOST!=="127.0.0.1:19099")throw Error("isolated_emulators_required");
+const now=Date.now(),uid="owner40hours",other="other40hours",p=paths(uid),hours=Object.fromEntries(["monday","tuesday","wednesday","thursday","friday","saturday","sunday"].map(d=>[d,[]]));
+let env;
+test.before(async()=>{env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:"127.0.0.1",port:18080,rules:fs.readFileSync("firestore.rules","utf8")}});await env.withSecurityRulesDisabled(async ctx=>{const db=ctx.firestore(),updatedAt=new Date(now-1000);await setDoc(doc(db,p.profile),{businessId:uid,name:"Synthetic Hours Salon",schemaVersion:1,acceptingBookings:false,updatedAt});await setDoc(doc(db,p.services),{schemaVersion:1,json:JSON.stringify([{id:"cut",name:"Cut",price:"20.00",duration:30}]),updatedAt});await setDoc(doc(db,p.staff),{schemaVersion:1,json:JSON.stringify([{id:"alex",name:"Alex",role:"Barber",serviceIds:["cut"],weeklySchedule:{monday:{open:"09:00",close:"17:00"}},weeklyBreaks:[],timeOff:[]}]),updatedAt})})});
+test.after(async()=>{if(env)await env.cleanup()});
+test("atomic Android v1 documents remain unapproved for business-wide hours and migration",async()=>{const db=env.authenticatedContext(uid,{email_verified:true}).firestore(),reader=createAndroidBusinessReader({db,doc,runTransaction}),result=await reader(p,uid);const checked=inspectAndroidCompatibility({uid,emailVerified:true,expiresAt:now+600000},result.documents,now);assert.equal(checked.status,"COMPATIBLE_READ_ONLY");assert.equal(checked.businessOpeningHoursStatus,"NOT_VERIFIED");assert.equal(checked.migrationReady,false);assert.equal(inspectSharedRevision({ownerUid:uid,documents:result.documents,hours}).status,"UNAVAILABLE")});
+test("cross-owner Firestore reads rejected",async()=>{const db=env.authenticatedContext(other,{email_verified:true}).firestore();for(const path of Object.values(p))await assertFails(getDoc(doc(db,path)))});
+test("unverified owner Firestore reads rejected",async()=>{const db=env.authenticatedContext(uid,{email_verified:false}).firestore();for(const path of Object.values(p))await assertFails(getDoc(doc(db,path)))});
+test("synthetic mixed revision fails closed independently of Firestore reads",()=>{const d=Object.fromEntries(["profile","services","staff"].map(k=>[k,{ownerUid:uid,schemaVersion:2,sharedRevision:10,snapshotId:"snapshot_40_3"}]));d.staff.sharedRevision=11;assert.equal(inspectSharedRevision({ownerUid:uid,documents:d,hours}).reason,"mixed_cross_device_revision")});
