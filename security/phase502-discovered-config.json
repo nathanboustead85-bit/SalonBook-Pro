@@ -1,0 +1,24 @@
+{
+  "phase": "50.2",
+  "status": "READ_ONLY_CONFIGURATION_DISCOVERY",
+  "observedPaths": [
+    "app/google-services.json",
+    "app/build.gradle.kts",
+    ".github/workflows/boustio-phase-176-wif-stages.yml"
+  ],
+  "androidFirebaseProjectId": "salonbook-pro-ad5ff",
+  "androidFirebaseConfigClassification": "EXISTING_ANDROID_PROJECT_DO_NOT_USE_AS_STAGING",
+  "stagingProjectId": null,
+  "stagingProjectVerified": false,
+  "productionEnvironmentClassification": "NOT_INDEPENDENTLY_CONFIRMED",
+  "existingWifWorkflow": "READ_ONLY_AUTH_DIAGNOSTIC_WITH_SEPARATE_APPROVAL_NOT_A_STAGING_ENVIRONMENT",
+  "ownerApproval": false,
+  "realStagingTestsAuthorized": false,
+  "credentialsUsed": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "deployment": false,
+  "androidAppointments": "preserve-existing-two",
+  "launchBlockers": "ALL_SEVEN_OPEN"
+}
