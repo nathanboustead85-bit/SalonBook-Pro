@@ -1,0 +1,26 @@
+name: Boustio Phase 49.3 Independent Security Preparation
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'docs/security/phase-49-3-independent-backend-verification.md'
+      - 'tests/phase493_*'
+      - '.github/workflows/boustio-phase-493-independent-security.yml'
+permissions:
+  contents: read
+jobs:
+  preparation-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Synthetic revocation, owner isolation and guardrail regression
+        run: node --test tests/phase493_security_preparation.test.cjs
+      - name: Verify no production credentials are configured
+        run: |
+          test -z "${GOOGLE_APPLICATION_CREDENTIALS:-}"
+          test -z "${FIREBASE_TOKEN:-}"
+          echo 'No production credentials used; seven blockers remain OPEN'
