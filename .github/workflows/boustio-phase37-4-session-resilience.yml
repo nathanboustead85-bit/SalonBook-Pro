@@ -6,6 +6,7 @@ on:
     paths:
       - 'web/phase37/**'
       - 'tests/phase37_4_*'
+      - 'tests/phase37_3_reactive.test.mjs'
       - '.github/workflows/boustio-phase37-4-session-resilience.yml'
 permissions:
   contents: read
