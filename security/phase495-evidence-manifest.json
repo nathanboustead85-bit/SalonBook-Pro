@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "phase": "49.5",
+  "environment": "isolated-demo-only",
+  "implementationAuthor": "UNASSIGNED",
+  "reviewer": "UNASSIGNED",
+  "independentApproval": false,
+  "records": [
+    {
+      "control": "admin-revocation",
+      "status": "PENDING",
+      "sha256": null,
+      "sourceCommit": null,
+      "runUrl": null,
+      "verifiedAtUtc": null
+    },
+    {
+      "control": "session-expiry",
+      "status": "PENDING",
+      "sha256": null,
+      "sourceCommit": null,
+      "runUrl": null,
+      "verifiedAtUtc": null
+    },
+    {
+      "control": "owner-isolation",
+      "status": "PENDING",
+      "sha256": null,
+      "sourceCommit": null,
+      "runUrl": null,
+      "verifiedAtUtc": null
+    },
+    {
+      "control": "credential-boundaries",
+      "status": "PENDING",
+      "sha256": null,
+      "sourceCommit": null,
+      "runUrl": null,
+      "verifiedAtUtc": null
+    },
+    {
+      "control": "staging-isolation",
+      "status": "PENDING",
+      "sha256": null,
+      "sourceCommit": null,
+      "runUrl": null,
+      "verifiedAtUtc": null
+    },
+    {
+      "control": "negative-tests",
+      "status": "PENDING",
+      "sha256": null,
+      "sourceCommit": null,
+      "runUrl": null,
+      "verifiedAtUtc": null
+    },
+    {
+      "control": "rollback-readiness",
+      "status": "PENDING",
+      "sha256": null,
+      "sourceCommit": null,
+      "runUrl": null,
+      "verifiedAtUtc": null
+    }
+  ]
+}
