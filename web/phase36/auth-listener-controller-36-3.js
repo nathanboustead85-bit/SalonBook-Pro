@@ -6,23 +6,26 @@ function createAuthListenerController({auth,db,doc,runTransaction,getIdTokenResu
  if(!auth||typeof onIdTokenChanged!=="function"||typeof now!=="function")throw TypeError("auth_listener_dependencies_required");
  const bridge=createVerifiedOwnerSession({auth,db,doc,runTransaction,getIdTokenResult});
  let started=false,unsubscribe=null,epoch=0,online=true,current=null,state=empty("not_started");
+ const observers=new Set();
+ const publish=next=>{state=next;for(const listener of [...observers]){try{listener(state)}catch{/* observers cannot interrupt auth */}}return state};
+ const subscribe=listener=>{if(typeof listener!=="function")throw TypeError("listener_required");observers.add(listener);listener(state);return ()=>observers.delete(listener)};
  const snapshot=()=>state;
- const clear=reason=>{epoch++;current=null;bridge.signOut();state=empty(reason);return state};
+ const clear=reason=>{epoch++;current=null;bridge.signOut();return publish(empty(reason))};
  const notify=async(user)=>{
   const token=++epoch;
   current=user||null;
   bridge.authChanged(user||null);
-  state=empty(user?"auth_refreshing":"signed_out");
+  publish(empty(user?"auth_refreshing":"signed_out"));
   if(!started||!online||!user)return state;
   let result;
   try{result=await bridge.refresh(now())}catch{if(token===epoch)return clear("auth_refresh_failed");return state}
   if(token!==epoch||!started||!online||current!==user||auth.currentUser!==user)return state;
-  state=result.status==="READ_ONLY_READY"?result:empty(result.reason||"auth_refresh_failed");
+  publish(result.status==="READ_ONLY_READY"?result:empty(result.reason||"auth_refresh_failed"));
   return state;
  };
  function start(){
   if(started)return snapshot();
-  started=true;online=true;state=empty("awaiting_auth");
+  started=true;online=true;publish(empty("awaiting_auth"));
   try{
    const stop=onIdTokenChanged(auth,user=>{void notify(user)},()=>{clear("auth_listener_error")});
    if(typeof stop!=="function")throw Error("missing_unsubscribe");
@@ -45,6 +48,6 @@ function createAuthListenerController({auth,db,doc,runTransaction,getIdTokenResu
   if(!started||!online)return snapshot();
   return notify(auth.currentUser);
  }
- return Object.freeze({start,stop,networkUnavailable,networkRestored,refresh,snapshot});
+ return Object.freeze({start,stop,networkUnavailable,networkRestored,refresh,snapshot,subscribe});
 }
 module.exports=Object.freeze({createAuthListenerController});
