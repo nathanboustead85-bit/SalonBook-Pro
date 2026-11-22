@@ -1,0 +1,9 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {assessLaunchGaps,evidence}=require("../web/phase46/readiness-gaps-46-1");
+test("assessment inherits all seven exact Phase 45 open blockers",()=>{const r=assessLaunchGaps();assert.equal(r.status,"ISOLATED_GAP_ASSESSMENT_COMPLETE",JSON.stringify(r.failures));assert.equal(r.openCount,7);assert.equal(r.gaps.length,7);assert.ok(r.gaps.every(x=>x.status==="OPEN"&&x.evidenceStatus==="MISSING"&&x.remediationStatus==="NOT_STARTED"))});
+test("all blockers have unique priority and actionable evidence, remediation and gate",()=>{const r=assessLaunchGaps();assert.deepEqual(r.gaps.map(x=>x.priority),[1,2,3,4,5,6,7]);assert.equal(new Set(r.gaps.map(x=>x.id)).size,7);for(const x of r.gaps){assert.ok(x.required.length>40);assert.ok(x.plan.length>40);assert.ok(x.gate.length>5);assert.equal(x.approved,false)}});
+test("no production or live capabilities become enabled",()=>{const r=assessLaunchGaps();for(const k of ["productionReady","stagingApproved","appointmentsMigrationApproved","canBook","canPay","canMessage","canDeploy"])assert.equal(r[k],false)});
+test("appointment protection explicitly requires owner approval and rollback evidence",()=>{const gap=assessLaunchGaps().gaps[3];assert.equal(gap.gate,"OWNER_APPROVAL");assert.match(gap.required,/backup.*restore.*rollback/i);assert.match(gap.plan,/do not read, migrate or modify appointments/i)});
+test("synthetic emulator tests cannot close independent verification blocker",()=>{const gap=assessLaunchGaps().gaps[6];assert.equal(gap.status,"OPEN");assert.match(gap.plan,/emulator results alone cannot close/i)});
+test("evidence planning metadata remains immutable",()=>{assert.ok(Object.isFrozen(evidence));assert.ok(evidence.every(Object.isFrozen));assert.ok(Object.isFrozen(assessLaunchGaps().gaps))});
