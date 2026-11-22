@@ -1,0 +1,16 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs");
+const {initializeTestEnvironment,assertFails}=require("@firebase/rules-unit-testing");
+const {doc,setDoc,getDoc,runTransaction}=require("firebase/firestore");
+const {paths}=require("../web/phase34/android-firestore-map-34-2");
+const {createIsolatedDashboardHarness}=require("../web/phase39/integration-contract-39-1");
+const PROJECT="demo-boustio-phase39-1";
+if(process.env.GCLOUD_PROJECT!==PROJECT||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:18080"||process.env.FIREBASE_AUTH_EMULATOR_HOST!=="127.0.0.1:19099")throw Error("isolated_emulators_required");
+let env;const now=Date.now(),uid="owner39",other="other39";
+const creds=id=>({user:{uid:id,emailVerified:true},token:{claims:{user_id:id,email_verified:true},expirationTime:new Date(now+600000).toISOString()}});
+test.before(async()=>{env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:"127.0.0.1",port:18080,rules:fs.readFileSync("firestore.rules","utf8")}});const p=paths(uid),updatedAt=new Date(now-1000);await env.withSecurityRulesDisabled(async c=>{const db=c.firestore();await setDoc(doc(db,p.profile),{businessId:uid,name:"Phase 39 Salon",acceptingBookings:false,schemaVersion:1,updatedAt});await setDoc(doc(db,p.services),{schemaVersion:1,json:JSON.stringify([{id:"cut",name:"Cut",price:"20.00",duration:30}]),updatedAt});await setDoc(doc(db,p.staff),{schemaVersion:1,json:JSON.stringify([{id:"alex",name:"Alex",role:"Barber",serviceIds:["cut"],weeklySchedule:{},weeklyBreaks:[],timeOff:[]}]),updatedAt})})});
+test.after(async()=>{if(env)await env.cleanup()});
+const harness=(id,credentialId=id)=>createIsolatedDashboardHarness({db:env.authenticatedContext(id,{email_verified:true}).firestore(),doc,runTransaction,credentials:async()=>creds(credentialId),now:()=>now});
+test("full isolated read-only composition reads synthetic owner records",async()=>{const h=harness(uid),result=await h.refresh();assert.equal(result.status,"COMPATIBLE_READ_ONLY");assert.equal(result.business.name,"Phase 39 Salon");assert.equal(h.canBook,false);assert.equal(h.canDeploy,false);h.signOut();assert.equal(h.snapshot().business,null)});
+test("cross-owner client cannot load another owner's business",async()=>{const h=harness(other,uid);assert.equal((await h.refresh()).status,"UNAVAILABLE");assert.equal(h.snapshot().business,null)});
+test("unauthorized Firestore document access is denied by emulator rules",async()=>{const db=env.authenticatedContext(other,{email_verified:true}).firestore();for(const p of Object.values(paths(uid)))await assertFails(getDoc(doc(db,p)))});
