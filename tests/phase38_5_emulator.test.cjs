@@ -1,0 +1,17 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs");
+const {initializeTestEnvironment,assertFails}=require("@firebase/rules-unit-testing");
+const {doc,setDoc,getDoc,runTransaction}=require("firebase/firestore");
+const {paths}=require("../web/phase34/android-firestore-map-34-2");
+const {createAndroidBusinessReader}=require("../web/phase36/android-business-adapter-36-1");
+const {createOwnerAuthorizationGate}=require("../web/phase38/owner-authorization-38-3");
+const {createDashboardRecovery}=require("../web/phase38/dashboard-recovery-38-4");
+const PROJECT="demo-boustio-phase38-5";
+if(process.env.GCLOUD_PROJECT!==PROJECT||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:18080"||process.env.FIREBASE_AUTH_EMULATOR_HOST!=="127.0.0.1:19099")throw Error("isolated_emulators_required");
+let env;const now=Date.now(),uid="auditOwner38";
+const auth=()=>({user:{uid,emailVerified:true},token:{claims:{user_id:uid,email_verified:true},expirationTime:new Date(now+600000).toISOString()}});
+test.before(async()=>{env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:"127.0.0.1",port:18080,rules:fs.readFileSync("firestore.rules","utf8")}});const p=paths(uid),updatedAt=new Date(now-1000);await env.withSecurityRulesDisabled(async c=>{const db=c.firestore();await setDoc(doc(db,p.profile),{businessId:uid,name:"Audit Salon",acceptingBookings:false,schemaVersion:1,updatedAt});await setDoc(doc(db,p.services),{schemaVersion:1,json:JSON.stringify([{id:"cut",name:"Haircut",price:"20.00",duration:30}]),updatedAt});await setDoc(doc(db,p.staff),{schemaVersion:1,json:JSON.stringify([{id:"alex",name:"Alex",role:"Barber",serviceIds:["cut"],weeklySchedule:{},weeklyBreaks:[],timeOff:[]}]),updatedAt})})});
+test.after(async()=>{if(env)await env.cleanup()});
+test("end-to-end read-only owner dashboard and safe sign-out",async()=>{const db=env.authenticatedContext(uid,{email_verified:true}).firestore(),gate=createOwnerAuthorizationGate({readAtomic:createAndroidBusinessReader({db,doc,runTransaction}),now:()=>now}),c=createDashboardRecovery({gate,credentials:async()=>auth()});const r=await c.refresh();assert.equal(r.status,"COMPATIBLE_READ_ONLY");assert.equal(r.business.name,"Audit Salon");assert.equal(r.bookingEnabled,false);assert.equal(r.canPay,false);c.signOut();assert.equal(c.snapshot().business,null)});
+test("anonymous, unverified and cross-owner reads remain denied",async()=>{const p=paths(uid);for(const db of [env.unauthenticatedContext().firestore(),env.authenticatedContext(uid,{email_verified:false}).firestore(),env.authenticatedContext("intruder",{email_verified:true}).firestore()])for(const item of Object.values(p))await assertFails(getDoc(doc(db,item)))});
+test("all live reservation and payment placeholder writes remain denied",async()=>{const db=env.authenticatedContext(uid,{email_verified:true}).firestore();for(const p of ["users/"+uid+"/customerBookingReservations/audit","users/"+uid+"/customerBookingRequests/audit","businesses/"+uid+"/appointments/audit","businesses/"+uid+"/payments/audit","businesses/"+uid+"/conversations/audit"])await assertFails(setDoc(doc(db,p),{synthetic:true}))});
