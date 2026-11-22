@@ -1,0 +1,15 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {inspectHours,inspectSharedRevision}=require("../web/phase40/hours-revision-contract-40-3");
+const days=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+const hours=()=>Object.fromEntries(days.map(d=>[d,d==="sunday"?[]:[{open:"09:00",close:"17:00"}]]));
+const docs=()=>Object.fromEntries(["profile","services","staff"].map(k=>[k,{ownerUid:"owner40",schemaVersion:2,sharedRevision:7,snapshotId:"snapshot_40_3"}]));
+const check=(d=docs(),h=hours())=>inspectSharedRevision({ownerUid:"owner40",documents:d,hours:h});
+test("valid hours contract is not availability approval",()=>{assert.equal(inspectHours(hours()).status,"HOURS_SCHEMA_VALID");const r=check();assert.equal(r.status,"CONTRACT_COMPATIBLE_READ_ONLY");assert.equal(r.migrationReady,false);assert.equal(r.availabilityVerified,false);assert.equal(r.canBook,false)});
+test("missing and unknown days fail closed",()=>{for(const mutate of [h=>delete h.monday,h=>h.holiday=[]]){const h=hours();mutate(h);assert.equal(inspectHours(h).status,"UNAVAILABLE")}});
+test("invalid times, overnight hours and malformed periods fail",()=>{for(const p of [{open:"25:00",close:"17:00"},{open:"18:00",close:"09:00"},{open:"09:00",close:"09:00"},{open:"09:00",close:"17:00",unsafe:true},null]){const h=hours();h.monday=[p];assert.equal(inspectHours(h).status,"UNAVAILABLE")}});
+test("overlapping or unordered hours fail",()=>{for(const periods of [[{open:"09:00",close:"12:00"},{open:"11:59",close:"14:00"}],[{open:"14:00",close:"17:00"},{open:"09:00",close:"12:00"}]]){const h=hours();h.monday=periods;assert.equal(inspectHours(h).status,"UNAVAILABLE")}});
+test("missing and mixed revisions fail",()=>{for(const change of [d=>delete d.staff.sharedRevision,d=>d.staff.sharedRevision=8,d=>d.staff.snapshotId="snapshot_other",d=>d.staff.schemaVersion=1,d=>d.staff.ownerUid="other40"]){const d=docs();change(d);assert.equal(check(d).status,"UNAVAILABLE")}});
+test("extra documents, malformed revision and unsupported snapshots fail",()=>{for(const change of [d=>d.bookings={},d=>d.staff.sharedRevision=-1,d=>d.staff.snapshotId="../bad",d=>delete d.profile]){const d=docs();change(d);assert.equal(check(d).status,"UNAVAILABLE")}});
+test("two synthetic devices disagreeing on revision cannot be treated as consistent",()=>{const a=check(),b=docs();b.profile.sharedRevision=8;assert.equal(a.status,"CONTRACT_COMPATIBLE_READ_ONLY");assert.equal(check(b).reason,"mixed_cross_device_revision")});
+test("legacy v1 data cannot be silently treated as shared revision v2",()=>{const d=docs();for(const x of Object.values(d)){x.schemaVersion=1;delete x.sharedRevision}assert.equal(check(d).status,"UNAVAILABLE")});
