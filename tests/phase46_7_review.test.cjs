@@ -1,0 +1,10 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {reviewPreStaging}=require("../web/phase46/prestaging-review-46-7");
+const {assessLaunchGaps}=require("../web/phase46/readiness-gaps-46-1");
+test("all six previous phase scopes consolidated without claiming real-world validation",()=>{const r=reviewPreStaging();assert.deepEqual(r.phases.map(x=>x.phase),["46.1","46.2","46.3","46.4","46.5","46.6"]);assert.ok(r.phases.every(x=>x.evidence!=="PRODUCTION_VERIFIED"));assert.equal(r.status,"PRE_STAGING_REVIEW_PREPARED_NOT_APPROVED")});
+test("seven inherited launch blockers remain OPEN with missing evidence",()=>{const r=reviewPreStaging();assert.equal(r.openCount,7);assert.equal(r.risks.length,7);assert.ok(r.risks.every(x=>x.status==="OPEN"&&x.evidenceStatus==="MISSING"&&!x.approved));assert.deepEqual(r.risks.map(x=>x.id),assessLaunchGaps().gaps.map(x=>x.id))});
+test("approval checklist cannot grant approval or mutate inherited blockers",()=>{const r=reviewPreStaging();assert.equal(r.checklist.length,7);assert.ok(r.checklist.every(x=>!x.completed&&x.independentEvidenceRequired));assert.equal(assessLaunchGaps().openCount,7);assert.ok(Object.isFrozen(r.checklist))});
+test("Samsung manual signoff and original Android appointments remain untouched",()=>{const r=reviewPreStaging();assert.equal(r.manualSamsungChecks,8);assert.equal(r.deviceSignedOff,false);assert.equal(r.originalAppointments,"NOT_ACCESSED_OR_VERIFIED")});
+test("staging, production, migration, bookings, payments, messaging and deployment denied",()=>{const r=reviewPreStaging();for(const k of ["stagingApproved","productionReady","appointmentsMigrationApproved","canBook","canPay","canMessage","canDeploy"])assert.equal(r[k],false)});
+test("review is repeatable, immutable and does not close gaps",()=>{const a=reviewPreStaging(),b=reviewPreStaging();assert.deepEqual(a,b);assert.ok(Object.isFrozen(a));assert.ok(Object.isFrozen(a.risks));assert.equal(assessLaunchGaps().openCount,7)});
