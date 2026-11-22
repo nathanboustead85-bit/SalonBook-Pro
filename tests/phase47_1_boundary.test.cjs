@@ -1,0 +1,13 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {validateStagingBoundary,assertNoCredentialEnvironment}=require("../web/phase47/staging-boundary-47-1");
+const {reviewPreStaging}=require("../web/phase46/prestaging-review-46-7");
+const config={projectId:"demo-boustio-phase47-1",authHost:"127.0.0.1:19099",firestoreHost:"127.0.0.1:18080"};
+test("isolated emulator configuration is valid but never approved",()=>{const r=validateStagingBoundary(config);assert.equal(r.status,"ISOLATED_CONFIGURATION_VALIDATED_NOT_APPROVED");assert.equal(r.stagingApproved,false);assert.equal(r.openBlockers,7)});
+test("owner approval evidence cannot override independent staging approval",()=>{const r=validateStagingBoundary(config,{ownerApproved:true});assert.equal(r.ownerApprovalRecorded,true);assert.equal(r.stagingApproved,false);assert.equal(r.canDeploy,false)});
+test("production project and external hosts rejected",()=>{for(const c of [{...config,projectId:"boustio-prod"},{...config,authHost:"example.com:19099"},{...config,firestoreHost:"localhost:8080"}])assert.equal(validateStagingBoundary(c).status,"DENIED")});
+test("unknown configuration keys and injected credentials rejected",()=>{assert.equal(validateStagingBoundary({...config,privateKey:"secret"}).status,"DENIED");assert.equal(validateStagingBoundary({...config,serviceAccount:"secret"}).status,"DENIED")});
+test("prototype pollution and missing config rejected",()=>{assert.equal(validateStagingBoundary(null).status,"DENIED");assert.equal(validateStagingBoundary(Object.create(null)).status,"DENIED");assert.equal(validateStagingBoundary([]).status,"DENIED")});
+test("ambient service credentials fail closed",()=>{for(const key of ["GOOGLE_APPLICATION_CREDENTIALS","FIREBASE_SERVICE_ACCOUNT","FIREBASE_TOKEN","FIREBASE_ADMIN_PRIVATE_KEY"])assert.equal(assertNoCredentialEnvironment({[key]:"secret"}).reason,"ambient_credential_detected")});
+test("empty synthetic environment is credential-free but not authorized",()=>{const r=assertNoCredentialEnvironment({});assert.equal(r.status,"NO_EXPLICIT_CREDENTIALS_IN_SUPPLIED_ENVIRONMENT");assert.equal(r.accessGranted,false)});
+test("all seven blockers stay open and all live capabilities disabled",()=>{const a=reviewPreStaging(),r=validateStagingBoundary(config);assert.equal(a.openCount,7);assert.ok(a.risks.every(x=>x.status==="OPEN"));for(const k of ["canBook","canPay","canMessage","canDeploy","stagingApproved"])assert.equal(r[k],false)});
