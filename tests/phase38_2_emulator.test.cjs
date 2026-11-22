@@ -1,0 +1,15 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs");
+const {initializeTestEnvironment,assertFails}=require("@firebase/rules-unit-testing");
+const {doc,setDoc,getDoc,runTransaction}=require("firebase/firestore");
+const {paths}=require("../web/phase34/android-firestore-map-34-2");
+const {createAndroidBusinessReader}=require("../web/phase36/android-business-adapter-36-1");
+const {validateBusinessCompatibility}=require("../web/phase38/schema-compatibility-38-2");
+const PROJECT="demo-boustio-phase38-2";
+if(process.env.GCLOUD_PROJECT!==PROJECT||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:18080"||process.env.FIREBASE_AUTH_EMULATOR_HOST!=="127.0.0.1:19099")throw Error("isolated_emulators_required");
+let env;const now=Date.now(),owner="owner38",other="other38";
+test.before(async()=>{env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:"127.0.0.1",port:18080,rules:fs.readFileSync("firestore.rules","utf8")}});const p=paths(owner),updatedAt=new Date(now-1000);await env.withSecurityRulesDisabled(async c=>{const db=c.firestore();await setDoc(doc(db,p.profile),{businessId:owner,name:"Demo Salon",acceptingBookings:false,schemaVersion:1,updatedAt});await setDoc(doc(db,p.services),{schemaVersion:1,json:JSON.stringify([{id:"cut",name:"Haircut",price:"20.00",duration:30}]),updatedAt});await setDoc(doc(db,p.staff),{schemaVersion:1,json:JSON.stringify([{id:"alex",name:"Alex",role:"Barber",serviceIds:["cut"],weeklySchedule:{},weeklyBreaks:[],timeOff:[]}]),updatedAt})})});
+test.after(async()=>{if(env)await env.cleanup()});
+test("verified owner reads all three synthetic documents atomically",async()=>{const db=env.authenticatedContext(owner,{email_verified:true}).firestore();const read=createAndroidBusinessReader({db,doc,runTransaction});const result=await read(paths(owner),owner);assert.equal(result.atomic,true);const mapped=validateBusinessCompatibility({uid:owner,emailVerified:true,expiresAt:now+600000},result.documents,now);assert.equal(mapped.status,"COMPATIBLE_READ_ONLY");assert.equal(mapped.business.name,"Demo Salon")});
+test("cross-owner and unverified accounts cannot read synthetic business",async()=>{const p=paths(owner);await assertFails(getDoc(doc(env.authenticatedContext(other,{email_verified:true}).firestore(),p.profile)));await assertFails(getDoc(doc(env.authenticatedContext(owner,{email_verified:false}).firestore(),p.profile)))});
+test("unexpected path request is rejected before Firestore read",async()=>{const db=env.authenticatedContext(owner,{email_verified:true}).firestore(),read=createAndroidBusinessReader({db,doc,runTransaction});await assert.rejects(read({...paths(owner),staff:paths(other).staff},owner),/unexpected_business_paths/)});
