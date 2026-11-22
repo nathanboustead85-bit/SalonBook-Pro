@@ -1,0 +1,52 @@
+name: Boustio Phase 37.3 Reactive Browser Security
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase36/auth-listener-controller-36-3.js'
+      - 'web/phase36/secure-dashboard-session-36-4.js'
+      - 'web/phase36/final-integration-audit-36-5.js'
+      - 'web/phase37/**'
+      - 'tests/phase37_3_*'
+      - '.github/workflows/boustio-phase37-3-reactive-dashboard.yml'
+permissions:
+  contents: read
+jobs:
+  reactive-browser-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase37-2
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:19099
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated test dependencies
+        run: npm install --no-save --no-package-lock firebase@11 firebase-admin@13 @firebase/rules-unit-testing@4 firebase-tools@14 esbuild@0.25 @playwright/test@1.56 jsdom@26
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Bundle isolated browser
+        run: npx esbuild web/phase37/dashboard-37-2-entry.js --bundle --platform=browser --format=iife --target=es2022 --outfile=web/phase37/dashboard-37-2-bundle.js
+      - name: Phase 37.3 reactive unit and DOM tests
+        run: node --test tests/phase37_3_reactive.test.mjs
+      - name: Phase 37.3 and 37.2 Playwright Firebase emulator tests
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase37-2 --config firebase.phase32-4.json "npx playwright test --config=playwright.phase37-2.config.cjs"
+      - name: Phase 37.1 DOM regression
+        run: node --test tests/phase37_1_browser.test.mjs
+      - name: Phase 36.5 security regression
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase36-5 --config firebase.phase32-4.json "node --test tests/phase36_5_final_integration_audit.test.cjs"
+        env:
+          GCLOUD_PROJECT: demo-boustio-phase36-5
+      - name: No deployment verification
+        run: |
+          test -s firestore.rules
+          test -s firebase.phase32-4.json
+          echo "PHASE37_3_REACTIVE_NO_DEPLOYMENT"
