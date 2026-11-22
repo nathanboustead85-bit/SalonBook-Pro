@@ -1,0 +1,49 @@
+name: Boustio Phase 37.2 Isolated Browser Firebase Integration
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase37/dashboard-37-2*'
+      - 'web/phase37/README-37-2.md'
+      - 'tests/phase37_2_*'
+      - 'playwright.phase37-2.config.cjs'
+      - '.github/workflows/boustio-phase37-2-browser-firebase.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-browser-firebase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase37-2
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:19099
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated Firebase browser and Playwright dependencies
+        run: npm install --no-save --no-package-lock firebase@11 firebase-admin@13 @firebase/rules-unit-testing@4 firebase-tools@14 esbuild@0.25 @playwright/test@1.56 jsdom@26
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Bundle isolated browser Firebase integration
+        run: npx esbuild web/phase37/dashboard-37-2-entry.js --bundle --platform=browser --format=iife --target=es2022 --outfile=web/phase37/dashboard-37-2-bundle.js
+      - name: Real browser Firebase Auth and Firestore emulator integration tests
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase37-2 --config firebase.phase32-4.json "npx playwright test --config=playwright.phase37-2.config.cjs"
+      - name: Phase 37.1 browser DOM regression
+        run: node --test tests/phase37_1_browser.test.mjs
+      - name: Phase 36.5 real Firebase emulator audit
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase36-5 --config firebase.phase32-4.json "node --test tests/phase36_5_final_integration_audit.test.cjs"
+        env:
+          GCLOUD_PROJECT: demo-boustio-phase36-5
+      - name: No deployment verification
+        run: |
+          test -s firestore.rules
+          test -s firebase.phase32-4.json
+          echo "PHASE37_2_BROWSER_EMULATOR_ONLY_NO_DEPLOYMENT"
