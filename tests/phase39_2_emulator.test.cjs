@@ -1,0 +1,15 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs");
+const {initializeTestEnvironment,assertFails}=require("@firebase/rules-unit-testing");
+const {doc,setDoc,getDoc,runTransaction}=require("firebase/firestore");
+const {paths}=require("../web/phase34/android-firestore-map-34-2");
+const {createUnifiedSession}=require("../web/phase39/unified-session-39-2");
+const PROJECT="demo-boustio-phase39-2";
+if(process.env.GCLOUD_PROJECT!==PROJECT||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:18080"||process.env.FIREBASE_AUTH_EMULATOR_HOST!=="127.0.0.1:19099")throw Error("isolated_emulators_required");
+let env;const now=Date.now(),uid="owner39session",other="other39session";
+const user=id=>({uid:id,emailVerified:true,async getIdTokenResult(){return {claims:{user_id:id,email_verified:true},expirationTime:new Date(now+600000).toISOString()}}});
+test.before(async()=>{env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:"127.0.0.1",port:18080,rules:fs.readFileSync("firestore.rules","utf8")}});const p=paths(uid),updatedAt=new Date(now-1000);await env.withSecurityRulesDisabled(async c=>{const db=c.firestore();await setDoc(doc(db,p.profile),{businessId:uid,name:"Session Salon",acceptingBookings:false,schemaVersion:1,updatedAt});await setDoc(doc(db,p.services),{schemaVersion:1,json:JSON.stringify([{id:"cut",name:"Cut",price:"20.00",duration:30}]),updatedAt});await setDoc(doc(db,p.staff),{schemaVersion:1,json:JSON.stringify([{id:"alex",name:"Alex",role:"Barber",serviceIds:["cut"],weeklySchedule:{},weeklyBreaks:[],timeOff:[]}]),updatedAt})})});
+test.after(async()=>{if(env)await env.cleanup()});
+test("verified owner loads synthetic data, sign-out clears it",async()=>{const auth={currentUser:user(uid)},session=createUnifiedSession({auth,db:env.authenticatedContext(uid,{email_verified:true}).firestore(),doc,runTransaction,now:()=>now});const r=await session.refresh();assert.equal(r.status,"COMPATIBLE_READ_ONLY");assert.equal(r.business.name,"Session Salon");auth.currentUser=null;session.signOut();assert.equal(session.snapshot().business,null)});
+test("unverified Firestore identity denied despite valid client-side token",async()=>{const auth={currentUser:user(uid)},session=createUnifiedSession({auth,db:env.authenticatedContext(uid,{email_verified:false}).firestore(),doc,runTransaction,now:()=>now});assert.equal((await session.refresh()).status,"UNAVAILABLE");assert.equal(session.snapshot().business,null)});
+test("cross-owner Firestore identity denied",async()=>{const auth={currentUser:user(uid)},session=createUnifiedSession({auth,db:env.authenticatedContext(other,{email_verified:true}).firestore(),doc,runTransaction,now:()=>now});assert.equal((await session.refresh()).status,"UNAVAILABLE");await assertFails(getDoc(doc(env.authenticatedContext(other,{email_verified:true}).firestore(),paths(uid).profile)))});
