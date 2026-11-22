@@ -23,7 +23,7 @@ function createSessionGuard({session,auth,now=Date.now}){
   start(){session.start();return view},
   userChanged,
   async retry(){if(!active)return view;const token=++generation;blocked=true;emit(deny("auth_refreshing"));try{await session.retry()}catch{return clear("auth_refresh_failed")}if(token!==generation||!active)return view;blocked=false;return accept(session.snapshot())},
-  async networkRestored(){if(!active)return view;const token=++generation;blocked=true;emit(deny("network_unavailable"));try{await session.networkRestored()}catch{return clear("network_unavailable")}if(token!==generation||!active)return view;blocked=false;return accept(session.snapshot())},
+  async networkRestored(){if(!active)return view;const token=++generation;blocked=true;emit(deny("network_unavailable"));try{await session.networkRestored()}catch{return clear("network_unavailable")}if(token!==generation||!active)return view;blocked=false;return this.revalidate()},
   networkUnavailable(){clear("network_unavailable");session.networkUnavailable();return view},
   signOut(){clear("signed_out");session.networkUnavailable();return view},
   async completeSignOut(){if(!active)return view;identity=null;session.networkUnavailable();return emit(deny("signed_out"))},
