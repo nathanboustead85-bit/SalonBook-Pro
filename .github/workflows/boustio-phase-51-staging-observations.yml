@@ -1,0 +1,26 @@
+name: Boustio Phase 51 Staging Observations Offline Evidence
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'docs/security/phase-51-staging-observations-2026-11-22.md'
+      - 'tests/phase51_staging_observations.test.cjs'
+      - '.github/workflows/boustio-phase-51-staging-observations.yml'
+permissions:
+  contents: read
+jobs:
+  evidence-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate reported observations and preserve blockers
+        run: node --test tests/phase51_staging_observations.test.cjs tests/phase51_consolidated_security.test.cjs
+      - name: Confirm offline only
+        run: |
+          test -z "${GOOGLE_APPLICATION_CREDENTIALS:-}"
+          test -z "${FIREBASE_TOKEN:-}"
+          echo 'Evidence recording only; no Firebase connection or deployment'
