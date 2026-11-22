@@ -1,0 +1,51 @@
+{
+  "phase": "49.7",
+  "reviewStatus": "NOT_STARTED",
+  "independentReviewer": "UNASSIGNED",
+  "ownerAuthorization": "NOT_GRANTED",
+  "stagingExecution": "NOT_AUTHORIZED",
+  "securityDecision": "PENDING",
+  "blockerClosureAuthorized": false,
+  "requiredControls": [
+    "admin-revocation",
+    "session-expiry",
+    "owner-isolation",
+    "credential-boundaries",
+    "staging-isolation",
+    "negative-tests",
+    "rollback-readiness"
+  ],
+  "outstandingRisks": [
+    {
+      "id": "R1",
+      "issue": "Real staging Admin SDK token revocation not independently demonstrated",
+      "status": "OPEN"
+    },
+    {
+      "id": "R2",
+      "issue": "Backend owner isolation and Admin SDK bypass risks lack independent staging evidence",
+      "status": "OPEN"
+    },
+    {
+      "id": "R3",
+      "issue": "Staging isolation and least-privilege credentials not independently verified",
+      "status": "OPEN"
+    },
+    {
+      "id": "R4",
+      "issue": "Session expiry, disabled accounts and negative cases not independently verified",
+      "status": "OPEN"
+    },
+    {
+      "id": "R5",
+      "issue": "Evidence provenance, independent signoff and rollback remain pending",
+      "status": "OPEN"
+    }
+  ],
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "deployment": false,
+  "androidAppointments": "preserve-existing-two",
+  "launchBlockers": "ALL_SEVEN_OPEN"
+}
