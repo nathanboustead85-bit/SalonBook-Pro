@@ -29,7 +29,7 @@ const {createSessionGuard}=require("./session-guard-37-4");
  window.addEventListener("pagehide",()=>{stopViewSubscription();renderer.disconnect()},{once:true});
  window.addEventListener("offline",()=>{guarded.networkUnavailable();sync()});
  window.addEventListener("online",async()=>{await guarded.networkRestored();sync()});
- onIdTokenChanged(auth,user=>{if(user!==lastUser){lastUser=user;guarded.userChanged(user);if(user)void guarded.revalidate()}sync()});
+ onIdTokenChanged(auth,user=>{if(user!==lastUser){lastUser=user;guarded.userChanged(user);if(user)void guarded.networkRestored()}sync()});
  document.getElementById("login-form").addEventListener("submit",async e=>{
   e.preventDefault();
   const email=document.getElementById("email").value,password=document.getElementById("password").value;
