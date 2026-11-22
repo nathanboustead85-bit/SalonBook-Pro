@@ -1,0 +1,38 @@
+name: Boustio Phase 41.2 Isolated Emulator Auth Lifecycle
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase41/**'
+      - 'tests/phase41_2_*'
+      - '.github/workflows/boustio-phase41-2-emulator-auth.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-emulator-auth:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase41-1
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:19099
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated Firebase emulator dependencies
+        run: npm install --no-save --no-package-lock firebase@11 firebase-admin@13 @firebase/rules-unit-testing@4 firebase-tools@14
+      - name: Auth lifecycle and prior phase regression
+        run: node --test tests/phase41_2_auth.test.cjs tests/phase41_1_contract.test.cjs tests/phase40_5_audit.test.cjs
+      - name: Firebase emulator owner security regression
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase41-1 --config firebase.phase32-4.json "node --test tests/phase41_1_emulator.test.cjs"
+      - name: NO_DEPLOYMENT safety gate
+        run: |
+          test -s web/phase41/README-41-2.md
+          echo "PHASE41_2_EMULATOR_ONLY_NO_LIVE_FEATURES_NO_DEPLOYMENT"
