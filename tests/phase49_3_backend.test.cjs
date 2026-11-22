@@ -1,0 +1,12 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {prepareBackendVerification}=require("../web/phase49/backend-verification-49-3");
+test("six independent backend procedures remain unverified",()=>{const p=prepareBackendVerification();assert.equal(p.procedureCount,6);assert.equal(p.status,"PHASE49_3_BACKEND_PROCEDURES_ONLY_NOT_APPROVED");assert.ok(p.procedures.every(x=>x.evidence==="MISSING"&&!x.approved))});
+test("revocation requires real checkRevoked verification",()=>assert.match(prepareBackendVerification().procedures[0].procedure,/verifyIdToken\(token,true\)/));
+test("owner isolation, expiry, credentials and concurrency covered",()=>{const ids=prepareBackendVerification().procedures.map(x=>x.id);for(const id of ["owner-isolation","session-expiry","credential-boundary","concurrency"])assert.ok(ids.includes(id))});
+test("all seven inherited blockers remain open",()=>{const p=prepareBackendVerification();assert.equal(p.openCount,7);assert.ok(p.blockers.every(x=>x.status==="OPEN"&&!x.approved))});
+test("self-reported approvals cannot authorize backend",()=>{const p=prepareBackendVerification({claims:{backendApproved:true,revocationVerified:true,stagingApproved:true}});assert.equal(p.backendApproved,false);assert.equal(p.revocationVerified,false);assert.equal(p.stagingApproved,false)});
+test("credential environment denied",()=>assert.equal(prepareBackendVerification({environment:{FIREBASE_TOKEN:"secret"}}).status,"DENIED"));
+test("real inventory denied",()=>assert.equal(prepareBackendVerification({inventory:{projectId:"real"}}).status,"DENIED"));
+test("malformed claims denied",()=>assert.equal(prepareBackendVerification({claims:[]}).status,"DENIED"));
+test("no production actions or original appointments accessed",()=>{const p=prepareBackendVerification();assert.equal(p.originalAppointments,"NOT_ACCESSED_OR_VERIFIED");assert.equal(p.realFirebaseAdminTests,"NOT_PERFORMED");for(const k of ["accessGranted","stagingApproved","securityApproved","backendApproved","revocationVerified","canBook","canPay","canMessage","canDeploy"])assert.equal(p[k],false)});
