@@ -1,0 +1,13 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {createIsolatedStagingIntegration}=require("../web/phase42/isolated-staging-integration-42-1");
+const now=Date.now();
+const env={mode:"EMULATOR_ONLY",projectId:"demo-boustio-phase42-1",firestoreHost:"127.0.0.1:18080",authHost:"127.0.0.1:19099",allowNetwork:false,allowWrites:false,allowDeploy:false};
+const token=uid=>({claims:{user_id:uid,email_verified:true},expirationTime:new Date(now+600000).toISOString()});
+function harness({verifier=async()=>true}={}){let observe,detached=false;const auth={currentUser:null},sdk={auth,doc:(_db,p)=>p,runTransaction:async(_db,fn)=>fn({get:async()=>({exists:()=>false})}),onAuthStateChanged:(_auth,fn)=>{observe=fn;return()=>{detached=true}}};const c=createIsolatedStagingIntegration({environment:env,sdk,db:{},verifyRevocation:verifier,now:()=>now});return {c,auth,observe:u=>{auth.currentUser=u;observe(u)},detached:()=>detached}}
+const user=uid=>({uid,emailVerified:true,getIdTokenResult:async()=>token(uid)});
+test("rejects production, network and write configurations",()=>{const h=harness();h.c.stop();for(const change of [{projectId:"production"},{allowWrites:true},{allowNetwork:true},{allowDeploy:true}])assert.throws(()=>createIsolatedStagingIntegration({environment:{...env,...change},sdk:{},db:{},verifyRevocation:async()=>true}),/emulator_only/)});
+test("missing synthetic documents fail closed, never enabling live actions",async()=>{const h=harness();h.observe(user("owner42"));await h.c.refresh();assert.equal(h.c.snapshot().state,"UNAVAILABLE");for(const k of ["canBook","canPay","canMessage","canDeploy"])assert.equal(h.c[k],false);h.c.stop();assert.equal(h.detached(),true)});
+test("unverified and revoked identities fail closed",async()=>{const h=harness({verifier:async()=>false});h.observe(user("owner42"));await h.c.refresh();assert.equal(h.c.snapshot().state,"UNAVAILABLE");h.observe({...user("owner42"),emailVerified:false});await h.c.refresh();assert.equal(h.c.snapshot().business,null);h.c.stop()});
+test("offline and signout clear state and reconnect does not trust cache",async()=>{const h=harness();h.observe(user("owner42"));h.c.offline();assert.equal(h.c.snapshot().business,null);await h.c.reconnect();assert.equal(h.c.snapshot().state,"UNAVAILABLE");h.c.signOut();assert.equal(h.c.snapshot().business,null);h.c.stop()});
+test("account switching and teardown never retain business data",async()=>{const h=harness();h.observe(user("ownerA"));h.observe(user("ownerB"));await h.c.refresh();h.c.stop();assert.equal(h.c.snapshot().state,"UNAVAILABLE");assert.equal(h.c.snapshot().business,null)});
