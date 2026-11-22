@@ -1,0 +1,76 @@
+{
+  "deployment_authorized": false,
+  "environment": "boustio-staging",
+  "gates": [
+    {
+      "automated_evidence_verified": false,
+      "evidence_records": 0,
+      "gate": "G1",
+      "independent_verification": "PENDING",
+      "launch_blocker": "OPEN",
+      "reviewer_signoff": false,
+      "topic": "Staging isolation and least-privilege IAM"
+    },
+    {
+      "automated_evidence_verified": false,
+      "evidence_records": 0,
+      "gate": "G2",
+      "independent_verification": "PENDING",
+      "launch_blocker": "OPEN",
+      "reviewer_signoff": false,
+      "topic": "Authentication and revoked-token behavior"
+    },
+    {
+      "automated_evidence_verified": false,
+      "evidence_records": 0,
+      "gate": "G3",
+      "independent_verification": "PENDING",
+      "launch_blocker": "OPEN",
+      "reviewer_signoff": false,
+      "topic": "Firestore cross-owner isolation"
+    },
+    {
+      "automated_evidence_verified": false,
+      "evidence_records": 0,
+      "gate": "G4",
+      "independent_verification": "PENDING",
+      "launch_blocker": "OPEN",
+      "reviewer_signoff": false,
+      "topic": "App Check test-only key and enforcement readiness"
+    },
+    {
+      "automated_evidence_verified": false,
+      "evidence_records": 0,
+      "gate": "G5",
+      "independent_verification": "PENDING",
+      "launch_blocker": "OPEN",
+      "reviewer_signoff": false,
+      "topic": "Booking concurrency and idempotency"
+    },
+    {
+      "automated_evidence_verified": false,
+      "evidence_records": 0,
+      "gate": "G6",
+      "independent_verification": "PENDING",
+      "launch_blocker": "OPEN",
+      "reviewer_signoff": false,
+      "topic": "Messaging, attachment and payment restrictions"
+    },
+    {
+      "automated_evidence_verified": false,
+      "evidence_records": 0,
+      "gate": "G7",
+      "independent_verification": "PENDING",
+      "launch_blocker": "OPEN",
+      "reviewer_signoff": false,
+      "topic": "Credential scans, logging, rollback and release controls"
+    }
+  ],
+  "live_bookings_authorized": false,
+  "messaging_authorized": false,
+  "note": "Offline register validation only; actual GitHub runs and Firebase configuration have not been independently verified.",
+  "original_android_appointments": "DO_NOT_ACCESS_OR_MODIFY",
+  "payments_authorized": false,
+  "phase": "50.8",
+  "status": "NOT_APPROVED"
+}
