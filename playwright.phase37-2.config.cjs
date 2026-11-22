@@ -1,0 +1,2 @@
+const {defineConfig}=require("@playwright/test");
+module.exports=defineConfig({testDir:"./tests",testMatch:"phase37_2_browser.spec.cjs",workers:1,fullyParallel:false,timeout:30000,retries:0,use:{baseURL:"http://127.0.0.1:18737",browserName:"chromium",headless:true},webServer:{command:"node tests/phase37_2_static_server.cjs",url:"http://127.0.0.1:18737/dashboard-37-2.html",reuseExistingServer:false,timeout:20000}});
