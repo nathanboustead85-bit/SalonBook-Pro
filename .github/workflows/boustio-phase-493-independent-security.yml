@@ -19,6 +19,12 @@ jobs:
           node-version: '22'
       - name: Synthetic revocation, owner isolation and guardrail regression
         run: node --test tests/phase493_security_preparation.test.cjs
+      - name: Install isolated Firebase emulator test tools
+        run: |
+          npm install --no-save --ignore-scripts firebase-tools@14 @firebase/rules-unit-testing@4 firebase@11
+      - name: Verify isolated Firestore emulator owner isolation
+        run: |
+          npx firebase emulators:exec --config tests/phase493.firebase.json --only firestore --project demo-boustio-phase493 "node --test tests/phase493_firestore_emulator.cjs"
       - name: Verify no production credentials are configured
         run: |
           test -z "${GOOGLE_APPLICATION_CREDENTIALS:-}"
