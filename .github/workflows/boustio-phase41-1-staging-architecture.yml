@@ -1,0 +1,39 @@
+name: Boustio Phase 41.1 Isolated Staging Architecture
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase41/**'
+      - 'tests/phase41_1_*'
+      - '.github/workflows/boustio-phase41-1-staging-architecture.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-staging-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase41-1
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:19099
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install emulator-only dependencies
+        run: npm install --no-save --no-package-lock firebase@11 firebase-admin@13 @firebase/rules-unit-testing@4 firebase-tools@14
+      - name: Staging architecture and Phase 40 audit regression
+        run: node --test tests/phase41_1_contract.test.cjs tests/phase40_5_audit.test.cjs tests/phase40_4_security.test.cjs
+      - name: Firebase emulator owner isolation regression
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase41-1 --config firebase.phase32-4.json "node --test tests/phase41_1_emulator.test.cjs"
+      - name: NO_DEPLOYMENT gate
+        run: |
+          test -s web/phase41/README-41-1.md
+          test -s firestore.rules
+          echo "PHASE41_1_ARCHITECTURE_ONLY_EMULATOR_NO_LIVE_NO_DEPLOYMENT"
