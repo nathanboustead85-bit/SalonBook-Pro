@@ -1,0 +1,89 @@
+{
+  "phase": "50.9",
+  "decision": "NOT_APPROVED",
+  "environment": "boustio-staging",
+  "pull_request": 5,
+  "independent_review_required": true,
+  "merge_authorized": false,
+  "deployment_authorized": false,
+  "live_bookings_authorized": false,
+  "payments_authorized": false,
+  "messaging_authorized": false,
+  "app_check_enforcement_authorized": false,
+  "original_android_appointments": "DO_NOT_ACCESS_OR_MODIFY",
+  "gates": [
+    {
+      "id": "G1",
+      "blocker": "OPEN",
+      "review": "PENDING",
+      "evidence_verified": false,
+      "reviewer": null,
+      "review_date": null,
+      "findings": []
+    },
+    {
+      "id": "G2",
+      "blocker": "OPEN",
+      "review": "PENDING",
+      "evidence_verified": false,
+      "reviewer": null,
+      "review_date": null,
+      "findings": []
+    },
+    {
+      "id": "G3",
+      "blocker": "OPEN",
+      "review": "PENDING",
+      "evidence_verified": false,
+      "reviewer": null,
+      "review_date": null,
+      "findings": []
+    },
+    {
+      "id": "G4",
+      "blocker": "OPEN",
+      "review": "PENDING",
+      "evidence_verified": false,
+      "reviewer": null,
+      "review_date": null,
+      "findings": []
+    },
+    {
+      "id": "G5",
+      "blocker": "OPEN",
+      "review": "PENDING",
+      "evidence_verified": false,
+      "reviewer": null,
+      "review_date": null,
+      "findings": []
+    },
+    {
+      "id": "G6",
+      "blocker": "OPEN",
+      "review": "PENDING",
+      "evidence_verified": false,
+      "reviewer": null,
+      "review_date": null,
+      "findings": []
+    },
+    {
+      "id": "G7",
+      "blocker": "OPEN",
+      "review": "PENDING",
+      "evidence_verified": false,
+      "reviewer": null,
+      "review_date": null,
+      "findings": []
+    }
+  ],
+  "handover_requirements": [
+    "Independent reviewer validates staging and production isolation and IAM.",
+    "Independently reproduce authentication, revoked-token and owner-isolation negative cases.",
+    "Inspect Firestore emulator results and staging rule evidence.",
+    "Verify test-only App Check configuration; do not enforce without explicit approval.",
+    "Verify booking idempotency, concurrency and recovery evidence.",
+    "Verify disabled messaging, attachment and payment boundaries.",
+    "Verify secrets, audit logging, billing alerts, rollback and release permissions.",
+    "Record immutable commit SHA, run URLs, sanitized logs, findings and remediation owners."
+  ]
+}
