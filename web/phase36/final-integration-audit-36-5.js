@@ -20,7 +20,8 @@ function createAuditedDashboard(deps){
   networkUnavailable:()=>{session.networkUnavailable();return inspect()},
   networkRestored:async()=>{await session.networkRestored();return inspect()},
   retry:async()=>{await session.retry();return inspect()},
-  snapshot:inspect
+  snapshot:inspect,
+  subscribe:listener=>session.subscribe(()=>listener(inspect()))
  });
 }
 module.exports=Object.freeze({auditView,createAuditedDashboard});
