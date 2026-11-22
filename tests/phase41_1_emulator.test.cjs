@@ -1,0 +1,14 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs");
+const {initializeTestEnvironment,assertFails}=require("@firebase/rules-unit-testing");
+const {doc,setDoc,getDoc}=require("firebase/firestore");
+const {paths}=require("../web/phase34/android-firestore-map-34-2");
+const {validateStagingEnvironment}=require("../web/phase41/staging-contract-41-1");
+const PROJECT="demo-boustio-phase41-1";
+if(process.env.GCLOUD_PROJECT!==PROJECT||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:18080"||process.env.FIREBASE_AUTH_EMULATOR_HOST!=="127.0.0.1:19099")throw Error("isolated_emulators_required");
+let env;const uid="owner41synthetic",other="other41synthetic",p=paths(uid);
+test.before(async()=>{env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:"127.0.0.1",port:18080,rules:fs.readFileSync("firestore.rules","utf8")}});await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),p.profile),{businessId:uid,name:"Synthetic Staging Contract",schemaVersion:1,acceptingBookings:false,updatedAt:new Date()})})});
+test.after(async()=>{if(env)await env.cleanup()});
+test("emulator-only contract remains disconnected from production",()=>{const r=validateStagingEnvironment({mode:"EMULATOR_ONLY",projectId:PROJECT,firestoreHost:"127.0.0.1:18080",authHost:"127.0.0.1:19099",allowNetwork:false,allowWrites:false,allowDeploy:false});assert.equal(r.status,"EMULATOR_CONTRACT_VALID");assert.equal(r.stagingConnected,false)});
+test("synthetic owner can read own profile",async()=>{const db=env.authenticatedContext(uid,{email_verified:true}).firestore();assert.equal((await getDoc(doc(db,p.profile))).data().name,"Synthetic Staging Contract")});
+test("cross-owner and unverified identity cannot read synthetic owner data",async()=>{for(const [id,verified] of [[other,true],[uid,false]]){const db=env.authenticatedContext(id,{email_verified:verified}).firestore();await assertFails(getDoc(doc(db,p.profile)))}});
