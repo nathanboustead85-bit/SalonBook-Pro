@@ -1,0 +1,18 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs");
+const {initializeTestEnvironment,assertFails}=require("@firebase/rules-unit-testing");
+const {doc,setDoc,getDoc,runTransaction}=require("firebase/firestore");
+const {paths}=require("../web/phase34/android-firestore-map-34-2");
+const {createUnifiedSession}=require("../web/phase39/unified-session-39-2");
+const {createDashboardViewModel}=require("../web/phase39/dashboard-view-model-39-3");
+const PROJECT="demo-boustio-phase39-3";
+if(process.env.GCLOUD_PROJECT!==PROJECT||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:18080"||process.env.FIREBASE_AUTH_EMULATOR_HOST!=="127.0.0.1:19099")throw Error("isolated_emulators_required");
+let env;const now=Date.now(),uid="owner39view",other="other39view";
+const user=id=>({uid:id,emailVerified:true,async getIdTokenResult(){return {claims:{user_id:id,email_verified:true},expirationTime:new Date(now+600000).toISOString()}}});
+test.before(async()=>{env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:"127.0.0.1",port:18080,rules:fs.readFileSync("firestore.rules","utf8")}});const p=paths(uid),updatedAt=new Date(now-1000);await env.withSecurityRulesDisabled(async c=>{const db=c.firestore();await setDoc(doc(db,p.profile),{businessId:uid,name:"View Salon",acceptingBookings:false,schemaVersion:1,updatedAt});await setDoc(doc(db,p.services),{schemaVersion:1,json:JSON.stringify([{id:"cut",name:"Cut",price:"20.00",duration:30}]),updatedAt});await setDoc(doc(db,p.staff),{schemaVersion:1,json:JSON.stringify([{id:"alex",name:"Alex",role:"Barber",serviceIds:["cut"],weeklySchedule:{},weeklyBreaks:[],timeOff:[]}]),updatedAt})})});
+test.after(async()=>{if(env)await env.cleanup()});
+const create=(db,id=uid)=>{const auth={currentUser:user(id)},session=createUnifiedSession({auth,db,doc,runTransaction,now:()=>now});return {auth,vm:createDashboardViewModel({session})}};
+test("owner reads safe view-model, sign-out clears it",async()=>{const {auth,vm}=create(env.authenticatedContext(uid,{email_verified:true}).firestore());const r=await vm.refresh();assert.equal(r.state,"READY");assert.equal(r.business.name,"View Salon");assert.equal(r.canBook,false);auth.currentUser=null;vm.signOut();assert.equal(vm.snapshot().business,null)});
+test("cross-owner denial remains private",async()=>{const {vm}=create(env.authenticatedContext(other,{email_verified:true}).firestore());assert.equal((await vm.refresh()).state,"UNAVAILABLE");assert.equal(vm.snapshot().business,null)});
+test("malformed synthetic profile cannot appear in ready view",async()=>{const p=paths(uid);await env.withSecurityRulesDisabled(async c=>setDoc(doc(c.firestore(),p.profile),{businessId:uid,name:"<script>bad</script>",acceptingBookings:false,schemaVersion:1,updatedAt:new Date(now-1000)}));const {vm}=create(env.authenticatedContext(uid,{email_verified:true}).firestore());assert.equal((await vm.refresh()).state,"UNAVAILABLE")});
+test("cross-owner direct reads denied by security rules",async()=>{const db=env.authenticatedContext(other,{email_verified:true}).firestore();for(const p of Object.values(paths(uid)))await assertFails(getDoc(doc(db,p)))});
