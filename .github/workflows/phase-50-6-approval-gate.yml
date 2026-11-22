@@ -1,0 +1,24 @@
+name: Boustio Phase 50.6 offline staging approval gate
+on:
+  pull_request:
+    paths:
+      - 'docs/security/phase-50-6-*'
+      - '.github/workflows/phase-50-6-approval-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-approval-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run fail-closed offline tests
+        run: python -m unittest discover -s docs/security -p 'test_phase_50_6_gate.py' -v
+      - name: Validate pending evidence
+        run: python docs/security/phase_50_6_gate.py docs/security/phase-50-6-evidence.json
