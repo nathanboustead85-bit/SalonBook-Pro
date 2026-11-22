@@ -38,7 +38,6 @@
   return Object.freeze({
    snapshot:()=>({mounted:active,identity:active?identity:null}),
    unmount(){if(!active)return;active=false;epoch++;identity=null;try{if(typeof detach==="function")detach()}finally{try{unsubscribe()}finally{viewModel.stop();element.replaceChildren()}}},
-   },
    canBook:false,canPay:false,canMessage:false,canDeploy:false
   });
  }
