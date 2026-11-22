@@ -1,0 +1,1 @@
+{"firestore":{"rules":"tests/phase493.firestore.rules"},"emulators":{"firestore":{"host":"127.0.0.1","port":8783},"ui":{"enabled":false}}}
