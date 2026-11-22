@@ -8,7 +8,7 @@ function createIsolatedStagingIntegration({environment,sdk,db,verifyRevocation,n
  if(validateStagingEnvironment(environment).status!=="EMULATOR_CONTRACT_VALID"||validateSdkContract(sdk).status!=="INJECTED_SDK_CONTRACT_VALID"||!db||typeof verifyRevocation!=="function"||typeof now!=="function")throw TypeError("emulator_only_dependencies_required");
  const readAtomic=createAndroidBusinessReader({db,doc:sdk.doc,runTransaction:sdk.runTransaction});
  const recovery=createMultiDeviceRecovery({readAtomic,now});
- let active=true,online=true,epoch=0,state=unavailable("signed_out"),user=null,pending=null;
+ let active=true,online=true,epoch=0,state=unavailable("signed_out"),user=null,pending=null,reconnecting=false;
  const listeners=new Set();
  const emit=x=>{state=x;for(const fn of [...listeners]){try{fn(x)}catch{}}return state};
  const clear=reason=>{epoch++;return emit(unavailable(reason))};
@@ -25,7 +25,8 @@ function createIsolatedStagingIntegration({environment,sdk,db,verifyRevocation,n
    if(!token?.claims||token.claims.user_id!==u.uid||token.claims.email_verified!==true||!Number.isFinite(Date.parse(token.expirationTime))||Date.parse(token.expirationTime)<=now()){recovery.signOut();return clear("invalid_or_expired_token")}
    if(await verifyRevocation({uid:u.uid,token})!==true){if(same(seq,u)){recovery.signOut();return clear("revocation_not_verified")}return state}
    if(!same(seq,u))return state;
-   const result=await recovery.refresh({uid:u.uid,emailVerified:true,expiresAt:Date.parse(token.expirationTime)});
+   const ownerAuth={uid:u.uid,emailVerified:true,expiresAt:Date.parse(token.expirationTime)};
+   const result=reconnecting?await recovery.reconnect(ownerAuth):await recovery.refresh(ownerAuth);
    if(!same(seq,u))return state;
    return emit(result?.state==="READY"?result:unavailable(result?.reason||"dashboard_unavailable"));
   }catch{if(same(seq,u)){recovery.signOut();return clear("verification_or_read_failed")}return state}
@@ -44,7 +45,7 @@ function createIsolatedStagingIntegration({environment,sdk,db,verifyRevocation,n
   subscribe(fn){if(typeof fn!=="function")throw TypeError("listener_required");listeners.add(fn);fn(state);return()=>listeners.delete(fn)},
   signOut(){user=null;recovery.signOut();return clear("signed_out")},
   offline(){online=false;recovery.offline();return clear("network_unavailable")},
-  async reconnect(){if(!active)return state;online=true;recovery.offline();clear("reconnecting");return refresh()},
+  async reconnect(){if(!active)return state;online=true;reconnecting=true;recovery.offline();clear("reconnecting");try{return await refresh()}finally{reconnecting=false}},
   stop(){if(!active)return state;active=false;user=null;clear("stopped");try{if(typeof detach==="function")detach()}finally{recovery.stop();listeners.clear()}return state},
   stagingConnected:false,stagingApproved:false,canBook:false,canPay:false,canMessage:false,canDeploy:false
  });
