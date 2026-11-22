@@ -1,0 +1,17 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {createAppointmentRecoveryPreparation}=require("../web/phase47/appointment-recovery-47-5");
+const {assessLaunchGaps}=require("../web/phase46/readiness-gaps-46-1");
+const ownerId="synthetic-owner",identity={uid:ownerId,emailVerified:true,revocationVerified:true,sessionActive:true,appCheckVerified:true};
+const records=[{id:"fixture-a",ownerId,version:1,acceptingBookings:false},{id:"fixture-b",ownerId,version:1,acceptingBookings:false}];
+const args={requestOwnerId:ownerId,identity,restored:records,ownerApproval:true};
+const make=()=>createAppointmentRecoveryPreparation({ownerId,records,revision:2});
+test("synthetic two-record checksum and restore precheck never execute restore",()=>{const g=make(),r=g.inspect(args);assert.equal(g.plan.count,2);assert.match(g.plan.checksum,/^[a-f0-9]{64}$/);assert.equal(r.status,"SYNTHETIC_RECOVERY_PRECHECK_ONLY");assert.equal(r.restoreExecuted,false);assert.equal(r.migrationApproved,false);g.stop()});
+test("reordered identical fixtures preserve checksum",()=>{const g=make();assert.equal(g.inspect({...args,restored:[...records].reverse()}).status,"SYNTHETIC_RECOVERY_PRECHECK_ONLY");g.stop()});
+test("tampered, missing, duplicate and cross-owner fixtures fail closed",()=>{const g=make();for(const restored of [[{...records[0],version:2},records[1]],[records[0]],[records[0],records[0]],[{...records[0],ownerId:"synthetic-other"},records[1]]])assert.equal(g.inspect({...args,restored}).status,"BLOCKED");g.stop()});
+test("explicit verified owner approval is mandatory but cannot approve migration",()=>{const g=make();assert.equal(g.inspect({...args,ownerApproval:false}).reason,"owner_approval_required");assert.equal(g.inspect({...args,operation:"migrate"}).reason,"owner_or_operation_denied");assert.equal(g.inspect(args).migrationApproved,false);g.stop()});
+test("cross-owner and revoked or unverified identities are rejected",()=>{const g=make();for(const request of [{...args,requestOwnerId:"synthetic-other"},{...args,identity:{...identity,revocationVerified:false}},{...args,identity:{...identity,appCheckVerified:false}}])assert.equal(g.inspect(request).reason,"owner_or_operation_denied");g.stop()});
+test("rollback is a checklist only and original appointments untouched",()=>{const g=make();assert.equal(g.checklist.status,"ROLLBACK_PLAN_ONLY");assert.equal(g.checklist.rollbackExecuted,false);assert.equal(g.checklist.originalAndroidAppointments,"UNTOUCHED_NOT_INSPECTED");g.stop()});
+test("stopped gate refuses all operations",()=>{const g=make();g.stop();assert.equal(g.inspect(args).reason,"stopped")});
+test("invalid inventory, non-synthetic owner and enabled bookings fail closed",()=>{assert.equal(createAppointmentRecoveryPreparation({ownerId:"real-owner",records}).status,"BLOCKED");assert.equal(createAppointmentRecoveryPreparation({ownerId,records:[{...records[0],acceptingBookings:true}]}).status,"BLOCKED")});
+test("seven launch blockers remain open and all live features disabled",()=>{const g=make(),r=g.inspect(args);assert.equal(assessLaunchGaps().openCount,7);for(const key of ["accessGranted","restoreExecuted","rollbackExecuted","migrationApproved","stagingApproved","canBook","canPay","canMessage","canDeploy"])assert.equal(r[key],false);g.stop()});
