@@ -1,0 +1,38 @@
+name: Boustio Phase 45.5 Final Isolated Staging Audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase45/**'
+      - 'tests/phase45_5_*'
+      - '.github/workflows/boustio-phase45-5-final-audit.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-final-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase45-5
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:19099
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated dependencies
+        run: npm install --no-save --no-package-lock firebase@11 firebase-admin@13 @firebase/rules-unit-testing@4 firebase-tools@14
+      - name: Final staging security audit and all Phase 45 regressions
+        run: node --test tests/phase45_5_audit.test.cjs tests/phase45_4_integrity.test.cjs tests/phase45_3_access.test.cjs tests/phase45_2_secrets.test.cjs tests/phase45_1_readiness.test.cjs
+      - name: Firebase emulator final security integration
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase45-5 --config firebase.phase32-4.json "node --test tests/phase45_5_emulator.test.cjs"
+      - name: NO_DEPLOYMENT safety gate
+        run: |
+          test -s web/phase45/README-45-5.md
+          echo "PHASE45_5_EMULATOR_ONLY_NO_DEPLOYMENT"
