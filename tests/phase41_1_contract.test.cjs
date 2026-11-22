@@ -1,0 +1,10 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {validateStagingEnvironment,validateSdkContract,assessStagingReadiness}=require("../web/phase41/staging-contract-41-1");
+const env=()=>({mode:"EMULATOR_ONLY",projectId:"demo-boustio-phase41-1",firestoreHost:"127.0.0.1:18080",authHost:"127.0.0.1:19099",allowNetwork:false,allowWrites:false,allowDeploy:false});
+const sdk=()=>({auth:{currentUser:null},doc(){},runTransaction(){},onAuthStateChanged(){}});
+test("explicit emulator architecture passes but cannot connect or deploy",()=>{const r=assessStagingReadiness(env(),sdk());assert.equal(r.status,"ARCHITECTURE_CONTRACTS_VALID");for(const k of ["stagingConnected","stagingApproved","productionReady","migrationApproved","canDeploy","canBook","canPay","canMessage"])assert.equal(r[k],false)});
+test("real or non-demo Firebase projects are rejected",()=>{for(const projectId of ["boustio-production","boustio-staging","demo-boustio-production","",null]){const x=env();x.projectId=projectId;assert.equal(validateStagingEnvironment(x).status,"NOT_APPROVED")}});
+test("remote endpoints and permissive network/write/deploy flags fail closed",()=>{for(const change of [x=>x.firestoreHost="firestore.googleapis.com",x=>x.authHost="localhost:19099",x=>x.allowNetwork=true,x=>x.allowWrites=true,x=>x.allowDeploy=true,x=>x.mode="STAGING_LIVE",x=>x.apiKey="secret"]){const x=env();change(x);assert.equal(validateStagingEnvironment(x).status,"NOT_APPROVED")}});
+test("SDK adapter requires explicit injected read-only primitives",()=>{for(const change of [x=>delete x.doc,x=>x.runTransaction=null,x=>x.onAuthStateChanged=null,x=>x.auth=null,x=>x.setDoc=()=>{}]){const x=sdk();change(x);assert.equal(validateSdkContract(x).status,"NOT_APPROVED")}});
+test("Phase 40 P0 blockers remain open in architecture readiness",()=>{const r=assessStagingReadiness(env(),sdk());assert.ok(r.openBlockers.length>=5);assert.ok(r.openBlockers.every(x=>x.status==="OPEN"))});
