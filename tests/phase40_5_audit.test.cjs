@@ -1,0 +1,10 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {auditPhase40,blockers}=require("../web/phase40/final-audit-40-5");
+const {assessReadiness}=require("../web/phase40/readiness-assessment-40-1");
+const {inspectSharedRevision}=require("../web/phase40/hours-revision-contract-40-3");
+test("source-grounded final audit passes isolated checks without approving launch",()=>{const r=auditPhase40();assert.equal(r.status,"ISOLATED_AUDIT_CHECKS_PASSED",r.failures.join(";"));for(const key of ["productionReady","stagingApproved","migrationApproved","canBook","canPay","canMessage","canDeploy"])assert.equal(r[key],false)});
+test("P0 blocker register remains open, uniquely identified and documented",()=>{assert.ok(blockers.length>=5);assert.equal(new Set(blockers.map(x=>x.id)).size,blockers.length);assert.ok(blockers.every(x=>x.status==="OPEN"&&x.description.length>30))});
+test("previous readiness assessment remains fail closed",()=>{const r=assessReadiness();assert.equal(r.productionReady,false);assert.equal(r.deploymentApproved,false);assert.equal(r.migrationApproved,false)});
+test("cross-device mismatched snapshot is not authorized",()=>{const hours=Object.fromEntries(["monday","tuesday","wednesday","thursday","friday","saturday","sunday"].map(x=>[x,[]]));const documents=Object.fromEntries(["profile","services","staff"].map(k=>[k,{ownerUid:"synthetic",schemaVersion:2,sharedRevision:4,snapshotId:"snapshot40"}]));documents.staff.sharedRevision=5;const result=inspectSharedRevision({ownerUid:"synthetic",documents,hours});assert.equal(result.status,"UNAVAILABLE");assert.equal(result.canBook,false)});
+test("source audit rejects missing files and deployment workflows without requiring live Firebase",()=>{const fs=require("node:fs"),path=require("node:path");const root=path.resolve(__dirname,"..");for(const p of ["web/phase40/browser-dashboard-40-2.js","web/phase40/secure-recovery-40-4.js","web/phase40/hours-revision-contract-40-3.js"]){const s=fs.readFileSync(path.join(root,p),"utf8");assert.ok(s.includes("canBook:false"));assert.equal(/\binitializeApp\s*\(/.test(s),false)}});
