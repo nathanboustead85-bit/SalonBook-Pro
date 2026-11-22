@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "environment": "boustio-staging",
+  "deployment_enabled": false,
+  "live_bookings_enabled": false,
+  "payments_enabled": false,
+  "messaging_enabled": false,
+  "app_check_enforced": false,
+  "independent_approval": false,
+  "gates": [
+    {
+      "gate": "G1",
+      "status": "PENDING",
+      "reviewer": null,
+      "reviewed_at": null,
+      "evidence": [],
+      "commit_sha": null,
+      "environment": "boustio-staging"
+    },
+    {
+      "gate": "G2",
+      "status": "PENDING",
+      "reviewer": null,
+      "reviewed_at": null,
+      "evidence": [],
+      "commit_sha": null,
+      "environment": "boustio-staging"
+    },
+    {
+      "gate": "G3",
+      "status": "PENDING",
+      "reviewer": null,
+      "reviewed_at": null,
+      "evidence": [],
+      "commit_sha": null,
+      "environment": "boustio-staging"
+    },
+    {
+      "gate": "G4",
+      "status": "PENDING",
+      "reviewer": null,
+      "reviewed_at": null,
+      "evidence": [],
+      "commit_sha": null,
+      "environment": "boustio-staging"
+    },
+    {
+      "gate": "G5",
+      "status": "PENDING",
+      "reviewer": null,
+      "reviewed_at": null,
+      "evidence": [],
+      "commit_sha": null,
+      "environment": "boustio-staging"
+    },
+    {
+      "gate": "G6",
+      "status": "PENDING",
+      "reviewer": null,
+      "reviewed_at": null,
+      "evidence": [],
+      "commit_sha": null,
+      "environment": "boustio-staging"
+    },
+    {
+      "gate": "G7",
+      "status": "PENDING",
+      "reviewer": null,
+      "reviewed_at": null,
+      "evidence": [],
+      "commit_sha": null,
+      "environment": "boustio-staging"
+    }
+  ]
+}
