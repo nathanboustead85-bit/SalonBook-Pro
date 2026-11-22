@@ -1,0 +1,11 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {validateSafeConfiguration,scanSyntheticText,expected}=require("../web/phase45/secrets-guard-45-2");
+const config={...expected};
+test("exact isolated configuration passes without enabling features",()=>{const r=validateSafeConfiguration(config,{GCLOUD_PROJECT:config.projectId,FIRESTORE_EMULATOR_HOST:config.firestoreHost,FIREBASE_AUTH_EMULATOR_HOST:config.authHost});assert.equal(r.status,"ISOLATED_SECRETS_CHECK_PASSED",JSON.stringify(r));for(const k of ["canDeploy","canBook","canPay","canMessage","stagingApproved"])assert.equal(r[k],false)});
+test("configuration key injection and mutation fail closed",()=>{for(const change of [{projectId:"production"},{mode:"STAGING"},{allowNetwork:true},{allowWrites:true},{allowDeploy:true},{firestoreHost:"remote:18080"},{unexpected:"value"}])assert.equal(validateSafeConfiguration({...config,...change}).status,"BLOCKED")});
+test("credential-bearing environment variables rejected",()=>{for(const key of ["FIREBASE_TOKEN","GOOGLE_APPLICATION_CREDENTIALS","GITHUB_TOKEN","SERVICE_ACCOUNT_KEY","APP_SECRET","GOOGLE_CLOUD_PROJECT","FIREBASE_PROJECT_ID"])assert.equal(validateSafeConfiguration(config,{[key]:"synthetic-credential-value"}).status,"BLOCKED")});
+test("synthetic secret patterns rejected without printing material",()=>{for(const text of ["-----BEGIN PRIVATE KEY-----","api_key=syntheticExampleSecret12345","password: syntheticPassword12345","ghp_abcdefghijklmnopqrstuvwxyz123456"]){const r=scanSyntheticText(text);assert.equal(r.status,"BLOCKED");assert.ok(!JSON.stringify(r).includes("syntheticPassword"))}});
+test("nonsecret synthetic text allowed",()=>{assert.equal(scanSyntheticText("demo-boustio-phase45-1 EMULATOR_ONLY").status,"NO_KNOWN_SECRET_PATTERN")});
+test("invalid input, prototype pollution and oversized scan fail closed",()=>{for(const c of [null,[],Object.create(null),{...config,__unsafe:true}])assert.equal(validateSafeConfiguration(c).status,"BLOCKED");assert.equal(scanSyntheticText("x".repeat(1000001)).status,"BLOCKED")});
+test("ambient emulator host tampering rejected",()=>{assert.equal(validateSafeConfiguration(config,{FIRESTORE_EMULATOR_HOST:"example.com:18080"}).status,"BLOCKED")});
