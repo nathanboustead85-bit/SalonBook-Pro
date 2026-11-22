@@ -1,0 +1,27 @@
+name: Boustio Phase 51 Consolidated Offline Security Gate
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'security/phase51-consolidated-gates.json'
+      - 'tests/phase51_consolidated_security.test.cjs'
+      - 'docs/security/phase-51-consolidated-verification.md'
+      - '.github/workflows/boustio-phase-51-consolidated-security.yml'
+permissions:
+  contents: read
+jobs:
+  offline-security-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify seven blockers stay open and launch stays disabled
+        run: node --test tests/phase51_consolidated_security.test.cjs
+      - name: Verify no cloud credentials are passed to job
+        run: |
+          test -z "${GOOGLE_APPLICATION_CREDENTIALS:-}"
+          test -z "${FIREBASE_TOKEN:-}"
+          echo 'Offline only: no Firebase access, no deployment, no launch approval'
