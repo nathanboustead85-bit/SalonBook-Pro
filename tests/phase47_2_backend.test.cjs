@@ -1,0 +1,16 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {createTrustedBackendPreparation}=require("../web/phase47/trusted-backend-47-2");
+const {assessLaunchGaps}=require("../web/phase46/readiness-gaps-46-1");
+const uid="synthetic-owner",now=Date.now(),s=Math.floor(now/1000);
+const claims={uid,email_verified:true,iat:s-50,auth_time:s-60,exp:s+600,firebase:{sign_in_provider:"password"}};
+const args={uid,resourceOwnerId:uid,token:"synthetic-token"};
+const make=(fn=async()=>claims,environment={})=>createTrustedBackendPreparation({adminAuth:{verifyIdToken:fn},now:()=>now,environment});
+test("injected verifier checks revoked flag and never grants access",async()=>{let revoked;const g=make(async(t,checkRevoked)=>{revoked=checkRevoked;return claims});const r=await g.check(args);assert.equal(revoked,true);assert.equal(r.status,"SYNTHETIC_TRUSTED_BACKEND_PRECHECK_ONLY");assert.equal(r.accessGranted,false);g.stop()});
+test("cross-owner and write requests denied before token verification",async()=>{let called=false;const g=make(async()=>{called=true;return claims});assert.equal((await g.check({...args,resourceOwnerId:"synthetic-other"})).status,"DENIED");assert.equal((await g.check({...args,operation:"write"})).status,"DENIED");assert.equal(called,false);g.stop()});
+test("revoked token rejection fails closed",async()=>{const g=make(async()=>{throw Error("revoked")});assert.equal((await g.check(args)).status,"DENIED");g.stop()});
+test("expired, unverified and anonymous tokens denied",async()=>{for(const bad of [{...claims,exp:s-1},{...claims,email_verified:false},{...claims,firebase:{sign_in_provider:"anonymous"}}]){const g=make(async()=>bad);assert.equal((await g.check(args)).status,"DENIED");g.stop()}});
+test("ambient credentials rejected",async()=>{const g=make(async()=>claims,{GOOGLE_APPLICATION_CREDENTIALS:"secret"});assert.equal((await g.check(args)).reason,"credential_boundary");g.stop()});
+test("session invalidation rejects pending response",async()=>{let release;const p=new Promise(r=>release=r);const g=make(()=>p);const result=g.check(args);g.invalidate();release(claims);assert.equal((await result).reason,"session_invalidated");g.stop()});
+test("stopped verifier never authorizes",async()=>{const g=make();g.stop();assert.equal((await g.check(args)).reason,"stopped")});
+test("seven blockers remain OPEN and all live features disabled",async()=>{const g=make(),r=await g.check(args);assert.equal(assessLaunchGaps().openCount,7);for(const k of ["canBook","canPay","canMessage","canDeploy","stagingApproved"])assert.equal(r[k],false);g.stop()});
