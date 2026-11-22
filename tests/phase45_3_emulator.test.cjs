@@ -1,0 +1,18 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs");
+const {initializeTestEnvironment,assertFails,assertSucceeds}=require("@firebase/rules-unit-testing");
+const {doc,getDoc,setDoc}=require("firebase/firestore");
+const {paths}=require("../web/phase34/android-firestore-map-34-2");
+const {authorizeOwnerRead}=require("../web/phase45/access-guard-45-3");
+const PROJECT="demo-boustio-phase45-3",owner="owner45access",other="other45access",p=paths(owner);
+if(process.env.GCLOUD_PROJECT!==PROJECT||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:18080"||process.env.FIREBASE_AUTH_EMULATOR_HOST!=="127.0.0.1:19099")throw Error("isolated_emulators_required");
+let env;
+test.before(async()=>{env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:"127.0.0.1",port:18080,rules:fs.readFileSync("firestore.rules","utf8")}});await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),p.profile),{businessId:owner,name:"Synthetic Phase 45 Access Salon",schemaVersion:1,acceptingBookings:false,updatedAt:new Date()})})});
+test.after(async()=>{if(env)await env.cleanup()});
+test("verified owner can read synthetic profile",async()=>{const db=env.authenticatedContext(owner,{email_verified:true}).firestore();assert.equal((await assertSucceeds(getDoc(doc(db,p.profile)))).exists(),true)});
+test("cross-business owner cannot read synthetic profile",async()=>{await assertFails(getDoc(doc(env.authenticatedContext(other,{email_verified:true}).firestore(),p.profile)))});
+test("unverified owner cannot read synthetic profile",async()=>{await assertFails(getDoc(doc(env.authenticatedContext(owner,{email_verified:false}).firestore(),p.profile)))});
+test("anonymous user cannot read synthetic profile",async()=>{await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(),p.profile)))});
+test("application guard denies synthetic cross-owner read",async()=>{const identity={uid:other,emailVerified:true,revocationVerified:true,appCheckVerified:true,sessionActive:true,online:true};assert.equal(authorizeOwnerRead({identity,ownerId:other,resourceOwnerId:owner}).status,"DENIED")});
+test("application guard denies unverified App Check and revoked session",async()=>{const base={uid:owner,emailVerified:true,revocationVerified:true,appCheckVerified:true,sessionActive:true,online:true};for(const field of ["appCheckVerified","revocationVerified"])assert.equal(authorizeOwnerRead({identity:{...base,[field]:false},ownerId:owner,resourceOwnerId:owner}).status,"DENIED")});
+test("application guard never authorizes writes or deployment",async()=>{const identity={uid:owner,emailVerified:true,revocationVerified:true,appCheckVerified:true,sessionActive:true,online:true};for(const operation of ["write","deploy","book"])assert.equal(authorizeOwnerRead({identity,ownerId:owner,resourceOwnerId:owner,operation}).status,"DENIED")});
