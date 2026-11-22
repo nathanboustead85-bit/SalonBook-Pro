@@ -1,0 +1,17 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs");
+const {initializeTestEnvironment,assertFails}=require("@firebase/rules-unit-testing");
+const {doc,setDoc,getDoc,runTransaction}=require("firebase/firestore");
+const {paths}=require("../web/phase34/android-firestore-map-34-2");
+const {createAndroidBusinessReader}=require("../web/phase36/android-business-adapter-36-1");
+const {inspectAndroidCompatibility}=require("../web/phase39/android-compatibility-39-4");
+const PROJECT="demo-boustio-phase39-4";
+if(process.env.GCLOUD_PROJECT!==PROJECT||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:18080"||process.env.FIREBASE_AUTH_EMULATOR_HOST!=="127.0.0.1:19099")throw Error("isolated_emulators_required");
+let env;const now=Date.now(),uid="owner39compat",other="other39compat",p=paths(uid);
+test.before(async()=>{env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:"127.0.0.1",port:18080,rules:fs.readFileSync("firestore.rules","utf8")}});await env.withSecurityRulesDisabled(async c=>{const db=c.firestore(),updatedAt=new Date(now-1000);await setDoc(doc(db,p.profile),{businessId:uid,name:"Compatibility Salon",schemaVersion:1,acceptingBookings:false,updatedAt});await setDoc(doc(db,p.services),{schemaVersion:1,json:JSON.stringify([{id:"cut",name:"Cut",price:"20.00",duration:30}]),updatedAt});await setDoc(doc(db,p.staff),{schemaVersion:1,json:JSON.stringify([{id:"alex",name:"Alex",role:"Barber",serviceIds:["cut"],weeklySchedule:{monday:{open:"09:00",close:"17:00"}},weeklyBreaks:[],timeOff:[]}]),updatedAt})})});
+test.after(async()=>{if(env)await env.cleanup()});
+const read=async()=>{const db=env.authenticatedContext(uid,{email_verified:true}).firestore();return (await createAndroidBusinessReader({db,doc,runTransaction})(p,uid)).documents};
+const auth={uid,emailVerified:true,expiresAt:now+600000};
+test("atomic synthetic Android v1 records validate with staff hours",async()=>{const result=inspectAndroidCompatibility(auth,await read(),now);assert.equal(result.status,"COMPATIBLE_READ_ONLY");assert.equal(result.migrationReady,false);assert.equal(result.availabilityStatus,"UNVERIFIED_READ_ONLY")});
+test("unsupported schema version denied after emulator read",async()=>{await env.withSecurityRulesDisabled(async c=>setDoc(doc(c.firestore(),p.staff),{schemaVersion:2,json:"[]",updatedAt:new Date(now-1000)}));assert.equal(inspectAndroidCompatibility(auth,await read(),now).status,"UNAVAILABLE")});
+test("cross-owner read rejected by Firestore rules",async()=>{const db=env.authenticatedContext(other,{email_verified:true}).firestore();for(const key of Object.values(p))await assertFails(getDoc(doc(db,key)))});
