@@ -22,9 +22,9 @@ const {createDashboardRenderer}=require("./dashboard-37-1-renderer.mjs");
   return s;
  }
  renderer.connect(session);sync();
- // The Phase 36 controller does not emit state notifications. Poll only while this local preview is open.
- const interval=setInterval(sync,80);
- window.addEventListener("pagehide",()=>{clearInterval(interval);session.stop()},{once:true});
+ const stopViewSubscription=session.subscribe(()=>sync());
+ // Phase 37.3: state is delivered by the audited subscription, never by polling.
+ window.addEventListener("pagehide",()=>{stopViewSubscription();renderer.disconnect()},{once:true});
  window.addEventListener("offline",()=>{session.networkUnavailable();sync()});
  window.addEventListener("online",async()=>{await session.networkRestored();sync()});
  onIdTokenChanged(auth,user=>{if(user!==lastUser){lastUser=user;renderer.render({view:user?"LOADING":"SIGNED_OUT",message:user?"Verifying your account.":"Signed out.",business:null,services:[],staff:[],canBook:false,canEdit:false,canMessage:false,canPay:false})}sync()});
@@ -36,5 +36,5 @@ const {createDashboardRenderer}=require("./dashboard-37-1-renderer.mjs");
   try{await signInWithEmailAndPassword(auth,email,password)}catch{renderer.render({view:"UNAVAILABLE",message:"Sign-in failed.",business:null,services:[],staff:[],canBook:false,canEdit:false,canMessage:false,canPay:false})}
  });
  document.getElementById("signout").addEventListener("click",async()=>{session.networkUnavailable();renderer.render({view:"SIGNED_OUT",message:"Signed out.",business:null,services:[],staff:[],canBook:false,canEdit:false,canMessage:false,canPay:false});await signOut(auth);await session.networkRestored();sync()});
- window.__phase37_2_test=Object.freeze({view:()=>current,signOut:()=>signOut(auth),refresh:()=>session.retry(),networkUnavailable:()=>{session.networkUnavailable();sync()},networkRestored:()=>session.networkRestored()});
+ window.__phase37_2_test=Object.freeze({view:()=>current,signOut:()=>signOut(auth),refresh:()=>session.retry(),forceTokenRefresh:()=>auth.currentUser?.getIdToken(true),networkUnavailable:()=>{session.networkUnavailable();sync()},networkRestored:()=>session.networkRestored(),subscriptionMode:"reactive"});
 })().catch(()=>{document.getElementById("status").textContent="Isolated dashboard unavailable."});
