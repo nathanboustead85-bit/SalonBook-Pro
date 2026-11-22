@@ -1,0 +1,38 @@
+name: Boustio Phase 43.2 Isolated Revocation Verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase43/**'
+      - 'tests/phase43_2_*'
+      - '.github/workflows/boustio-phase43-2-revocation.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-revocation-verification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase43-2
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:19099
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated dependencies
+        run: npm install --no-save --no-package-lock firebase@11 firebase-admin@13 @firebase/rules-unit-testing@4 firebase-tools@14
+      - name: Revocation and prior contract regressions
+        run: node --test tests/phase43_2_revocation.test.cjs tests/phase43_1_auth.test.cjs
+      - name: Synthetic Firebase emulator access verification
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase43-2 --config firebase.phase32-4.json "node --test tests/phase43_2_emulator.test.cjs"
+      - name: NO_DEPLOYMENT safety gate
+        run: |
+          test -s web/phase43/README-43-2.md
+          echo "PHASE43_2_EMULATOR_ONLY_NO_DEPLOYMENT"
