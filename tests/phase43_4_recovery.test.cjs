@@ -1,0 +1,17 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {createSecureDashboardRecovery}=require("../web/phase43/secure-dashboard-recovery-43-4");
+const now=Date.now(),sec=Math.floor(now/1000),config={mode:"EMULATOR_ONLY",projectId:"demo-boustio-phase43-4",firestoreHost:"127.0.0.1:18080",authHost:"127.0.0.1:19099",allowNetwork:false,allowWrites:false,allowDeploy:false};
+function fixture(overrides={}){
+ const auth={currentUser:null},sdk={auth,doc:(_db,p)=>p,runTransaction:async(_db,fn)=>fn({get:async()=>({exists:()=>false})}),onAuthStateChanged:()=>()=>{}};
+ let counter=0;const used=new Set();
+ const opts={environment:config,config,sdk,db:{},verifyRevocation:async()=>true,approvedAppIds:["synthetic-approved"],verifyIdToken:async()=>({uid:auth.currentUser?.uid,email_verified:true,iat:sec-100,auth_time:sec-200,exp:sec+600,firebase:{sign_in_provider:"password"}}),verifyAppCheckToken:async()=>({appId:"synthetic-approved",iat:sec-30,exp:sec+300}),consumeReplayKey:async({key})=>{if(used.has(key))return false;used.add(key);return true},credentials:async u=>({uid:u.uid,idToken:"synthetic-id",appCheckToken:"synthetic-app",replayKey:"synthetic_nonce_"+String(++counter).padStart(16,"0")}),now:()=>now,...overrides};
+ return {auth,guard:createSecureDashboardRecovery(opts)};
+}
+const user=uid=>({uid,emailVerified:true,getIdTokenResult:async()=>({claims:{user_id:uid,email_verified:true},expirationTime:new Date(now+600000).toISOString()})});
+test("synthetic missing dashboard data stays unavailable despite policy acceptance",async()=>{const h=fixture();h.auth.currentUser=user("owner");assert.equal((await h.guard.refresh()).state,"UNAVAILABLE");assert.equal(h.guard.snapshot().business,null);h.guard.stop()});
+test("denied App Check blocks dashboard read",async()=>{const h=fixture({verifyAppCheckToken:async()=>({appId:"unapproved",iat:sec-30,exp:sec+300})});h.auth.currentUser=user("owner");assert.equal((await h.guard.refresh()).state,"UNAVAILABLE");assert.equal(h.guard.snapshot().business,null);h.guard.stop()});
+test("offline and repeated reconnects remain fail closed",async()=>{const h=fixture();h.auth.currentUser=user("owner");h.guard.offline();assert.equal(h.guard.snapshot().business,null);await Promise.all([h.guard.reconnect(),h.guard.reconnect()]);assert.equal(h.guard.snapshot().state,"UNAVAILABLE");h.guard.stop()});
+test("account switching fences delayed policy response",async()=>{let release;const pending=new Promise(r=>release=r);const h=fixture({verifyIdToken:()=>pending});h.auth.currentUser=user("a");const result=h.guard.refresh();await Promise.resolve();h.auth.currentUser=user("b");h.guard.accountChanged();release({uid:"a",email_verified:true,iat:sec-100,auth_time:sec-200,exp:sec+600});await result;assert.equal(h.guard.snapshot().business,null);h.guard.stop()});
+test("sign-out and teardown prevent late recovery",async()=>{let release;const pending=new Promise(r=>release=r);const h=fixture({credentials:()=>pending});h.auth.currentUser=user("owner");const result=h.guard.refresh();h.guard.signOut();release({uid:"owner",idToken:"synthetic",appCheckToken:"synthetic",replayKey:"synthetic_nonce_00000000001"});await result;assert.equal(h.guard.snapshot().business,null);h.guard.stop()});
+test("disabled live capabilities cannot be enabled by policy acceptance",()=>{const h=fixture();for(const k of ["canBook","canPay","canMessage","canDeploy","stagingApproved","crossDeviceRevisionVerified"])assert.equal(h.guard[k],false);h.guard.stop()});
