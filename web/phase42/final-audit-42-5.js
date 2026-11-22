@@ -6,7 +6,7 @@ const root=path.resolve(__dirname,"../..");
 const sources=Object.freeze(["web/phase42/isolated-staging-integration-42-1.js","web/phase42/session-hardening-42-2.js","web/phase42/session-races-42-3.js","web/phase42/session-recovery-audit-42-4.js"]);
 const tests=Object.freeze(["tests/phase42_1_integration.test.cjs","tests/phase42_1_emulator.test.cjs","tests/phase42_2_session.test.cjs","tests/phase42_2_emulator.test.cjs","tests/phase42_3_races.test.cjs","tests/phase42_3_emulator.test.cjs","tests/phase42_4_recovery.test.cjs","tests/phase42_4_emulator.test.cjs"]);
 const docs=Object.freeze([1,2,3,4].map(i=>"web/phase42/README-42-"+i+".md"));
-const workflows=Object.freeze([".github/workflows/boustio-phase42-1-isolated-staging.yml",".github/workflows/boustio-phase42-2-session-hardening.yml",".github/workflows/boustio-phase42-3-session-races.yml",".github/workflows/boustio-phase42-4-session-recovery.yml",".github/workflows/boustio-phase42-5-final-audit.yml"]);
+const workflows=Object.freeze([".github/workflows/boustio-phase42-2-session-hardening.yml",".github/workflows/boustio-phase42-3-session-races.yml",".github/workflows/boustio-phase42-4-session-recovery.yml",".github/workflows/boustio-phase42-5-final-audit.yml"]);
 const blockers=Object.freeze([
  {id:"42.5-P0-01",status:"OPEN",reason:"No independently verified real staging SDK connection, App Check or trusted backend token revocation"},
  {id:"42.5-P0-02",status:"OPEN",reason:"Android v1 lacks verified shared cross-device revision and business-wide opening hours; v2 migration not approved"},
