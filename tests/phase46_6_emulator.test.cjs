@@ -11,7 +11,7 @@ const {createAppCheckReplayContract}=require("../web/phase46/appcheck-replay-46-
 const {createMultiDeviceGate}=require("../web/phase46/multidevice-46-4");
 const {createRecoveryPlan,verifyRestore,rollbackChecklist}=require("../web/phase46/recovery-plan-46-5");
 const {createSamsungAcceptance,acceptanceMatrix}=require("../web/phase46/samsung-acceptance-46-6");
-const PROJECT="demo-boustio-phase46-6",owner="owner46samsung",other="other46samsung",p=paths(owner),now=Date.now();
+const PROJECT="demo-boustio-phase46-6",owner="synthetic-owner46samsung",other="synthetic-other46samsung",p=paths(owner),now=Date.now();
 if(process.env.GCLOUD_PROJECT!==PROJECT||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:18080"||process.env.FIREBASE_AUTH_EMULATOR_HOST!=="127.0.0.1:19099")throw Error("isolated_emulators_required");
 let env;
 test.before(async()=>{env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:"127.0.0.1",port:18080,rules:fs.readFileSync("firestore.rules","utf8")}});await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),p.profile),{businessId:owner,name:"Synthetic Integrity Salon",schemaVersion:1,acceptingBookings:false,updatedAt:new Date(now-1000),revision:2})})});
