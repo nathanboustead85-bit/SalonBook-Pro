@@ -1,0 +1,16 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {createBackendVerificationContract}=require("../web/phase46/backend-contract-46-2");
+const {assessLaunchGaps}=require("../web/phase46/readiness-gaps-46-1");
+const now=Date.now(),s=Math.floor(now/1000),uid="synthetic-owner";
+const claims=()=>({uid,email_verified:true,iat:s-100,auth_time:s-200,exp:s+600,firebase:{sign_in_provider:"password"}});
+const input={uid,resourceOwnerId:uid,token:"synthetic-only"};
+const make=(verifyIdToken=async()=>claims(),opts={})=>createBackendVerificationContract({adminAuth:{verifyIdToken},now:()=>now,...opts});
+test("injected verifier receives checkRevoked=true; no access or live feature granted",async()=>{let flag;const g=make(async(_token,checkRevoked)=>{flag=checkRevoked;return claims()});const r=await g.verify(input);assert.equal(flag,true);assert.equal(r.status,"ISOLATED_BACKEND_CONTRACT_CHECK_PASSED");assert.equal(r.accessGranted,false);for(const k of ["canBook","canPay","canMessage","canDeploy","stagingApproved","productionReady"])assert.equal(r[k],false);g.stop()});
+test("revoked token or verifier error is denied without leaking credentials",async()=>{const g=make(async()=>{throw Error("synthetic revoked token")});const r=await g.verify(input);assert.equal(r.status,"DENIED");assert.equal(r.reason,"token_verification_failed");assert.ok(!JSON.stringify(r).includes(input.token));g.stop()});
+test("expired, future, unverified and anonymous tokens denied",async()=>{for(const bad of [{exp:s-1},{iat:s+60},{email_verified:false},{firebase:{sign_in_provider:"anonymous"}},{auth_time:s-10000},{uid:"another"}]){const g=make(async()=>({...claims(),...bad}));assert.equal((await g.verify(input)).status,"DENIED");g.stop()}});
+test("cross-business owner, missing identity, writes and deploy requests denied",async()=>{const g=make();for(const bad of [{resourceOwnerId:"other"},{uid:"other"},{token:""},{operation:"write"},{operation:"deploy"},{operation:"book"}])assert.equal((await g.verify({...input,...bad})).status,"DENIED");g.stop()});
+test("ambient credentials and config tampering fail closed",async()=>{for(const opts of [{environment:{FIREBASE_TOKEN:"synthetic"}},{config:{mode:"PRODUCTION"}},{environment:{GOOGLE_APPLICATION_CREDENTIALS:"/synthetic/credentials.json"}}]){const g=make(async()=>claims(),opts);assert.equal((await g.verify(input)).reason,"credential_boundary");g.stop()}});
+test("in-flight verification invalidation denies stale result",async()=>{let release;const pending=new Promise(r=>release=r),g=make(()=>pending);const attempt=g.verify(input);g.invalidate();release(claims());assert.equal((await attempt).reason,"session_invalidated");g.stop()});
+test("stop denies further verification and missing verifier rejected",async()=>{assert.throws(()=>createBackendVerificationContract({adminAuth:{}}),TypeError);const g=make();g.stop();assert.equal((await g.verify(input)).status,"DENIED")});
+test("all seven evidence blockers remain OPEN",()=>{const r=assessLaunchGaps();assert.equal(r.openCount,7);assert.ok(r.gaps.every(x=>x.status==="OPEN"&&x.evidenceStatus==="MISSING"&&!x.approved))});
