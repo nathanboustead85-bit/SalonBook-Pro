@@ -1,0 +1,12 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {auditPhase41,blockers,sources,tests,workflows}=require("../web/phase41/final-audit-41-5");
+const {validateStagingEnvironment}=require("../web/phase41/staging-contract-41-1");
+const {inspectDashboardSnapshot}=require("../web/phase41/dashboard-data-41-3");
+const {createMultiDeviceRecovery}=require("../web/phase41/multidevice-recovery-41-4");
+test("Phase 41 source and CI boundary audit passes with no launch approval",()=>{const a=auditPhase41();assert.equal(a.status,"ISOLATED_AUDIT_CHECKS_PASSED");assert.deepEqual(a.failures,[]);for(const k of ["stagingConnected","stagingApproved","productionReady","migrationApproved","revisionVerified","canBook","canPay","canMessage","canDeploy"])assert.equal(a[k],false)});
+test("all security and operational blockers remain open",()=>{assert.equal(blockers.length,6);assert.ok(blockers.every(b=>b.status==="OPEN"));assert.ok(blockers.some(b=>b.reason.includes("appointments")));assert.ok(blockers.some(b=>b.reason.includes("App Check")))});
+test("audit includes all Phase 41 sources, tests and workflows",()=>{assert.equal(sources.length,4);assert.equal(tests.length,7);assert.equal(workflows.length,5)});
+test("real project, remote endpoints and write permissions are rejected",()=>{const base={mode:"EMULATOR_ONLY",projectId:"demo-boustio-phase41-5",firestoreHost:"127.0.0.1:18080",authHost:"127.0.0.1:19099",allowNetwork:false,allowWrites:false,allowDeploy:false};for(const change of [{projectId:"boustio-production"},{firestoreHost:"remote:8080"},{allowWrites:true},{allowDeploy:true},{allowNetwork:true}])assert.equal(validateStagingEnvironment({...base,...change}).status,"NOT_APPROVED")});
+test("unverified owner never receives dashboard data",()=>{const r=inspectDashboardSnapshot({auth:{uid:"synthetic",emailVerified:false},documents:{}});assert.equal(r.state,"UNAVAILABLE");assert.equal(r.canBook,false)});
+test("recovery never enables live features",()=>{const c=createMultiDeviceRecovery({readAtomic:async()=>{throw Error("offline")}});for(const k of ["canBook","canPay","canMessage","canDeploy"])assert.equal(c[k],false);c.stop()});
