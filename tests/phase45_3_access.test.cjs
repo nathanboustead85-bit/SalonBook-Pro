@@ -1,0 +1,12 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {authorizeOwnerRead}=require("../web/phase45/access-guard-45-3");
+const identity={uid:"ownerA",emailVerified:true,revocationVerified:true,appCheckVerified:true,sessionActive:true,online:true};
+const args={identity,ownerId:"ownerA",resourceOwnerId:"ownerA"};
+test("verified synthetic owner is permitted read-only without enabling features",()=>{const r=authorizeOwnerRead(args);assert.equal(r.status,"ISOLATED_OWNER_READ_ALLOWED");assert.equal(r.readOnly,true);for(const k of ["canBook","canPay","canMessage","canDeploy","stagingApproved"])assert.equal(r[k],false)});
+test("cross-business, anonymous and wrong owner denied",()=>{for(const change of [{resourceOwnerId:"ownerB"},{ownerId:"ownerB"},{identity:{...identity,uid:"ownerB"}},{identity:null},{identity:{...identity,uid:""}}])assert.equal(authorizeOwnerRead({...args,...change}).status,"DENIED")});
+test("unverified, revoked, offline and signed-out synthetic identities denied",()=>{for(const key of ["emailVerified","revocationVerified","appCheckVerified","sessionActive","online"])assert.equal(authorizeOwnerRead({...args,identity:{...identity,[key]:false}}).status,"DENIED")});
+test("writes, deployment and payment operations denied",()=>{for(const operation of ["write","create","update","delete","deploy","book","pay","message"])assert.equal(authorizeOwnerRead({...args,operation}).status,"DENIED")});
+test("missing or malformed owner identifiers fail closed",()=>{for(const id of ["","../owner","owner/a","x".repeat(81),null])assert.equal(authorizeOwnerRead({...args,resourceOwnerId:id}).status,"DENIED")});
+test("tampered emulator configuration and ambient cloud credentials denied",()=>{assert.equal(authorizeOwnerRead({...args,config:{mode:"PRODUCTION"}}).status,"DENIED");assert.equal(authorizeOwnerRead({...args,environment:{FIREBASE_TOKEN:"synthetic"}}).status,"DENIED")});
+test("no implicit trust from owner id alone",()=>{assert.equal(authorizeOwnerRead({ownerId:"ownerA",resourceOwnerId:"ownerA"}).status,"DENIED")});
