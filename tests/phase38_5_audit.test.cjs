@@ -1,0 +1,11 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {auditRepository}=require("../web/phase38/release-audit-38-5");
+const {createOwnerAuthorizationGate}=require("../web/phase38/owner-authorization-38-3");
+const {createDashboardRecovery}=require("../web/phase38/dashboard-recovery-38-4");
+const {deny}=require("../web/phase38/schema-compatibility-38-2");
+const now=Date.now(),uid="auditOwner",credentials=()=>({user:{uid,emailVerified:true},token:{claims:{user_id:uid,email_verified:true},expirationTime:new Date(now+600000).toISOString()}});
+test("repository isolation audit passes without granting launch",()=>{const r=auditRepository();assert.equal(r.status,"ISOLATED_GATES_VERIFIED");assert.equal(r.findings.length,0);for(const key of ["productionLaunchApproved","liveBookingsEnabled","paymentsEnabled","messagingEnabled","deploymentApproved"])assert.equal(r[key],false)});
+test("missing or expired credentials cannot initiate an atomic read",async()=>{let reads=0;const gate=createOwnerAuthorizationGate({readAtomic:async()=>{reads++;return {atomic:true,documents:{}}},now:()=>now});for(const auth of [{}, {...credentials(),token:{...credentials().token,expirationTime:new Date(now-1000).toISOString()}}])assert.equal((await gate.load(auth)).status,"UNAVAILABLE");assert.equal(reads,0)});
+test("recoveries never enable booking payment or messaging on denied data",async()=>{const gate={load:async()=>deny("synthetic_denied"),snapshot:()=>deny("synthetic_denied"),networkUnavailable(){},signOut(){},accountChanged(){},stop(){}};const c=createDashboardRecovery({gate,credentials:async()=>credentials()});for(const action of ["refresh","retry","networkRestored","foreground"]){const r=await c[action]();assert.equal(r.business,null);assert.equal(r.bookingEnabled,false);assert.equal(r.canPay,false);assert.equal(r.canMessage,false)}});
+test("session transitions keep private data empty and stop is terminal",async()=>{const gate={load:async()=>deny("synthetic_denied"),snapshot:()=>deny("synthetic_denied"),networkUnavailable(){},signOut(){},accountChanged(){},stop(){}};const c=createDashboardRecovery({gate,credentials:async()=>credentials()});for(const action of ["networkUnavailable","signOut","accountChanged","stop"]){const r=c[action]();assert.equal(r.business,null)}assert.equal((await c.refresh()).business,null)});
