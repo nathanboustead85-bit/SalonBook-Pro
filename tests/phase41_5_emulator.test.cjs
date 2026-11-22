@@ -1,0 +1,15 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs");
+const {initializeTestEnvironment,assertFails}=require("@firebase/rules-unit-testing");
+const {doc,setDoc,getDoc,runTransaction}=require("firebase/firestore");
+const {paths}=require("../web/phase34/android-firestore-map-34-2");
+const {createAndroidBusinessReader}=require("../web/phase36/android-business-adapter-36-1");
+const {createMultiDeviceRecovery}=require("../web/phase41/multidevice-recovery-41-4");
+const PROJECT="demo-boustio-phase41-5",now=Date.now(),owners=["auditOwnerA","auditOwnerB"];
+if(process.env.GCLOUD_PROJECT!==PROJECT||process.env.FIRESTORE_EMULATOR_HOST!=="127.0.0.1:18080"||process.env.FIREBASE_AUTH_EMULATOR_HOST!=="127.0.0.1:19099")throw Error("isolated_emulators_required");
+let env;
+test.before(async()=>{env=await initializeTestEnvironment({projectId:PROJECT,firestore:{host:"127.0.0.1",port:18080,rules:fs.readFileSync("firestore.rules","utf8")}});await env.withSecurityRulesDisabled(async c=>{const db=c.firestore(),updatedAt=new Date(now-1000);for(const uid of owners){const p=paths(uid);await setDoc(doc(db,p.profile),{businessId:uid,name:"Synthetic Audit "+uid,schemaVersion:1,acceptingBookings:false,updatedAt});await setDoc(doc(db,p.services),{schemaVersion:1,json:JSON.stringify([{id:"cut",name:"Cut",price:"20.00",duration:30}]),updatedAt});await setDoc(doc(db,p.staff),{schemaVersion:1,json:JSON.stringify([{id:"alex",name:"Alex",role:"Barber",serviceIds:["cut"],weeklySchedule:{monday:{open:"09:00",close:"17:00"}},weeklyBreaks:[],timeOff:[]}]),updatedAt})}})});
+test.after(async()=>{if(env)await env.cleanup()});
+test("two synthetic owners read separate read-only dashboards",async()=>{for(const uid of owners){const db=env.authenticatedContext(uid,{email_verified:true}).firestore(),reader=createAndroidBusinessReader({db,doc,runTransaction}),c=createMultiDeviceRecovery({readAtomic:reader,now:()=>now});const r=await c.refresh({uid,emailVerified:true,expiresAt:now+600000});assert.equal(r.state,"READY");assert.equal(r.business.name,"Synthetic Audit "+uid);assert.equal(r.canBook,false);c.stop()}});
+test("cross-owner and unverified Firestore reads are denied",async()=>{const db=env.authenticatedContext(owners[0],{email_verified:true}).firestore(),foreign=paths(owners[1]);for(const p of Object.values(foreign))await assertFails(getDoc(doc(db,p)));const unverified=env.authenticatedContext(owners[1],{email_verified:false}).firestore();await assertFails(getDoc(doc(unverified,foreign.profile)))});
+test("emulator reconnect revalidates data without enabling bookings",async()=>{const uid=owners[0],db=env.authenticatedContext(uid,{email_verified:true}).firestore(),reader=createAndroidBusinessReader({db,doc,runTransaction}),c=createMultiDeviceRecovery({readAtomic:reader,now:()=>now}),auth={uid,emailVerified:true,expiresAt:now+600000};await c.refresh(auth);c.offline();assert.equal(c.snapshot().business,null);const r=await c.reconnect(auth);assert.equal(r.state,"READY");assert.equal(r.canBook,false);c.stop()});
