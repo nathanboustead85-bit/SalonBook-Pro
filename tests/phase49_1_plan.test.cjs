@@ -1,0 +1,11 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {planStaging49}=require("../web/phase49/staging-plan-49-1");
+test("five staging prerequisites remain unverified",()=>{const p=planStaging49();assert.equal(p.status,"PHASE49_1_STAGING_PLAN_ONLY_NOT_APPROVED");assert.equal(p.checklistCount,5);assert.ok(p.checklist.every(x=>x.status==="NOT_VERIFIED"&&!x.approved))});
+test("all seven blockers have independent closure criteria",()=>{const p=planStaging49();assert.equal(p.openCount,7);assert.equal(new Set(p.evidence.map(x=>x.id)).size,7);assert.ok(p.evidence.every(x=>x.status==="OPEN"&&!x.approved&&x.closureCriterion&&x.independentReview==="REQUIRED"))});
+test("least privilege prohibits broad access and persistent keys",()=>{const p=planStaging49();const t=p.checklist.find(x=>x.id==="least-privilege").requirement;assert.match(t,/Owner\/Editor/);assert.match(t,/long-lived/);assert.match(t,/IAM/)});
+test("all capabilities remain disabled",()=>{const p=planStaging49();for(const k of ["accessGranted","stagingApproved","securityApproved","ownerApproved","deviceSignedOff","productionReady","canBook","canPay","canMessage","canDeploy"])assert.equal(p[k],false)});
+test("self-asserted approvals do not change gates",()=>{const p=planStaging49({claims:{stagingApproved:true,ownerApproved:true,securityApproved:true,canDeploy:true}});assert.equal(p.claimsAreNotApproval,true);assert.ok(p.evidence.every(x=>!x.approved));assert.equal(p.canDeploy,false)});
+test("explicit credentials denied",()=>{const p=planStaging49({environment:{FIREBASE_TOKEN:"secret"}});assert.equal(p.status,"DENIED");assert.equal(p.canDeploy,false)});
+test("invalid approval claims denied",()=>{assert.equal(planStaging49({claims:[]}).status,"DENIED")});
+test("two original appointments never claimed inspected",()=>{assert.equal(planStaging49().originalAppointments,"NOT_ACCESSED_OR_VERIFIED")});
