@@ -34,7 +34,8 @@ function createSecureDashboardSession(dependencies){
   networkUnavailable:()=>{controller.networkUnavailable();return snapshot()},
   networkRestored:async()=>{await controller.networkRestored();return snapshot()},
   retry:async()=>{await controller.refresh();return snapshot()},
-  snapshot
+  snapshot,
+  subscribe:listener=>controller.subscribe(state=>listener(project(state)))
  });
 }
 module.exports=Object.freeze({createSecureDashboardSession,project});
