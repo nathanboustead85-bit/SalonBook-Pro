@@ -1,0 +1,10 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const root=path.resolve(__dirname,".."),read=p=>fs.readFileSync(path.join(root,p),"utf8");
+const report=read("web/phase38/READINESS-38-1.md");
+test("assessment cites actual integration files",()=>{for(const p of ["web/phase36/android-business-adapter-36-1.js","web/phase36/secure-dashboard-session-36-4.js","web/phase36/final-integration-audit-36-5.js","web/phase37/dashboard-37-2-entry.js","web/phase37/session-guard-37-4.js","web/phase37/READINESS-37-5.md"]){assert.ok(fs.existsSync(path.join(root,p)),p);assert.ok(report.includes(p),p)}});
+test("prioritised plan includes all launch blockers and explicit nonapproval",()=>{for(const s of ["NOT READY FOR PRODUCTION","P0","P1","P2","38.2","38.3","38.4","38.5","App Check","Booking","payment","messaging","No deployment","two original appointments"])assert.ok(report.includes(s),s)});
+test("browser integration remains emulator-only and guarded",()=>{const s=read("web/phase37/dashboard-37-2-entry.js");assert.match(s,/phase37_2_loopback_only/);assert.match(s,/connectAuthEmulator/);assert.match(s,/connectFirestoreEmulator/);assert.match(s,/createSessionGuard/);assert.doesNotMatch(s,/setInterval\s*\(/)});
+test("business adapter only performs atomic reads",()=>{const s=read("web/phase36/android-business-adapter-36-1.js");assert.match(s,/transaction\.get/);assert.doesNotMatch(s,/transaction\.(set|update|delete|create)\s*\(/);assert.doesNotMatch(s,/\b(setDoc|addDoc|updateDoc|deleteDoc)\s*\(/)});
+test("dashboard projection permanently disables live actions",()=>{const s=read("web/phase36/secure-dashboard-session-36-4.js");for(const k of ["canBook:false","canEdit:false","canMessage:false","canPay:false"])assert.ok(s.includes(k),k)});
+test("assessment workflow is read-only, emulator-only and cannot deploy",()=>{const s=read(".github/workflows/boustio-phase38-1-gap-assessment.yml");assert.match(s,/contents: read/);assert.match(s,/emulators:exec/);assert.doesNotMatch(s,/firebase(-tools)?\s+deploy|deploy-pages|gh-pages|pull_request_target/);assert.match(s,/NO_DEPLOYMENT/)});
