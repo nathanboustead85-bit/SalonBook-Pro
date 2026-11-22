@@ -1,0 +1,49 @@
+{
+  "phase": "51",
+  "environment": "boustio-staging",
+  "mode": "offline-only",
+  "approval": "NOT_APPROVED",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "gates": {
+    "G1": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "realStagingEvidence": false
+    },
+    "G2": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "realStagingEvidence": false
+    },
+    "G3": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "realStagingEvidence": false
+    },
+    "G4": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "realStagingEvidence": false
+    },
+    "G5": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "realStagingEvidence": false
+    },
+    "G6": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "realStagingEvidence": false
+    },
+    "G7": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "realStagingEvidence": false
+    }
+  }
+}
