@@ -1,0 +1,11 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {auditPhase48,phases}=require("../web/phase48/final-audit-48-7");
+test("all six Phase 48 preparation scopes are inventoried",()=>{const a=auditPhase48();assert.equal(a.status,"PHASE48_ISOLATED_AUDIT_PREPARED_NOT_APPROVED");assert.deepEqual(a.phases.map(p=>p.phase),["48.1","48.2","48.3","48.4","48.5","48.6"])});
+test("seven launch blockers remain open and unapproved",()=>{const a=auditPhase48();assert.equal(a.openCount,7);assert.equal(a.blockers.length,7);assert.ok(a.blockers.every(x=>x.status==="OPEN"&&x.approved===false&&x.independentEvidenceRequired===true))});
+test("nine independent staging requirements remain unverified",()=>{const a=auditPhase48();assert.equal(a.requirementCount,9);assert.ok(a.requirements.every(x=>x.status==="NOT_VERIFIED"&&x.approved===false))});
+test("all live capabilities remain disabled",()=>{const a=auditPhase48();for(const k of ["accessGranted","credentialsApproved","securityApproved","stagingApproved","productionReady","deviceSignedOff","appointmentsMigrationApproved","appointmentPreservationVerified","restoreExecuted","rollbackExecuted","canBook","canPay","canMessage","canDeploy"])assert.equal(a[k],false,k)});
+test("real-world checks explicitly remain pending",()=>{const a=auditPhase48();for(const k of ["realStagingValidation","realAppCheckValidation","distributedReplayValidation","physicalSamsungSignoff","independentSecurityReview"])assert.equal(a[k],"NOT_PERFORMED");assert.equal(a.originalAndroidAppointments,"NOT_ACCESSED_OR_VERIFIED")});
+test("untrusted approval claims never authorize staging",()=>{const a=auditPhase48({approvalEvidence:{stagingApproved:true,securityApproved:true,ownerApproved:true,deviceSignedOff:true}});assert.equal(a.stagingApproved,false);assert.ok(a.requirements.every(x=>x.approved===false))});
+test("explicit credential environment denied",()=>{const a=auditPhase48({environment:{FIREBASE_TOKEN:"secret"}});assert.equal(a.status,"AUDIT_DENIED");assert.equal(a.canDeploy,false)});
+test("scope never claims real distributed replay or physical device signoff",()=>{assert.equal(phases.find(x=>x.phase==="48.3").evidence,"NOT_DISTRIBUTED_ATOMIC");assert.equal(phases.find(x=>x.phase==="48.6").evidence,"PHYSICAL_SIGNOFF_MISSING")});
