@@ -20,7 +20,7 @@ function createSessionRaceGuard(options){
   if(!active||!online)return state;
   const user=sdk.auth.currentUser;
   if(!user||user.emailVerified!==true||typeof user.uid!=="string"){owner=null;current=null;base.signOut();return clear("unverified_or_signed_out")}
-  if(owner!==user.uid||current!==user){owner=user.uid;current=user;base.accountChanged();clear("identity_changed")}
+  if(owner!==user.uid||current!==user){owner=user.uid;current=user;clear("identity_changed")}
   const seq=++epoch;emit(unavailable("refreshing"));
   try{
    const result=reconnect?await base.reconnect():await base.refresh();
@@ -30,7 +30,7 @@ function createSessionRaceGuard(options){
    const token=await user.getIdTokenResult(true);
    if(!valid(seq,user))return state;
    const expiry=Date.parse(token?.expirationTime);
-   if(token?.claims?.user_id!==user.uid||token?.claims?.email_verified!==true||!Number.isFinite(expiry)||expiry<=options.now?.() /* optional injected clock */){
+   if(token?.claims?.user_id!==user.uid||token?.claims?.email_verified!==true||!Number.isFinite(expiry)||expiry<=(typeof options.now==="function"?options.now():Date.now())){
     base.signOut();return clear("expired_or_invalid_token");
    }
    if(await verified({uid:user.uid,token})!==true){if(valid(seq,user)){base.signOut();return clear("revoked_or_unverified_session")}return state}
