@@ -18,7 +18,7 @@ function createHardenedSession({environment,sdk,db,verifyRevocation,now=Date.now
   if(!active||!online)return state;
   const current=sdk.auth.currentUser;
   if(!current||typeof current.uid!=="string"||current.emailVerified!==true){identity=null;base.signOut();return clear("unverified_or_signed_out")}
-  if(identity!==current.uid){identity=current.uid;base.signOut();clear("account_changed")}
+  if(identity!==current.uid){identity=current.uid;clear("account_changed")}
   const seq=++generation;emit(unavailable("auth_refreshing"));
   const result=reconnect?await base.reconnect():await base.refresh();
   if(!active||!online||seq!==generation||identity!==current.uid||sdk.auth.currentUser!==current)return state;
