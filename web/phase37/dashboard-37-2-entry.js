@@ -38,5 +38,5 @@ const {createSessionGuard}=require("./session-guard-37-4");
   try{await signInWithEmailAndPassword(auth,email,password)}catch{renderer.render({view:"UNAVAILABLE",message:"Sign-in failed.",business:null,services:[],staff:[],canBook:false,canEdit:false,canMessage:false,canPay:false})}
  });
  document.getElementById("signout").addEventListener("click",async()=>{guarded.signOut();renderer.render({view:"SIGNED_OUT",message:"Signed out.",business:null,services:[],staff:[],canBook:false,canEdit:false,canMessage:false,canPay:false});await signOut(auth);await guarded.completeSignOut();sync()});
- window.__phase37_2_test=Object.freeze({view:()=>current,signOut:()=>signOut(auth),refresh:()=>guarded.revalidate(),forceTokenRefresh:()=>auth.currentUser?.getIdToken(true),networkUnavailable:()=>{session.networkUnavailable();sync()},networkRestored:()=>guarded.networkRestored(),subscriptionMode:"reactive"});
+ window.__phase37_2_test=Object.freeze({view:()=>current,signOut:()=>signOut(auth),refresh:()=>guarded.revalidate(),forceTokenRefresh:()=>auth.currentUser?.getIdToken(true),networkUnavailable:()=>{guarded.networkUnavailable();sync()},networkRestored:()=>guarded.networkRestored(),subscriptionMode:"reactive"});
 })().catch(()=>{document.getElementById("status").textContent="Isolated dashboard unavailable."});
