@@ -1,0 +1,38 @@
+name: Boustio Phase 42.1 Isolated Staging Integration
+on:
+  workflow_dispatch:
+  push:
+    branches: [milestone-customer-booking-experience]
+    paths:
+      - 'web/phase42/**'
+      - 'tests/phase42_1_*'
+      - '.github/workflows/boustio-phase42-1-staging-integration.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-staging-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase42-1
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:18080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:19099
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install emulator-only dependencies
+        run: npm install --no-save --no-package-lock firebase@11 firebase-admin@13 @firebase/rules-unit-testing@4 firebase-tools@14
+      - name: Integration and prior phase regressions
+        run: node --test tests/phase42_1_integration.test.cjs tests/phase41_5_audit.test.cjs tests/phase41_4_recovery.test.cjs
+      - name: Synthetic Firebase emulator verification
+        run: npx firebase-tools emulators:exec --only auth,firestore --project demo-boustio-phase42-1 --config firebase.phase32-4.json "node --test tests/phase42_1_emulator.test.cjs"
+      - name: NO_DEPLOYMENT safety gate
+        run: |
+          test -s web/phase42/README-42-1.md
+          echo "PHASE42_1_EMULATOR_ONLY_NO_DEPLOYMENT"
