@@ -3,7 +3,7 @@ const test=require("node:test"),assert=require("node:assert/strict");
 const {createSessionRecoveryAudit}=require("../web/phase42/session-recovery-audit-42-4");
 const now=Date.now(),environment={mode:"EMULATOR_ONLY",projectId:"demo-boustio-phase42-4",firestoreHost:"127.0.0.1:18080",authHost:"127.0.0.1:19099",allowNetwork:false,allowWrites:false,allowDeploy:false};
 const token=(uid,expiry=now+600000)=>({claims:{user_id:uid,email_verified:true},expirationTime:new Date(expiry).toISOString()});
-const user=(uid,fn)=>({uid,emailVerified:true,getIdTokenResult:fn||async()=>token(uid)});
+const user=(uid,fn)=>({uid,emailVerified:true,getIdTokenResult:fn||(async()=>token(uid))});
 function fixture(verifier=async()=>true){const auth={currentUser:null},sdk={auth,doc:(_db,p)=>p,runTransaction:async(_db,fn)=>fn({get:async()=>({exists:()=>false})}),onAuthStateChanged:()=>()=>{}};return {auth,audit:createSessionRecoveryAudit({environment,sdk,db:{},verifyRevocation:verifier,now:()=>now})}}
 test("expired token during a pending read cannot publish data",async()=>{let resolve;const gate=new Promise(r=>resolve=r);const h=fixture(()=>gate);h.auth.currentUser=user("owner");const pending=h.audit.refresh();await Promise.resolve();h.audit.offline();resolve(true);await pending;assert.equal(h.audit.snapshot().state,"UNAVAILABLE");assert.equal(h.audit.snapshot().business,null);h.audit.stop()});
 test("repeated reconnects fail closed without business data",async()=>{const h=fixture();h.auth.currentUser=user("owner");h.audit.offline();await Promise.all([h.audit.reconnect(),h.audit.reconnect(),h.audit.reconnect()]);assert.equal(h.audit.snapshot().state,"UNAVAILABLE");h.audit.stop()});
