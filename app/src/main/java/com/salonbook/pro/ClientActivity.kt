@@ -179,6 +179,44 @@ class ClientActivity : Activity() {
 
     }
 
+    private fun bottomNavigation(): LinearLayout = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        setBackgroundColor(Color.WHITE)
+        setPadding(dp(8), dp(8), dp(8), dp(8))
+        elevation = dp(8).toFloat()
+        listOf(
+            Triple(R.drawable.nav_home, "Home", false),
+            Triple(R.drawable.nav_calendar, "Calendar", false),
+            Triple(R.drawable.nav_clients, "Clients", true),
+            Triple(R.drawable.nav_settings, "Settings", false)
+        ).forEach { (icon, title, selected) ->
+            val tab = LinearLayout(this@ClientActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                background = surface(if (selected) mint else Color.WHITE)
+                isClickable = true
+                isFocusable = true
+                contentDescription = title
+                setOnClickListener {
+                    if (selected) render() else {
+                        startActivity(Intent(this@ClientActivity, MainActivity::class.java)
+                            .putExtra("boustio_tab", title)
+                            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                        finish()
+                    }
+                }
+            }
+            tab.addView(ImageView(this@ClientActivity).apply {
+                setImageResource(icon)
+                setColorFilter(if (selected) teal else muted)
+            }, LinearLayout.LayoutParams(dp(25), dp(25)))
+            tab.addView(label(title, 11f, selected).apply {
+                setTextColor(if (selected) teal else muted)
+            })
+            addView(tab, LinearLayout.LayoutParams(0, dp(60), 1f))
+        }
+    }
+
     private fun details(id: String) {
         val c = records.firstOrNull { it.id == id } ?: return
         AlertDialog.Builder(this)
