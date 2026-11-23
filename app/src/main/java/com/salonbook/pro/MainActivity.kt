@@ -434,46 +434,87 @@ class MainActivity : Activity() {
     private fun showCalendar() {
         activeTab = "Calendar"
         screen("Appointment calendar")
+        container.addView(TextView(this).apply {
+            text = "Your appointments, beautifully organised."
+            textSize = 16f
+            setTextColor(muted)
+            setPadding(0, 0, 0, dp(18))
+        })
 
-        text(
-            "Selected date: $selectedDate",
-            19f
-        )
-
-        button("Choose Date") {
-            pickDate(selectedDate) {
-                selectedDate = it
-                showCalendar()
+        val datePanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = rounded(Color.WHITE, dp(22).toFloat())
+            elevation = dp(2).toFloat()
+            setPadding(dp(20), dp(18), dp(20), dp(18))
+        }
+        datePanel.addView(TextView(this).apply {
+            text = "SELECTED DATE"
+            textSize = 12f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(purple)
+        })
+        datePanel.addView(dashboardLabel(selectedDate, 24f, true))
+        val dateButton = TextView(this).apply {
+            text = "▦  Choose another date   ›"
+            textSize = 15f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(purple)
+            setPadding(dp(8), dp(12), dp(8), dp(12))
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                pickDate(selectedDate) {
+                    selectedDate = it
+                    showCalendar()
+                }
             }
         }
+        datePanel.addView(dateButton)
+        container.addView(datePanel)
 
-        button("Add Booking for This Date") {
-            bookingDialog(
-                defaultDate = selectedDate
-            )
+        sectionLabel("Your diary")
+        val daily = bookings.filter { it.date == selectedDate }.sortedBy { it.time }
+        val diary = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = rounded(mint, dp(18).toFloat())
+            setPadding(dp(16), dp(14), dp(16), dp(14))
         }
+        diary.addView(dashboardLabel(
+            if (daily.size == 1) "1 appointment" else "${daily.size} appointments",
+            18f, true
+        ))
+        diary.addView(TextView(this).apply {
+            text = "For ${selectedDate}"
+            textSize = 13f
+            setTextColor(muted)
+        })
+        container.addView(diary)
 
-        val daily = bookings.filter {
-            it.date == selectedDate
-        }.sortedBy {
-            it.time
-        }
-
-        text(
-            "${daily.size} appointments",
-            18f
-        )
-
+        sectionLabel("Appointments")
         if (daily.isEmpty()) {
-            text("No appointments for this date.")
+            val empty = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                background = rounded(Color.WHITE, dp(20).toFloat())
+                elevation = dp(2).toFloat()
+                setPadding(dp(20), dp(22), dp(20), dp(22))
+            }
+            empty.addView(dashboardLabel("No appointments on this date", 17f, true))
+            empty.addView(TextView(this).apply {
+                text = "Choose another date or create a new appointment."
+                textSize = 14f
+                setTextColor(muted)
+            })
+            container.addView(empty)
+        } else {
+            daily.forEach { bookingCard(it) }
         }
 
-        daily.forEach {
-            bookingCard(it)
+        sectionLabel("Quick actions")
+        homeAction("New appointment", "Book a client for the selected date") {
+            bookingDialog(defaultDate = selectedDate)
         }
-
-        button("Back to Dashboard") {
-            showDashboard()
+        homeAction("All appointments", "Browse and manage your full diary") {
+            showAppointments()
         }
     }
 
