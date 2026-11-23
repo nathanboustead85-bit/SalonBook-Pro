@@ -1,0 +1,28 @@
+{
+  "phase": "57.10",
+  "status": "SYNTHETIC_TESTS_PENDING",
+  "phase57PlannedParts": 10,
+  "scope": "isolated Firebase emulator and synthetic in-memory restore only",
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "liveAndroidRestoreTested": false,
+  "realCloudBackupMigrationTested": false,
+  "rollbackOnDeviceVerified": false,
+  "independentApproval": false,
+  "activeRulesChanged": false,
+  "deployedRulesChanged": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "deployment": false,
+  "remainingLaunchGates": [
+    "G1",
+    "G2",
+    "G3",
+    "G4",
+    "G5",
+    "G6",
+    "G7"
+  ],
+  "decision": "DO_NOT_DEPLOY_CANDIDATE"
+}
