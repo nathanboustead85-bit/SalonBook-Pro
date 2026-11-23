@@ -1,0 +1,22 @@
+name: Boustio Phase 59.6 secure messaging backend core
+on:
+  push:
+    paths:
+      - 'chat/backend.cjs'
+      - 'tests/phase59-6-message-backend.test.cjs'
+      - 'security/phase59-6-message-backend.md'
+      - '.github/workflows/boustio-phase-59-6-message-backend.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  messaging-backend-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test disabled-by-default transactional messaging core
+        run: node --test tests/phase59-6-message-backend.test.cjs
