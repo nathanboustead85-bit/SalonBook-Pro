@@ -21,8 +21,12 @@ jobs:
       - name: Install image processing dependency
         working-directory: tests/phase599-media
         run: npm install --no-audit --no-fund
-      - name: Verify ffmpeg and ffprobe available
+      - name: Install FFmpeg and FFprobe on GitHub runner
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          command -v ffmpeg
+          command -v ffprobe
           ffmpeg -version
           ffprobe -version
       - name: Test real image decoding and voice duration inspection
