@@ -1,8 +1,8 @@
 # Boustio Phase 57.4 — Firestore security rules verification
 
-**Status: BLOCKED — actual version-controlled rules not located at expected root path.**
+**Status: EMULATOR TESTS PENDING — user-supplied rules copied into repository.**
 
-At implementation time, `firestore.rules` and `firebase.json` were not found at repository root on the Phase 57.3 branch. They may exist elsewhere or in Firebase Console; this finding does not prove that no rules exist. Do not copy guessed rules or use an open-by-default ruleset.
+The user supplied the Firebase Console rules in chat. A copy now exists at repository root as `firestore.rules`, with `firebase.json` for local emulator use. The copied content has not been independently compared against the active deployed rules. A dedicated emulator workflow now exists, but results are pending. Do not deploy or publish these files.
 
 ## Evidence required to unblock
 
