@@ -1,0 +1,23 @@
+name: Boustio Phase 57.2 staging security verification
+on:
+  push:
+    paths:
+      - 'security/phase57-2-staging-security-verification.json'
+      - 'security/phase57-2-staging-security-verification.md'
+      - 'tests/phase572_staging_security_verification.test.cjs'
+      - '.github/workflows/boustio-phase-57-2-staging-security-verification.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-security-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify security requirements and unchanged launch blockers
+        run: node --test tests/phase572_staging_security_verification.test.cjs
