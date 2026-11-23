@@ -1,0 +1,5 @@
+# Phase 59.14 — Emulator recovery and conservative cleanup
+
+Adds a disabled-by-default Firebase-emulator-only recovery module. Stale pending Firestore reservations transition transactionally to failed, while fresh and ready messages are preserved. Orphan object scanning is scoped to a trusted business/conversation, excludes paths referenced by message records, enforces a minimum age of one hour, and defaults to dry-run. Optional deletion uses object generation preconditions. Tests run against actual Firestore and Storage emulators.
+
+**Important limitations:** This is not a cross-process lease implementation. The existing upload pipeline does not persist object paths while pending; recovery cannot guarantee detection of all orphans or prevent races with active uploads. Orphan deletion is NOT enabled by the workflow and requires additional server-side coordination and independent review. Production cleanup workers, retryable durable queue, crash-injection stress tests and real credentials remain absent. G1–G7 OPEN; no deployment, Android modification or live messaging.
