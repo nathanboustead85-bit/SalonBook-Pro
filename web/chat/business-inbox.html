@@ -21,11 +21,11 @@
   <section class="detail" aria-label="Selected conversation">
    <header class="detail-head"><button type="button" class="back" id="backButton" aria-label="Back to conversations">←</button><div><h2 id="customerName">Select a conversation</h2><p id="customerMeta">Demo customer information</p></div><span class="secure">Preview</span></header>
    <div class="messages" id="messages" aria-live="polite"><p class="empty">Select a sample conversation to view its messages.</p></div>
-   <form class="reply" id="replyForm"><label for="replyText" class="sr-only">Write reply</label><textarea id="replyText" maxlength="4000" rows="1" placeholder="Write a demo reply…" disabled></textarea><button id="replyButton" type="submit" disabled>Preview reply</button></form>
+   <div class="business-media" aria-label="Demo attachment controls"><label class="media-photo" for="businessPhoto">＋ Photo</label><input id="businessPhoto" type="file" accept="image/jpeg,image/png,image/webp" hidden disabled><button type="button" id="businessRecord" disabled aria-label="Record a voice note">🎙 Voice</button><span id="businessMediaStatus" role="status" aria-live="polite">Select a demo conversation to attach media</span></div><div id="businessMediaPreview" class="business-media-preview" hidden></div><form class="reply" id="replyForm"><label for="replyText" class="sr-only">Write reply</label><textarea id="replyText" maxlength="4000" rows="1" placeholder="Write a demo reply…" disabled></textarea><button id="replyButton" type="submit" disabled>Preview reply</button></form>
    <p class="reply-note">Demo only · No messages are delivered</p>
   </section>
  </div>
 </main>
-<script src="./business-inbox.js" defer></script>
+<script src="./media-controls.js" defer></script><script src="./business-inbox.js" defer></script>
 </body>
 </html>
