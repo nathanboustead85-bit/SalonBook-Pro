@@ -164,19 +164,66 @@ class ClientActivity : Activity() {
             query = ""
             render()
         }
-        val visible = records.filter { it.name.contains(query, ignoreCase = true) }
-            .sortedBy { it.name.lowercase(Locale.UK) }
-        content.addView(label("CLIENT DIRECTORY • ${records.size} SAVED", 13f, true))
+        val directoryNames = (records.map { it.name } + readBookingNames())
+            .distinctBy { it.lowercase(Locale.UK) }
+            .sortedBy { it.lowercase(Locale.UK) }
+        val visible = directoryNames.filter { it.contains(query, ignoreCase = true) }
+        content.addView(label("CLIENT DIRECTORY • ${directoryNames.size} CLIENTS", 13f, true))
         if (visible.isEmpty()) card(
-            if (records.isEmpty()) "No saved clients yet" else "No matching clients",
+            if (directoryNames.isEmpty()) "No clients yet" else "No matching clients",
             "Add a client or try another search."
         ) { edit() }
-        visible.forEach { c ->
-            val subtitle = listOf(c.phone, c.email).filter { it.isNotBlank() }
-                .joinToString(" • ").ifBlank { "Tap to view contact details" }
-            card(c.name, subtitle) { details(c.id) }
+        visible.forEach { name ->
+            val c = records.firstOrNull { it.name.equals(name, ignoreCase = true) }
+            val count = bookingCount(name)
+            val subtitle = listOfNotNull(
+                c?.phone?.takeIf { it.isNotBlank() },
+                c?.email?.takeIf { it.isNotBlank() },
+                "${count} appointment(s)"
+            ).joinToString(" • ")
+            card(name, subtitle) {
+                if (c != null) details(c.id) else appointmentHistory(name)
+            }
         }
+    }
 
+    private fun readBookingNames(): List<String> {
+        return try {
+            val array = JSONArray(prefs.getString("bookings", "[]") ?: "[]")
+            (0 until array.length()).mapNotNull { i ->
+                array.optJSONObject(i)?.optString("client")?.trim()?.takeIf { it.isNotBlank() }
+            }
+        } catch (_: Exception) { emptyList() }
+    }
+
+    private fun bookingCount(name: String): Int {
+        return try {
+            val array = JSONArray(prefs.getString("bookings", "[]") ?: "[]")
+            (0 until array.length()).count { i ->
+                array.optJSONObject(i)?.optString("client")?.trim()?.equals(name, true) == true
+            }
+        } catch (_: Exception) { 0 }
+    }
+
+    private fun appointmentHistory(name: String) {
+        val array = try {
+            JSONArray(prefs.getString("bookings", "[]") ?: "[]")
+        } catch (_: Exception) {
+            Toast.makeText(this, "Unable to load appointment history", Toast.LENGTH_LONG).show()
+            return
+        }
+        val entries = (0 until array.length()).mapNotNull { i ->
+            val b = array.optJSONObject(i) ?: return@mapNotNull null
+            if (!b.optString("client").trim().equals(name, true)) return@mapNotNull null
+            listOf(b.optString("date"), b.optString("time"), b.optString("service"))
+                .filter { it.isNotBlank() }.joinToString(" • ")
+        }.sorted()
+        AlertDialog.Builder(this).setTitle("Appointments • $name")
+            .setMessage(entries.joinToString("\n").ifBlank { "No appointments yet" })
+            .setPositiveButton("Close", null)
+            .setNeutralButton("Add contact details") { _, _ ->
+                if (records.none { it.name.equals(name, true) }) edit(prefillName = name)
+            }.show()
     }
 
     private fun bottomNavigation(): LinearLayout = LinearLayout(this).apply {
@@ -226,11 +273,11 @@ class ClientActivity : Activity() {
                 "Notes: ${c.notes.ifBlank { "None" }}").joinToString("\n"))
             .setPositiveButton("Edit") { _, _ -> edit(c.id) }
             .setNeutralButton("Delete") { _, _ -> delete(c.id) }
-            .setNegativeButton("Close", null)
+            .setNegativeButton("History") { _, _ -> appointmentHistory(c.name) }
             .show()
     }
 
-    private fun edit(id: String? = null) {
+    private fun edit(id: String? = null, prefillName: String = "") {
         val current = records.firstOrNull { it.id == id }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -243,7 +290,7 @@ class ClientActivity : Activity() {
                 inputType = kind
                 form.addView(this)
             }
-        val name = field("Name (required)", current?.name ?: "",
+        val name = field("Name (required)", current?.name ?: prefillName,
             InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_WORDS)
         val phone = field("Phone", current?.phone ?: "", InputType.TYPE_CLASS_PHONE)
         val email = field("Email", current?.email ?: "",
