@@ -29,7 +29,8 @@ class AndroidStorageSnapshotAdapterValidationTest {
 
     @Test fun missingBlankAndWrongTypeBookingIdsAreRejected() {
         for (raw in listOf("[{}]", "[{\"id\":\"\"}]", "[{\"id\":\"  \"}]", "[{\"id\":17}]", "[{\"id\":null}]")) {
-            rejected(capture(bookings = raw))
+            val result = capture(bookings = raw)
+            assertTrue("Malformed JSON unexpectedly accepted: $raw", result is AndroidStorageSnapshotAdapter.Capture.Rejected)
         }
     }
 
