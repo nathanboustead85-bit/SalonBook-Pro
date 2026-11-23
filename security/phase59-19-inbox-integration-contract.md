@@ -1,0 +1,5 @@
+# Phase 59.19 — Isolated conversation integration session
+
+Adds `chat/emulator-conversation-session.cjs`, composing the Phase 59.6 text-message backend, Phase 59.7 transactional Firestore adapter and Phase 59.18 inbox/notification-candidate projections into one server-side session contract. Emulator tests exercise a customer message, idempotent resend, business inbox read, owner reply, and both recipient notification candidates. Outsiders, unverified identities, disabled sessions and cross-business access are rejected.
+
+**Scope limitations:** `auth` is a trusted test fixture, not verified Firebase ID token middleware. This module is only available when `FIRESTORE_EMULATOR_HOST` is set and `enabled` is explicitly true. No HTTP endpoints, client browser integration, push delivery, real-time subscription, live Firebase data, Android updates, deployment or payment features were added. The offline browser demos are unchanged. Seven launch blockers remain OPEN. Real staging identity verification, integration with both UI screens, anti-abuse, and independent security sign-off remain outstanding.
