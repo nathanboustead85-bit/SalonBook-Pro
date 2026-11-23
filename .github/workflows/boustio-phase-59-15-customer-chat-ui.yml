@@ -1,0 +1,24 @@
+name: Boustio Phase 59.15 customer chat UI
+on:
+  push:
+    paths:
+      - 'web/chat/**'
+      - 'tests/phase59-15-chat-ui.test.cjs'
+      - 'security/phase59-15-customer-chat-ui.md'
+      - '.github/workflows/boustio-phase-59-15-customer-chat-ui.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  customer-chat-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate chat interface and launch safety gates
+        run: node --test tests/phase59-15-chat-ui.test.cjs
+      - name: Check browser script syntax
+        run: node --check web/chat/customer-chat.js
