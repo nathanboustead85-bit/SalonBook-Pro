@@ -1,0 +1,23 @@
+name: Boustio Phase 58.3 Android recovery integration preparation
+on:
+  push:
+    paths:
+      - 'app/src/main/java/com/salonbook/pro/recovery/RecoveryPreviewValidator.kt'
+      - 'tests/phase583-android-integration-prep.test.cjs'
+      - 'security/phase58-3-integration-prep.json'
+      - 'security/phase58-3-integration-prep.md'
+      - '.github/workflows/boustio-phase-58-3-android-integration-prep.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android-integration-prep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Kotlin helper safety and source contracts
+        run: node --test tests/phase583-android-integration-prep.test.cjs
