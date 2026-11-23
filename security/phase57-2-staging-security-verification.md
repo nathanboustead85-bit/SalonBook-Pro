@@ -2,6 +2,8 @@
 
 **Status: NOT VERIFIED — OFFLINE REVIEW ONLY.**
 
+All least-privilege access requirements must be independently verified before any staging access is authorized.
+
 This phase adds machine-checkable requirements and evidence templates. It does **not** inspect actual Firebase IAM, project IDs, credentials, Firestore rules, billing, CI secrets or audit logs. These require independently supplied evidence and a separately approved read-only review.
 
 ## Verification requirements
