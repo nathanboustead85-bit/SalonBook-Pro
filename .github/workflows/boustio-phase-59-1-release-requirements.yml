@@ -1,0 +1,22 @@
+name: Boustio Phase 59.1 security and release requirements
+on:
+  push:
+    paths:
+      - 'security/phase59-1-release-requirements.json'
+      - 'security/phase59-1-release-requirements.md'
+      - 'tests/phase59-1-release-requirements.test.cjs'
+      - '.github/workflows/boustio-phase-59-1-release-requirements.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  release-requirements:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify mandatory chat and Android upgrade requirements and safeguards
+        run: node --test tests/phase59-1-release-requirements.test.cjs
