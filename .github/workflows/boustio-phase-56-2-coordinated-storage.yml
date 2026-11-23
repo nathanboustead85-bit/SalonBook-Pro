@@ -1,0 +1,32 @@
+name: Boustio Phase 56.2 coordinated storage protection
+on:
+  push:
+    paths:
+      - 'app/src/main/java/com/salonbook/pro/CoordinatedSnapshotStore.kt'
+      - 'app/src/test/java/com/salonbook/pro/CoordinatedSnapshotStoreTest.kt'
+      - 'tests/phase562_coordinated_storage_isolation.test.cjs'
+      - '.github/workflows/boustio-phase-56-2-coordinated-storage.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  coordinated-storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run synthetic concurrency and conflict JUnit tests
+        run: gradle --no-daemon :app:testReleaseUnitTest --tests com.salonbook.pro.CoordinatedSnapshotStoreTest
+      - name: Verify isolation and open launch blockers
+        run: node --test tests/phase562_coordinated_storage_isolation.test.cjs
