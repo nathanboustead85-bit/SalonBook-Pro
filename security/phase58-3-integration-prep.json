@@ -1,0 +1,20 @@
+{
+  "phase": "58.3",
+  "status": "AUTOMATED_CHECKS_PENDING",
+  "scope": "Android-specific Kotlin preview validation helper plus source-contract tests",
+  "helper": "app/src/main/java/com/salonbook/pro/recovery/RecoveryPreviewValidator.kt",
+  "helperIntegratedIntoApp": false,
+  "productionRestoreEnabled": false,
+  "onDeviceRestartVerified": false,
+  "onDeviceRollbackVerified": false,
+  "actualAndroidUnitTestsRun": false,
+  "androidAppBuildVerified": false,
+  "independentSecurityApproval": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "launchGatesRemainOpen": true
+}
