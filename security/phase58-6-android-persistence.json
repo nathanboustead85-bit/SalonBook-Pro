@@ -1,0 +1,16 @@
+{
+  "phase": "58.6",
+  "status": "ROBOLECTRIC_TESTS_PENDING",
+  "scope": "Robolectric Android SharedPreferences tests with unique disposable preference namespace",
+  "realAndroidDeviceTested": false,
+  "actualAndroidProcessDeathTested": false,
+  "productionPreferencesTouched": false,
+  "productionRestoreEnabled": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "launchGatesRemainOpen": true
+}
