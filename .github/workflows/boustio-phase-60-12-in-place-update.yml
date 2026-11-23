@@ -5,7 +5,7 @@ on:
       - 'app/build.gradle.kts'
       - 'tests/phase60-12-in-place-update.test.cjs'
       - 'security/phase60-12-in-place-update.md'
-      - '.github/workflows/boustio-phase-60-12-stable-signing.yml'
+      - '.github/workflows/boustio-phase-60-12-in-place-update.yml'
   workflow_dispatch:
 permissions:
   contents: read
