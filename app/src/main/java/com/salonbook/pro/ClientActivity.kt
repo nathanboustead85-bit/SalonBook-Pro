@@ -11,6 +11,8 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.InputType
+import android.text.TextWatcher
+import android.text.Editable
 import android.view.Gravity
 import android.widget.*
 import org.json.JSONArray
@@ -76,13 +78,13 @@ class ClientActivity : Activity() {
             textSize = size
             setTextColor(ink)
             if (bold) typeface = Typeface.DEFAULT_BOLD
-            setPadding(0, dp(7), 0, dp(7))
+            setPadding(0, dp(3), 0, dp(3))
         }
 
     private fun card(title: String, subtitle: String, click: () -> Unit) {
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(14), dp(20), dp(14))
+            setPadding(dp(16), dp(10), dp(16), dp(10))
             background = surface()
             elevation = dp(2).toFloat()
             isClickable = true
@@ -93,7 +95,7 @@ class ClientActivity : Activity() {
         panel.addView(label(title, 18f, true))
         panel.addView(label(subtitle, 13f).apply { setTextColor(muted) })
         content.addView(panel, LinearLayout.LayoutParams(-1, -2).apply {
-            bottomMargin = dp(14)
+            bottomMargin = dp(10)
         })
     }
 
@@ -115,10 +117,11 @@ class ClientActivity : Activity() {
         @Suppress("DEPRECATION")
         window.decorView.systemUiVisibility =
             View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        directoryContainer = null
         val scroll = ScrollView(this)
         content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(22), dp(20), dp(28))
+            setPadding(dp(20), dp(14), dp(20), dp(22))
         }
         scroll.addView(content)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -127,23 +130,23 @@ class ClientActivity : Activity() {
         val brand = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, 0, 0, dp(24))
+            setPadding(0, 0, 0, dp(12))
         }
         brand.addView(ImageView(this).apply {
             setImageResource(R.drawable.boustio_mark)
             contentDescription = "Boustio brand mark"
-        }, LinearLayout.LayoutParams(dp(52), dp(52)))
+        }, LinearLayout.LayoutParams(dp(44), dp(44)))
         val brandText = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), 0, 0, 0)
         }
-        brandText.addView(label("Boustio", 25f, true))
+        brandText.addView(label("Boustio", 23f, true))
         brandText.addView(label("A booking platform with a difference", 11f).apply {
             setTextColor(teal)
         })
         brand.addView(brandText)
         content.addView(brand)
-        content.addView(label("Client management", 28f, true))
+        content.addView(label("Client management", 25f, true))
         content.addView(label("Private client records saved on this test device.", 14f))
         card("+ Add client", "Save a name, phone, email and notes") { edit() }
 
@@ -153,26 +156,39 @@ class ClientActivity : Activity() {
             inputType = InputType.TYPE_CLASS_TEXT
             setText(query)
             background = surface()
-            setPadding(dp(14), dp(12), dp(14), dp(12))
+            setPadding(dp(14), dp(10), dp(14), dp(10))
+            addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    query = s?.toString()?.trim() ?: ""
+                    refreshDirectory()
+                }
+                override fun afterTextChanged(s: Editable?) {}
+            })
         }
-        content.addView(search)
-        card("Search", "Filter the directory") {
-            query = search.text.toString().trim()
-            render()
-        }
-        if (query.isNotEmpty()) card("Clear search", "Show all saved clients") {
-            query = ""
-            render()
-        }
+        content.addView(search, LinearLayout.LayoutParams(-1, dp(52)).apply {
+            bottomMargin = dp(12)
+        })
+        val directory = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        content.addView(directory)
+        directoryContainer = directory
+        refreshDirectory()
+    }
+
+    private var directoryContainer: LinearLayout? = null
+
+    private fun refreshDirectory() {
+        val target = directoryContainer ?: return
+        target.removeAllViews()
         val directoryNames = (records.map { it.name } + readBookingNames())
             .distinctBy { it.lowercase(Locale.UK) }
             .sortedBy { it.lowercase(Locale.UK) }
         val visible = directoryNames.filter { it.contains(query, ignoreCase = true) }
-        content.addView(label("CLIENT DIRECTORY • ${directoryNames.size} CLIENTS", 13f, true))
-        if (visible.isEmpty()) card(
-            if (directoryNames.isEmpty()) "No clients yet" else "No matching clients",
-            "Add a client or try another search."
-        ) { edit() }
+        target.addView(label("CLIENT DIRECTORY • ${directoryNames.size} CLIENTS", 13f, true))
+        if (visible.isEmpty()) {
+            target.addView(label(if (directoryNames.isEmpty())
+                "No clients yet — add a client above." else "No matching clients.", 15f))
+        }
         visible.forEach { name ->
             val c = records.firstOrNull { it.name.equals(name, ignoreCase = true) }
             val count = bookingCount(name)
@@ -181,10 +197,25 @@ class ClientActivity : Activity() {
                 c?.email?.takeIf { it.isNotBlank() },
                 "${count} appointment(s)"
             ).joinToString(" • ")
-            card(name, subtitle) {
-                if (c != null) details(c.id) else appointmentHistory(name)
+            val panel = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(16), dp(10), dp(16), dp(10))
+                background = surface()
+                elevation = dp(2).toFloat()
+                isClickable = true
+                setOnClickListener { if (c != null) details(c.id) else appointmentHistory(name) }
             }
+            panel.addView(label(name, 17f, true))
+            panel.addView(label(subtitle, 13f).apply { setTextColor(muted) })
+            target.addView(panel, LinearLayout.LayoutParams(-1, -2).apply {
+                bottomMargin = dp(10)
+            })
         }
+        target.addView(label("APPOINTMENT HISTORY", 13f, true))
+        val total = directoryNames.sumOf { bookingCount(it) }
+        target.addView(label(if (total == 0) "No appointments on this test installation."
+            else "$total appointment(s) — tap a client to view history.", 14f))
+
     }
 
     private fun readBookingNames(): List<String> {
@@ -229,7 +260,7 @@ class ClientActivity : Activity() {
     private fun bottomNavigation(): LinearLayout = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         setBackgroundColor(Color.WHITE)
-        setPadding(dp(8), dp(8), dp(8), dp(8))
+        setPadding(dp(6), dp(6), dp(6), dp(6))
         elevation = dp(8).toFloat()
         listOf(
             Triple(R.drawable.nav_home, "Home", false),
@@ -241,6 +272,7 @@ class ClientActivity : Activity() {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER
                 background = surface(if (selected) mint else Color.WHITE)
+                setPadding(0, dp(3), 0, dp(3))
                 isClickable = true
                 isFocusable = true
                 contentDescription = title
@@ -258,6 +290,8 @@ class ClientActivity : Activity() {
                 setColorFilter(if (selected) teal else muted)
             }, LinearLayout.LayoutParams(dp(25), dp(25)))
             tab.addView(label(title, 11f, selected).apply {
+                gravity = Gravity.CENTER
+                setPadding(0, dp(3), 0, 0)
                 setTextColor(if (selected) teal else muted)
             })
             addView(tab, LinearLayout.LayoutParams(0, dp(60), 1f))
