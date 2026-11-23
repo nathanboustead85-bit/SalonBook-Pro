@@ -28,6 +28,9 @@
 
         </activity>
 
+        <!-- Offline local client profiles -->
+        <activity android:name=".ClientActivity" android:exported="false" android:screenOrientation="portrait" />
+
         <!-- Services and staff management -->
         <activity
             android:name=".ManagementActivity"
