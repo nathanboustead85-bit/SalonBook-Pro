@@ -7,7 +7,8 @@ const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 test('adapter only reads expected keys and is not connected to activities',()=>{
  const adapter=read('app/src/main/java/com/salonbook/pro/AndroidStorageSnapshotAdapter.kt');
  for(const key of ['"bookings"','"services"','"staff"'])assert.ok(adapter.includes(key));
- assert.doesNotMatch(adapter,/getSharedPreferences|\.edit\(|putString|Firebase|\.commit\(|\.apply\(/);
+ const executable=adapter.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/[^\n]*/g,'');
+ assert.doesNotMatch(executable,/getSharedPreferences|\.edit\(|putString|Firebase|\.commit\(|\.apply\(/);
  for(const p of ['MainActivity.kt','CloudActivity.kt','ManagementActivity.kt'])assert.doesNotMatch(read('app/src/main/java/com/salonbook/pro/'+p),/AndroidStorageSnapshotAdapter/);
 });
 test('launch gates and original appointment safety unchanged',()=>{
