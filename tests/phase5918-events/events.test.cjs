@@ -1,0 +1,42 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');
+const admin=require('firebase-admin');
+const {createEmulatorInboxEvents}=require('../../chat/emulator-inbox-events.cjs');
+if(!process.env.FIRESTORE_EMULATOR_HOST)throw new Error('FIRESTORE_EMULATOR_REQUIRED');
+admin.initializeApp({projectId:'demo-boustio-phase5918'});
+const db=admin.firestore();
+const owner={uid:'owner5918',emailVerified:true},customer={uid:'customer5918',emailVerified:true},outsider={uid:'outsider5918',emailVerified:true};
+const ref=db.doc('businesses/owner5918/conversations/convo5918');
+const create=enabled=>createEmulatorInboxEvents({db,businessId:'owner5918',enabled});
+test('real Firestore emulator: owner/customer projections and notification events',async()=>{
+ await ref.set({businessId:'owner5918',ownerUid:'owner5918',customerUid:'customer5918',status:'open'});
+ await ref.collection('messages').doc('m1').set({senderUid:'customer5918',type:'text',text:'Can I book a haircut?',createdAtMs:100});
+ await ref.collection('messages').doc('m2').set({senderUid:'owner5918',type:'text',text:'Yes, of course.',createdAtMs:200});
+ await ref.collection('messages').doc('m3').set({senderUid:'customer5918',type:'image',status:'pending',createdAtMs:300});
+ await ref.collection('messages').doc('m4').set({senderUid:'customer5918',type:'voice',status:'ready',createdAtMs:400});
+ const service=create(true);
+ const ownerMessages=await service.listMessages({auth:owner,conversationId:'convo5918'});
+ assert.equal(ownerMessages.ok,true);assert.equal(ownerMessages.messages.length,4);
+ assert.equal(ownerMessages.messages[2].mediaReady,false);
+ const inbox=await service.listBusinessInbox({auth:owner});
+ assert.equal(inbox.ok,true);assert.equal(inbox.items.length,1);assert.equal(inbox.items[0].lastMessage.type,'voice');
+ const ownerEvents=await service.notificationCandidates({auth:owner,conversationId:'convo5918'});
+ assert.deepEqual(ownerEvents.events.map(e=>e.messageId),['m1','m4']);
+ const customerEvents=await service.notificationCandidates({auth:customer,conversationId:'convo5918',sinceMs:100});
+ assert.deepEqual(customerEvents.events.map(e=>e.messageId),['m2']);
+});
+test('fail closed for disabled, unverified, outsider, cross-owner and invalid inputs',async()=>{
+ assert.equal((await create(false).listMessages({auth:owner,conversationId:'convo5918'})).code,'MESSAGING_DISABLED');
+ assert.equal((await create(true).listMessages({auth:outsider,conversationId:'convo5918'})).code,'NOT_AUTHORIZED');
+ assert.equal((await create(true).listMessages({auth:{uid:'owner5918',emailVerified:false},conversationId:'convo5918'})).code,'AUTH_REQUIRED');
+ assert.equal((await create(true).listBusinessInbox({auth:customer})).code,'OWNER_REQUIRED');
+ assert.equal((await create(true).notificationCandidates({auth:customer,conversationId:'convo5918',sinceMs:-1})).code,'INVALID_CURSOR');
+ const other=createEmulatorInboxEvents({db,businessId:'otherBusiness',enabled:true});
+ assert.equal((await other.listMessages({auth:owner,conversationId:'convo5918'})).code,'CONVERSATION_UNAVAILABLE');
+});
+test('launch gates remain open',()=>{
+ const gates=require('../../security/phase51-consolidated-gates.json');
+ assert.equal(Object.keys(gates.gates).length,7);
+ for(const g of Object.values(gates.gates))assert.equal(g.status,'OPEN');
+ for(const k of ['messaging','deployment','payments','liveBookings'])assert.equal(gates[k],false);
+});
