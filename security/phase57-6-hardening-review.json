@@ -1,0 +1,35 @@
+{
+  "phase": "57.6",
+  "status": "COMPATIBILITY_REVIEW_PENDING",
+  "scope": "local-demo-firestore-emulator",
+  "rulesChanged": false,
+  "publishedRulesChanged": false,
+  "approval": "NOT_APPROVED",
+  "proposals": [
+    {
+      "id": "H1",
+      "issue": "Unverified owner can overwrite backup with arbitrary schema",
+      "suggestion": "Require verified owner and a versioned, size-bounded backup envelope; assess restore compatibility and migration",
+      "status": "PROPOSAL_ONLY"
+    },
+    {
+      "id": "H2",
+      "issue": "Legacy booking writes allowed when bookingMode document absent",
+      "suggestion": "Require explicit legacy mode and migration evidence before any legacy write; test all Android upgrade paths",
+      "status": "PROPOSAL_ONLY"
+    },
+    {
+      "id": "H3",
+      "issue": "Public business documents accessible when published",
+      "suggestion": "Restrict published fields to intentionally public data and independently inspect current documents",
+      "status": "PROPOSAL_ONLY"
+    }
+  ],
+  "independentApproval": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false
+}
