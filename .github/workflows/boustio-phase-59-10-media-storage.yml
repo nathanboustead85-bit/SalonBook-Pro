@@ -1,0 +1,29 @@
+name: Boustio Phase 59.10 isolated media storage integration
+on:
+  push:
+    paths:
+      - 'chat/staging-media-store.cjs'
+      - 'tests/phase5910-media-store.test.cjs'
+      - 'security/phase59-10-media-storage.md'
+      - '.github/workflows/boustio-phase-59-10-media-storage.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-media-storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated Sharp dependency
+        working-directory: tests/phase599-media
+        run: npm install --no-audit --no-fund
+      - name: Install FFmpeg for voice validation
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Test private media storage with real image processing
+        run: NODE_PATH=./tests/phase599-media/node_modules node --test tests/phase5910-media-store.test.cjs
