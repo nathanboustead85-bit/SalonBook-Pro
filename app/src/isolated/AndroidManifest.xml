@@ -4,5 +4,5 @@
     <!-- Test APK must not communicate with any live backend. -->
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
-    <application android:label="Boustio TEST" android:allowBackup="false" android:usesCleartextTraffic="false" />
+    <application tools:replace="android:label,android:allowBackup" android:label="Boustio TEST" android:allowBackup="false" android:usesCleartextTraffic="false" />
 </manifest>
