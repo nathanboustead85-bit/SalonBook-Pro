@@ -1,0 +1,52 @@
+{
+  "phase": "57.3",
+  "mode": "offline-policy-simulation-only",
+  "status": "NOT_VERIFIED",
+  "approval": "NOT_APPROVED",
+  "executionAuthorized": false,
+  "productionAccess": false,
+  "stagingAccess": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "scenarios": [
+    {
+      "id": "A1",
+      "name": "Unauthenticated read rejected",
+      "status": "PENDING_REAL_STAGING_EVIDENCE"
+    },
+    {
+      "id": "A2",
+      "name": "Cross-business read rejected",
+      "status": "PENDING_REAL_STAGING_EVIDENCE"
+    },
+    {
+      "id": "A3",
+      "name": "Cross-business write rejected",
+      "status": "PENDING_REAL_STAGING_EVIDENCE"
+    },
+    {
+      "id": "A4",
+      "name": "Unverified owner write rejected",
+      "status": "PENDING_REAL_STAGING_EVIDENCE"
+    },
+    {
+      "id": "A5",
+      "name": "Read-only auditor cannot mutate data",
+      "status": "PENDING_REAL_STAGING_EVIDENCE"
+    },
+    {
+      "id": "A6",
+      "name": "Staging identity cannot access production",
+      "status": "PENDING_REAL_STAGING_EVIDENCE"
+    },
+    {
+      "id": "A7",
+      "name": "Denied request creates no appointment changes",
+      "status": "PENDING_REAL_STAGING_EVIDENCE"
+    }
+  ],
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false
+}
