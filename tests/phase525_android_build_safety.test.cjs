@@ -9,7 +9,7 @@ const restore=cloud.slice(cloud.indexOf('    private fun restore() {'),cloud.ind
 const gate=JSON.parse(read('security/phase51-consolidated-gates.json'));
 test('backup uses stable authenticated UID and verified account',()=>{
  assert.match(cloud,/private fun backupDocument\(uid: String\)/);
- assert.match(cloud,/backupDocument\(user\.uid\)/);
+ assert.match(cloud,/backupDocument\(uid\)/);
  assert.match(cloud,/if \(!user\.isEmailVerified\)/);
  assert.doesNotMatch(cloud,/currentUser!!/);
 });
