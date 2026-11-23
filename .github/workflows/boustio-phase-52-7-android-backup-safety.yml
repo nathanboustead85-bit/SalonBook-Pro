@@ -1,0 +1,32 @@
+name: Boustio Phase 52.7 Android backup safety
+on:
+  push:
+    paths:
+      - 'app/src/main/java/com/salonbook/pro/CloudActivity.kt'
+      - 'tests/phase527_android_backup_isolation.test.cjs'
+      - 'tests/phase525_android_build_safety.test.cjs'
+      - '.github/workflows/boustio-phase-52-7-android-backup-safety.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android-backup-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Run all relevant Android source safeguards
+        run: node --test tests/phase524_android_restore_safety.test.cjs tests/phase525_android_build_safety.test.cjs tests/phase527_android_backup_isolation.test.cjs
+      - name: Compile Android release Kotlin without publishing or installing
+        run: gradle --no-daemon :app:compileReleaseKotlin
