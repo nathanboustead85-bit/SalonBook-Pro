@@ -6,8 +6,8 @@ const root = path.resolve(__dirname, '..');
 const read = p => fs.readFileSync(path.join(root,p),'utf8');
 test('rules verification cannot be approved without actual emulator evidence',()=>{
  const x=JSON.parse(read('security/phase57-4-firestore-rules-evidence.json'));
- assert.equal(x.status,'BLOCKED_MISSING_RULES');
- assert.equal(x.emulatorEvidence,'NOT_EXECUTED');
+ assert.equal(x.status,'EMULATOR_TESTS_PENDING');
+ assert.equal(x.emulatorEvidence,'WORKFLOW_PENDING');
  assert.equal(x.approval,'NOT_APPROVED');
  assert.equal(x.executionAuthorized,false);
  assert.ok(x.requiredTests.length>=7);
