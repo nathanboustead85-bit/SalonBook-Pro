@@ -10,6 +10,8 @@
  let selectedId=null,filter='all',search='';
  const workspace=document.querySelector('.workspace'),list=$('conversations'),messages=$('messages');
  const selected=()=>samples.find(s=>s.id===selectedId);
+ const media=window.BoustioMediaControls.mount({photoInput:$('businessPhoto'),recordButton:$('businessRecord'),preview:$('businessMediaPreview'),status:$('businessMediaStatus'),disabled:()=>!selected()});
+ window.addEventListener('pagehide',()=>media.dispose());
  function create(tag,className,text){const e=document.createElement(tag);if(className)e.className=className;if(text!==undefined)e.textContent=text;return e}
  function renderList(){
   list.replaceChildren();
@@ -22,7 +24,7 @@
    const summary=create('p','',item.messages.at(-1)?.text||item.service);
    if(item.unread)summary.append(create('span','unread-dot'));
    body.append(heading,summary);button.append(avatar,body);
-   button.addEventListener('click',()=>{selectedId=item.id;item.unread=false;workspace.classList.add('show-detail');renderList();renderDetail()});
+   button.addEventListener('click',()=>{media.clear();selectedId=item.id;item.unread=false;workspace.classList.add('show-detail');renderList();renderDetail()});
    list.append(button);
   }
   $('unreadCount').textContent=samples.filter(s=>s.unread).length+' unread';
@@ -32,6 +34,7 @@
   $('customerName').textContent=item?item.name:'Select a conversation';
   $('customerMeta').textContent=item?item.service+' · Sample customer':'Demo customer information';
   $('replyText').disabled=!item;$('replyButton').disabled=!item;
+  $('businessPhoto').disabled=!item;$('businessRecord').disabled=!item;
   messages.replaceChildren();
   if(!item){messages.append(create('p','empty','Select a sample conversation to view its messages.'));return}
   for(const msg of item.messages){
@@ -49,8 +52,12 @@
  $('backButton').addEventListener('click',()=>workspace.classList.remove('show-detail'));
  $('replyForm').addEventListener('submit',event=>{
   event.preventDefault();const item=selected(),value=$('replyText').value.trim();
-  if(!item||!value)return;
-  item.messages.push({from:'business',text:value.slice(0,4000),time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  const attachment=media.snapshot();
+  if(!item||(!value&&!attachment.photo&&!attachment.voice))return;
+  if(value)item.messages.push({from:'business',text:value.slice(0,4000),time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  if(attachment.photo)item.messages.push({from:'business',text:'📷 Photo preview: '+attachment.photo.name+' (not uploaded)',time:'Preview'});
+  if(attachment.voice)item.messages.push({from:'business',text:'🎙 Voice note preview: '+Math.ceil(attachment.voice.seconds)+' seconds (not uploaded)',time:'Preview'});
+  media.clear();
   $('replyText').value='';renderDetail();renderList();
  });
  renderList();renderDetail();
