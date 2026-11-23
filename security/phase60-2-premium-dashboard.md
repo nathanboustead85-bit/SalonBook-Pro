@@ -1,0 +1,5 @@
+# Phase 60.2 — Premium Boustio Android dashboard preview
+
+Replaces the purple SalonBook Pro Milestone 5 home screen in `MainActivity.kt` with a teal-and-white Boustio dashboard, booking summary cards, and navigation to the existing booking, calendar, client, staff, service and cloud screens. The underlying booking persistence key (`salonbook_data`) and booking methods are unchanged. This is a real native Android source change, not a website mockup. Other Android screens still require premium styling and functional integration; booking links and business settings remain unavailable and explicitly say so.
+
+The CI workflow builds only `assembleIsolatedDebug` with the separate package `com.salonbook.pro.isolated`, confirms no INTERNET permission, and uploads the disposable APK. It does not upgrade the original app or prove Android device integrity. Original Boustio DEV 11.13 and its two appointments must not be uninstalled, cleared or overwritten. All G1–G7 remain OPEN and live services disabled.
