@@ -41,6 +41,8 @@ jobs:
       BOUSTIO_SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: boustio-phase-60-13-client-profile-polish
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
