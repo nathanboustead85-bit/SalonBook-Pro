@@ -4,7 +4,25 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+val isolatedSigningFile = providers.environmentVariable("BOUSTIO_SIGNING_STORE_FILE").orNull
+val isolatedStorePassword = providers.environmentVariable("BOUSTIO_SIGNING_STORE_PASSWORD").orNull
+val isolatedKeyAlias = providers.environmentVariable("BOUSTIO_SIGNING_KEY_ALIAS").orNull
+val isolatedKeyPassword = providers.environmentVariable("BOUSTIO_SIGNING_KEY_PASSWORD").orNull
+val isolatedSigningReady = listOf(
+    isolatedSigningFile, isolatedStorePassword, isolatedKeyAlias, isolatedKeyPassword
+).all { !it.isNullOrBlank() }
+
 android {
+    signingConfigs {
+        if (isolatedSigningReady) {
+            create("boustioIsolatedTest") {
+                storeFile = file(isolatedSigningFile!!)
+                storePassword = isolatedStorePassword!!
+                keyAlias = isolatedKeyAlias!!
+                keyPassword = isolatedKeyPassword!!
+            }
+        }
+    }
     namespace = "com.salonbook.pro"
     compileSdk = 35
 
@@ -26,8 +44,16 @@ android {
         applicationId = "com.salonbook.pro"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.2.1"
+        versionCode = 4
+        versionName = "0.2.2"
+    }
+
+    buildTypes {
+        getByName("debug") {
+            if (isolatedSigningReady) {
+                signingConfig = signingConfigs.getByName("boustioIsolatedTest")
+            }
+        }
     }
 
     compileOptions {
