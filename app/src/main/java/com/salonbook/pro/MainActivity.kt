@@ -1189,91 +1189,41 @@ class MainActivity : Activity() {
         activeTab = "Clients"
         screen("Your clients")
         container.addView(TextView(this).apply {
-            text = "Keep every client relationship beautifully organised."
+            text = "Manage client profiles and appointment history."
             textSize = 16f
             setTextColor(muted)
-            setPadding(0, 0, 0, dp(18))
         })
-
-        val names = bookings.map { it.client.trim() }
-            .filter { it.isNotEmpty() }
-            .distinct()
-            .sortedWith(String.CASE_INSENSITIVE_ORDER)
-
-        val overview = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = rounded(Color.WHITE, dp(22).toFloat())
-            elevation = dp(2).toFloat()
-            setPadding(dp(20), dp(20), dp(20), dp(20))
+        sectionLabel("Client management")
+        premiumCard("+", "Open client directory", "Add, edit and search saved client profiles") {
+            startActivity(Intent(this, ClientActivity::class.java))
         }
-        overview.addView(TextView(this).apply {
-            text = "YOUR CLIENTS • BOUSTIO"
-            textSize = 12f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(purple)
-        })
-        overview.addView(dashboardLabel(
-            if (names.size == 1) "1 client" else "${names.size} clients", 25f, true
-        ))
-        overview.addView(TextView(this).apply {
-            text = "Clients are collected from bookings saved on this device."
-            textSize = 13f
-            setTextColor(muted)
-        })
-        container.addView(overview)
-
-        sectionLabel("Client directory")
+        sectionLabel("Appointment clients")
+        val names = bookings.map { it.client.trim() }.filter { it.isNotEmpty() }
+            .distinct().sortedWith(String.CASE_INSENSITIVE_ORDER)
         if (names.isEmpty()) {
-            val empty = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                background = rounded(Color.WHITE, dp(20).toFloat())
-                elevation = dp(2).toFloat()
-                setPadding(dp(20), dp(22), dp(20), dp(22))
+            premiumCard("♙", "No appointment clients yet",
+                "Create a booking or add a client profile") {
+                startActivity(Intent(this, ClientActivity::class.java))
             }
-            empty.addView(dashboardLabel("No clients yet", 18f, true))
-            empty.addView(TextView(this).apply {
-                text = "Create your first appointment to start building your client list."
-                textSize = 14f
-                setTextColor(muted)
-            })
-            container.addView(empty)
         } else {
             names.forEach { name ->
-                val clientBookings = bookings.filter { it.client.trim() == name }
-                    .sortedWith(compareBy<Booking> { it.date }.thenBy { it.time })
-                val next = clientBookings.firstOrNull { it.date >= today() }
-                val description = buildString {
-                    append("${clientBookings.size} ")
-                    append(if (clientBookings.size == 1) "appointment" else "appointments")
-                    if (next != null) append(" • Next: ${next.date}")
-                }
-                premiumCard("♙", name, description) {
+                val count = bookings.count { it.client.trim() == name }
+                premiumCard("♙", name, "$count appointment(s) • view history") {
                     showClientDetails(name)
                 }
             }
-        }
-        sectionLabel("Quick actions")
-        homeAction("New appointment", "Add a booking for a new or existing client") {
-            bookingDialog()
         }
     }
 
     private fun showClientDetails(clientName: String) {
         activeTab = "Clients"
         screen(clientName)
-        container.addView(TextView(this).apply {
-            text = "Appointment history from this device"
-            textSize = 15f
-            setTextColor(muted)
-            setPadding(0, 0, 0, dp(16))
-        })
+        sectionLabel("Appointment history")
         val history = bookings.filter { it.client.trim() == clientName }
             .sortedWith(compareByDescending<Booking> { it.date }.thenByDescending { it.time })
-        sectionLabel("Appointment history")
+        if (history.isEmpty()) text("No appointments yet")
         history.forEach { bookingCard(it) }
-        sectionLabel("Quick actions")
-        homeAction("Book an appointment", "Create a new booking") { bookingDialog() }
-        homeAction("Back to clients", "Return to the client directory") { showClients() }
+        homeAction("Back to clients", "Return to client directory") { showClients() }
     }
 
     private fun saveBookings() {
