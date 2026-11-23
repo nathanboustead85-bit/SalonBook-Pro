@@ -1,0 +1,33 @@
+name: Boustio Phase 58.5 disposable restart recovery
+on:
+  push:
+    paths:
+      - 'app/src/test/java/com/salonbook/pro/recovery/DisposableRestartRecoveryTest.kt'
+      - 'security/phase58-5-disposable-restart.json'
+      - 'security/phase58-5-disposable-restart.md'
+      - '.github/workflows/boustio-phase-58-5-disposable-restart.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disposable-restart-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Configure Android SDK from runner image
+        run: |
+          echo "ANDROID_HOME=${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Run Kotlin synthetic restart and recovery tests
+        run: gradle :app:testDebugUnitTest --tests 'com.salonbook.pro.recovery.DisposableRestartRecoveryTest' --no-daemon --stacktrace
+      - name: Assert launch gates and safety flags
+        run: |
+          node -e "const a=require('./security/phase58-5-disposable-restart.json'),g=require('./security/phase51-consolidated-gates.json');if(a.productionRestoreEnabled||a.deployment||a.actualUserDataAccessed||a.originalAndroidAppointments!=='DO_NOT_TOUCH'||Object.values(g.gates).some(x=>x.status!=='OPEN'))process.exit(1)"
