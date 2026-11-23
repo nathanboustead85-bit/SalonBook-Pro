@@ -1,0 +1,5 @@
+# Phase 59.13 — Media reservation and compensation (emulator only)
+
+Adds a Firestore transaction-backed pending reservation before a media object is uploaded. Successful uploads transition to ready, while validation failures transition to failed. A single-process in-flight map coalesces simultaneous duplicate requests; persistent reservation keys prevent retries from allocating additional objects. On finalization exceptions, the code attempts object deletion and marks the reservation failed. Tests exercise real Firestore and Storage emulators, concurrent duplicates, invalid uploads, outsider denial and launch gates.
+
+**Remaining production blockers:** No cross-process lease/expiry, no crashed-process recovery worker, no object garbage collection, no retry of failed reservations, no durable cleanup queue if object deletion fails, no production authentication/notifications, no real-device verification or independent approval. This is intentionally **not** a production-ready exactly-once guarantee. No real Firebase writes, no deployments, no Android changes. All G1–G7 open; live messaging/bookings/payments disabled.
