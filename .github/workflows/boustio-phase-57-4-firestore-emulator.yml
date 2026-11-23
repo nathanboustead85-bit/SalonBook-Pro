@@ -1,0 +1,33 @@
+name: Boustio Phase 57.4 real Firestore rules emulator tests
+on:
+  push:
+    paths:
+      - 'firestore.rules'
+      - 'firebase.json'
+      - 'tests/phase574-emulator/**'
+      - '.github/workflows/boustio-phase-57-4-firestore-emulator.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  firestore-rules-emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase574
+      FIREBASE_CLI_EXPERIMENTS: webframeworks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated emulator test dependencies
+        working-directory: tests/phase574-emulator
+        run: npm install --no-audit --no-fund
+      - name: Run exact Firestore rules against local emulator only
+        working-directory: tests/phase574-emulator
+        run: npx firebase emulators:exec --only firestore --project demo-boustio-phase574 "node --test rules.test.cjs"
