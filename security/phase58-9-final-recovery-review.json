@@ -1,0 +1,32 @@
+{
+  "phase": "58.9",
+  "decision": "NOT_APPROVED_FOR_PRODUCTION_RESTORE",
+  "engineeringScope": "offline source and synthetic Android/JVM verification",
+  "verifiedGithubRuns": {
+    "58.4": 45187104392,
+    "58.5": 45187434947,
+    "58.6": 45188057394,
+    "58.7": 45188428953,
+    "58.8": 45188810718
+  },
+  "evidenceLimit": "Run IDs reflect prior observed GitHub Actions success; this audit does not independently query GitHub API or validate artifacts",
+  "outstanding": [
+    "Real Samsung disposable-device process-kill and restart evidence",
+    "Atomic multi-key restore and disk/commit failure recovery",
+    "Production restore is not implemented or wired into CloudActivity",
+    "Legacy record parser and cloud contract compatibility",
+    "Backup size limit mismatch: validator 500000 vs CloudActivity 1000000",
+    "Independent security review and G1-G7 closure"
+  ],
+  "productionRestoreEnabled": false,
+  "realDeviceTested": false,
+  "productionCodeModified": false,
+  "productionPreferencesTouched": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "launchGatesRemainOpen": true
+}
