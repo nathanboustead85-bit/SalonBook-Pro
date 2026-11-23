@@ -8,6 +8,20 @@ android {
     namespace = "com.salonbook.pro"
     compileSdk = 35
 
+    flavorDimensions += "environment"
+    productFlavors {
+        create("isolated") {
+            dimension = "environment"
+            applicationIdSuffix = ".isolated"
+            versionNameSuffix = "-isolated-test"
+            manifestPlaceholders["appDisplayName"] = "Boustio TEST"
+        }
+        create("standard") {
+            dimension = "environment"
+            manifestPlaceholders["appDisplayName"] = "SalonBook Pro"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.salonbook.pro"
         minSdk = 26
