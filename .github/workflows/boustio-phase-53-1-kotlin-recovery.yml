@@ -3,6 +3,8 @@ on:
   push:
     paths:
       - 'app/src/main/java/com/salonbook/pro/RecoveryTransaction.kt'
+      - 'app/src/test/java/com/salonbook/pro/RecoveryTransactionTest.kt'
+      - 'app/build.gradle.kts'
       - 'tests/phase531_kotlin_recovery.test.cjs'
       - 'docs/security/phase-53-1-recovery-prototype.md'
       - '.github/workflows/boustio-phase-53-1-kotlin-recovery.yml'
@@ -29,4 +31,4 @@ jobs:
       - name: Run offline guardrails
         run: node --test tests/phase531_kotlin_recovery.test.cjs
       - name: Compile Kotlin prototype without installation or deployment
-        run: gradle --no-daemon :app:compileReleaseKotlin
+        run: gradle --no-daemon :app:compileReleaseKotlin :app:testReleaseUnitTest
