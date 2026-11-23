@@ -1,0 +1,23 @@
+name: Boustio Phase 57.3 staging access permissions
+on:
+  push:
+    paths:
+      - 'security/phase57-3-access-permissions.json'
+      - 'security/phase57-3-access-permissions.md'
+      - 'tests/phase573_access_permissions.test.cjs'
+      - '.github/workflows/boustio-phase-57-3-access-permissions.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-access-permissions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run synthetic access permission and safety gate tests
+        run: node --test tests/phase573_access_permissions.test.cjs
