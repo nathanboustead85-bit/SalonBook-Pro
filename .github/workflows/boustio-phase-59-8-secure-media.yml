@@ -1,0 +1,22 @@
+name: Boustio Phase 59.8 secure photo and voice validation
+on:
+  push:
+    paths:
+      - 'chat/media-validation.cjs'
+      - 'tests/phase59-8-media-validation.test.cjs'
+      - 'security/phase59-8-secure-media.md'
+      - '.github/workflows/boustio-phase-59-8-secure-media.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  secure-media-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test photo and voice upload validation safety
+        run: node --test tests/phase59-8-media-validation.test.cjs
