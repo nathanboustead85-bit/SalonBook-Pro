@@ -16,9 +16,8 @@ test('Android helper validates v1 envelope and rejects duplicate booking ids',()
  assert.match(helper,/MAX_FIELD_LENGTH = 500000/);
 });
 test('Android helper is side-effect-free and not wired into active restore',()=>{
- for(const prohibited of ['SharedPreferences','FirebaseFirestore','\.putString\(','\.commit\(','\.apply\(','\.set\(']){
-  if(prohibited==='SharedPreferences')continue; // appears only in safety documentation
-  assert.doesNotMatch(helper,new RegExp(prohibited));
+ for(const prohibited of ['FirebaseFirestore','.putString(','.commit(','.apply(','.set(']) {
+  assert.equal(helper.includes(prohibited),false,'Unexpected side-effect operation: '+prohibited);
  }
  assert.doesNotMatch(activity,/RecoveryPreviewValidator/);
  assert.match(activity,/Cloud restore preview only/);
