@@ -1,0 +1,22 @@
+name: Boustio Phase 52.1 independent verification evidence
+on:
+  push:
+    paths:
+      - 'docs/security/phase-52-1-*'
+      - 'docs/security/test_phase_52_1_evidence.py'
+      - '.github/workflows/boustio-phase-52-1-independent-verification.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-evidence-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate seven open gates and disabled features
+        run: python -m unittest discover -s docs/security -p 'test_phase_52_1_evidence.py' -v
