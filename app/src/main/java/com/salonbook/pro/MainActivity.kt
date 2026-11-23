@@ -6,6 +6,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
@@ -20,9 +21,9 @@ import java.util.UUID
 
 class MainActivity : Activity() {
 
-    private val purple = Color.rgb(111, 66, 193)
-    private val dark = Color.rgb(40, 35, 55)
-    private val background = Color.rgb(248, 246, 252)
+    private val purple = Color.rgb(0, 139, 131)
+    private val dark = Color.rgb(20, 49, 52)
+    private val background = Color.rgb(244, 250, 249)
 
     private val prefs by lazy {
         getSharedPreferences("salonbook_data", MODE_PRIVATE)
@@ -84,7 +85,7 @@ class MainActivity : Activity() {
 
         container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(32, 45, 32, 40)
+            setPadding(26, 32, 26, 48)
         }
 
         scroll.addView(container)
@@ -92,11 +93,11 @@ class MainActivity : Activity() {
 
         container.addView(TextView(this).apply {
             text = title
-            textSize = 27f
+            textSize = 25f
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(purple)
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 24)
+            gravity = Gravity.START
+            setPadding(8, 0, 8, 24)
         })
     }
 
@@ -112,122 +113,95 @@ class MainActivity : Activity() {
         })
     }
 
-    private fun button(
-        label: String,
-        action: () -> Unit
-    ) {
+    private fun rounded(fill: Int, radius: Float = 22f): GradientDrawable =
+        GradientDrawable().apply {
+            setColor(fill)
+            cornerRadius = radius
+        }
+
+    private fun button(label: String, action: () -> Unit) {
         val b = Button(this).apply {
             text = label
             isAllCaps = false
-            textSize = 16f
+            textSize = 15f
+            typeface = Typeface.DEFAULT_BOLD
             setTextColor(Color.WHITE)
-
-            backgroundTintList =
-                android.content.res.ColorStateList
-                    .valueOf(purple)
-
-            setOnClickListener {
-                action()
-            }
+            background = rounded(purple, 24f)
+            elevation = 3f
+            setPadding(16, 14, 16, 14)
+            setOnClickListener { action() }
         }
-
-        container.addView(
-            b,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = 12
-            }
-        )
+        container.addView(b, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = 14 })
     }
 
+    private fun dashboardLabel(value: String, size: Float = 15f, strong: Boolean = false) =
+        TextView(this).apply {
+            text = value
+            textSize = size
+            setTextColor(dark)
+            if (strong) typeface = Typeface.DEFAULT_BOLD
+            setPadding(8, 5, 8, 5)
+        }
+
+    private fun dashboardStat(label: String, count: Int): LinearLayout =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = rounded(Color.WHITE)
+            setPadding(18, 18, 18, 18)
+            elevation = 2f
+            addView(dashboardLabel(count.toString(), 27f, true))
+            addView(dashboardLabel(label, 12f))
+        }
+
     private fun showDashboard() {
-        screen("SalonBook Pro")
+        screen("Boustio")
+        container.addView(dashboardLabel("A booking platform with a difference.", 14f))
+        container.addView(dashboardLabel("Your business at a glance", 21f, true),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = 24; bottomMargin = 12 })
 
-        text(
-            "Your Beauty Business. Simplified.",
-            17f
-        )
-
-        text(
-            "Today's appointments: " +
-                "${bookings.count { it.date == today() }}",
-            20f
-        )
-
-        text(
-            "Upcoming appointments: " +
-                "${bookings.count { it.date >= today() }}",
-            20f
-        )
-
-        text(
-            "Total saved bookings: ${bookings.size}",
-            18f
-        )
-
-        button("View Appointment Calendar") {
-            showCalendar()
+        val stats = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            weightSum = 3f
         }
-
-        button("Create New Booking") {
-            bookingDialog()
+        listOf(
+            dashboardStat("Today", bookings.count { it.date == today() }),
+            dashboardStat("Upcoming", bookings.count { it.date >= today() }),
+            dashboardStat("Total bookings", bookings.size)
+        ).forEach { stat ->
+            stats.addView(stat, LinearLayout.LayoutParams(0, -2, 1f).apply {
+                marginEnd = 8
+            })
         }
+        container.addView(stats)
+        container.addView(dashboardLabel("Bookings", 19f, true),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = 24; bottomMargin = 10 })
+        button("＋  New appointment") { bookingDialog() }
+        button("▦  Appointment calendar") { showCalendar() }
+        button("☰  All appointments") { showAppointments() }
 
-        button("All Appointments") {
-            showAppointments()
+        container.addView(dashboardLabel("Manage your business", 19f, true),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = 18; bottomMargin = 10 })
+        button("Clients") { showClients() }
+        button("Services & prices") {
+            startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
         }
-
-        button("Clients") {
-            showClients()
+        button("Staff & working hours") {
+            startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
         }
-
-        button("Services & Prices") {
-            startActivity(
-                Intent(
-                    this,
-                    ManagementActivity::class.java
-                ).putExtra("staff", false)
-            )
+        button("Cloud account & backup") {
+            startActivity(Intent(this, CloudActivity::class.java))
         }
-
-        button("Staff Management") {
-            startActivity(
-                Intent(
-                    this,
-                    ManagementActivity::class.java
-                ).putExtra("staff", true)
-            )
+        button("My booking link") {
+            message("Online booking links are not yet connected in this Android build.")
         }
-
-        // NEW: Firebase account and cloud backup screen
-        button("Cloud Account & Backup") {
-            startActivity(
-                Intent(
-                    this,
-                    CloudActivity::class.java
-                )
-            )
+        button("Business settings") {
+            message("Business settings are not yet connected in this Android build.")
         }
-
-        button("My Booking Link") {
-            message(
-                "Customer online booking links " +
-                    "are coming in a future milestone"
-            )
-        }
-
-        button("Business Settings") {
-            message(
-                "Business settings are coming next"
-            )
-        }
-
-        text(
-            "SalonBook Pro | Milestone 5",
-            12f
-        )
+        container.addView(dashboardLabel("Boustio • Isolated preview • Phase 60.2", 12f),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = 16 })
     }
 
     private fun showCalendar() {
