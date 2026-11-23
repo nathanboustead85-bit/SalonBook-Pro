@@ -1,0 +1,43 @@
+name: Boustio Phase 53.2 Firebase environment isolation
+on:
+  push:
+    paths:
+      - 'security/phase532-firebase-environment.cjs'
+      - 'tests/phase532_firebase_environment.test.cjs'
+      - 'docs/security/phase-53-2-firebase-environment-isolation.md'
+      - '.github/workflows/boustio-phase-53-2-firebase-isolation.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-environment-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify production and staging separation with synthetic configs
+        run: node --test tests/phase532_firebase_environment.test.cjs
+      - name: Confirm tracked configuration belongs to production
+        run: node security/phase532-firebase-environment.cjs production app/google-services.json
+      - name: Verify production configuration cannot be mistaken for staging
+        run: |
+          if node security/phase532-firebase-environment.cjs staging app/google-services.json; then
+            echo 'ERROR: production configuration was accepted as staging'
+            exit 1
+          fi
+          echo 'Expected: production configuration rejected for staging'
+  staging-config-required:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require genuine staging configuration before any staging build
+        run: node security/phase532-firebase-environment.cjs staging app/src/staging/google-services.json
