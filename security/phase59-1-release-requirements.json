@@ -1,0 +1,62 @@
+{
+  "phase": "59.1",
+  "status": "EVIDENCE_GAP_ASSESSMENT",
+  "independentSecurityApproval": "NOT_OBTAINED",
+  "productionApproval": "NOT_APPROVED",
+  "requirements": {
+    "messaging": {
+      "requiredForCompletion": true,
+      "enabled": false,
+      "features": [
+        "real-time customer-business chat",
+        "60-second voice notes",
+        "photo attachments",
+        "notifications",
+        "account and conversation isolation",
+        "abuse prevention and attachment validation"
+      ],
+      "evidenceNeeded": [
+        "staging integration tests",
+        "authorization and storage rules review",
+        "real-device end-to-end verification",
+        "independent security approval"
+      ]
+    },
+    "androidUpgrade": {
+      "requiredForCompletion": true,
+      "installedUserApp": "11.13 (user-reported; contains two appointments)",
+      "repositoryApplicationId": "com.salonbook.pro",
+      "repositoryVersionCode": 2,
+      "repositoryVersionName": "0.2.0",
+      "installedPackageIdVerified": false,
+      "installedVersionCodeVerified": false,
+      "signingCertificateCompatibilityVerified": false,
+      "backupAndRollbackVerified": false,
+      "safeUpgradeApproved": false,
+      "requiredChecks": [
+        "inspect installed package ID, versionCode and signing certificate without modifying data",
+        "confirm update signing identity and monotonic versionCode",
+        "verify backward-compatible bookings, services and staff formats",
+        "verify safe rollback and backups with disposable test data",
+        "explicit consent before attempting update to appointment-bearing installation"
+      ]
+    }
+  },
+  "gates": {
+    "G1": "OPEN",
+    "G2": "OPEN",
+    "G3": "OPEN",
+    "G4": "OPEN",
+    "G5": "OPEN",
+    "G6": "OPEN",
+    "G7": "OPEN"
+  },
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "productionPreferencesTouched": false,
+  "productionRestoreEnabled": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "deployment": false
+}
