@@ -1,0 +1,59 @@
+{
+  "phase": "57.2",
+  "scope": "offline-configuration-and-policy-review-only",
+  "status": "NOT_VERIFIED",
+  "executionAuthorized": false,
+  "approval": "NOT_APPROVED",
+  "productionAccess": false,
+  "stagingAccess": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "checks": [
+    {
+      "id": "S1",
+      "name": "Staging Firebase project identity independently attested distinct from production",
+      "status": "OPEN",
+      "evidence": null
+    },
+    {
+      "id": "S2",
+      "name": "Staging and production credentials, service accounts and secrets isolated",
+      "status": "OPEN",
+      "evidence": null
+    },
+    {
+      "id": "S3",
+      "name": "Least-privilege IAM roles independently reviewed",
+      "status": "OPEN",
+      "evidence": null
+    },
+    {
+      "id": "S4",
+      "name": "Firestore and Storage security rules reviewed with deny-by-default tests",
+      "status": "OPEN",
+      "evidence": null
+    },
+    {
+      "id": "S5",
+      "name": "CI credentials scoped to disposable staging and protected environments",
+      "status": "OPEN",
+      "evidence": null
+    },
+    {
+      "id": "S6",
+      "name": "Audit logging, budget alerts and incident response verified",
+      "status": "OPEN",
+      "evidence": null
+    },
+    {
+      "id": "S7",
+      "name": "Independent approval for future isolated staging access",
+      "status": "OPEN",
+      "evidence": null
+    }
+  ],
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false
+}
