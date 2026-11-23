@@ -1,0 +1,30 @@
+name: Boustio Phase 59.9 real image and voice inspection
+on:
+  push:
+    paths:
+      - 'chat/media-processing.cjs'
+      - 'tests/phase599-media/**'
+      - 'security/phase59-9-real-media-inspection.md'
+      - '.github/workflows/boustio-phase-59-9-real-media.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-media-processing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install image processing dependency
+        working-directory: tests/phase599-media
+        run: npm install --no-audit --no-fund
+      - name: Verify ffmpeg and ffprobe available
+        run: |
+          ffmpeg -version
+          ffprobe -version
+      - name: Test real image decoding and voice duration inspection
+        working-directory: tests/phase599-media
+        run: node --test media.test.cjs
