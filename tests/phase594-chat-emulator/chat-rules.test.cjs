@@ -7,7 +7,7 @@ const projectId='demo-boustio-phase594';
 const conversation='businesses/owner-a/conversations/conversation-1';
 const message=conversation+'/messages/message-1';
 before(async()=>{
- env=await initializeTestEnvironment({projectId,firestore:{host:'127.0.0.1',port:8080,rules:fs.readFileSync('firestore.rules','utf8')}});
+ env=await initializeTestEnvironment({projectId,firestore:{host:'127.0.0.1',port:8080,rules:fs.readFileSync('../../firestore.rules','utf8')}});
  await env.withSecurityRulesDisabled(async ctx=>{
    const db=ctx.firestore();
    await db.doc(conversation).set({businessId:'owner-a',customerId:'customer-1'});
@@ -60,7 +60,7 @@ test('cross-business writes denied',async()=>{
  await assertFails(db.doc(conversation).update({status:'changed'}));
 });
 test('all gates remain open, no production activation',()=>{
- const gates=JSON.parse(fs.readFileSync('security/phase51-consolidated-gates.json','utf8'));
+ const gates=JSON.parse(fs.readFileSync('../../security/phase51-consolidated-gates.json','utf8'));
  assert.equal(gates.approval,'NOT_APPROVED');
  for(const gate of Object.values(gates.gates))assert.equal(gate.status,'OPEN');
  for(const flag of ['deployment','liveBookings','payments','messaging','appCheckEnforcement'])assert.equal(gates[flag],false);
