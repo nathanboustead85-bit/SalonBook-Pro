@@ -1,0 +1,17 @@
+{
+  "phase": "58.4",
+  "status": "RUNTIME_TESTS_PENDING",
+  "testScope": "Actual Kotlin JVM local unit tests for isolated Android validator, Gradle Android unit test task",
+  "realDeviceTests": false,
+  "androidProcessDeathTested": false,
+  "sharedPreferencesRestoreTested": false,
+  "productionRestoreEnabled": false,
+  "helperIntegratedIntoApp": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "launchGatesRemainOpen": true
+}
