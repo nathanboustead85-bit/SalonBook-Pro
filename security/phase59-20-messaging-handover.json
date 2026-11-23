@@ -1,0 +1,39 @@
+{
+  "phase": "59.20",
+  "status": "ENGINEERING_HANDOVER_ONLY",
+  "launchApproved": false,
+  "realDeviceVerified": false,
+  "realStagingVerified": false,
+  "independentSecurityApproved": false,
+  "customerChatConnected": false,
+  "businessInboxConnected": false,
+  "pushNotificationsDelivered": false,
+  "productionMessagingEnabled": false,
+  "artifacts": {
+    "customerPreview": "web/chat/customer-chat.html",
+    "businessPreview": "web/chat/business-inbox.html",
+    "photoVoiceControls": "web/chat/media-controls.js",
+    "textBackend": "chat/backend.cjs",
+    "transactionalFirestore": "chat/firestore-adapter.cjs",
+    "mediaReliability": "chat/reliable-media-emulator.cjs",
+    "orphanRecovery": "chat/media-recovery.cjs",
+    "inboxProjection": "chat/emulator-inbox-events.cjs",
+    "sessionIntegration": "chat/emulator-conversation-session.cjs"
+  },
+  "remaining": [
+    "Verify production-grade Firebase identity and owner/customer routing",
+    "Connect customer and business UIs to authenticated staging endpoints",
+    "Add consent-based notification delivery, retry and deduplication",
+    "Validate media storage and crash recovery end to end in real staging",
+    "Independent security review and all G1-G7 evidence",
+    "Verify Android APK package identity, signing, versionCode and data-safe upgrade on Samsung"
+  ],
+  "nextPhase": "60 — safe Android APK build and device verification",
+  "androidSafeguards": {
+    "installedOriginalAppointments": 2,
+    "neverUninstall": true,
+    "neverClearData": true,
+    "neverOverwriteWithoutVerifiedUpgrade": true,
+    "disposableTestApplicationIdSuffix": true
+  }
+}
