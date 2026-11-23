@@ -1,0 +1,57 @@
+{
+  "phase": "57.1",
+  "environment": "boustio-staging",
+  "mode": "planning-only",
+  "approval": "NOT_APPROVED",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "prerequisites": [
+    {
+      "id": "R1",
+      "title": "Independent staging project and billing isolation verified",
+      "status": "OPEN",
+      "evidence": null
+    },
+    {
+      "id": "R2",
+      "title": "Least-privilege IAM and temporary credentials reviewed",
+      "status": "OPEN",
+      "evidence": null
+    },
+    {
+      "id": "R3",
+      "title": "Disposable synthetic staging dataset approved",
+      "status": "OPEN",
+      "evidence": null
+    },
+    {
+      "id": "R4",
+      "title": "Cross-device transactional locking and durable idempotency designed and reviewed",
+      "status": "OPEN",
+      "evidence": null
+    },
+    {
+      "id": "R5",
+      "title": "Process-kill and network interruption test procedure approved",
+      "status": "OPEN",
+      "evidence": null
+    },
+    {
+      "id": "R6",
+      "title": "Rollback, backups, monitoring and incident response independently verified",
+      "status": "OPEN",
+      "evidence": null
+    },
+    {
+      "id": "R7",
+      "title": "Explicit human approval to perform isolated staging tests",
+      "status": "OPEN",
+      "evidence": null
+    }
+  ],
+  "executionAuthorized": false
+}
