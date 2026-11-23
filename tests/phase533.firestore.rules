@@ -1,11 +1,19 @@
 rules_version = '2';
 service cloud.firestore {
  match /databases/{database}/documents {
-  // Isolated candidate policy only. NOT published or used by the Android app.
-  match /syntheticBusinesses/{ownerId}/{document=**} {
-   allow read, write: if request.auth != null
+  // Candidate emulator-only policy. Do not deploy.
+  function verifiedOwner(ownerId) {
+   return request.auth != null
      && request.auth.uid == ownerId
      && request.auth.token.email_verified == true;
+  }
+  // Explicit document paths: recursive wildcards in rules_version 2 match
+  // zero segments and would also grant access to the parent business document.
+  match /syntheticBusinesses/{ownerId}/bookings/{bookingId} {
+   allow read, write: if verifiedOwner(ownerId);
+  }
+  match /syntheticBusinesses/{ownerId}/clients/{clientId} {
+   allow read, write: if verifiedOwner(ownerId);
   }
   match /{document=**} { allow read, write: if false; }
  }
