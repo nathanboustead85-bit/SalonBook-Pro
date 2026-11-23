@@ -1,0 +1,24 @@
+{
+  "phase": "58.8",
+  "status": "STATIC_CONTRACT_TESTS_PENDING",
+  "scope": "Read-only Android integration contract audit",
+  "productionCodeModified": false,
+  "productionRestoreEnabled": false,
+  "cloudBackupWritesEnabled": false,
+  "realDeviceTested": false,
+  "actualAndroidProcessDeathTested": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "launchGatesRemainOpen": true,
+  "findings": [
+    "MainActivity uses salonbook_data bookings key and apply() for normal writes",
+    "CloudActivity cloud restore is preview-only and reads Source.SERVER",
+    "RecoveryPreviewValidator is not wired into CloudActivity",
+    "Validator 500000 character ceiling differs from CloudActivity 1000000 character ceiling",
+    "Production restore needs independent security and rollback approval before any write"
+  ]
+}
