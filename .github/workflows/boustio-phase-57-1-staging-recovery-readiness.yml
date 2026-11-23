@@ -1,0 +1,23 @@
+name: Boustio Phase 57.1 staging recovery readiness
+on:
+  push:
+    paths:
+      - 'security/phase57-1-staging-recovery-readiness.json'
+      - 'security/phase57-1-staging-recovery-readiness.md'
+      - 'tests/phase571_staging_readiness.test.cjs'
+      - '.github/workflows/boustio-phase-57-1-staging-recovery-readiness.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify staging readiness plan and closed execution gates
+        run: node --test tests/phase571_staging_readiness.test.cjs
