@@ -1,0 +1,22 @@
+name: Boustio Phase 58.8 Android recovery integration readiness
+on:
+  push:
+    paths:
+      - 'tests/phase58-8-integration-readiness.test.cjs'
+      - 'security/phase58-8-integration-readiness.json'
+      - 'security/phase58-8-integration-readiness.md'
+      - '.github/workflows/boustio-phase-58-8-integration-readiness.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integration-contract-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify actual Android integration contracts and launch gates
+        run: node --test tests/phase58-8-integration-readiness.test.cjs
