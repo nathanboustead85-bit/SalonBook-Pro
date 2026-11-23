@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#087f77">
+<title>Business Inbox | Boustio</title>
+<link rel="stylesheet" href="./business-inbox.css">
+</head>
+<body>
+<main class="inbox-shell">
+ <header class="topbar"><div class="brand">boustio<span>.</span></div><div class="business-name">Kody Blends <small>Business dashboard preview</small></div><span class="demo">OFFLINE DEMO</span></header>
+ <div class="notice" role="status">Preview only. No customer data is loaded, and messages are not sent.</div>
+ <div class="workspace">
+  <aside class="sidebar" aria-label="Demo conversations">
+   <div class="sidebar-head"><h1>Messages</h1><span id="unreadCount" class="count" aria-live="polite">0 unread</span></div>
+   <label for="search" class="sr-only">Search conversations</label><input id="search" type="search" placeholder="Search demo conversations…">
+   <div class="filters" role="group" aria-label="Conversation filters"><button type="button" data-filter="all" aria-pressed="true">All</button><button type="button" data-filter="unread" aria-pressed="false">Unread</button></div>
+   <div id="conversations" class="conversations"></div>
+   <p class="sidebar-note">Sample conversations only. Nothing is connected to your real customers.</p>
+  </aside>
+  <section class="detail" aria-label="Selected conversation">
+   <header class="detail-head"><button type="button" class="back" id="backButton" aria-label="Back to conversations">←</button><div><h2 id="customerName">Select a conversation</h2><p id="customerMeta">Demo customer information</p></div><span class="secure">Preview</span></header>
+   <div class="messages" id="messages" aria-live="polite"><p class="empty">Select a sample conversation to view its messages.</p></div>
+   <form class="reply" id="replyForm"><label for="replyText" class="sr-only">Write reply</label><textarea id="replyText" maxlength="4000" rows="1" placeholder="Write a demo reply…" disabled></textarea><button id="replyButton" type="submit" disabled>Preview reply</button></form>
+   <p class="reply-note">Demo only · No messages are delivered</p>
+  </section>
+ </div>
+</main>
+<script src="./business-inbox.js" defer></script>
+</body>
+</html>
