@@ -1,0 +1,5 @@
+# Phase 59.18 — Firestore emulator inbox projections and notification candidates
+
+Adds `chat/emulator-inbox-events.cjs`, an isolated trusted-server read adapter using actual Firestore emulator documents. It checks verified owner/customer membership before listing messages or generating notification **candidates**. Only the business owner may list inbox conversations. It filters pending media from notification candidates, avoids exposing raw attachment storage paths, and returns minimal event metadata.
+
+This is **not push notifications or real-time browser delivery**. The browser previews from 59.15–59.17 remain standalone and offline. No public HTTP API, push tokens, FCM service, production authentication integration, subscriptions, or deployment were added. Further work must connect both interfaces to an authenticated staging endpoint, implement notification delivery with deduplication and consent, and perform independent security tests. All seven gates remain OPEN. Live bookings, payments, messaging and deployment stay disabled; Android appointments not accessed.
