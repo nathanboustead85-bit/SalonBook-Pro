@@ -1,0 +1,36 @@
+name: Boustio Phase 57.9 Android-compatible backup candidate
+on:
+  push:
+    paths:
+      - 'security/candidates/phase57-9-firestore.rules'
+      - 'tests/phase574-emulator/backup-format.test.cjs'
+      - 'security/phase57-9-backup-format-review.json'
+      - 'security/phase57-9-backup-format-review.md'
+      - '.github/workflows/boustio-phase-57-9-backup-format.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backup-format-emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase579
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated emulator dependencies
+        working-directory: tests/phase574-emulator
+        run: npm install --no-audit --no-fund
+      - name: Test Android-compatible candidate on demo emulator
+        working-directory: tests/phase574-emulator
+        run: npx firebase emulators:exec --only firestore --project demo-boustio-phase579 "node --test backup-format.test.cjs"
+      - name: Confirm launch gates and source rules unchanged
+        run: |
+          node -e "const a=require('./security/phase57-9-backup-format-review.json'),g=require('./security/phase51-consolidated-gates.json');if(a.originalRulesChanged||a.publishedRulesChanged||a.deployment||a.originalAndroidAppointments!=='DO_NOT_TOUCH'||Object.values(g.gates).some(x=>x.status!=='OPEN'))process.exit(1)"
