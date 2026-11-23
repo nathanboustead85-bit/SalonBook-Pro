@@ -1,0 +1,37 @@
+name: Boustio Phase 59.20 messaging handover and safety regression
+on:
+  push:
+    paths:
+      - 'security/phase59-20-messaging-handover.*'
+      - 'tests/phase59-20-handover.test.cjs'
+      - '.github/workflows/boustio-phase-59-20-messaging-handover.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  handover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Consolidated safety and handover assertions
+        run: node --test tests/phase59-20-handover.test.cjs
+      - name: Recheck browser and backend JavaScript
+        run: |
+          node --check web/chat/customer-chat.js
+          node --check web/chat/business-inbox.js
+          node --check web/chat/media-controls.js
+          node --check chat/emulator-conversation-session.cjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated emulator test dependencies
+        working-directory: tests/phase5919-session
+        run: npm install --no-audit --no-fund
+      - name: Re-run real Firestore emulator messaging integration
+        working-directory: tests/phase5919-session
+        run: npx firebase emulators:exec --project demo-boustio-phase5919 --only firestore "node --test session.test.cjs" --config firebase.json
