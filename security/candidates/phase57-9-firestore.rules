@@ -1,0 +1,361 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===================================
+    // SHARED SECURITY FUNCTIONS
+    // ===================================
+
+    function isOwner(userId) {
+      return request.auth != null
+        && request.auth.uid == userId;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isOwner(userId)
+        && request.auth.token.email_verified == true;
+    }
+
+    // ===================================
+    // PHASE 8D.61: MIGRATION MARKER
+    // ===================================
+
+    function migrationCompleted(userId) {
+      return exists(
+        /databases/$(database)/documents/businesses/$(userId)/migrations/android-bookings-v1
+      );
+    }
+
+    // ===================================
+    // PHASE 8D.68: BOOKING MODE GUARD
+    // ===================================
+
+    function bookingModePath(userId) {
+      return /databases/$(database)/documents/businesses/$(userId)/settings/bookingMode;
+    }
+
+    function legacyBookingWriteAllowed(userId) {
+      return !migrationCompleted(userId)
+        && exists(bookingModePath(userId))
+        && get(bookingModePath(userId)).data.mode == "legacy";
+    }
+
+    // ===================================
+    // PHASE 5: CLOUD BACKUP AND RESTORE
+    // ===================================
+
+    match /users/{userId}/backups/{backupId} {
+      allow read: if isVerifiedOwner(userId)
+        && backupId == "latest";
+
+      // Version 1 Android-compatible envelope, isolated candidate only.
+      // updatedAt is optional to accommodate existing legacy backup documents.
+      allow create, update: if isVerifiedOwner(userId)
+        && backupId == "latest"
+        && request.resource.data.keys().hasOnly([
+          "bookings", "services", "staff", "schemaVersion", "updatedAt"
+        ])
+        && request.resource.data.keys().hasAll([
+          "bookings", "services", "staff", "schemaVersion"
+        ])
+        && request.resource.data.bookings is string
+        && request.resource.data.services is string
+        && request.resource.data.staff is string
+        && request.resource.data.bookings.size() <= 500000
+        && request.resource.data.services.size() <= 500000
+        && request.resource.data.staff.size() <= 500000
+        && request.resource.data.schemaVersion == 1
+        && (
+          !request.resource.data.keys().hasAny(["updatedAt"])
+          || request.resource.data.updatedAt is timestamp
+        );
+
+      allow delete: if false;
+    }
+
+        // ===================================
+    // PHASE 6: CLOUD SYNCHRONISATION
+    // PHASE 8D.68: MODE PROTECTION
+    // ===================================
+
+    match /users/{userId}/liveData/{dataType} {
+
+      allow read: if isVerifiedOwner(userId)
+        && dataType in [
+          "bookings",
+          "services",
+          "staff"
+        ];
+
+      allow create, update: if isVerifiedOwner(userId)
+        && dataType in [
+          "bookings",
+          "services",
+          "staff"
+        ]
+
+        && (
+          dataType != "bookings"
+          || legacyBookingWriteAllowed(userId)
+        )
+
+        && request.resource.data.keys().hasOnly([
+          "json",
+          "schemaVersion",
+          "updatedAt"
+        ])
+
+        && request.resource.data.json is string
+
+        && request.resource.data.schemaVersion == 1
+
+        && request.resource.data.updatedAt is timestamp
+
+        && request.resource.data.json.size() <= 500000;
+
+      allow delete: if false;
+    }
+
+    // ===================================
+    // PHASE 12.11A:
+    // PRIVATE CLIENT PROFILE SYNC
+    // ===================================
+
+    match /users/{userId}/clientProfiles/{profileId} {
+
+      // Only the verified account owner
+      // can read their private client profiles.
+
+      allow get: if isVerifiedOwner(userId);
+
+      // No directory listing or deletion
+      // through the Android client.
+
+      allow list, delete: if false;
+
+      // Allow validated client contact
+      // information to be saved.
+
+      allow create, update: if isVerifiedOwner(userId)
+
+        // Client profile IDs must be
+        // 64-character lowercase SHA-256 hashes.
+
+        && profileId.matches('[0-9a-f]{64}')
+
+        // Only approved fields are permitted.
+
+        && request.resource.data.keys().hasOnly([
+          "name",
+          "phone",
+          "email",
+          "notes",
+          "schemaVersion",
+          "updatedAt"
+        ])
+
+        && request.resource.data.keys().hasAll([
+          "name",
+          "phone",
+          "email",
+          "notes",
+          "schemaVersion",
+          "updatedAt"
+        ])
+
+        // Client name validation.
+
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 150
+
+        // Phone validation.
+
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() <= 50
+
+        // Email validation.
+
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 254
+
+        // Notes validation.
+
+        && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 5000
+
+        // Schema version.
+
+        && request.resource.data.schemaVersion == 1
+
+        // Timestamp must be generated
+        // by the server.
+
+        && request.resource.data.updatedAt == request.time
+
+        // Prevent existing cloud profile
+        // identities being renamed in place.
+
+        && (
+          resource == null
+          || request.resource.data.name == resource.data.name
+        );
+    }
+
+    // ===================================
+    // PHASE 7A: PRIVATE BUSINESS PROFILE
+    // ===================================
+
+    match /users/{userId}/business/{documentId} {
+
+      allow read: if isVerifiedOwner(userId)
+        && documentId == "profile";
+
+      allow create, update: if isVerifiedOwner(userId)
+        && documentId == "profile"
+
+        && request.resource.data.keys().hasOnly([
+          "businessId",
+          "name",
+          "slug",
+          "category",
+          "email",
+          "phone",
+          "address",
+          "description",
+          "acceptingBookings",
+          "schemaVersion",
+          "updatedAt"
+        ])
+
+        && request.resource.data.keys().hasAll([
+          "businessId",
+          "name",
+          "slug",
+          "category",
+          "email",
+          "phone",
+          "address",
+          "description",
+          "acceptingBookings",
+          "schemaVersion",
+          "updatedAt"
+        ])
+
+        && request.resource.data.businessId is string
+        && request.resource.data.businessId == userId
+
+        && request.resource.data.name is string
+        && request.resource.data.slug is string
+        && request.resource.data.category is string
+        && request.resource.data.email is string
+        && request.resource.data.phone is string
+        && request.resource.data.address is string
+        && request.resource.data.description is string
+
+        && request.resource.data.acceptingBookings is bool
+
+        && request.resource.data.schemaVersion == 1
+
+        && request.resource.data.updatedAt is timestamp
+
+        && request.resource.data.name.size() >= 3
+        && request.resource.data.name.size() <= 100
+
+        && request.resource.data.slug.size() >= 3
+        && request.resource.data.slug.size() <= 50
+
+        && request.resource.data.category.size() <= 100
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.phone.size() <= 50
+        && request.resource.data.address.size() <= 500
+        && request.resource.data.description.size() <= 2000
+
+        && request.resource.data.acceptingBookings == false;
+
+      allow delete: if false;
+    }
+
+    // ===================================
+    // PHASE 7C: PUBLIC BUSINESS DIRECTORY
+    // ===================================
+
+    match /publicBusinesses/{businessId} {
+
+      allow get: if resource.data.published == true;
+
+      allow list: if false;
+
+      allow create, update, delete: if false;
+    }
+
+    // ===================================
+    // PHASE 8C: PRIVATE APPOINTMENTS
+    // ===================================
+
+    match /businesses/{businessId}/appointments/{appointmentId} {
+
+      allow get, list: if isVerifiedOwner(businessId);
+
+      // Appointment changes must go
+      // through the trusted backend.
+
+      allow create, update, delete: if false;
+    }
+
+    // ===================================
+    // PHASE 8C: BOOKING LOCKS
+    // ===================================
+
+    match /businesses/{businessId}/bookingLocks/{lockId} {
+      allow read, write: if false;
+    }
+
+    // ===================================
+    // PHASE 8D.63: BOOKING MODE
+    // ===================================
+
+    match /businesses/{businessId}/settings/{settingId} {
+
+      allow get: if isVerifiedOwner(businessId)
+        && settingId == "bookingMode";
+
+      allow list, create, update, delete: if false;
+    }
+
+    // ===================================
+    // PHASE 8D.61: MIGRATION MARKERS
+    // ===================================
+
+    match /businesses/{businessId}/migrations/{migrationId} {
+      allow read, write: if false;
+    }
+
+    // ===================================
+    // PHASE 9E.1: PRIVATE CHAT FOUNDATION
+    // ===================================
+
+    match /businesses/{businessId}/conversations/{conversationId} {
+
+      allow get, list: if isVerifiedOwner(businessId);
+
+      allow create, update, delete: if false;
+
+      match /messages/{messageId} {
+
+        allow get, list: if isVerifiedOwner(businessId);
+
+        allow create, update, delete: if false;
+      }
+    }
+
+    // ===================================
+    // DEFAULT DENY
+    // ===================================
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
