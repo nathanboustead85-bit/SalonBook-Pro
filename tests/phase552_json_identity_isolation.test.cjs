@@ -7,7 +7,7 @@ const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 test('JSON parser, booking identity checks and test cases are present',()=>{
  const source=read('app/src/main/java/com/salonbook/pro/AndroidStorageSnapshotAdapter.kt');
  const suite=read('app/src/test/java/com/salonbook/pro/AndroidStorageSnapshotAdapterValidationTest.kt');
- for(const token of ['JsonParser.parseReader','Duplicate booking ID','Booking ID missing or invalid','isJsonObject'])assert.ok(source.includes(token),token);
+ for(const token of ['JsonParser.parseString','Duplicate booking ID','Booking ID missing or invalid','isJsonObject'])assert.ok(source.includes(token),token);
  for(const token of ['duplicateBookingIdsAreRejected','malformedJsonAndTrailingTokensAreRejected','optionalServiceAndStaffIdsAllowLegacyRecords','twoUniqueSyntheticAppointmentsArePreserved'])assert.ok(suite.includes(token),token);
 });
 test('adapter is isolated from Android activity and storage writes',()=>{
