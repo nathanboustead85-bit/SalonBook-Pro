@@ -1,0 +1,25 @@
+name: Boustio Phase 52.9 recovery design and Android review
+on:
+  push:
+    paths:
+      - 'security/phase529-recovery-plan.cjs'
+      - 'tests/phase529_recovery_plan.test.cjs'
+      - 'docs/security/phase-52-9-recovery-design-and-android-review.md'
+      - '.github/workflows/boustio-phase-52-9-recovery-review.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recovery-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run synthetic recovery review
+        run: node --test tests/phase529_recovery_plan.test.cjs
+      - name: Confirm no deployment
+        run: echo 'Offline recovery design checks only; no Firebase or Android device access.'
