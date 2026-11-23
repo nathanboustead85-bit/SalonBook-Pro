@@ -10,6 +10,7 @@ import android.graphics.drawable.GradientDrawable
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import org.json.JSONArray
@@ -32,6 +33,9 @@ class MainActivity : Activity() {
     private val bookings = mutableListOf<Booking>()
     private var selectedDate = today()
     private lateinit var container: LinearLayout
+    private var activeTab = "Home"
+    private val muted = Color.rgb(108, 120, 117)
+    private val mint = Color.rgb(231, 244, 239)
 
     data class Booking(
         val id: String,
@@ -78,27 +82,205 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun screen(title: String) {
-        val scroll = ScrollView(this).apply {
-            setBackgroundColor(this@MainActivity.background)
-        }
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
+    private fun screen(title: String) {
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.rgb(249, 250, 248))
+        }
+        val scroll = ScrollView(this).apply {
+            fillViewport = false
+        }
         container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(26, 32, 26, 48)
+            setPadding(dp(20), dp(24), dp(20), dp(30))
         }
-
         scroll.addView(container)
-        setContentView(scroll)
+        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(bottomNavigation())
+        setContentView(root)
 
+        val brand = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, 0, 0, dp(25))
+        }
+        brand.addView(TextView(this).apply {
+            text = "B"
+            textSize = 31f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            background = rounded(Color.rgb(9, 62, 55), dp(4).toFloat())
+        }, LinearLayout.LayoutParams(dp(52), dp(52)))
+        val brandText = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), 0, 0, 0)
+        }
+        brandText.addView(dashboardLabel("Boustio", 25f, true))
+        brandText.addView(TextView(this).apply {
+            text = "A booking platform with a difference"
+            textSize = 11f
+            setTextColor(Color.rgb(17, 106, 96))
+        })
+        brand.addView(brandText)
+        container.addView(brand)
         container.addView(TextView(this).apply {
             text = title
+            textSize = 28f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(dark)
+            setPadding(0, 0, 0, dp(8))
+        })
+    }
+
+    private fun bottomNavigation(): LinearLayout =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setBackgroundColor(Color.WHITE)
+            setPadding(dp(9), dp(8), dp(9), dp(8))
+            elevation = dp(8).toFloat()
+            listOf(
+                Triple("⌂", "Home", { showDashboard() }),
+                Triple("▦", "Calendar", { showCalendar() }),
+                Triple("♧", "Clients", { showClients() }),
+                Triple("⚙", "Settings", { showBusinessSettings() })
+            ).forEach { (symbol, label, action) ->
+                val selected = activeTab == label
+                val item = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    gravity = Gravity.CENTER
+                    background = rounded(if (selected) mint else Color.WHITE, dp(15).toFloat())
+                    setPadding(0, dp(6), 0, dp(6))
+                    isClickable = true
+                    isFocusable = true
+                    contentDescription = label
+                    setOnClickListener { action() }
+                }
+                item.addView(TextView(this@MainActivity).apply {
+                    text = symbol
+                    textSize = 24f
+                    gravity = Gravity.CENTER
+                    setTextColor(if (selected) purple else muted)
+                })
+                item.addView(TextView(this@MainActivity).apply {
+                    text = label
+                    textSize = 11f
+                    gravity = Gravity.CENTER
+                    typeface = if (selected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+                    setTextColor(if (selected) purple else muted)
+                })
+                addView(item, LinearLayout.LayoutParams(0, dp(60), 1f))
+            }
+        }
+
+    private fun sectionLabel(label: String) {
+        container.addView(TextView(this).apply {
+            text = label.uppercase(Locale.UK)
+            textSize = 12f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(muted)
+        }, LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(26)
+            bottomMargin = dp(10)
+        })
+    }
+
+    private fun premiumCard(
+        symbol: String, title: String, description: String, action: () -> Unit
+    ) {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(15), dp(16), dp(14), dp(16))
+            background = rounded(Color.WHITE, dp(20).toFloat())
+            elevation = dp(2).toFloat()
+            isClickable = true
+            isFocusable = true
+            contentDescription = title
+            setOnClickListener { action() }
+        }
+        card.addView(TextView(this).apply {
+            text = symbol
             textSize = 25f
+            gravity = Gravity.CENTER
+            background = rounded(mint, dp(14).toFloat())
+        }, LinearLayout.LayoutParams(dp(54), dp(54)))
+        val labels = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(15), 0, dp(6), 0)
+        }
+        labels.addView(dashboardLabel(title, 16f, true))
+        labels.addView(TextView(this).apply {
+            text = description
+            textSize = 12f
+            setTextColor(muted)
+        })
+        card.addView(labels, LinearLayout.LayoutParams(0, -2, 1f))
+        card.addView(TextView(this).apply {
+            text = "›"
+            textSize = 28f
+            setTextColor(purple)
+        })
+        container.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
+            bottomMargin = dp(14)
+        })
+    }
+
+    private fun showBusinessSettings() {
+        activeTab = "Settings"
+        screen("Business settings")
+        container.addView(TextView(this).apply {
+            text = "Make Boustio work beautifully for your business."
+            textSize = 17f
+            setTextColor(muted)
+            setPadding(0, 0, 0, dp(20))
+        })
+        val introduction = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(20), dp(20), dp(20))
+            background = rounded(Color.WHITE, dp(22).toFloat())
+            elevation = dp(2).toFloat()
+        }
+        introduction.addView(TextView(this).apply {
+            text = "YOUR BUSINESS • BOUSTIO"
+            textSize = 12f
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(purple)
-            gravity = Gravity.START
-            setPadding(8, 0, 8, 24)
         })
+        introduction.addView(dashboardLabel("Everything in its place", 21f, true))
+        introduction.addView(TextView(this).apply {
+            text = "Manage your services, team, booking link and account from one place."
+            textSize = 14f
+            setTextColor(muted)
+        })
+        container.addView(introduction)
+        sectionLabel("Business management")
+        premiumCard("▤", "Services & Prices", "Manage your service catalogue") {
+            startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
+        }
+        premiumCard("♟", "Staff & Working Hours", "Manage your team and availability") {
+            startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
+        }
+        premiumCard("🔗", "My Boustio Booking Link", "Public booking profile • not connected") {
+            message("Booking link is not connected in this test build.")
+        }
+        premiumCard("☏", "Customer Messages", "Private chat inbox • preview only") {
+            message("Customer messaging is not enabled in this test build.")
+        }
+        sectionLabel("Account and tools")
+        premiumCard("☁", "Cloud Account & Backup", "Cloud account, backup and restore") {
+            startActivity(Intent(this, CloudActivity::class.java))
+        }
+        premiumCard("▦", "Test Appointment Availability", "Check booking slots") {
+            showCalendar()
+        }
+        sectionLabel("Appointments")
+        premiumCard("▣", "All Appointments", "Browse and manage every booking") {
+            showAppointments()
+        }
+        container.addView(dashboardLabel("BOUSTIO • A BOOKING PLATFORM WITH A DIFFERENCE", 10f))
     }
 
     private fun text(
@@ -157,7 +339,8 @@ class MainActivity : Activity() {
         }
 
     private fun showDashboard() {
-        screen("Boustio")
+        activeTab = "Home"
+        screen("Dashboard")
         container.addView(dashboardLabel("A booking platform with a difference.", 14f))
         container.addView(dashboardLabel("Your business at a glance", 21f, true),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = 24; bottomMargin = 12 })
@@ -197,15 +380,14 @@ class MainActivity : Activity() {
         button("My booking link") {
             message("Online booking links are not yet connected in this Android build.")
         }
-        button("Business settings") {
-            message("Business settings are not yet connected in this Android build.")
-        }
+        button("Business settings") { showBusinessSettings() }
         container.addView(dashboardLabel("Boustio • Isolated preview • Phase 60.2", 12f),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = 16 })
     }
 
     private fun showCalendar() {
-        screen("Appointment Calendar")
+        activeTab = "Calendar"
+        screen("Appointment calendar")
 
         text(
             "Selected date: $selectedDate",
@@ -914,6 +1096,7 @@ class MainActivity : Activity() {
     }
 
     private fun showClients() {
+        activeTab = "Clients"
         screen("Clients")
 
         val clients = bookings.map {
