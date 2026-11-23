@@ -1,0 +1,26 @@
+{
+  "phase": "57.4",
+  "scope": "read-only repository preflight",
+  "rulesPath": "firestore.rules",
+  "firebaseConfigPath": "firebase.json",
+  "rulesSource": "NOT_FOUND_AT_EXPECTED_PATH",
+  "emulatorEvidence": "NOT_EXECUTED",
+  "status": "BLOCKED_MISSING_RULES",
+  "approval": "NOT_APPROVED",
+  "executionAuthorized": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "requiredTests": [
+    "anonymous reads and writes denied",
+    "cross-business reads denied",
+    "cross-business writes denied",
+    "unverified owner writes denied",
+    "verified owner access limited to own resources",
+    "backup and booking mode protections",
+    "deny-by-default for unknown paths"
+  ],
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false
+}
