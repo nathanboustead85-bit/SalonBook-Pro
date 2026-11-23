@@ -1,0 +1,7 @@
+# Phase 59.6 — Disabled-by-default secure messaging backend core
+
+Implemented `chat/backend.cjs` with a dependency-injected transactional store interface. The core accepts only authenticated, verified identities, rejects forged message metadata, validates conversation membership against **store-loaded** conversation data, enforces message validation and per-minute quota, and supports request-ID idempotency. Synthetic tests cover replay, quotas, membership denial and closed conversations.
+
+**Important limits:** The `enabled:true` switch is for isolated tests only. The repository has no wired trusted Firebase Admin adapter, live endpoint, or atomic Firestore transaction for this core yet. The example in-memory store is only a test double; it does not prove concurrency safety or quota resistance across processes. An adapter must enforce transaction atomicity, verify server-side auth claims, and scope idempotency to the persisted conversation and sender. No media message can pass this backend yet: photo/voice metadata validation alone cannot authenticate actual file bytes or duration. Notification delivery is not implemented.
+
+No Firestore rules changed or deployed, no customer chat UI was activated, and no Android data or appointments were touched. G1–G7 remain OPEN. Next: implement a trusted emulator-only Firestore transaction adapter and concurrent request tests, then real media scanning and staged integration.
