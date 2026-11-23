@@ -1,0 +1,32 @@
+name: Boustio Phase 56.5 recovery integrity audit
+on:
+  push:
+    paths:
+      - 'app/src/test/java/com/salonbook/pro/RecoveryIntegrityAuditTest.kt'
+      - 'security/phase56-5-recovery-integrity-audit.md'
+      - 'tests/phase565_recovery_integrity_audit.test.cjs'
+      - '.github/workflows/boustio-phase-56-5-recovery-integrity-audit.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recovery-integrity-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Cross-phase recovery integrity JUnit tests
+        run: gradle --no-daemon :app:testReleaseUnitTest --tests com.salonbook.pro.RecoveryIntegrityAuditTest
+      - name: Safety gate and evidence matrix checks
+        run: node --test tests/phase565_recovery_integrity_audit.test.cjs
