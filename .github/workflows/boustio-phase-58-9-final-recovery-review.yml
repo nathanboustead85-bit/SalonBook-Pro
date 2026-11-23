@@ -1,0 +1,22 @@
+name: Boustio Phase 58.9 final recovery safety review
+on:
+  push:
+    paths:
+      - 'security/phase58-9-final-recovery-review.json'
+      - 'security/phase58-9-final-recovery-review.md'
+      - 'tests/phase58-9-final-recovery-review.test.cjs'
+      - '.github/workflows/boustio-phase-58-9-final-recovery-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recovery-final-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit actual Android source and Phase 58 evidence
+        run: node --test tests/phase58-9-final-recovery-review.test.cjs
