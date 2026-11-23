@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#087f77">
+<title>Messages | Boustio</title>
+<link rel="stylesheet" href="./customer-chat.css">
+</head>
+<body>
+<main class="chat-shell" aria-label="Boustio customer messaging preview">
+ <header class="chat-header">
+  <div class="brand">boustio<span class="brand-dot">.</span></div>
+  <div class="business"><div class="avatar" aria-hidden="true">KB</div><div><h1>Kody Blends</h1><p>Customer messaging preview</p></div></div>
+  <span class="preview-pill">DEMO ONLY</span>
+ </header>
+ <div class="notice" role="status">This is an offline interface preview. Messages and attachments are not sent to a business.</div>
+ <section class="conversation" id="conversation" aria-label="Conversation" aria-live="polite">
+  <p class="date-label">Preview conversation</p>
+  <article class="bubble incoming"><span class="sender">Kody Blends</span><p>Hi! How can we help with your next appointment?</p><time>10:30</time></article>
+  <article class="bubble outgoing"><span class="sender">You</span><p>Could I ask about availability for a haircut?</p><time>10:31</time></article>
+ </section>
+ <div class="attachment-preview" id="attachmentPreview" hidden></div>
+ <div class="voice-preview" id="voicePreview" hidden><span id="voiceStatus">Voice note ready</span><button type="button" id="clearVoice">Remove</button></div>
+ <form class="composer" id="composer">
+  <label class="icon-button attachment-label" for="photoInput" title="Choose photo"><span aria-hidden="true">＋</span><span class="sr-only">Choose photo</span></label>
+  <input type="file" id="photoInput" accept="image/png,image/jpeg,image/webp" hidden>
+  <label class="sr-only" for="message">Write a message</label>
+  <textarea id="message" rows="1" maxlength="4000" placeholder="Write a message…" aria-label="Write a message"></textarea>
+  <button type="button" id="recordButton" class="icon-button" aria-label="Record a voice note">🎙</button>
+  <button type="submit" class="send-button">Preview</button>
+ </form>
+ <p class="composer-help" id="composerHelp">Preview only · Voice notes limited to 60 seconds · No messages leave this device</p>
+</main>
+<script src="./customer-chat.js" defer></script>
+</body>
+</html>
