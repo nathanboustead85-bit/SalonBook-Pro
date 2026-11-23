@@ -100,4 +100,29 @@ class DurableRecoveryJournalTest {
         assertFalse(File(dir, "original.dat").exists())
     }
 
+    @Test fun corruptOrphanOriginalFailsClosedWithoutDeletingActive() = withDirectory { dir ->
+        assertTrue(DurableRecoveryJournal(dir).initializeSynthetic(empty))
+        File(dir, "original.dat").writeText("corrupt")
+        val restarted = DurableRecoveryJournal(dir)
+        assertFalse(restarted.recover())
+        assertNull(restarted.readSynthetic())
+        assertTrue(File(dir, "snapshot.dat").exists())
+        assertTrue(File(dir, "original.dat").exists())
+    }
+
+    @Test fun secondRecoveryAfterInterruptedRollbackIsIdempotent() = withDirectory { dir ->
+        assertTrue(DurableRecoveryJournal(dir).initializeSynthetic(empty))
+        try {
+            DurableRecoveryJournal(dir) { checkpoint ->
+                if (checkpoint == "after-active") throw SimulatedProcessDeath()
+            }.applySynthetic(updated)
+            fail("Expected synthetic crash")
+        } catch (_: SimulatedProcessDeath) { }
+        val restarted = DurableRecoveryJournal(dir)
+        assertTrue(restarted.recover())
+        assertEquals(empty, restarted.readSynthetic())
+        assertTrue(DurableRecoveryJournal(dir).recover())
+        assertEquals(empty, DurableRecoveryJournal(dir).readSynthetic())
+    }
+
 }
