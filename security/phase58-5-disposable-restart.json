@@ -1,0 +1,17 @@
+{
+  "phase": "58.5",
+  "status": "KOTLIN_RUNTIME_TESTS_PENDING",
+  "scope": "JVM synthetic file fixtures simulating separate reads after restart and pre-commit interruption",
+  "androidProcessDeathVerified": false,
+  "androidSharedPreferencesVerified": false,
+  "androidDeviceTested": false,
+  "actualUserDataAccessed": false,
+  "productionRestoreEnabled": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "launchGatesRemainOpen": true
+}
