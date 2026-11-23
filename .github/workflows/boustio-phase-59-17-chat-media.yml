@@ -1,0 +1,27 @@
+name: Boustio Phase 59.17 chat media controls
+on:
+  push:
+    paths:
+      - 'web/chat/**'
+      - 'tests/phase59-17-chat-media.test.cjs'
+      - 'security/phase59-17-chat-media-controls.md'
+      - '.github/workflows/boustio-phase-59-17-chat-media.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chat-media:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate media controls and launch gates
+        run: node --test tests/phase59-17-chat-media.test.cjs
+      - name: Validate browser JavaScript syntax
+        run: |
+          node --check web/chat/media-controls.js
+          node --check web/chat/business-inbox.js
+          node --check web/chat/customer-chat.js
