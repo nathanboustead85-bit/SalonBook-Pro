@@ -1,0 +1,22 @@
+name: Boustio Phase 58.10 final recovery handover
+on:
+  push:
+    paths:
+      - 'security/phase58-10-handover.json'
+      - 'security/phase58-10-handover.md'
+      - 'tests/phase58-10-handover.test.cjs'
+      - '.github/workflows/boustio-phase-58-10-final-handover.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  phase58-handover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify Phase 58 handover and unchanged launch gates
+        run: node --test tests/phase58-10-handover.test.cjs
