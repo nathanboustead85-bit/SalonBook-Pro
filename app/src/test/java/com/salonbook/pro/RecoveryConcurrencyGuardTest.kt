@@ -55,8 +55,8 @@ class RecoveryConcurrencyGuardTest {
         try {
             val futures = (1..16).map { i -> pool.submit<Boolean> {
                 start.await()
-                guard.begin("request-$i", envelope, 12L, 12L)
-                    is RecoveryConcurrencyGuard.Decision.Prepared
+                (guard.begin("request-$i", envelope, 12L, 12L)
+                    is RecoveryConcurrencyGuard.Decision.Prepared)
             } }
             start.countDown()
             assertEquals(1, futures.count { it.get(10, TimeUnit.SECONDS) })
