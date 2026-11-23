@@ -10,12 +10,12 @@ The Phase 60.11 workflow **fails closed** if any of four repository Actions secr
 
 Required GitHub repository secrets (Settings > Secrets and variables > Actions > New repository secret):
 
-1. `BOUSTIO_TEST_KEYSTORE_BASE64`: Base64 of a newly generated, securely backed-up Android test keystore file.
-2. `BOUSTIO_TEST_STORE_PASSWORD`: Keystore password.
-3. `BOUSTIO_TEST_KEY_ALIAS`: Key alias in that keystore.
-4. `BOUSTIO_TEST_KEY_PASSWORD`: Private-key password.
+1. `SIGNING_KEYSTORE_BASE64`: Base64 of a newly generated, securely backed-up Android test keystore file.
+2. `SIGNING_STORE_PASSWORD`: Keystore password.
+3. `SIGNING_KEY_ALIAS`: Key alias in that keystore.
+4. `SIGNING_KEY_PASSWORD`: Private-key password.
 
-Generate a strong key **privately**, using a trusted Android keystore generation method or a trusted computer. Do not use a public web-based keystore generator or send the private key to the assistant. Back up the keystore and passwords securely; losing them will prevent future in-place updates to APKs signed with this certificate. After the secrets are configured, rerun the Phase 60.11 workflow. Its APK has versionCode 4 and the isolated package `com.salonbook.pro.isolated`.
+Reuse the previously created, backed-up `salonbook-release.jks` keystore with alias `salonbook`; do not generate or replace the existing signing key. Do not use a public web-based keystore generator or send the private key to the assistant. Back up the keystore and passwords securely; losing them will prevent future in-place updates to APKs signed with this certificate. After the secrets are configured, rerun the Phase 60.11 workflow. Its APK has versionCode 4 and the isolated package `com.salonbook.pro.isolated`.
 
 ## Migration of existing Phase 60.9 app
 
