@@ -549,8 +549,9 @@ class MainActivity : Activity() {
     private fun bookingCard(booking: Booking) {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(22, 18, 22, 18)
-            setBackgroundColor(Color.WHITE)
+            setPadding(dp(18), dp(18), dp(18), dp(18))
+            background = rounded(Color.WHITE, dp(20).toFloat())
+            elevation = dp(2).toFloat()
         }
 
         val staff = readRecords("staff").firstOrNull {
@@ -600,8 +601,10 @@ class MainActivity : Activity() {
         })
 
         card.addView(Button(this).apply {
-            text = "Edit / Cancel"
+            text = "Manage appointment  ›"
             isAllCaps = false
+            setTextColor(purple)
+            background = rounded(mint, dp(12).toFloat())
 
             setOnClickListener {
                 bookingOptions(booking)
@@ -614,7 +617,7 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                bottomMargin = 16
+                bottomMargin = dp(14)
             }
         )
     }
