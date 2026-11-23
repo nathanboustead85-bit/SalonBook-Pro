@@ -1,0 +1,48 @@
+name: Boustio Phase 60.9 integrated clients APK
+on:
+  push:
+    paths:
+      - 'app/src/main/java/com/salonbook/pro/MainActivity.kt'
+      - 'app/src/main/java/com/salonbook/pro/ClientActivity.kt'
+      - 'tests/phase60-9-integrated-clients.test.cjs'
+      - 'security/phase60-9-client-integration.md'
+      - '.github/workflows/boustio-phase-60-9-integrated-clients.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrated-clients:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify client integration and safety
+        run: node --test tests/phase60-9-integrated-clients.test.cjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build isolated Android APK
+        run: gradle --no-daemon :app:assembleIsolatedDebug
+      - name: Verify isolated offline APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/isolated/debug/app-isolated-debug.apk"
+          test -s "$APK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
+          "$AAPT" dump badging "$APK" > /tmp/boustio60-9.txt
+          grep -q "name='com.salonbook.pro.isolated'" /tmp/boustio60-9.txt
+          ! grep -q "uses-permission: name='android.permission.INTERNET'" /tmp/boustio60-9.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase60-9-INTEGRATED-CLIENTS-APK
+          path: app/build/outputs/apk/isolated/debug/app-isolated-debug.apk
+          if-no-files-found: error
