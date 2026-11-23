@@ -1,0 +1,35 @@
+name: Boustio Phase 57.8 Android backup compatibility
+on:
+  push:
+    paths:
+      - 'tests/phase574-emulator/android-backup-compatibility.test.cjs'
+      - 'security/phase57-8-android-compatibility.json'
+      - 'security/phase57-8-android-compatibility.md'
+      - '.github/workflows/boustio-phase-57-8-android-compatibility.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android-backup-compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase578
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install emulator dependencies
+        working-directory: tests/phase574-emulator
+        run: npm install --no-audit --no-fund
+      - name: Verify Android backup contract against isolated candidate
+        working-directory: tests/phase574-emulator
+        run: npx firebase emulators:exec --only firestore --project demo-boustio-phase578 "node --test android-backup-compatibility.test.cjs"
+      - name: Confirm safety and incompatibility evidence
+        run: |
+          node -e "const a=require('./security/phase57-8-android-compatibility.json'),g=require('./security/phase51-consolidated-gates.json');if(a.candidateCompatible||a.publishedRulesChanged||a.activeRulesChanged||a.deployment||a.originalAndroidAppointments!=='DO_NOT_TOUCH'||Object.values(g.gates).some(x=>x.status!=='OPEN'))process.exit(1)"
