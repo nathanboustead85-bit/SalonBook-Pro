@@ -55,14 +55,35 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         loadBookings()
-        showDashboard()
+        openRequestedTab()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        openRequestedTab()
+    }
+
+    private fun openRequestedTab() {
+        when (intent?.getStringExtra("boustio_tab")) {
+            "Calendar" -> showCalendar()
+            "Clients" -> showClients()
+            "Settings" -> showBusinessSettings()
+            else -> showDashboard()
+        }
+        intent?.removeExtra("boustio_tab")
     }
 
     override fun onResume() {
         super.onResume()
         if (::container.isInitialized) {
             loadBookings()
-            showDashboard()
+            when (activeTab) {
+                "Calendar" -> showCalendar()
+                "Clients" -> showClients()
+                "Settings" -> showBusinessSettings()
+                else -> showDashboard()
+            }
         }
     }
 
