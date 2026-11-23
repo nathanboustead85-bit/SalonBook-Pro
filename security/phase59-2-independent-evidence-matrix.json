@@ -1,0 +1,125 @@
+{
+  "phase": "59.2",
+  "status": "INDEPENDENT_REVIEW_PENDING",
+  "approval": "NOT_APPROVED",
+  "reviewer": {
+    "identity": null,
+    "independentOfImplementation": null,
+    "approvalDate": null
+  },
+  "gateEvidence": {
+    "G1": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "stagingEvidence": null,
+      "reviewerSignoff": null
+    },
+    "G2": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "stagingEvidence": null,
+      "reviewerSignoff": null
+    },
+    "G3": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "stagingEvidence": null,
+      "reviewerSignoff": null
+    },
+    "G4": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "stagingEvidence": null,
+      "reviewerSignoff": null
+    },
+    "G5": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "stagingEvidence": null,
+      "reviewerSignoff": null
+    },
+    "G6": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "stagingEvidence": null,
+      "reviewerSignoff": null
+    },
+    "G7": {
+      "status": "OPEN",
+      "independentApproval": false,
+      "stagingEvidence": null,
+      "reviewerSignoff": null
+    }
+  },
+  "workstreams": [
+    {
+      "id": "CHAT_AUTH",
+      "requirement": "Authenticated conversation participant isolation and owner-only business access",
+      "evidence": [
+        "Firestore emulator cross-tenant denial tests",
+        "independent rules review",
+        "controlled staging verification"
+      ],
+      "state": "MISSING_INDEPENDENT_EVIDENCE"
+    },
+    {
+      "id": "CHAT_MEDIA",
+      "requirement": "60-second voice notes, photo MIME and size enforcement, storage isolation and abuse quotas",
+      "evidence": [
+        "Storage rules and upload rejection tests",
+        "voice duration validation tests",
+        "attachment abuse and rotation controls"
+      ],
+      "state": "MISSING_INDEPENDENT_EVIDENCE"
+    },
+    {
+      "id": "CHAT_RUNTIME",
+      "requirement": "Working customer-business chat, notifications and offline/retry behaviour",
+      "evidence": [
+        "two-account staging end-to-end tests",
+        "real Android device tests",
+        "delivery and notification logs"
+      ],
+      "state": "MISSING_INDEPENDENT_EVIDENCE"
+    },
+    {
+      "id": "APK_IDENTITY",
+      "requirement": "Safe 11.13 in-place Android update eligibility",
+      "evidence": [
+        "installed package identifier",
+        "installed versionCode",
+        "installed signing certificate fingerprint",
+        "new APK signing certificate fingerprint"
+      ],
+      "state": "MISSING_DEVICE_EVIDENCE"
+    },
+    {
+      "id": "APK_DATA",
+      "requirement": "Preserve two original appointments",
+      "evidence": [
+        "disposable upgrade and rollback tests",
+        "legacy schema compatibility",
+        "user approval for real update"
+      ],
+      "state": "MISSING_DEVICE_EVIDENCE"
+    },
+    {
+      "id": "FIREBASE_STAGING",
+      "requirement": "Independent staging isolation and least-privilege verification",
+      "evidence": [
+        "staging project identity",
+        "IAM audit",
+        "rules deployment approval and staged deny tests"
+      ],
+      "state": "MISSING_INDEPENDENT_EVIDENCE"
+    }
+  ],
+  "productionPreferencesTouched": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "productionRestoreEnabled": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "deployment": false
+}
