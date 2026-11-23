@@ -1,0 +1,22 @@
+name: Boustio Phase 57.5 security evidence audit
+on:
+  push:
+    paths:
+      - 'security/phase57-5-rules-audit.json'
+      - 'security/phase57-5-rules-audit.md'
+      - 'tests/phase575_rules_audit.test.cjs'
+      - '.github/workflows/boustio-phase-57-5-rules-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidence-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate evidence and unresolved security findings
+        run: node --test tests/phase575_rules_audit.test.cjs
