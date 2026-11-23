@@ -244,16 +244,44 @@ class ClientActivity : Activity() {
             return
         }
         val entries = (0 until array.length()).mapNotNull { i ->
-            val b = array.optJSONObject(i) ?: return@mapNotNull null
-            if (!b.optString("client").trim().equals(name, true)) return@mapNotNull null
-            listOf(b.optString("date"), b.optString("time"), b.optString("service"))
-                .filter { it.isNotBlank() }.joinToString(" • ")
-        }.sorted()
-        AlertDialog.Builder(this).setTitle("Appointments • $name")
-            .setMessage(entries.joinToString("\n").ifBlank { "No appointments yet" })
+            val booking = array.optJSONObject(i) ?: return@mapNotNull null
+            if (!booking.optString("client").trim().equals(name, true)) return@mapNotNull null
+            booking
+        }.sortedWith(compareByDescending<JSONObject> {
+            it.optString("date") + " " + it.optString("time")
+        })
+        val list = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(8), dp(18), dp(8))
+        }
+        list.addView(label("${entries.size} appointment(s)", 14f, true).apply {
+            setTextColor(teal)
+        })
+        if (entries.isEmpty()) {
+            list.addView(label("No appointments recorded for this client.", 15f))
+        } else {
+            entries.forEach { booking ->
+                val panel = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(14), dp(10), dp(14), dp(10))
+                    background = surface(mint)
+                }
+                val dateTime = listOf(booking.optString("date"), booking.optString("time"))
+                    .filter { it.isNotBlank() }.joinToString(" • ")
+                panel.addView(label(dateTime.ifBlank { "Date not provided" }, 15f, true))
+                panel.addView(label(booking.optString("service").ifBlank { "Service not provided" }, 14f))
+                list.addView(panel, LinearLayout.LayoutParams(-1, -2).apply {
+                    bottomMargin = dp(9)
+                })
+            }
+        }
+        val scroll = ScrollView(this).apply { addView(list) }
+        AlertDialog.Builder(this).setTitle("Appointment history • $name")
+            .setView(scroll)
             .setPositiveButton("Close", null)
-            .setNeutralButton("Add contact details") { _, _ ->
-                if (records.none { it.name.equals(name, true) }) edit(prefillName = name)
+            .setNeutralButton("Client profile") { _, _ ->
+                val record = records.firstOrNull { it.name.equals(name, true) }
+                if (record != null) details(record.id) else edit(prefillName = name)
             }.show()
     }
 
@@ -300,15 +328,37 @@ class ClientActivity : Activity() {
 
     private fun details(id: String) {
         val c = records.firstOrNull { it.id == id } ?: return
-        AlertDialog.Builder(this)
+        val profile = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(10), dp(20), dp(10))
+        }
+        profile.addView(label("CONTACT DETAILS", 12f, true).apply { setTextColor(teal) })
+        profile.addView(label("Phone", 12f).apply { setTextColor(muted) })
+        profile.addView(label(c.phone.ifBlank { "Not provided" }, 16f))
+        profile.addView(label("Email", 12f).apply { setTextColor(muted) })
+        profile.addView(label(c.email.ifBlank { "Not provided" }, 16f))
+        profile.addView(label("CLIENT NOTES", 12f, true).apply { setTextColor(teal) })
+        profile.addView(label(c.notes.ifBlank { "No notes saved" }, 15f))
+        profile.addView(label("${bookingCount(c.name)} appointment(s) • View history below", 13f).apply {
+            setTextColor(muted)
+        })
+        val dialog = AlertDialog.Builder(this)
             .setTitle(c.name)
-            .setMessage(listOf("Phone: ${c.phone.ifBlank { "Not provided" }}",
-                "Email: ${c.email.ifBlank { "Not provided" }}",
-                "Notes: ${c.notes.ifBlank { "None" }}").joinToString("\n"))
+            .setView(ScrollView(this).apply { addView(profile) })
             .setPositiveButton("Edit") { _, _ -> edit(c.id) }
-            .setNeutralButton("Delete") { _, _ -> delete(c.id) }
-            .setNegativeButton("History") { _, _ -> appointmentHistory(c.name) }
-            .show()
+            .setNeutralButton("History") { _, _ -> appointmentHistory(c.name) }
+            .setNegativeButton("More", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
+                AlertDialog.Builder(this)
+                    .setTitle("Client actions")
+                    .setItems(arrayOf("Delete client", "Cancel")) { _, choice ->
+                        if (choice == 0) { dialog.dismiss(); delete(c.id) }
+                    }.show()
+            }
+        }
+        dialog.show()
     }
 
     private fun edit(id: String? = null, prefillName: String = "") {
