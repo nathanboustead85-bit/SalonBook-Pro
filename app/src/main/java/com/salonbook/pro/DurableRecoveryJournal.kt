@@ -67,20 +67,23 @@ internal class DurableRecoveryJournal(
         }
     }
 
-    /** Recover an interrupted transaction before any new operation. */
+    /**
+     * Restore the original whenever an original copy remains, even if a crash
+     * occurred before marker creation or after marker cleanup.
+     * Unknown orphan files or corrupt originals fail closed.
+     */
     @Synchronized fun recover(): Boolean {
-        if (!marker.exists()) return !pending.exists() && !original.exists()
-        if (!original.exists()) return false
+        if (!original.exists()) {
+            return !marker.exists() && !pending.exists()
+        }
         return try {
             val safe = decode(original)
             atomicWrite(active, encode(safe))
             if (decode(active) != safe) return false
-            // Keep original until after the marker is removed; an interrupted
-            // cleanup fails closed rather than losing the rollback copy.
             if (pending.exists() && !pending.delete()) return false
-            if (!marker.delete()) return false
+            if (marker.exists() && !marker.delete()) return false
             if (!original.delete()) return false
-            !marker.exists() && !original.exists()
+            !marker.exists() && !pending.exists() && !original.exists()
         } catch (_: Exception) { false }
     }
 
