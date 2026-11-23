@@ -1,0 +1,32 @@
+{
+  "phase": "57.9",
+  "status": "EMULATOR_TESTS_PENDING",
+  "candidate": "security/candidates/phase57-9-firestore.rules",
+  "backupFields": [
+    "bookings",
+    "services",
+    "staff",
+    "schemaVersion"
+  ],
+  "optionalFields": [
+    "updatedAt"
+  ],
+  "schemaVersion": 1,
+  "maxStringCharactersPerDataField": 500000,
+  "scope": "isolated-demo-emulator",
+  "limitations": [
+    "Firestore rules validate field types and sizes, not JSON array contents",
+    "Legacy backup compatibility depends on existing stored document shapes",
+    "No full Android APK end-to-end backup restore verification",
+    "No published rules comparison or independent security approval"
+  ],
+  "originalRulesChanged": false,
+  "publishedRulesChanged": false,
+  "independentApproval": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false
+}
