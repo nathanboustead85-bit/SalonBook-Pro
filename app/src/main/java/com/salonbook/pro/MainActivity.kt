@@ -90,7 +90,7 @@ class MainActivity : Activity() {
             setBackgroundColor(Color.rgb(249, 250, 248))
         }
         val scroll = ScrollView(this).apply {
-            fillViewport = false
+            isFillViewport = false
         }
         container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
