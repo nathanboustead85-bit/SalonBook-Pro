@@ -200,12 +200,12 @@ class CloudActivity : Activity() {
 
         addButton("Restore from Cloud") {
             AlertDialog.Builder(this)
-                .setTitle("Replace local data?")
+                .setTitle("Preview cloud backup?")
                 .setMessage(
-                    "This will replace all bookings, services and " +
-                        "staff currently stored on this phone."
+                    "View cloud backup contents without replacing " +
+                        "any bookings, services or staff on this phone."
                 )
-                .setPositiveButton("Restore") { _, _ ->
+                .setPositiveButton("Preview") { _, _ ->
                     restore()
                 }
                 .setNegativeButton("Cancel", null)
@@ -218,9 +218,9 @@ class CloudActivity : Activity() {
         )
     }
 
-    private fun backupDocument() =
+    private fun backupDocument(uid: String) =
         db.collection("users")
-            .document(auth.currentUser!!.uid)
+            .document(uid)
             .collection("backups")
             .document("latest")
 
@@ -258,7 +258,7 @@ class CloudActivity : Activity() {
             "updatedAt" to FieldValue.serverTimestamp()
         )
 
-        backupDocument()
+        backupDocument(user.uid)
             .set(data)
             .addOnSuccessListener {
                 message("Cloud backup completed successfully")
@@ -270,62 +270,78 @@ class CloudActivity : Activity() {
             }
     }
 
+    // Phase 52.4: preview-only, fail-closed restore inspection.
+    // No local preferences are changed by this function.
     private fun restore() {
         val user = auth.currentUser ?: return
+        val uid = user.uid
 
         if (!user.isEmailVerified) {
             message("Verify your email first")
             return
         }
 
-        backupDocument()
+        backupDocument(uid)
             .get(Source.SERVER)
             .addOnSuccessListener { document ->
+                if (auth.currentUser?.uid != uid ||
+                    auth.currentUser?.isEmailVerified != true
+                ) {
+                    message("Account changed. Restore preview cancelled.")
+                    return@addOnSuccessListener
+                }
+
                 if (!document.exists()) {
                     message("No cloud backup found")
+                    return@addOnSuccessListener
+                }
+
+                if (document.getLong("schemaVersion") != 1L) {
+                    message("Unsupported cloud backup version")
                     return@addOnSuccessListener
                 }
 
                 val bookings = document.getString("bookings")
                 val services = document.getString("services")
                 val staff = document.getString("staff")
-
-                if (
-                    bookings == null ||
-                    services == null ||
-                    staff == null
-                ) {
+                if (bookings == null || services == null || staff == null) {
                     message("Backup is incomplete")
                     return@addOnSuccessListener
                 }
 
-                try {
-                    JSONArray(bookings)
-                    JSONArray(services)
-                    JSONArray(staff)
+                if (bookings.length > 1_000_000 ||
+                    services.length > 1_000_000 ||
+                    staff.length > 1_000_000
+                ) {
+                    message("Backup is too large")
+                    return@addOnSuccessListener
+                }
+
+                val counts = try {
+                    listOf(
+                        JSONArray(bookings).length(),
+                        JSONArray(services).length(),
+                        JSONArray(staff).length()
+                    )
                 } catch (_: Exception) {
                     message("Backup contains invalid data")
                     return@addOnSuccessListener
                 }
 
-                val saved = prefs.edit()
-                    .putString("bookings", bookings)
-                    .putString("services", services)
-                    .putString("staff", staff)
-                    .commit()
-
-                if (saved) {
-                    message(
-                        "Restore complete. Return to dashboard."
+                AlertDialog.Builder(this)
+                    .setTitle("Cloud restore preview only")
+                    .setMessage(
+                        "Cloud backup contains ${counts[0]} bookings, " +
+                            "${counts[1]} services and ${counts[2]} staff. " +
+                            "Your existing phone data has NOT been changed. " +
+                            "Restoring is disabled until rollback and " +
+                            "data-protection checks are completed."
                     )
-                } else {
-                    message("Unable to save restored data")
-                }
+                    .setPositiveButton("Close", null)
+                    .show()
             }
             .addOnFailureListener {
-                message(
-                    it.localizedMessage ?: "Restore failed"
-                )
+                message(it.localizedMessage ?: "Restore preview failed")
             }
     }
 
