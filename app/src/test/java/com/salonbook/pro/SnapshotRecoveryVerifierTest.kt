@@ -5,7 +5,7 @@ import org.junit.Test
 
 class SnapshotRecoveryVerifierTest {
     private val synthetic = RecoveryTransaction.Snapshot(
-        "[{\\"id\\":\\"synthetic-1\\"},{\\"id\\":\\"synthetic-2\\"}]", "[]", "[]")
+        """[{"id":"synthetic-1"},{"id":"synthetic-2"}]""", "[]", "[]")
     private fun envelope(revision: Long = 9L) =
         VersionedSnapshotProtocol.Envelope(revision, synthetic, VersionedSnapshotProtocol.digest(synthetic))
     private fun rejected(value: SnapshotRecoveryVerifier.Verdict) =
