@@ -1,0 +1,34 @@
+name: Boustio Phase 57.6 Firestore hardening compatibility tests
+on:
+  push:
+    paths:
+      - 'tests/phase574-emulator/hardening.test.cjs'
+      - 'security/phase57-6-hardening-review.json'
+      - 'security/phase57-6-hardening-review.md'
+      - '.github/workflows/boustio-phase-57-6-hardening-compatibility.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  emulator-compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase576
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install local emulator dependencies
+        working-directory: tests/phase574-emulator
+        run: npm install --no-audit --no-fund
+      - name: Run Firestore rules hardening compatibility regressions
+        working-directory: tests/phase574-emulator
+        run: npx firebase emulators:exec --only firestore --project demo-boustio-phase576 "node --test hardening.test.cjs"
+      - name: Check all launch gates remain open
+        run: node -e "const g=require('./security/phase51-consolidated-gates.json');const a=require('./security/phase57-6-hardening-review.json');if(Object.values(g.gates).some(x=>x.status!=='OPEN')||a.rulesChanged||a.publishedRulesChanged||a.deployment||a.originalAndroidAppointments!=='DO_NOT_TOUCH')process.exit(1)"
