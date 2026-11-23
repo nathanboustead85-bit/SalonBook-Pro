@@ -1,0 +1,45 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');
+const admin=require('firebase-admin');
+const {createEmulatorConversationSession}=require('../../chat/emulator-conversation-session.cjs');
+if(!process.env.FIRESTORE_EMULATOR_HOST)throw new Error('FIRESTORE_EMULATOR_REQUIRED');
+admin.initializeApp({projectId:'demo-boustio-phase5919'});
+const db=admin.firestore(),businessId='owner5919',conversationId='convo5919';
+const owner={uid:businessId,emailVerified:true},customer={uid:'customer5919',emailVerified:true},outsider={uid:'outsider5919',emailVerified:true};
+const ref=db.doc('businesses/'+businessId+'/conversations/'+conversationId);
+const make=(auth,enabled=true,clock=()=>100000)=>createEmulatorConversationSession({db,businessId,auth,enabled,clock});
+test('real Firestore emulator: customer send, owner inbox, reply and recipient notification candidates',async()=>{
+ await ref.set({businessId,ownerUid:businessId,customerUid:customer.uid,status:'open'});
+ const customerSession=make(customer),ownerSession=make(owner);
+ const first=await customerSession.sendText({conversationId,requestId:'req1',text:'Can I book on Friday?'});
+ assert.equal(first.ok,true);
+ const duplicate=await customerSession.sendText({conversationId,requestId:'req1',text:'Can I book on Friday?'});
+ assert.equal(duplicate.ok,true);assert.equal(duplicate.duplicate,true);
+ const inbox=await ownerSession.inbox();
+ assert.equal(inbox.ok,true);assert.equal(inbox.items.length,1);assert.equal(inbox.items[0].lastMessage.text,'Can I book on Friday?');
+ const ownerMessages=await ownerSession.messages({conversationId});
+ assert.equal(ownerMessages.ok,true);assert.equal(ownerMessages.messages.length,1);
+ const ownerNotifications=await ownerSession.notifications({conversationId});
+ assert.deepEqual(ownerNotifications.events.map(e=>e.messageId),['customer5919_req1']);
+ const reply=await ownerSession.sendText({conversationId,requestId:'req2',text:'Yes, we have slots available.'});
+ assert.equal(reply.ok,true);
+ const customerMessages=await customerSession.messages({conversationId});
+ assert.equal(customerMessages.messages.length,2);
+ const customerNotifications=await customerSession.notifications({conversationId});
+ assert.deepEqual(customerNotifications.events.map(e=>e.messageId),['owner5919_req2']);
+});
+test('unverified, outsider, disabled and wrong business fail closed',async()=>{
+ assert.equal((await make(outsider).sendText({conversationId,requestId:'req3',text:'Hello'})).code,'NOT_AUTHORIZED');
+ assert.equal((await make(customer,false).sendText({conversationId,requestId:'req4',text:'Hello'})).code,'MESSAGING_DISABLED');
+ assert.equal((await make(outsider).messages({conversationId})).code,'NOT_AUTHORIZED');
+ assert.equal((await make(customer).inbox()).code,'OWNER_REQUIRED');
+ assert.throws(()=>make({uid:customer.uid,emailVerified:false}),/VERIFIED_IDENTITY_REQUIRED/);
+ const other=createEmulatorConversationSession({db,businessId:'other5919',auth:customer,enabled:true});
+ assert.equal((await other.sendText({conversationId,requestId:'req5',text:'Hello'})).code,'CONVERSATION_UNAVAILABLE');
+});
+test('production launch gates remain open',()=>{
+ const gates=require('../../security/phase51-consolidated-gates.json');
+ assert.equal(Object.keys(gates.gates).length,7);
+ for(const g of Object.values(gates.gates))assert.equal(g.status,'OPEN');
+ for(const key of ['messaging','deployment','liveBookings','payments'])assert.equal(gates[key],false);
+});
