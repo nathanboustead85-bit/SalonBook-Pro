@@ -1,0 +1,24 @@
+name: Boustio Phase 59.16 business inbox UI
+on:
+  push:
+    paths:
+      - 'web/chat/business-inbox.*'
+      - 'tests/phase59-16-business-inbox.test.cjs'
+      - 'security/phase59-16-business-inbox-ui.md'
+      - '.github/workflows/boustio-phase-59-16-business-inbox.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  business-inbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate business inbox and production launch gates
+        run: node --test tests/phase59-16-business-inbox.test.cjs
+      - name: Check browser script syntax
+        run: node --check web/chat/business-inbox.js
