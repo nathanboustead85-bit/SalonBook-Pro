@@ -27,4 +27,4 @@ jobs:
           ffprobe -version
       - name: Test real image decoding and voice duration inspection
         working-directory: tests/phase599-media
-        run: node --test media.test.cjs
+        run: NODE_PATH=./node_modules node --test media.test.cjs
