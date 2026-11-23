@@ -1,0 +1,41 @@
+{
+  "phase": "58.1",
+  "status": "SOURCE_CONTRACT_AUDIT_PENDING",
+  "branch": "boustio-phase-58-1-android-recovery-readiness",
+  "source": "app/src/main/java/com/salonbook/pro/CloudActivity.kt",
+  "currentAndroidBackupMode": "PREVIEW_ONLY",
+  "currentAndroidRestoreMode": "PREVIEW_ONLY",
+  "expectedBackupFields": [
+    "bookings",
+    "services",
+    "staff",
+    "schemaVersion"
+  ],
+  "candidate": "security/candidates/phase57-9-firestore.rules",
+  "outstandingRisks": [
+    "Firestore rules cannot validate JSON array contents",
+    "Historical cloud backup schemas not independently inventoried",
+    "No verified atomic on-device rollback or restore",
+    "No independently approved production security evidence"
+  ],
+  "realAndroidRestoreVerified": false,
+  "realCloudMigrationVerified": false,
+  "rollbackOnDeviceVerified": false,
+  "independentSecurityApproval": false,
+  "candidateDeployed": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "launchGates": [
+    "G1",
+    "G2",
+    "G3",
+    "G4",
+    "G5",
+    "G6",
+    "G7"
+  ]
+}
