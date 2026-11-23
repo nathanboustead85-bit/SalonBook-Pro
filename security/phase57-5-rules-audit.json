@@ -1,0 +1,48 @@
+{
+  "phase": "57.5",
+  "status": "REVIEW_REQUIRED",
+  "sourceRun": {
+    "url": "https://github.com/nathanboustead85-bit/SalonBook-Pro/actions/runs/45176857254",
+    "job": "firestore-rules-emulator",
+    "conclusion": "success",
+    "scope": "local emulator using repository firestore.rules"
+  },
+  "deployedRulesComparison": {
+    "status": "NOT_VERIFIED",
+    "evidence": null
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "REVIEW",
+      "path": "/users/{userId}/backups/latest",
+      "observed": "owner read/write does not require email_verified or enforce backup schema",
+      "decision": "PENDING",
+      "risk": "backup tampering or malformed backup restore requires application/backend controls"
+    },
+    {
+      "id": "F2",
+      "severity": "REVIEW",
+      "path": "/users/{userId}/liveData/bookings",
+      "observed": "verified owner writes allowed when migration absent and booking mode absent or legacy",
+      "decision": "PENDING",
+      "risk": "legacy mode must be explicitly retired before backend-only booking launch"
+    },
+    {
+      "id": "F3",
+      "severity": "REVIEW",
+      "path": "/publicBusinesses/{businessId}",
+      "observed": "published documents can be read by anonymous users",
+      "decision": "PENDING",
+      "risk": "public document fields must be reviewed for accidental personal data exposure"
+    }
+  ],
+  "independentApproval": false,
+  "launchGates": "G1-G7 OPEN",
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false
+}
