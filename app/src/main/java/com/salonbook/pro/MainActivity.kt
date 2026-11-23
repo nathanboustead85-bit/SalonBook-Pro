@@ -11,6 +11,8 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.view.WindowInsets
+import android.os.Build
 import android.view.ViewGroup
 import android.widget.*
 import org.json.JSONArray
@@ -99,6 +101,20 @@ class MainActivity : Activity() {
         scroll.addView(container)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         root.addView(bottomNavigation())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            root.setOnApplyWindowInsetsListener { view, insets ->
+                val bars = insets.getInsets(WindowInsets.Type.systemBars())
+                view.setPadding(0, bars.top, 0, bars.bottom)
+                insets
+            }
+        } else {
+            root.fitsSystemWindows = true
+        }
+        window.navigationBarColor = Color.WHITE
+        window.statusBarColor = Color.rgb(249, 250, 248)
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
         setContentView(root)
 
         val brand = LinearLayout(this).apply {
@@ -106,13 +122,10 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(0, 0, 0, dp(25))
         }
-        brand.addView(TextView(this).apply {
-            text = "B"
-            textSize = 31f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-            background = rounded(Color.rgb(9, 62, 55), dp(4).toFloat())
+        brand.addView(ImageView(this).apply {
+            setImageResource(R.drawable.boustio_mark)
+            contentDescription = "Boustio brand mark"
+            scaleType = ImageView.ScaleType.FIT_CENTER
         }, LinearLayout.LayoutParams(dp(52), dp(52)))
         val brandText = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -142,10 +155,10 @@ class MainActivity : Activity() {
             setPadding(dp(9), dp(8), dp(9), dp(8))
             elevation = dp(8).toFloat()
             listOf(
-                Triple("⌂", "Home", { showDashboard() }),
-                Triple("▦", "Calendar", { showCalendar() }),
-                Triple("♧", "Clients", { showClients() }),
-                Triple("⚙", "Settings", { showBusinessSettings() })
+                Triple(R.drawable.nav_home, "Home", { showDashboard() }),
+                Triple(R.drawable.nav_calendar, "Calendar", { showCalendar() }),
+                Triple(R.drawable.nav_clients, "Clients", { showClients() }),
+                Triple(R.drawable.nav_settings, "Settings", { showBusinessSettings() })
             ).forEach { (symbol, label, action) ->
                 val selected = activeTab == label
                 val item = LinearLayout(this@MainActivity).apply {
@@ -158,12 +171,11 @@ class MainActivity : Activity() {
                     contentDescription = label
                     setOnClickListener { action() }
                 }
-                item.addView(TextView(this@MainActivity).apply {
-                    text = symbol
-                    textSize = 24f
-                    gravity = Gravity.CENTER
-                    setTextColor(if (selected) purple else muted)
-                })
+                item.addView(ImageView(this@MainActivity).apply {
+                    setImageResource(symbol)
+                    setColorFilter(if (selected) purple else muted)
+                    contentDescription = null
+                }, LinearLayout.LayoutParams(dp(25), dp(25)))
                 item.addView(TextView(this@MainActivity).apply {
                     text = label
                     textSize = 11f
