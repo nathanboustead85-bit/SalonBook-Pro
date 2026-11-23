@@ -1,0 +1,22 @@
+name: Boustio Phase 59.2 independent evidence matrix
+on:
+  push:
+    paths:
+      - 'security/phase59-2-independent-evidence-matrix.json'
+      - 'security/phase59-2-independent-evidence-matrix.md'
+      - 'tests/phase59-2-independent-evidence.test.cjs'
+      - '.github/workflows/boustio-phase-59-2-independent-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidence-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify independent evidence gaps and production safeguards
+        run: node --test tests/phase59-2-independent-evidence.test.cjs
