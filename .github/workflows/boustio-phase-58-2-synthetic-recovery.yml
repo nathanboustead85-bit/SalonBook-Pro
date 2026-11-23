@@ -1,0 +1,25 @@
+name: Boustio Phase 58.2 synthetic Android recovery harness
+on:
+  push:
+    paths:
+      - 'tests/phase582/**'
+      - 'security/phase58-2-synthetic-recovery.json'
+      - 'security/phase58-2-synthetic-recovery.md'
+      - '.github/workflows/boustio-phase-58-2-synthetic-recovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-recovery-harness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test synthetic recovery and rollback
+        run: node --test tests/phase582/recovery-engine.test.cjs
+      - name: Confirm all launch gates remain open
+        run: |
+          node -e "const a=require('./security/phase58-2-synthetic-recovery.json'),g=require('./security/phase51-consolidated-gates.json');if(a.deployment||a.originalAndroidFilesModified||a.activeFirestoreRulesModified||a.originalAndroidAppointments!=='DO_NOT_TOUCH'||Object.values(g.gates).some(x=>x.status!=='OPEN'))process.exit(1)"
