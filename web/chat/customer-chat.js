@@ -14,7 +14,7 @@
  }
  function clearPhoto(){selectedPhoto=null;photo.value='';preview.hidden=true;preview.replaceChildren();if(photoUrl){URL.revokeObjectURL(photoUrl);photoUrl=null}}
  photo.addEventListener('change',()=>{
-  clearPhoto();const file=photo.files[0];if(!file)return;
+  const file=photo.files[0];clearPhoto();if(!file)return;
   if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){alert('Choose a JPEG, PNG or WebP image under 5 MB.');return}
   selectedPhoto=file;photoUrl=URL.createObjectURL(file);
   const title=document.createElement('span');title.textContent='Photo selected (preview only): '+file.name;
