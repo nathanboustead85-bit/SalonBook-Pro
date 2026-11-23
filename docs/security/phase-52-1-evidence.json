@@ -1,0 +1,55 @@
+{
+  "phase": "52.1",
+  "project": "boustio-staging",
+  "decision": "NOT_APPROVED",
+  "deployment_enabled": false,
+  "live_bookings_enabled": false,
+  "payments_enabled": false,
+  "messaging_enabled": false,
+  "app_check_enforced": false,
+  "original_android_appointments_preserved": true,
+  "gates": {
+    "G1": {
+      "status": "OPEN",
+      "independent_reviewer": null,
+      "approved_at": null,
+      "evidence": []
+    },
+    "G2": {
+      "status": "OPEN",
+      "independent_reviewer": null,
+      "approved_at": null,
+      "evidence": []
+    },
+    "G3": {
+      "status": "OPEN",
+      "independent_reviewer": null,
+      "approved_at": null,
+      "evidence": []
+    },
+    "G4": {
+      "status": "OPEN",
+      "independent_reviewer": null,
+      "approved_at": null,
+      "evidence": []
+    },
+    "G5": {
+      "status": "OPEN",
+      "independent_reviewer": null,
+      "approved_at": null,
+      "evidence": []
+    },
+    "G6": {
+      "status": "OPEN",
+      "independent_reviewer": null,
+      "approved_at": null,
+      "evidence": []
+    },
+    "G7": {
+      "status": "OPEN",
+      "independent_reviewer": null,
+      "approved_at": null,
+      "evidence": []
+    }
+  }
+}

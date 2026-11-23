@@ -1,0 +1,29 @@
+name: Boustio Phase 52.2 AI-assisted source review guardrails
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'docs/security/phase-52-2-ai-assisted-source-review.md'
+      - 'tests/phase52_source_safety.test.cjs'
+      - 'app/google-services.json'
+      - 'app/src/main/AndroidManifest.xml'
+      - 'app/src/main/java/com/salonbook/pro/CloudActivity.kt'
+      - '.github/workflows/boustio-phase-52-2-ai-source-review.yml'
+permissions:
+  contents: read
+jobs:
+  source-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source findings and fail-closed safety assertions
+        run: node --test tests/phase52_source_safety.test.cjs
+      - name: Confirm no privileged cloud credentials supplied
+        run: |
+          test -z "${GOOGLE_APPLICATION_CREDENTIALS:-}"
+          test -z "${FIREBASE_TOKEN:-}"
+          echo 'Static checks only; no live Firebase access, no AI API calls, no deployment'

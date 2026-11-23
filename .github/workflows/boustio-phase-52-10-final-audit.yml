@@ -1,0 +1,22 @@
+name: Boustio Phase 52.10 final consolidated audit
+on:
+  push:
+    paths:
+      - 'docs/security/phase-52-10-consolidated-audit.md'
+      - 'tests/phase5210_consolidated_audit.test.cjs'
+      - '.github/workflows/boustio-phase-52-10-final-audit.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fail-closed-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify launch blockers and evidence boundaries
+        run: node --test tests/phase5210_consolidated_audit.test.cjs

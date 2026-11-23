@@ -1,0 +1,32 @@
+name: Boustio Phase 54.1 isolated durable recovery
+on:
+  push:
+    paths:
+      - 'app/src/main/java/com/salonbook/pro/DurableRecoveryJournal.kt'
+      - 'app/src/test/java/com/salonbook/pro/DurableRecoveryJournalTest.kt'
+      - 'tests/phase541_durable_recovery_source.test.cjs'
+      - '.github/workflows/boustio-phase-54-1-durable-recovery.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  durable-recovery-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compile and run isolated Kotlin recovery unit tests
+        run: gradle --no-daemon :app:testReleaseUnitTest --tests com.salonbook.pro.DurableRecoveryJournalTest
+      - name: Verify isolation and release safety
+        run: node --test tests/phase541_durable_recovery_source.test.cjs

@@ -1,0 +1,23 @@
+name: Boustio Phase 52.6 backup isolation and recovery
+on:
+  push:
+    paths:
+      - 'security/phase526-backup-safety.cjs'
+      - 'tests/phase526_backup_safety.test.cjs'
+      - 'docs/security/phase-52-6-backup-recovery-isolation.md'
+      - '.github/workflows/boustio-phase-52-6-backup-isolation.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-backup-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify synthetic backup isolation and fail-closed recovery
+        run: node --test tests/phase526_backup_safety.test.cjs

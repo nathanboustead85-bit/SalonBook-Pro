@@ -1,0 +1,35 @@
+name: Boustio Phase 52.8 Android OS backup security
+on:
+  push:
+    paths:
+      - 'app/src/main/AndroidManifest.xml'
+      - 'app/src/main/res/xml/boustio_backup_rules.xml'
+      - 'app/src/main/res/xml/boustio_data_extraction_rules.xml'
+      - 'tests/phase528_android_os_backup.test.cjs'
+      - '.github/workflows/boustio-phase-52-8-os-backup-security.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  os-backup-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Verify backup exclusions and launch gates
+        run: node --test tests/phase528_android_os_backup.test.cjs
+      - name: Compile Android release Kotlin and resources without APK deployment
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Confirm release artifact not distributed
+        run: echo 'Release assembled locally in CI only. No artifact upload, installation, signing for distribution, or deployment.'

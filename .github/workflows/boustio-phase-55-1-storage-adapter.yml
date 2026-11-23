@@ -1,0 +1,32 @@
+name: Boustio Phase 55.1 read-only storage adapter
+on:
+  push:
+    paths:
+      - 'app/src/main/java/com/salonbook/pro/AndroidStorageSnapshotAdapter.kt'
+      - 'app/src/test/java/com/salonbook/pro/AndroidStorageSnapshotAdapterTest.kt'
+      - 'tests/phase551_android_storage_isolation.test.cjs'
+      - '.github/workflows/boustio-phase-55-1-storage-adapter.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  read-only-adapter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compile and test synthetic read-only adapter
+        run: gradle --no-daemon :app:testReleaseUnitTest --tests com.salonbook.pro.AndroidStorageSnapshotAdapterTest
+      - name: Check activity isolation and seven open gates
+        run: node --test tests/phase551_android_storage_isolation.test.cjs

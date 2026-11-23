@@ -1,0 +1,31 @@
+name: Boustio Phase 50.3 Isolated Staging Policy
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'security/phase503-*'
+      - 'tests/phase503_*'
+      - 'docs/security/phase-50-3-staging-design.md'
+      - '.github/workflows/boustio-phase-503-staging-policy.yml'
+permissions:
+  contents: read
+jobs:
+  staging-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce design-only Firebase staging safety
+        run: node security/phase503-staging-guard.cjs
+      - name: Test candidate isolation and negative cases
+        run: node --test tests/phase503_staging_policy.test.cjs
+      - name: Regression configuration discovery
+        run: node --test tests/phase502_config_discovery.test.cjs
+      - name: Check no cloud credentials
+        run: |
+          test -z "${GOOGLE_APPLICATION_CREDENTIALS:-}"
+          test -z "${FIREBASE_TOKEN:-}"
+          echo 'Design only; seven blockers OPEN; no Firebase staging access'

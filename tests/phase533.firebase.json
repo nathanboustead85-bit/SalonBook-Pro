@@ -1,0 +1,4 @@
+{
+  "firestore": {"rules": "phase533.firestore.rules"},
+  "emulators": {"firestore": {"host": "127.0.0.1", "port": 8785}, "ui": {"enabled": false}}
+}

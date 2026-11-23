@@ -1,0 +1,34 @@
+name: Boustio Phase 51 Firestore Deny-All Emulator Verification
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'tests/phase51.firestore.rules'
+      - 'tests/phase51.firebase.json'
+      - 'tests/phase51_firestore_deny_all_emulator.cjs'
+      - '.github/workflows/boustio-phase-51-firestore-emulator.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-firestore-emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Ensure no Firebase production credentials
+        run: |
+          test -z "${GOOGLE_APPLICATION_CREDENTIALS:-}"
+          test -z "${FIREBASE_TOKEN:-}"
+      - name: Install isolated Firebase test tools
+        run: npm install --no-save --ignore-scripts firebase-tools@14 @firebase/rules-unit-testing@4 firebase@11
+      - name: Verify deny-all rules against synthetic clients only
+        run: npx firebase emulators:exec --config tests/phase51.firebase.json --only firestore --project demo-boustio-phase51 "node --test tests/phase51_firestore_deny_all_emulator.cjs"
+      - name: Preserve offline security gates
+        run: node --test tests/phase51_consolidated_security.test.cjs tests/phase51_staging_observations.test.cjs

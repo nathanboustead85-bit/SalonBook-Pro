@@ -1,0 +1,23 @@
+name: Boustio Phase 52.4 Android restore safety
+on:
+  push:
+    paths:
+      - 'app/src/main/java/com/salonbook/pro/CloudActivity.kt'
+      - 'tests/phase524_android_restore_safety.test.cjs'
+      - 'docs/security/phase-52-4-android-restore-preview-only.md'
+      - '.github/workflows/boustio-phase-52-4-android-restore-safety.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-source-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify restore preview cannot write local data
+        run: node --test tests/phase524_android_restore_safety.test.cjs

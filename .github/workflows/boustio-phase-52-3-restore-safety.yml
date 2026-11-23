@@ -1,0 +1,23 @@
+name: Boustio Phase 52.3 synthetic restore safety
+on:
+  push:
+    paths:
+      - 'security/phase523-restore-guard.cjs'
+      - 'tests/phase523_restore_guard.test.cjs'
+      - 'docs/security/phase-52-3-restore-and-session-safety.md'
+      - '.github/workflows/boustio-phase-52-3-restore-safety.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-restore-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run synthetic non-destructive restore checks
+        run: node --test tests/phase523_restore_guard.test.cjs

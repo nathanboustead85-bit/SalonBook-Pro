@@ -1,0 +1,26 @@
+name: Boustio Phase 50.9 security review handover
+on:
+  pull_request:
+    paths:
+      - 'docs/security/phase_50_9_handover.py'
+      - 'docs/security/phase-50-9-handover.json'
+      - 'docs/security/test_phase_50_9_handover.py'
+      - '.github/workflows/phase-50-9-handover.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-handover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run offline handover regression tests
+        run: python -m unittest discover -s docs/security -p 'test_phase_50_9_handover.py' -v
+      - name: Validate unapproved handover
+        run: python docs/security/phase_50_9_handover.py

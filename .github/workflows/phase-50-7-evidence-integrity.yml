@@ -1,0 +1,26 @@
+name: Boustio Phase 50.7 independent evidence integrity
+on:
+  pull_request:
+    paths:
+      - 'docs/security/phase_50_7_evidence.py'
+      - 'docs/security/test_phase_50_7_evidence.py'
+      - 'docs/security/phase-50-6-evidence.json'
+      - '.github/workflows/phase-50-7-evidence-integrity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-evidence-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run negative and positive offline evidence checks
+        run: python -m unittest discover -s docs/security -p 'test_phase_50_7_evidence.py' -v
+      - name: Validate pending independent-review register
+        run: python docs/security/phase_50_7_evidence.py docs/security/phase-50-6-evidence.json

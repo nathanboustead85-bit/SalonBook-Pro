@@ -1,0 +1,23 @@
+name: Boustio Phase 53.4 evidence handover guard
+on:
+  push:
+    paths:
+      - 'security/phase534-evidence-manifest.json'
+      - 'tests/phase534_evidence_handover.test.cjs'
+      - 'docs/security/phase-53-4-independent-evidence-handover.md'
+      - '.github/workflows/boustio-phase-53-4-evidence-handover.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-unapproved-handover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify no launch gate or release switch has been approved
+        run: node --test tests/phase534_evidence_handover.test.cjs

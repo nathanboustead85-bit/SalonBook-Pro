@@ -1,0 +1,36 @@
+name: Boustio Phase 53.3 synthetic Firestore owner isolation
+on:
+  push:
+    paths:
+      - 'tests/phase533.firestore.rules'
+      - 'tests/phase533.firebase.json'
+      - 'tests/phase533_firestore_emulator.cjs'
+      - '.github/workflows/boustio-phase-53-3-owner-isolation.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Ensure no external Firebase credentials
+        run: |
+          test -z "${GOOGLE_APPLICATION_CREDENTIALS:-}"
+          test -z "${FIREBASE_TOKEN:-}"
+          test -z "${GCLOUD_PROJECT:-}"
+      - name: Install isolated Firebase test tools
+        run: npm install --no-save --ignore-scripts firebase-tools@14 @firebase/rules-unit-testing@4 firebase@11
+      - name: Run synthetic owner isolation against local Firestore emulator only
+        run: npx firebase emulators:exec --config tests/phase533.firebase.json --only firestore --project demo-boustio-phase533 "node --test tests/phase533_firestore_emulator.cjs"
+      - name: Check launch blockers remain open
+        run: node --test tests/phase51_consolidated_security.test.cjs

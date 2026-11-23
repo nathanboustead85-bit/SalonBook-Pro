@@ -1,0 +1,70 @@
+{
+  "phase": "49.4",
+  "mode": "preparation-only",
+  "independentApproval": false,
+  "productionDeployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "androidAppointments": "preserve-existing-two",
+  "launchBlockers": [
+    {
+      "id": "LB-1",
+      "status": "OPEN",
+      "evidence": "PENDING",
+      "independentReviewer": null,
+      "approval": null
+    },
+    {
+      "id": "LB-2",
+      "status": "OPEN",
+      "evidence": "PENDING",
+      "independentReviewer": null,
+      "approval": null
+    },
+    {
+      "id": "LB-3",
+      "status": "OPEN",
+      "evidence": "PENDING",
+      "independentReviewer": null,
+      "approval": null
+    },
+    {
+      "id": "LB-4",
+      "status": "OPEN",
+      "evidence": "PENDING",
+      "independentReviewer": null,
+      "approval": null
+    },
+    {
+      "id": "LB-5",
+      "status": "OPEN",
+      "evidence": "PENDING",
+      "independentReviewer": null,
+      "approval": null
+    },
+    {
+      "id": "LB-6",
+      "status": "OPEN",
+      "evidence": "PENDING",
+      "independentReviewer": null,
+      "approval": null
+    },
+    {
+      "id": "LB-7",
+      "status": "OPEN",
+      "evidence": "PENDING",
+      "independentReviewer": null,
+      "approval": null
+    }
+  ],
+  "controls": [
+    "admin-revocation",
+    "session-expiry",
+    "owner-isolation",
+    "credential-boundaries",
+    "staging-isolation",
+    "negative-tests",
+    "rollback-readiness"
+  ]
+}

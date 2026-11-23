@@ -1,0 +1,27 @@
+name: Boustio Phase 50.8 offline evidence consolidation
+on:
+  pull_request:
+    paths:
+      - 'docs/security/phase_50_8_consolidate.py'
+      - 'docs/security/phase-50-8-review-package.json'
+      - 'docs/security/phase-50-6-evidence.json'
+      - 'docs/security/test_phase_50_8_consolidate.py'
+      - '.github/workflows/phase-50-8-evidence-consolidation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-consolidation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline consolidation unit tests
+        run: python -m unittest discover -s docs/security -p 'test_phase_50_8_consolidate.py' -v
+      - name: Validate consolidated review package
+        run: python docs/security/phase_50_8_consolidate.py --check

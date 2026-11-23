@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Keep local booking/service/staff data out of OS cloud backups on older Android versions. -->
+    <exclude domain="sharedpref" path="salonbook_data.xml" />
+</full-backup-content>
