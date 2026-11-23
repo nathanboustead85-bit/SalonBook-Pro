@@ -1,0 +1,5 @@
+# Phase 59.7 — Real Firestore emulator transaction adapter
+
+Implemented a trusted-server-only Firestore Admin adapter that uses a Firestore transaction to load conversation membership, enforce authorization, detect idempotent retries, enforce an atomic per-sender 10/minute quota and persist text messages. GitHub Actions runs actual Firebase Firestore emulator tests for persistence, simultaneous duplicate requests, tenant isolation and quotas.
+
+**Security limits:** This adapter is not deployed or connected to any public endpoint. The emulator-only guard requires FIRESTORE_EMULATOR_HOST. The bound business ID is supplied by trusted server routing in the test, not verified from a production auth token. The unbound adapter fails closed. The production adapter must derive business routing and authenticated UID from trusted server state, apply App Check and abuse controls, and independently review indexes and retention. Media uploads and notifications are not implemented. This is emulator evidence, not independent staging approval. G1–G7 stay OPEN; no Android data is read or written.
