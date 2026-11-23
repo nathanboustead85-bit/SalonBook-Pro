@@ -1,0 +1,25 @@
+{
+  "phase": "59.3",
+  "scope": "Read-only verification of current Firestore chat rules and emulator workflow prerequisites",
+  "chatClientWritesDenied": true,
+  "chatReadsRestrictedToVerifiedBusinessOwner": true,
+  "chatEmulatorSmokeWorkflowRunnable": false,
+  "missingDependencies": [
+    "functions/package.json",
+    "functions/tests/chat-emulator-smoke.test.js"
+  ],
+  "limitations": [
+    "Static source checks are not emulator runtime verification",
+    "No customer-side chat authorization or production messaging implementation verified",
+    "No independent review or staging evidence",
+    "No photo/voice storage rules verified"
+  ],
+  "independentApproval": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "productionRestoreEnabled": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "deployment": false
+}
