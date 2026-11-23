@@ -1,0 +1,22 @@
+name: Boustio Phase 58.1 Android recovery readiness
+on:
+  push:
+    paths:
+      - 'tests/phase581-android-recovery-readiness.test.cjs'
+      - 'security/phase58-1-recovery-readiness.json'
+      - 'security/phase58-1-recovery-readiness.md'
+      - '.github/workflows/boustio-phase-58-1-android-recovery-readiness.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android-recovery-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit Android recovery source and launch safeguards
+        run: node --test tests/phase581-android-recovery-readiness.test.cjs
