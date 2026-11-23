@@ -1,0 +1,36 @@
+name: Boustio Phase 57.7 isolated candidate rules emulator
+on:
+  push:
+    paths:
+      - 'security/candidates/phase57-7-firestore.rules'
+      - 'security/phase57-7-candidate-review.json'
+      - 'security/phase57-7-candidate-review.md'
+      - 'tests/phase574-emulator/candidate.test.cjs'
+      - '.github/workflows/boustio-phase-57-7-candidate-rules.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate-rules-emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase577
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated test dependencies
+        working-directory: tests/phase574-emulator
+        run: npm install --no-audit --no-fund
+      - name: Test candidate rules against demo emulator only
+        working-directory: tests/phase574-emulator
+        run: npx firebase emulators:exec --only firestore --project demo-boustio-phase577 "node --test candidate.test.cjs"
+      - name: Confirm no active rules or launch gates changed
+        run: |
+          node -e "const fs=require('fs');const a=require('./security/phase57-7-candidate-review.json');const g=require('./security/phase51-consolidated-gates.json');if(a.activeRulesChanged||a.publishedRulesChanged||a.deployment||a.originalAndroidAppointments!=='DO_NOT_TOUCH'||Object.values(g.gates).some(x=>x.status!=='OPEN'))process.exit(1);if(!fs.existsSync('firestore.rules')||!fs.existsSync(a.candidateRules))process.exit(1)"
