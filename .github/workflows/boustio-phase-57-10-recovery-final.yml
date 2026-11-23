@@ -1,0 +1,35 @@
+name: Boustio Phase 57.10 synthetic recovery final
+on:
+  push:
+    paths:
+      - 'tests/phase574-emulator/recovery-migration.test.cjs'
+      - 'security/phase57-10-recovery-final.json'
+      - 'security/phase57-10-recovery-final.md'
+      - '.github/workflows/boustio-phase-57-10-recovery-final.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GCLOUD_PROJECT: demo-boustio-phase5710
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated emulator dependencies
+        working-directory: tests/phase574-emulator
+        run: npm install --no-audit --no-fund
+      - name: Run synthetic backup migration and recovery tests
+        working-directory: tests/phase574-emulator
+        run: npx firebase emulators:exec --only firestore --project demo-boustio-phase5710 "node --test recovery-migration.test.cjs"
+      - name: Verify all launch gates remain open
+        run: |
+          node -e "const a=require('./security/phase57-10-recovery-final.json'),g=require('./security/phase51-consolidated-gates.json');if(a.deployment||a.activeRulesChanged||a.deployedRulesChanged||a.originalAndroidAppointments!=='DO_NOT_TOUCH'||a.decision!=='DO_NOT_DEPLOY_CANDIDATE'||Object.values(g.gates).some(x=>x.status!=='OPEN'))process.exit(1)"
