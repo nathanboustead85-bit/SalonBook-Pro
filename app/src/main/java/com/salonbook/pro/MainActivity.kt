@@ -350,13 +350,33 @@ class MainActivity : Activity() {
             addView(dashboardLabel(label, 12f))
         }
 
+    private fun homeAction(label: String, detail: String, action: () -> Unit) {
+        premiumCard("›", label, detail, action)
+    }
+
     private fun showDashboard() {
         activeTab = "Home"
-        screen("Dashboard")
-        container.addView(dashboardLabel("A booking platform with a difference.", 14f))
-        container.addView(dashboardLabel("Your business at a glance", 21f, true),
-            LinearLayout.LayoutParams(-1, -2).apply { topMargin = 24; bottomMargin = 12 })
+        screen("Good to see you")
+        container.addView(TextView(this).apply {
+            text = "Here's what's happening with your business today."
+            textSize = 16f
+            setTextColor(muted)
+            setPadding(0, 0, 0, dp(18))
+        })
 
+        val summary = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = rounded(Color.WHITE, dp(22).toFloat())
+            elevation = dp(2).toFloat()
+            setPadding(dp(18), dp(18), dp(18), dp(18))
+        }
+        summary.addView(TextView(this).apply {
+            text = "YOUR BUSINESS • TODAY"
+            textSize = 12f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(purple)
+        })
+        summary.addView(dashboardLabel("Your business at a glance", 21f, true))
         val stats = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             weightSum = 3f
@@ -367,34 +387,48 @@ class MainActivity : Activity() {
             dashboardStat("Total bookings", bookings.size)
         ).forEach { stat ->
             stats.addView(stat, LinearLayout.LayoutParams(0, -2, 1f).apply {
-                marginEnd = 8
+                marginEnd = dp(4)
             })
         }
-        container.addView(stats)
-        container.addView(dashboardLabel("Bookings", 19f, true),
-            LinearLayout.LayoutParams(-1, -2).apply { topMargin = 24; bottomMargin = 10 })
-        button("＋  New appointment") { bookingDialog() }
-        button("▦  Appointment calendar") { showCalendar() }
-        button("☰  All appointments") { showAppointments() }
+        summary.addView(stats)
+        container.addView(summary)
 
-        container.addView(dashboardLabel("Manage your business", 19f, true),
-            LinearLayout.LayoutParams(-1, -2).apply { topMargin = 18; bottomMargin = 10 })
-        button("Clients") { showClients() }
-        button("Services & prices") {
-            startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
+        sectionLabel("Quick actions")
+        homeAction("New appointment", "Add a booking to your calendar") { bookingDialog() }
+        homeAction("Appointment calendar", "View your diary and available dates") { showCalendar() }
+        homeAction("Clients", "View your customer records") { showClients() }
+
+        sectionLabel("Upcoming appointments")
+        val upcoming = bookings.filter { it.date >= today() }
+            .sortedWith(compareBy<Booking> { it.date }.thenBy { it.time })
+            .take(3)
+        if (upcoming.isEmpty()) {
+            val empty = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                background = rounded(Color.WHITE, dp(20).toFloat())
+                elevation = dp(2).toFloat()
+                setPadding(dp(20), dp(20), dp(20), dp(20))
+            }
+            empty.addView(dashboardLabel("No upcoming appointments", 17f, true))
+            empty.addView(TextView(this).apply {
+                text = "Your next bookings will appear here."
+                textSize = 14f
+                setTextColor(muted)
+            })
+            container.addView(empty)
+        } else {
+            upcoming.forEach { bookingCard(it) }
         }
-        button("Staff & working hours") {
-            startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
+        homeAction("View all appointments", "Browse and manage every booking") {
+            showAppointments()
         }
-        button("Cloud account & backup") {
-            startActivity(Intent(this, CloudActivity::class.java))
+
+        sectionLabel("Manage your business")
+        homeAction("Business settings", "Services, staff, booking link and account") {
+            showBusinessSettings()
         }
-        button("My booking link") {
-            message("Online booking links are not yet connected in this Android build.")
-        }
-        button("Business settings") { showBusinessSettings() }
-        container.addView(dashboardLabel("Boustio • Isolated preview • Phase 60.2", 12f),
-            LinearLayout.LayoutParams(-1, -2).apply { topMargin = 16 })
+        container.addView(dashboardLabel("BOUSTIO • ISOLATED TEST PREVIEW", 10f),
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
     }
 
     private fun showCalendar() {
