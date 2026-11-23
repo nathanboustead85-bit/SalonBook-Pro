@@ -1,0 +1,17 @@
+{
+  "phase": "58.7",
+  "status": "ROBOLECTRIC_TESTS_PENDING",
+  "scope": "Disposable Robolectric SharedPreferences precommit and invalid-input failure injection",
+  "productionRestoreEnabled": false,
+  "realAndroidDeviceTested": false,
+  "actualAndroidProcessDeathTested": false,
+  "actualCommitFailureSimulated": false,
+  "productionPreferencesTouched": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false,
+  "launchGatesRemainOpen": true
+}
