@@ -1,0 +1,23 @@
+name: Boustio Phase 57.4 Firestore rules preflight (not emulator verification)
+on:
+  push:
+    paths:
+      - 'security/phase57-4-firestore-rules-evidence.json'
+      - 'security/phase57-4-firestore-rules-verification.md'
+      - 'tests/phase574_rules_preflight.test.cjs'
+      - '.github/workflows/boustio-phase-57-4-firestore-rules-preflight.yml'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rules-evidence-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate missing evidence and preserve safety gates
+        run: node --test tests/phase574_rules_preflight.test.cjs
