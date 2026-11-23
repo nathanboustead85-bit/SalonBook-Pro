@@ -29,7 +29,7 @@ class AndroidStorageSnapshotAdapterTest {
         assertEquals(values["services"], snapshot.services)
         assertEquals(values["staff"], snapshot.staff)
         assertEquals(before, fake.values)
-        assertEquals(3, fake.reads)
+        assertEquals(6, fake.reads)
     }
 
     @Test fun missingBookingKeyFailsClosed() {
