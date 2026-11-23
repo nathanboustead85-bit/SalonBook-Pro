@@ -4,6 +4,8 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonToken
+import com.google.gson.Strictness
 import java.io.StringReader
 
 /**
@@ -42,8 +44,10 @@ internal class AndroidStorageSnapshotAdapter(private val reader: PreferenceReade
     private fun validateArray(key: String, raw: String): String? {
         val parsed: JsonArray = try {
             val jsonReader = JsonReader(StringReader(raw))
-            jsonReader.isLenient = false
-            val value = JsonParser.parseReader(jsonReader)
+            jsonReader.strictness = Strictness.STRICT
+            jsonReader.skipValue()
+            if (jsonReader.peek() != JsonToken.END_DOCUMENT) return "$key has trailing content"
+            val value = JsonParser.parseString(raw)
             if (!value.isJsonArray) return "$key is not a JSON array"
             value.asJsonArray
         } catch (_: Exception) {
