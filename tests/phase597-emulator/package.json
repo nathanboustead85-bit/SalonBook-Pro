@@ -1,0 +1,9 @@
+{
+  "name": "boustio-phase597-chat-transaction-emulator",
+  "private": true,
+  "version": "1.0.0",
+  "devDependencies": {
+    "firebase-admin": "13.4.0",
+    "firebase-tools": "14.0.0"
+  }
+}
