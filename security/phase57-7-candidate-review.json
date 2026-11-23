@@ -1,0 +1,18 @@
+{
+  "phase": "57.7",
+  "status": "CANDIDATE_EMULATOR_PENDING",
+  "candidateRules": "security/candidates/phase57-7-firestore.rules",
+  "activeRepositoryRules": "firestore.rules",
+  "activeRulesChanged": false,
+  "publishedRulesChanged": false,
+  "backupCompatibility": "NOT_VERIFIED_ANDROID_FORMAT",
+  "legacyMigrationCompatibility": "NOT_VERIFIED_ANDROID_MIGRATION",
+  "approval": "NOT_APPROVED",
+  "independentReview": false,
+  "originalAndroidAppointments": "DO_NOT_TOUCH",
+  "deployment": false,
+  "liveBookings": false,
+  "payments": false,
+  "messaging": false,
+  "appCheckEnforcement": false
+}
