@@ -75,7 +75,12 @@ internal class DurableRecoveryJournal(
             val safe = decode(original)
             atomicWrite(active, encode(safe))
             if (decode(active) != safe) return false
-            // Keep original until after the marker is removed; an interrupted\n            // cleanup fails closed rather than losing the rollback copy.\n            if (pending.exists() && !pending.delete()) return false\n            if (!marker.delete()) return false\n            if (!original.delete()) return false\n            !marker.exists() && !original.exists()
+            // Keep original until after the marker is removed; an interrupted
+            // cleanup fails closed rather than losing the rollback copy.
+            if (pending.exists() && !pending.delete()) return false
+            if (!marker.delete()) return false
+            if (!original.delete()) return false
+            !marker.exists() && !original.exists()
         } catch (_: Exception) { false }
     }
 
