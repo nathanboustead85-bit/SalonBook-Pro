@@ -10,7 +10,10 @@ import java.security.MessageDigest
  * Caller must supply a private directory. The journal never touches SharedPreferences.
  * It stores synthetic JSON-array snapshots; schema validation is deferred.
  */
-internal class DurableRecoveryJournal(private val directory: File) {
+internal class DurableRecoveryJournal(
+    private val directory: File,
+    private val interruptionPoint: (String) -> Unit = {}
+) {
     private val active = File(directory, "snapshot.dat")
     private val pending = File(directory, "pending.dat")
     private val original = File(directory, "original.dat")
@@ -72,10 +75,7 @@ internal class DurableRecoveryJournal(private val directory: File) {
             val safe = decode(original)
             atomicWrite(active, encode(safe))
             if (decode(active) != safe) return false
-            pending.delete()
-            original.delete()
-            marker.delete()
-            !marker.exists()
+            // Keep original until after the marker is removed; an interrupted\n            // cleanup fails closed rather than losing the rollback copy.\n            if (pending.exists() && !pending.delete()) return false\n            if (!marker.delete()) return false\n            if (!original.delete()) return false\n            !marker.exists() && !original.exists()
         } catch (_: Exception) { false }
     }
 
@@ -95,13 +95,21 @@ internal class DurableRecoveryJournal(private val directory: File) {
         return try {
             val incomingBytes = encode(incoming)
             atomicWrite(original, encode(before))
+            interruptionPoint("after-original")
             atomicWrite(marker, "pending".toByteArray(Charsets.UTF_8))
+            interruptionPoint("after-marker")
             atomicWrite(pending, incomingBytes)
+            interruptionPoint("after-pending")
             require(decode(pending) == incoming)
             atomicWrite(active, incomingBytes)
+            interruptionPoint("after-active")
             require(decode(active) == incoming)
             // Cleanup failures leave a marker for safe rollback at next startup.
-            require(pending.delete() && original.delete() && marker.delete())
+            require(pending.delete())
+            interruptionPoint("after-pending-cleanup")
+            require(marker.delete())
+            interruptionPoint("after-marker-cleanup")
+            require(original.delete())
             true
         } catch (_: Exception) {
             recover()
