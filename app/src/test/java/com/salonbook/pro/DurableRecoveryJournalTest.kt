@@ -72,7 +72,7 @@ class DurableRecoveryJournalTest {
         }
     }
 
-    @Test fun crashBeforeMarkerFailsClosedWithoutDestroyingOriginal() = withDirectory { dir ->
+    @Test fun crashBeforeMarkerRestoresOriginalOnRestart() = withDirectory { dir ->
         assertTrue(DurableRecoveryJournal(dir).initializeSynthetic(empty))
         try {
             DurableRecoveryJournal(dir) { checkpoint ->
@@ -81,13 +81,12 @@ class DurableRecoveryJournalTest {
             fail("Expected synthetic crash")
         } catch (_: SimulatedProcessDeath) { }
         val restarted = DurableRecoveryJournal(dir)
-        assertFalse(restarted.recover())
-        assertNull(restarted.readSynthetic())
-        assertTrue(File(dir, "snapshot.dat").exists())
-        assertTrue(File(dir, "original.dat").exists())
+        assertTrue(restarted.recover())
+        assertEquals(empty, restarted.readSynthetic())
+        assertFalse(File(dir, "original.dat").exists())
     }
 
-    @Test fun crashAfterMarkerCleanupFailsClosedWithoutDeletingBackup() = withDirectory { dir ->
+    @Test fun crashAfterMarkerCleanupRestoresOriginalOnRestart() = withDirectory { dir ->
         assertTrue(DurableRecoveryJournal(dir).initializeSynthetic(empty))
         try {
             DurableRecoveryJournal(dir) { checkpoint ->
@@ -96,9 +95,9 @@ class DurableRecoveryJournalTest {
             fail("Expected synthetic crash")
         } catch (_: SimulatedProcessDeath) { }
         val restarted = DurableRecoveryJournal(dir)
-        assertFalse(restarted.recover())
-        assertNull(restarted.readSynthetic())
-        assertTrue(File(dir, "original.dat").exists())
+        assertTrue(restarted.recover())
+        assertEquals(empty, restarted.readSynthetic())
+        assertFalse(File(dir, "original.dat").exists())
     }
 
 }
