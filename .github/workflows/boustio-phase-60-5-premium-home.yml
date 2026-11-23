@@ -1,0 +1,47 @@
+name: Boustio Phase 60.5 premium native home APK
+on:
+  push:
+    paths:
+      - 'app/src/main/java/com/salonbook/pro/MainActivity.kt'
+      - 'tests/phase60-5-home.test.cjs'
+      - 'security/phase60-5-premium-home.md'
+      - '.github/workflows/boustio-phase-60-5-premium-home.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  premium-home:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify premium home and booking safety
+        run: node --test tests/phase60-5-home.test.cjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build isolated test APK
+        run: gradle --no-daemon :app:assembleIsolatedDebug
+      - name: Verify isolated package and offline permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/isolated/debug/app-isolated-debug.apk"
+          test -s "$APK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
+          "$AAPT" dump badging "$APK" > /tmp/boustio60-5.txt
+          grep -q "name='com.salonbook.pro.isolated'" /tmp/boustio60-5.txt
+          ! grep -q "uses-permission: name='android.permission.INTERNET'" /tmp/boustio60-5.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase60-5-PREMIUM-HOME-APK
+          path: app/build/outputs/apk/isolated/debug/app-isolated-debug.apk
+          if-no-files-found: error
