@@ -8,7 +8,7 @@ test('stable signing configured from environment without committed private keys'
  assert.match(gradle,/signingConfig = signingConfigs.getByName\("boustioIsolatedTest"\)/);
 });
 test('workflow fails closed when any signing secret is absent',()=>{
- for(const key of ['BOUSTIO_TEST_KEYSTORE_BASE64','BOUSTIO_TEST_STORE_PASSWORD','BOUSTIO_TEST_KEY_ALIAS','BOUSTIO_TEST_KEY_PASSWORD'])assert.ok(workflow.includes('secrets.'+key),key);
+ for(const key of ['SIGNING_KEYSTORE_BASE64','SIGNING_STORE_PASSWORD','SIGNING_KEY_ALIAS','SIGNING_KEY_PASSWORD'])assert.ok(workflow.includes('secrets.'+key),key);
  assert.ok(workflow.includes('Missing required GitHub Actions signing secret'));
  assert.ok(workflow.includes('needs: signing-preflight'));
  assert.ok(workflow.includes('base64 --decode'));
