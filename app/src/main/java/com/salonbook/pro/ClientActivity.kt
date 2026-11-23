@@ -1,6 +1,10 @@
 package com.salonbook.pro
 
 import android.app.Activity
+import android.content.Intent
+import android.os.Build
+import android.view.View
+import android.view.WindowInsets
 import android.app.AlertDialog
 import android.graphics.Color
 import android.graphics.Typeface
@@ -23,6 +27,7 @@ class ClientActivity : Activity() {
     private val teal = Color.rgb(0, 139, 131)
     private val muted = Color.rgb(108, 120, 117)
     private var query = ""
+    private val mint = Color.rgb(231, 244, 239)
 
     data class Client(val id: String, var name: String, var phone: String,
                       var email: String, var notes: String)
@@ -98,15 +103,46 @@ class ClientActivity : Activity() {
             setBackgroundColor(Color.rgb(249, 250, 248))
             fitsSystemWindows = true
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            root.setOnApplyWindowInsetsListener { view, insets ->
+                val bars = insets.getInsets(WindowInsets.Type.systemBars())
+                view.setPadding(0, bars.top, 0, bars.bottom)
+                insets
+            }
+        } else root.fitsSystemWindows = true
+        window.navigationBarColor = Color.WHITE
+        window.statusBarColor = Color.rgb(249, 250, 248)
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
         val scroll = ScrollView(this)
         content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(22), dp(20), dp(28))
         }
         scroll.addView(content)
-        root.addView(scroll)
+        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(bottomNavigation())
         setContentView(root)
-        content.addView(label("Boustio", 26f, true).apply { setTextColor(teal) })
+        val brand = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, 0, 0, dp(24))
+        }
+        brand.addView(ImageView(this).apply {
+            setImageResource(R.drawable.boustio_mark)
+            contentDescription = "Boustio brand mark"
+        }, LinearLayout.LayoutParams(dp(52), dp(52)))
+        val brandText = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), 0, 0, 0)
+        }
+        brandText.addView(label("Boustio", 25f, true))
+        brandText.addView(label("A booking platform with a difference", 11f).apply {
+            setTextColor(teal)
+        })
+        brand.addView(brandText)
+        content.addView(brand)
         content.addView(label("Client management", 28f, true))
         content.addView(label("Private client records saved on this test device.", 14f))
         card("+ Add client", "Save a name, phone, email and notes") { edit() }
@@ -140,7 +176,7 @@ class ClientActivity : Activity() {
                 .joinToString(" • ").ifBlank { "Tap to view contact details" }
             card(c.name, subtitle) { details(c.id) }
         }
-        card("Back to Boustio", "Return to the main app") { finish() }
+
     }
 
     private fun details(id: String) {
