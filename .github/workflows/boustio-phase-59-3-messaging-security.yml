@@ -1,0 +1,22 @@
+name: Boustio Phase 59.3 messaging security source verification
+on:
+  push:
+    paths:
+      - 'tests/phase59-3-messaging-security.test.cjs'
+      - 'security/phase59-3-messaging-security.json'
+      - 'security/phase59-3-messaging-security.md'
+      - '.github/workflows/boustio-phase-59-3-messaging-security.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  messaging-security-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify actual chat rules and identify missing emulator prerequisites
+        run: node --test tests/phase59-3-messaging-security.test.cjs
