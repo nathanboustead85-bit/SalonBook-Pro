@@ -1,0 +1,3 @@
+# Phase 61.16 — Copy contact details
+
+Explicit button presses copy a saved phone number or email address to the Android system clipboard. No automatic sharing, dialing, sending or booking changes. Clipboard contents may be accessible to other apps or visible in system clipboard previews: users should avoid copying private details on untrusted devices. Copy buttons appear only for populated fields. Preserve isolated TEST data and the two original DEV appointments; never uninstall or clear either app. All seven launch blockers remain open. Live bookings, payments, messaging and deployment disabled.
