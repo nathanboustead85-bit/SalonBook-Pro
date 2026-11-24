@@ -254,8 +254,13 @@ class ClientActivity : Activity() {
             else "Showing ${visible.size} client(s)", 13f
         ).apply { setTextColor(teal) })
         if (visible.isEmpty()) {
-            target.addView(label(if (directoryNames.isEmpty())
-                "No clients yet — add a client above." else "No matching clients — try a different name, phone or email.", 15f))
+            val emptyMessage = when {
+                !clientDataReadable -> "Saved client records are unavailable. Editing is disabled; do not clear app data."
+                directoryNames.isEmpty() -> "No clients yet — add a client above."
+                query.isNotBlank() -> "No matching clients — try a different name, phone or email."
+                else -> "No clients to display."
+            }
+            target.addView(label(emptyMessage, 15f))
         }
         visible.forEach { name ->
             val c = records.firstOrNull { it.name.equals(name, ignoreCase = true) }
