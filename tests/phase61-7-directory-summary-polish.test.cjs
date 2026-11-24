@@ -1,0 +1,4 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');const c=fs.readFileSync('app/src/main/java/com/salonbook/pro/ClientActivity.kt','utf8'),b=fs.readFileSync('app/build.gradle.kts','utf8');
+test('client summary singular and plural and accessible counts',()=>{for(const x of ['fun clientLabel(count: Int) = if (count == 1) "1 client" else "$count clients"','clientLabel(directoryNames.size)','clientLabel(visible.size)','contentDescription = "Client directory results:'])assert.ok(c.includes(x),x);});
+test('existing search, sort and client actions preserved',()=>{for(const x of ['Reset search and sorting','Most appointments','clientDataReadable','appointmentLabel(count)','if (c != null) details(c.id) else appointmentHistory(name)'])assert.ok(c.includes(x),x);});
+test('isolated build 20',()=>{for(const x of ['versionCode = 20','versionName = "0.2.18"','applicationIdSuffix = ".isolated"'])assert.ok(b.includes(x),x);});
