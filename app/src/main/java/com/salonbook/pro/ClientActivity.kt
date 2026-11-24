@@ -320,9 +320,17 @@ class ClientActivity : Activity() {
                 elevation = dp(2).toFloat()
                 isClickable = true
                 isFocusable = true
-                contentDescription = if (c != null)
-                    "Open client profile for $name. ${appointmentLabel(count)}."
-                else "View appointment history for $name. ${appointmentLabel(count)}."
+                val contactSummary = listOfNotNull(
+                    c?.phone?.takeIf { it.isNotBlank() }?.let { "Phone $it" },
+                    c?.email?.takeIf { it.isNotBlank() }?.let { "Email $it" }
+                ).joinToString(". ")
+                contentDescription = listOfNotNull(
+                    name,
+                    contactSummary.takeIf { it.isNotBlank() },
+                    appointmentLabel(count),
+                    if (c != null) "Double tap to open client profile"
+                    else "Double tap to view appointment history"
+                ).joinToString(". ")
                 setOnClickListener { if (c != null) details(c.id) else appointmentHistory(name) }
             }
             panel.addView(label(name, 17f, true))
