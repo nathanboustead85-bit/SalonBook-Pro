@@ -275,9 +275,12 @@ class ClientActivity : Activity() {
         }
         target.addView(label("CLIENT DIRECTORY • ${directoryNames.size} CLIENTS", 13f, true))
         target.addView(label(
-            if (query.isNotBlank()) "${visible.size} matching client(s)"
-            else "Showing ${visible.size} client(s)", 13f
-        ).apply { setTextColor(teal) })
+            if (query.isNotBlank()) "Showing ${visible.size} of ${directoryNames.size} clients • Sorted: $sortBy"
+            else "Showing all ${visible.size} clients • Sorted: $sortBy", 13f
+        ).apply {
+            setTextColor(teal)
+            contentDescription = "Client directory results: ${visible.size} of ${directoryNames.size}. Sorting: $sortBy"
+        })
         if (visible.isEmpty()) {
             val emptyMessage = when {
                 !clientDataReadable -> "Saved client records are unavailable. Editing is disabled; do not clear app data."
