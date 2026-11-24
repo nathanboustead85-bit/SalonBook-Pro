@@ -220,6 +220,23 @@ class ClientActivity : Activity() {
         }
         content.addView(label("SORT CLIENTS", 12f, true).apply { setTextColor(teal) })
         content.addView(sortControl, LinearLayout.LayoutParams(-1, dp(48)).apply {
+            bottomMargin = dp(6)
+        })
+        // One-tap recovery to the full A-Z directory without changing client data.
+        content.addView(Button(this).apply {
+            text = "Reset search and sorting"
+            isAllCaps = false
+            contentDescription = "Show all clients sorted by name"
+            setTextColor(teal)
+            setOnClickListener {
+                search.setText("")
+                search.clearFocus()
+                sortControl.setSelection(0)
+                sortBy = "Name A-Z"
+                prefs.edit().putString("client_directory_sort_v1", sortBy).apply()
+                refreshDirectory()
+            }
+        }, LinearLayout.LayoutParams(-1, dp(48)).apply {
             bottomMargin = dp(12)
         })
         val directory = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
