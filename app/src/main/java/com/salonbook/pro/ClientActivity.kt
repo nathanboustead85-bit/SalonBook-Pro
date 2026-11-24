@@ -167,7 +167,23 @@ class ClientActivity : Activity() {
                 override fun afterTextChanged(s: Editable?) {}
             })
         }
-        content.addView(search, LinearLayout.LayoutParams(-1, dp(52)).apply {
+        val searchRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        searchRow.addView(search, LinearLayout.LayoutParams(0, dp(52), 1f))
+        val clearSearch = Button(this).apply {
+            text = "Clear"
+            contentDescription = "Clear client search"
+            isAllCaps = false
+            setTextColor(teal)
+            setOnClickListener {
+                search.setText("")
+                search.clearFocus()
+            }
+        }
+        searchRow.addView(clearSearch, LinearLayout.LayoutParams(dp(88), dp(52)))
+        content.addView(searchRow, LinearLayout.LayoutParams(-1, -2).apply {
             bottomMargin = dp(12)
         })
         val sortControl = Spinner(this).apply {
@@ -216,11 +232,10 @@ class ClientActivity : Activity() {
             else -> matching.sortedWith(String.CASE_INSENSITIVE_ORDER)
         }
         target.addView(label("CLIENT DIRECTORY • ${directoryNames.size} CLIENTS", 13f, true))
-        if (query.isNotBlank()) {
-            target.addView(label("${visible.size} matching client(s)", 13f).apply {
-                setTextColor(teal)
-            })
-        }
+        target.addView(label(
+            if (query.isNotBlank()) "${visible.size} matching client(s)"
+            else "Showing ${visible.size} client(s)", 13f
+        ).apply { setTextColor(teal) })
         if (visible.isEmpty()) {
             target.addView(label(if (directoryNames.isEmpty())
                 "No clients yet — add a client above." else "No matching clients — try a different name, phone or email.", 15f))
@@ -239,6 +254,8 @@ class ClientActivity : Activity() {
                 background = surface()
                 elevation = dp(2).toFloat()
                 isClickable = true
+                isFocusable = true
+                contentDescription = "Open client $name"
                 setOnClickListener { if (c != null) details(c.id) else appointmentHistory(name) }
             }
             panel.addView(label(name, 17f, true))
