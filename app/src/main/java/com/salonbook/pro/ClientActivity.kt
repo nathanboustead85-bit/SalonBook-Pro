@@ -290,7 +290,19 @@ class ClientActivity : Activity() {
             }
             target.addView(label(emptyMessage, 15f))
         }
+        // Alphabetical section markers improve scanning without changing client order.
+        var previousSection: String? = null
         visible.forEach { name ->
+            if (sortBy != "Most appointments") {
+                val section = name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "#"
+                if (section != previousSection) {
+                    target.addView(label(section, 13f, true).apply {
+                        setTextColor(teal)
+                        contentDescription = "Client names beginning with $section"
+                    })
+                    previousSection = section
+                }
+            }
             val c = records.firstOrNull { it.name.equals(name, ignoreCase = true) }
             val count = countFor(name)
             val subtitle = listOfNotNull(
