@@ -308,8 +308,8 @@ class ClientActivity : Activity() {
             val c = records.firstOrNull { it.name.equals(name, ignoreCase = true) }
             val count = countFor(name)
             val subtitle = listOfNotNull(
-                c?.phone?.takeIf { it.isNotBlank() },
-                c?.email?.takeIf { it.isNotBlank() },
+                c?.phone?.takeIf { it.isNotBlank() }?.let { "Phone: $it" },
+                c?.email?.takeIf { it.isNotBlank() }?.let { "Email: $it" },
                 appointmentLabel(count)
             ).joinToString(" • ")
             val panel = LinearLayout(this).apply {
