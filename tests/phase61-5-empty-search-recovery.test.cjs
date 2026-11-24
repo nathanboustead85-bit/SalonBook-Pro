@@ -1,0 +1,4 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');const c=fs.readFileSync('app/src/main/java/com/salonbook/pro/ClientActivity.kt','utf8'),b=fs.readFileSync('app/build.gradle.kts','utf8');
+test('no-match search explains recovery without altering data',()=>{for(const x of ['No clients match your search.','tap Reset search and sorting above to show everyone.','query.isNotBlank() ->','Reset search and sorting'])assert.ok(c.includes(x),x);});
+test('existing sort, profile and fail-closed behaviour retained',()=>{for(const x of ['Most appointments','Name Z-A','if (c != null) details(c.id) else appointmentHistory(name)','clientDataReadable','Client names beginning with $section'])assert.ok(c.includes(x),x);});
+test('isolated build 18',()=>{for(const x of ['versionCode = 18','versionName = "0.2.16"','applicationIdSuffix = ".isolated"'])assert.ok(b.includes(x),x);});
