@@ -2,6 +2,7 @@ package com.salonbook.pro
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.view.View
 import android.view.WindowInsets
@@ -496,6 +497,32 @@ class ClientActivity : Activity() {
         profile.addView(label(c.phone.ifBlank { "Not provided" }, 16f).apply { contentDescription = "Phone: ${c.phone.ifBlank { "Not provided" }}" })
         profile.addView(label("Email", 12f).apply { setTextColor(muted) })
         profile.addView(label(c.email.ifBlank { "Not provided" }, 16f).apply { contentDescription = "Email: ${c.email.ifBlank { "Not provided" }}" })
+        if (c.phone.isNotBlank()) {
+            profile.addView(Button(this).apply {
+                text = "Call client"
+                isAllCaps = false
+                setOnClickListener {
+                    try {
+                        startActivity(Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", c.phone.trim(), null)))
+                    } catch (_: android.content.ActivityNotFoundException) {
+                        Toast.makeText(this@ClientActivity, "No phone app available", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            })
+        }
+        if (c.email.isNotBlank()) {
+            profile.addView(Button(this).apply {
+                text = "Email client"
+                isAllCaps = false
+                setOnClickListener {
+                    try {
+                        startActivity(Intent(Intent.ACTION_SENDTO, Uri.fromParts("mailto", c.email.trim(), null)))
+                    } catch (_: android.content.ActivityNotFoundException) {
+                        Toast.makeText(this@ClientActivity, "No email app available", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            })
+        }
         profile.addView(label("CLIENT NOTES", 12f, true).apply { setTextColor(teal) })
         profile.addView(label(c.notes.ifBlank { "No notes saved" }, 15f).apply { contentDescription = "Client notes: ${c.notes.ifBlank { "No notes saved" }}" })
         profile.addView(label("${appointmentLabel(bookingCount(c.name))} • View history below", 13f).apply {
