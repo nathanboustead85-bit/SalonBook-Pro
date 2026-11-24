@@ -386,7 +386,9 @@ class ClientActivity : Activity() {
             setTextColor(teal)
         })
         if (entries.isEmpty()) {
-            list.addView(label("No appointments recorded for this client.", 15f))
+            list.addView(label("No appointments recorded for this client.", 15f).apply {
+                contentDescription = "No appointment history for $name"
+            })
         } else {
             entries.forEach { booking ->
                 val panel = LinearLayout(this).apply {
@@ -396,8 +398,11 @@ class ClientActivity : Activity() {
                 }
                 val dateTime = listOf(booking.optString("date"), booking.optString("time"))
                     .filter { it.isNotBlank() }.joinToString(" • ")
+                val service = booking.optString("service").ifBlank { "Service not provided" }
+                panel.isFocusable = true
+                panel.contentDescription = "Appointment for $name. Date and time: ${dateTime.ifBlank { "Not provided" }}. Service: $service."
                 panel.addView(label(dateTime.ifBlank { "Date not provided" }, 15f, true))
-                panel.addView(label(booking.optString("service").ifBlank { "Service not provided" }, 14f))
+                panel.addView(label(service, 14f))
                 list.addView(panel, LinearLayout.LayoutParams(-1, -2).apply {
                     bottomMargin = dp(9)
                 })
