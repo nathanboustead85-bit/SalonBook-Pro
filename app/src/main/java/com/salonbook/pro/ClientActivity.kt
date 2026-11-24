@@ -43,6 +43,20 @@ class ClientActivity : Activity() {
 
     private fun appointmentLabel(count: Int) = if (count == 1) "1 appointment" else "$count appointments"
 
+    /** wa.me requires international digits without +, spaces or punctuation. UK local numbers use 44. */
+    private fun whatsappNumber(phone: String): String? {
+        val raw = phone.trim()
+        if (!raw.matches(Regex("[+0-9() .-]+"))) return null
+        val digits = raw.filter { it.isDigit() }
+        val international = when {
+            raw.startsWith("+") -> digits
+            digits.startsWith("00") -> digits.drop(2)
+            digits.startsWith("0") -> "44" + digits.drop(1)
+            else -> digits
+        }
+        return international.takeIf { it.length in 8..15 && !it.startsWith("0") }
+    }
+
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
     private fun surface(color: Int = Color.WHITE): GradientDrawable =
         GradientDrawable().apply { setColor(color); cornerRadius = dp(18).toFloat() }
@@ -545,6 +559,19 @@ class ClientActivity : Activity() {
                     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     clipboard.setPrimaryClip(ClipData.newPlainText("Client email address", c.email.trim()))
                     Toast.makeText(this@ClientActivity, "Email address copied", Toast.LENGTH_SHORT).show()
+                }
+            })
+        }
+        whatsappNumber(c.phone)?.let { number ->
+            profile.addView(Button(this).apply {
+                text = "WhatsApp client"
+                isAllCaps = false
+                setOnClickListener {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$number")))
+                    } catch (_: android.content.ActivityNotFoundException) {
+                        Toast.makeText(this@ClientActivity, "No app available to open WhatsApp", Toast.LENGTH_SHORT).show()
+                    }
                 }
             })
         }
