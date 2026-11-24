@@ -233,7 +233,11 @@ class ClientActivity : Activity() {
     private fun refreshDirectory() {
         val target = directoryContainer ?: return
         target.removeAllViews()
-        val directoryNames = (records.map { it.name } + readBookingNames())
+        // Read appointment names once per refresh rather than parsing bookings for every row.
+        val bookingNames = readBookingNames()
+        val appointmentCounts = bookingNames.groupingBy { it.lowercase(Locale.UK) }.eachCount()
+        fun countFor(name: String) = appointmentCounts[name.lowercase(Locale.UK)] ?: 0
+        val directoryNames = (records.map { it.name } + bookingNames)
              .distinctBy { it.lowercase(Locale.UK) }
         val matching = directoryNames.filter { name ->
             val contact = records.firstOrNull { it.name.equals(name, ignoreCase = true) }
@@ -244,7 +248,7 @@ class ClientActivity : Activity() {
         val visible = when (sortBy) {
             "Name Z-A" -> matching.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it })
             "Most appointments" -> matching.sortedWith(
-                compareByDescending<String> { bookingCount(it) }
+                compareByDescending<String> { countFor(it) }
                     .thenBy(String.CASE_INSENSITIVE_ORDER) { it })
             else -> matching.sortedWith(String.CASE_INSENSITIVE_ORDER)
         }
@@ -264,7 +268,7 @@ class ClientActivity : Activity() {
         }
         visible.forEach { name ->
             val c = records.firstOrNull { it.name.equals(name, ignoreCase = true) }
-            val count = bookingCount(name)
+            val count = countFor(name)
             val subtitle = listOfNotNull(
                 c?.phone?.takeIf { it.isNotBlank() },
                 c?.email?.takeIf { it.isNotBlank() },
@@ -287,7 +291,7 @@ class ClientActivity : Activity() {
             })
         }
         target.addView(label("APPOINTMENT HISTORY", 13f, true))
-        val total = directoryNames.sumOf { bookingCount(it) }
+        val total = directoryNames.sumOf { countFor(it) }
         target.addView(label(if (total == 0) "No appointments on this test installation."
             else "$total appointment(s) — tap a client to view history.", 14f))
 
