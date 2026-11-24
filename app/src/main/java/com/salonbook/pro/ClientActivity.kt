@@ -290,6 +290,7 @@ class ClientActivity : Activity() {
             }
             target.addView(label(emptyMessage, 15f))
         }
+        fun appointmentLabel(count: Int) = if (count == 1) "1 appointment" else "$count appointments"
         // Alphabetical section markers improve scanning without changing client order.
         var previousSection: String? = null
         visible.forEach { name ->
@@ -308,7 +309,7 @@ class ClientActivity : Activity() {
             val subtitle = listOfNotNull(
                 c?.phone?.takeIf { it.isNotBlank() },
                 c?.email?.takeIf { it.isNotBlank() },
-                "${count} appointment(s)"
+                appointmentLabel(count)
             ).joinToString(" • ")
             val panel = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
@@ -318,8 +319,8 @@ class ClientActivity : Activity() {
                 isClickable = true
                 isFocusable = true
                 contentDescription = if (c != null)
-                    "Open client profile for $name. $count appointments."
-                else "View appointment history for $name. $count appointments."
+                    "Open client profile for $name. ${appointmentLabel(count)}."
+                else "View appointment history for $name. ${appointmentLabel(count)}."
                 setOnClickListener { if (c != null) details(c.id) else appointmentHistory(name) }
             }
             panel.addView(label(name, 17f, true))
@@ -331,7 +332,7 @@ class ClientActivity : Activity() {
         target.addView(label("APPOINTMENT HISTORY", 13f, true))
         val total = directoryNames.sumOf { countFor(it) }
         target.addView(label(if (total == 0) "No appointments on this test installation."
-            else "$total appointment(s) — tap a client to view history.", 14f))
+            else "${appointmentLabel(total)} — tap a client to view history.", 14f))
 
     }
 
