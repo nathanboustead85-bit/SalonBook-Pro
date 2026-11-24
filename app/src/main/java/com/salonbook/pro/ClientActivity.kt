@@ -575,6 +575,20 @@ class ClientActivity : Activity() {
                 }
             })
         }
+        profile.addView(Button(this).apply {
+            text = "Copy client summary"
+            isAllCaps = false
+            setOnClickListener {
+                val summary = listOfNotNull(
+                    c.name.trim().takeIf { it.isNotBlank() },
+                    c.phone.trim().takeIf { it.isNotBlank() }?.let { "Phone: $it" },
+                    c.email.trim().takeIf { it.isNotBlank() }?.let { "Email: $it" }
+                ).joinToString("\n")
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("Client contact summary", summary))
+                Toast.makeText(this@ClientActivity, "Client summary copied", Toast.LENGTH_SHORT).show()
+            }
+        })
         profile.addView(label("CLIENT NOTES", 12f, true).apply { setTextColor(teal) })
         profile.addView(label(c.notes.ifBlank { "No notes saved" }, 15f).apply { contentDescription = "Client notes: ${c.notes.ifBlank { "No notes saved" }}" })
         profile.addView(label("${appointmentLabel(bookingCount(c.name))} • View history below", 13f).apply {
