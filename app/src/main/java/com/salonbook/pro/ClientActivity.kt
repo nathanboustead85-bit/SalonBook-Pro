@@ -273,13 +273,14 @@ class ClientActivity : Activity() {
                     .thenBy(String.CASE_INSENSITIVE_ORDER) { it })
             else -> matching.sortedWith(String.CASE_INSENSITIVE_ORDER)
         }
-        target.addView(label("CLIENT DIRECTORY • ${directoryNames.size} CLIENTS", 13f, true))
+        fun clientLabel(count: Int) = if (count == 1) "1 client" else "$count clients"
+        target.addView(label("CLIENT DIRECTORY • ${clientLabel(directoryNames.size).uppercase(Locale.UK)}", 13f, true))
         target.addView(label(
-            if (query.isNotBlank()) "Showing ${visible.size} of ${directoryNames.size} clients • Sorted: $sortBy"
-            else "Showing all ${visible.size} clients • Sorted: $sortBy", 13f
+            if (query.isNotBlank()) "Showing ${clientLabel(visible.size)} of ${clientLabel(directoryNames.size)} • Sorted: $sortBy"
+            else "Showing all ${clientLabel(visible.size)} • Sorted: $sortBy", 13f
         ).apply {
             setTextColor(teal)
-            contentDescription = "Client directory results: ${visible.size} of ${directoryNames.size}. Sorting: $sortBy"
+            contentDescription = "Client directory results: ${clientLabel(visible.size)} of ${clientLabel(directoryNames.size)}. Sorting: $sortBy"
         })
         if (visible.isEmpty()) {
             val emptyMessage = when {
