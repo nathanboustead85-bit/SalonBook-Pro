@@ -30,6 +30,7 @@ class ClientActivity : Activity() {
     private val muted = Color.rgb(108, 120, 117)
     private var query = ""
     private var sortBy = "Name A-Z"
+    private var clientDataReadable = true
     private val mint = Color.rgb(231, 244, 239)
 
     data class Client(val id: String, var name: String, var phone: String,
@@ -41,8 +42,17 @@ class ClientActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        sortBy = prefs.getString("client_directory_sort_v1", "Name A-Z")
+            ?.takeIf { it in listOf("Name A-Z", "Name Z-A", "Most appointments") }
+            ?: "Name A-Z"
+        query = savedInstanceState?.getString("client_directory_query") ?: ""
         load()
         render()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString("client_directory_query", query)
+        super.onSaveInstanceState(outState)
     }
 
     private fun load() {
@@ -57,12 +67,15 @@ class ClientActivity : Activity() {
             }
             records.clear()
             records.addAll(parsed)
+            clientDataReadable = true
         } catch (_: Exception) {
-            Toast.makeText(this, "Unable to read client records; existing data preserved", Toast.LENGTH_LONG).show()
+            clientDataReadable = false
+            Toast.makeText(this, "Client records unavailable; editing disabled to protect saved data", Toast.LENGTH_LONG).show()
         }
     }
 
     private fun persist(): Boolean {
+        if (!clientDataReadable) return false
         val array = JSONArray()
         records.forEach { c ->
             array.put(JSONObject().apply {
@@ -149,6 +162,9 @@ class ClientActivity : Activity() {
         content.addView(brand)
         content.addView(label("Client management", 25f, true))
         content.addView(label("Private client records saved on this test device.", 14f))
+        if (!clientDataReadable) {
+            content.addView(label("Client records unavailable. Editing disabled to protect saved data.", 14f, true))
+        }
         card("+ Add client", "Save a name, phone, email and notes") { edit() }
 
         val search = EditText(this).apply {
@@ -197,6 +213,7 @@ class ClientActivity : Activity() {
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?,
                     view: View?, position: Int, id: Long) {
                     sortBy = options[position]
+                    prefs.edit().putString("client_directory_sort_v1", sortBy).apply()
                     refreshDirectory()
                 }
             }
@@ -415,6 +432,10 @@ class ClientActivity : Activity() {
     }
 
     private fun edit(id: String? = null, prefillName: String = "") {
+        if (!clientDataReadable) {
+            Toast.makeText(this, "Editing unavailable until client data can be read safely", Toast.LENGTH_LONG).show()
+            return
+        }
         val current = records.firstOrNull { it.id == id }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -476,6 +497,10 @@ class ClientActivity : Activity() {
     }
 
     private fun delete(id: String) {
+        if (!clientDataReadable) {
+            Toast.makeText(this, "Deletion unavailable until client data can be read safely", Toast.LENGTH_LONG).show()
+            return
+        }
         val c = records.firstOrNull { it.id == id } ?: return
         val bookingArray = try {
             JSONArray(prefs.getString("bookings", "[]") ?: "[]")
