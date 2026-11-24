@@ -373,7 +373,7 @@ class ClientActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(8), dp(18), dp(8))
         }
-        list.addView(label("${entries.size} appointment(s)", 14f, true).apply {
+        list.addView(label("${appointmentLabel(entries.size)}", 14f, true).apply {
             setTextColor(teal)
         })
         if (entries.isEmpty()) {
@@ -458,7 +458,7 @@ class ClientActivity : Activity() {
         profile.addView(label(c.email.ifBlank { "Not provided" }, 16f))
         profile.addView(label("CLIENT NOTES", 12f, true).apply { setTextColor(teal) })
         profile.addView(label(c.notes.ifBlank { "No notes saved" }, 15f))
-        profile.addView(label("${bookingCount(c.name)} appointment(s) • View history below", 13f).apply {
+        profile.addView(label("${appointmentLabel(bookingCount(c.name))} • View history below", 13f).apply {
             setTextColor(muted)
         })
         val dialog = AlertDialog.Builder(this)
