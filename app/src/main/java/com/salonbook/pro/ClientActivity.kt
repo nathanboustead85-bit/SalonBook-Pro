@@ -239,11 +239,15 @@ class ClientActivity : Activity() {
         fun countFor(name: String) = appointmentCounts[name.lowercase(Locale.UK)] ?: 0
         val directoryNames = (records.map { it.name } + bookingNames)
              .distinctBy { it.lowercase(Locale.UK) }
+        // Ignore repeated whitespace and letter case when matching names and contact details.
+        fun normalized(value: String) = value.trim().replace(Regex("\\s+"), " ")
+            .lowercase(Locale.UK)
+        val normalizedQuery = normalized(query)
         val matching = directoryNames.filter { name ->
             val contact = records.firstOrNull { it.name.equals(name, ignoreCase = true) }
-            name.contains(query, ignoreCase = true) ||
-                (contact?.phone?.contains(query, ignoreCase = true) == true) ||
-                (contact?.email?.contains(query, ignoreCase = true) == true)
+            normalized(name).contains(normalizedQuery) ||
+                (contact?.phone?.let { normalized(it).contains(normalizedQuery) } == true) ||
+                (contact?.email?.let { normalized(it).contains(normalizedQuery) } == true)
         }
         val visible = when (sortBy) {
             "Name Z-A" -> matching.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it })
