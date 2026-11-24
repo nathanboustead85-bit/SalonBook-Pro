@@ -1,0 +1,4 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');const c=fs.readFileSync('app/src/main/java/com/salonbook/pro/ClientActivity.kt','utf8'),b=fs.readFileSync('app/build.gradle.kts','utf8');
+test('accessible client rows distinguish profiles from history',()=>{for(const x of ['Open client profile for $name. $count appointments.','View appointment history for $name. $count appointments.','if (c != null) details(c.id) else appointmentHistory(name)','isFocusable = true'])assert.ok(c.includes(x),x);});
+test('search, reset and fail-closed storage remain',()=>{for(const x of ['Reset search and sorting','client_records_v1','if (!clientDataReadable) return false','normalized(name).contains(normalizedQuery)','Most appointments'])assert.ok(c.includes(x),x);});
+test('isolated build 16',()=>{for(const x of ['versionCode = 16','versionName = "0.2.14"','applicationIdSuffix = ".isolated"'])assert.ok(b.includes(x),x);});
