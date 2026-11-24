@@ -285,7 +285,7 @@ class ClientActivity : Activity() {
             val emptyMessage = when {
                 !clientDataReadable -> "Saved client records are unavailable. Editing is disabled; do not clear app data."
                 directoryNames.isEmpty() -> "No clients yet — add a client above."
-                query.isNotBlank() -> "No matching clients — try a different name, phone or email."
+                query.isNotBlank() -> "No clients match your search. Try a shorter name, phone number or email, or tap Reset search and sorting above to show everyone."
                 else -> "No clients to display."
             }
             target.addView(label(emptyMessage, 15f))
