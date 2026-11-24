@@ -276,10 +276,54 @@ class ClientActivity : Activity() {
         }, LinearLayout.LayoutParams(-1, dp(48)).apply {
             bottomMargin = dp(12)
         })
+        content.addView(Button(this).apply {
+            text = "Check possible duplicate clients"
+            isAllCaps = false
+            setOnClickListener { showPossibleDuplicates() }
+        }, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(12) })
         val directory = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(directory)
         directoryContainer = directory
         refreshDirectory()
+    }
+
+    /** Review-only comparison. Matching contact details can belong to different people. */
+    private fun showPossibleDuplicates() {
+        if (!clientDataReadable) {
+            Toast.makeText(this, "Client records unavailable; no changes made", Toast.LENGTH_LONG).show()
+            return
+        }
+        fun normalizedPhone(value: String): String? {
+            val digits = value.filter { it.isDigit() }
+            return digits.takeIf { it.length >= 7 }
+        }
+        fun normalizedEmail(value: String): String? =
+            value.trim().lowercase(Locale.UK).takeIf { it.isNotBlank() }
+        val matches = linkedMapOf<String, MutableSet<String>>()
+        records.groupBy { normalizedPhone(it.phone) }.forEach { (key, clients) ->
+            if (key != null && clients.size > 1) {
+                matches.getOrPut("Matching phone number: ${clients.first().phone.trim()}") { linkedSetOf() }
+                    .addAll(clients.map { it.name })
+            }
+        }
+        records.groupBy { normalizedEmail(it.email) }.forEach { (key, clients) ->
+            if (key != null && clients.size > 1) {
+                matches.getOrPut("Matching email: $key") { linkedSetOf() }
+                    .addAll(clients.map { it.name })
+            }
+        }
+        val report = if (matches.isEmpty()) {
+            "No matching phone numbers or email addresses found among saved client records."
+        } else {
+            matches.entries.joinToString("\\n\\n") { (reason, names) ->
+                "$reason\\n" + names.joinToString("\\n") { "• $it" }
+            } + "\\n\\nThese are possible matches only. Shared contact details do not prove duplicate clients."
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Possible duplicate clients")
+            .setMessage(report)
+            .setPositiveButton("Close", null)
+            .show()
     }
 
     private var directoryContainer: LinearLayout? = null
