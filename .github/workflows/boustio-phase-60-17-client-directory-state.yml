@@ -71,7 +71,7 @@ jobs:
           AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
           "$AAPT" dump badging "$APK" > "$RUNNER_TEMP/boustio-badging.txt"
           grep -q "name='com.salonbook.pro.isolated'" "$RUNNER_TEMP/boustio-badging.txt"
-          grep -q "versionCode='9'" "$RUNNER_TEMP/boustio-badging.txt"
+          grep -q "versionCode='10'" "$RUNNER_TEMP/boustio-badging.txt"
           ! grep -q "uses-permission: name='android.permission.INTERNET'" "$RUNNER_TEMP/boustio-badging.txt"
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
           "$APKSIGNER" verify --print-certs "$APK" > "$RUNNER_TEMP/boustio-certificate.txt"
