@@ -29,6 +29,7 @@ class ClientActivity : Activity() {
     private val teal = Color.rgb(0, 139, 131)
     private val muted = Color.rgb(108, 120, 117)
     private var query = ""
+    private var sortBy = "Name A-Z"
     private val mint = Color.rgb(231, 244, 239)
 
     data class Client(val id: String, var name: String, var phone: String,
@@ -151,7 +152,7 @@ class ClientActivity : Activity() {
         card("+ Add client", "Save a name, phone, email and notes") { edit() }
 
         val search = EditText(this).apply {
-            hint = "Search clients by name"
+            hint = "Search name, phone or email"
             setSingleLine(true)
             inputType = InputType.TYPE_CLASS_TEXT
             setText(query)
@@ -169,6 +170,25 @@ class ClientActivity : Activity() {
         content.addView(search, LinearLayout.LayoutParams(-1, dp(52)).apply {
             bottomMargin = dp(12)
         })
+        val sortControl = Spinner(this).apply {
+            val options = listOf("Name A-Z", "Name Z-A", "Most appointments")
+            adapter = ArrayAdapter(this@ClientActivity,
+                android.R.layout.simple_spinner_dropdown_item, options)
+            setSelection(options.indexOf(sortBy).coerceAtLeast(0))
+            contentDescription = "Sort client directory"
+            onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+                override fun onItemSelected(parent: android.widget.AdapterView<*>?,
+                    view: View?, position: Int, id: Long) {
+                    sortBy = options[position]
+                    refreshDirectory()
+                }
+            }
+        }
+        content.addView(label("SORT CLIENTS", 12f, true).apply { setTextColor(teal) })
+        content.addView(sortControl, LinearLayout.LayoutParams(-1, dp(48)).apply {
+            bottomMargin = dp(12)
+        })
         val directory = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(directory)
         directoryContainer = directory
@@ -181,13 +201,29 @@ class ClientActivity : Activity() {
         val target = directoryContainer ?: return
         target.removeAllViews()
         val directoryNames = (records.map { it.name } + readBookingNames())
-            .distinctBy { it.lowercase(Locale.UK) }
-            .sortedBy { it.lowercase(Locale.UK) }
-        val visible = directoryNames.filter { it.contains(query, ignoreCase = true) }
+             .distinctBy { it.lowercase(Locale.UK) }
+        val matching = directoryNames.filter { name ->
+            val contact = records.firstOrNull { it.name.equals(name, ignoreCase = true) }
+            name.contains(query, ignoreCase = true) ||
+                (contact?.phone?.contains(query, ignoreCase = true) == true) ||
+                (contact?.email?.contains(query, ignoreCase = true) == true)
+        }
+        val visible = when (sortBy) {
+            "Name Z-A" -> matching.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it })
+            "Most appointments" -> matching.sortedWith(
+                compareByDescending<String> { bookingCount(it) }
+                    .thenBy(String.CASE_INSENSITIVE_ORDER) { it })
+            else -> matching.sortedWith(String.CASE_INSENSITIVE_ORDER)
+        }
         target.addView(label("CLIENT DIRECTORY • ${directoryNames.size} CLIENTS", 13f, true))
+        if (query.isNotBlank()) {
+            target.addView(label("${visible.size} matching client(s)", 13f).apply {
+                setTextColor(teal)
+            })
+        }
         if (visible.isEmpty()) {
             target.addView(label(if (directoryNames.isEmpty())
-                "No clients yet — add a client above." else "No matching clients.", 15f))
+                "No clients yet — add a client above." else "No matching clients — try a different name, phone or email.", 15f))
         }
         visible.forEach { name ->
             val c = records.firstOrNull { it.name.equals(name, ignoreCase = true) }
