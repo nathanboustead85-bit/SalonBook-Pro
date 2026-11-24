@@ -462,13 +462,14 @@ class ClientActivity : Activity() {
         }
         profile.addView(label("CONTACT DETAILS", 12f, true).apply { setTextColor(teal) })
         profile.addView(label("Phone", 12f).apply { setTextColor(muted) })
-        profile.addView(label(c.phone.ifBlank { "Not provided" }, 16f))
+        profile.addView(label(c.phone.ifBlank { "Not provided" }, 16f).apply { contentDescription = "Phone: ${c.phone.ifBlank { "Not provided" }}" })
         profile.addView(label("Email", 12f).apply { setTextColor(muted) })
-        profile.addView(label(c.email.ifBlank { "Not provided" }, 16f))
+        profile.addView(label(c.email.ifBlank { "Not provided" }, 16f).apply { contentDescription = "Email: ${c.email.ifBlank { "Not provided" }}" })
         profile.addView(label("CLIENT NOTES", 12f, true).apply { setTextColor(teal) })
-        profile.addView(label(c.notes.ifBlank { "No notes saved" }, 15f))
+        profile.addView(label(c.notes.ifBlank { "No notes saved" }, 15f).apply { contentDescription = "Client notes: ${c.notes.ifBlank { "No notes saved" }}" })
         profile.addView(label("${appointmentLabel(bookingCount(c.name))} • View history below", 13f).apply {
             setTextColor(muted)
+            contentDescription = "${appointmentLabel(bookingCount(c.name))}. Use History button to view appointments."
         })
         val dialog = AlertDialog.Builder(this)
             .setTitle(c.name)
