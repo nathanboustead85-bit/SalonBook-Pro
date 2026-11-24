@@ -305,7 +305,9 @@ class ClientActivity : Activity() {
                 elevation = dp(2).toFloat()
                 isClickable = true
                 isFocusable = true
-                contentDescription = "Open client $name"
+                contentDescription = if (c != null)
+                    "Open client profile for $name. $count appointments."
+                else "View appointment history for $name. $count appointments."
                 setOnClickListener { if (c != null) details(c.id) else appointmentHistory(name) }
             }
             panel.addView(label(name, 17f, true))
