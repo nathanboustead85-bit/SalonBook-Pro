@@ -281,6 +281,11 @@ class ClientActivity : Activity() {
             isAllCaps = false
             setOnClickListener { showPossibleDuplicates() }
         }, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(12) })
+        content.addView(Button(this).apply {
+            text = "Client data integrity check"
+            isAllCaps = false
+            setOnClickListener { showClientIntegrityCheck() }
+        }, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(12) })
         val directory = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(directory)
         directoryContainer = directory
@@ -321,6 +326,42 @@ class ClientActivity : Activity() {
         }
         AlertDialog.Builder(this)
             .setTitle("Possible duplicate clients")
+            .setMessage(report)
+            .setPositiveButton("Close", null)
+            .show()
+    }
+
+    /** Read-only local review; no backup, restore, repair or client edits. */
+    private fun showClientIntegrityCheck() {
+        if (!clientDataReadable) {
+            AlertDialog.Builder(this)
+                .setTitle("Client data integrity check")
+                .setMessage("Saved client records could not be read. No changes were made. Do not clear app data.")
+                .setPositiveButton("Close", null)
+                .show()
+            return
+        }
+        val total = records.size
+        val missingPhone = records.count { it.phone.isBlank() }
+        val missingEmail = records.count { it.email.isBlank() }
+        val missingEither = records.count { it.phone.isBlank() || it.email.isBlank() }
+        val missingBoth = records.count { it.phone.isBlank() && it.email.isBlank() }
+        val uniqueIds = records.map { it.id }.filter { it.isNotBlank() }.toSet().size
+        val invalidIds = records.count { it.id.isBlank() }
+        val duplicateIds = total - invalidIds - uniqueIds
+        val report = listOf(
+            "Saved clients: $total",
+            "Missing phone: $missingPhone",
+            "Missing email: $missingEmail",
+            "Missing phone or email: $missingEither",
+            "Missing both: $missingBoth",
+            "Missing client IDs: $invalidIds",
+            "Repeated client IDs: $duplicateIds",
+            "",
+            "Review only — no records were changed, repaired, merged or deleted."
+        ).joinToString("\n")
+        AlertDialog.Builder(this)
+            .setTitle("Client data integrity check")
             .setMessage(report)
             .setPositiveButton("Close", null)
             .show()
