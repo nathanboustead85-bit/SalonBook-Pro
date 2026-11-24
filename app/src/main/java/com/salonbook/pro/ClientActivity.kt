@@ -2,6 +2,9 @@ package com.salonbook.pro
 
 import android.app.Activity
 import android.content.Intent
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.view.View
@@ -520,6 +523,28 @@ class ClientActivity : Activity() {
                     } catch (_: android.content.ActivityNotFoundException) {
                         Toast.makeText(this@ClientActivity, "No email app available", Toast.LENGTH_SHORT).show()
                     }
+                }
+            })
+        }
+        if (c.phone.isNotBlank()) {
+            profile.addView(Button(this).apply {
+                text = "Copy phone number"
+                isAllCaps = false
+                setOnClickListener {
+                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Client phone number", c.phone.trim()))
+                    Toast.makeText(this@ClientActivity, "Phone number copied", Toast.LENGTH_SHORT).show()
+                }
+            })
+        }
+        if (c.email.isNotBlank()) {
+            profile.addView(Button(this).apply {
+                text = "Copy email address"
+                isAllCaps = false
+                setOnClickListener {
+                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Client email address", c.email.trim()))
+                    Toast.makeText(this@ClientActivity, "Email address copied", Toast.LENGTH_SHORT).show()
                 }
             })
         }
