@@ -1,0 +1,4 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');const c=fs.readFileSync('app/src/main/java/com/salonbook/pro/ClientActivity.kt','utf8'),b=fs.readFileSync('app/build.gradle.kts','utf8');
+test('client contact labels clarify phone and email',()=>{for(const x of ['?.let { "Phone: $it" }','?.let { "Email: $it" }','appointmentLabel(count)','joinToString(" • ")'])assert.ok(c.includes(x),x);});
+test('existing directory search, sort, navigation and safety retained',()=>{for(const x of ['Reset search and sorting','Most appointments','clientDataReadable','if (c != null) details(c.id) else appointmentHistory(name)'])assert.ok(c.includes(x),x);});
+test('isolated build 21',()=>{for(const x of ['versionCode = 21','versionName = "0.2.19"','applicationIdSuffix = ".isolated"'])assert.ok(b.includes(x),x);});
