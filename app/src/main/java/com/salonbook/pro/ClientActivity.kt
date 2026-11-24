@@ -30,6 +30,7 @@ class ClientActivity : Activity() {
     private val muted = Color.rgb(108, 120, 117)
     private var query = ""
     private var sortBy = "Name A-Z"
+    private var contactFilter = "All clients"
     private var clientDataReadable = true
     private val mint = Color.rgb(231, 244, 239)
 
@@ -204,6 +205,20 @@ class ClientActivity : Activity() {
         content.addView(searchRow, LinearLayout.LayoutParams(-1, -2).apply {
             bottomMargin = dp(12)
         })
+        val contactFilterControl = Spinner(this).apply {
+            val options = listOf("All clients", "Missing phone", "Missing email", "Missing phone or email")
+            adapter = ArrayAdapter(this@ClientActivity, android.R.layout.simple_spinner_dropdown_item, options)
+            setSelection(0)
+            onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    contactFilter = options[position]
+                    refreshDirectory()
+                }
+            }
+        }
+        content.addView(label("CONTACT DETAILS", 12f, true).apply { setTextColor(teal) })
+        content.addView(contactFilterControl, LinearLayout.LayoutParams(-1, dp(48)).apply { bottomMargin = dp(8) })
         val sortControl = Spinner(this).apply {
             val options = listOf("Name A-Z", "Name Z-A", "Most appointments")
             adapter = ArrayAdapter(this@ClientActivity,
@@ -234,6 +249,8 @@ class ClientActivity : Activity() {
                 search.setText("")
                 search.clearFocus()
                 sortControl.setSelection(0)
+                contactFilterControl.setSelection(0)
+                contactFilter = "All clients"
                 sortBy = "Name A-Z"
                 prefs.edit().putString("client_directory_sort_v1", sortBy).apply()
                 refreshDirectory()
@@ -264,10 +281,18 @@ class ClientActivity : Activity() {
         val normalizedQuery = normalized(query)
         val matching = directoryNames.filter { name ->
             val contact = records.firstOrNull { it.name.equals(name, ignoreCase = true) }
-            normalized(name).contains(normalizedQuery) ||
+            val missingPhone = contact?.phone.isNullOrBlank()
+            val missingEmail = contact?.email.isNullOrBlank()
+            val matchesContactFilter = when (contactFilter) {
+                "Missing phone" -> missingPhone
+                "Missing email" -> missingEmail
+                "Missing phone or email" -> missingPhone || missingEmail
+                else -> true
+            }
+            matchesContactFilter && (normalized(name).contains(normalizedQuery) ||
                 (contact?.phone?.let { normalized(it).contains(normalizedQuery) } == true) ||
                 (contact?.email?.let { normalized(it).contains(normalizedQuery) } == true) ||
-                (contact?.notes?.let { normalized(it).contains(normalizedQuery) } == true)
+                (contact?.notes?.let { normalized(it).contains(normalizedQuery) } == true))
         }
         val visible = when (sortBy) {
             "Name Z-A" -> matching.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it })
@@ -280,7 +305,7 @@ class ClientActivity : Activity() {
         target.addView(label("CLIENT DIRECTORY • ${clientLabel(directoryNames.size).uppercase(Locale.UK)}", 13f, true))
         target.addView(label(
             if (query.isNotBlank()) "Showing ${clientLabel(visible.size)} of ${clientLabel(directoryNames.size)} • Sorted: $sortBy"
-            else "Showing all ${clientLabel(visible.size)} • Sorted: $sortBy", 13f
+            else "Showing ${clientLabel(visible.size)} • Filter: $contactFilter • Sorted: $sortBy", 13f
         ).apply {
             setTextColor(teal)
             contentDescription = "Client directory results: ${clientLabel(visible.size)} of ${clientLabel(directoryNames.size)}. Sorting: $sortBy"
