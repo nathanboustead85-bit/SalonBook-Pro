@@ -36,6 +36,8 @@ class ClientActivity : Activity() {
     data class Client(val id: String, var name: String, var phone: String,
                       var email: String, var notes: String)
 
+    private fun appointmentLabel(count: Int) = if (count == 1) "1 appointment" else "$count appointments"
+
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
     private fun surface(color: Int = Color.WHITE): GradientDrawable =
         GradientDrawable().apply { setColor(color); cornerRadius = dp(18).toFloat() }
@@ -291,7 +293,6 @@ class ClientActivity : Activity() {
             }
             target.addView(label(emptyMessage, 15f))
         }
-        fun appointmentLabel(count: Int) = if (count == 1) "1 appointment" else "$count appointments"
         // Alphabetical section markers improve scanning without changing client order.
         var previousSection: String? = null
         visible.forEach { name ->
