@@ -170,7 +170,7 @@ class ClientActivity : Activity() {
         card("+ Add client", "Save a name, phone, email and notes") { edit() }
 
         val search = EditText(this).apply {
-            hint = "Search name, phone or email"
+            hint = "Search name, phone, email or notes"
             setSingleLine(true)
             inputType = InputType.TYPE_CLASS_TEXT
             setText(query)
@@ -266,7 +266,8 @@ class ClientActivity : Activity() {
             val contact = records.firstOrNull { it.name.equals(name, ignoreCase = true) }
             normalized(name).contains(normalizedQuery) ||
                 (contact?.phone?.let { normalized(it).contains(normalizedQuery) } == true) ||
-                (contact?.email?.let { normalized(it).contains(normalizedQuery) } == true)
+                (contact?.email?.let { normalized(it).contains(normalizedQuery) } == true) ||
+                (contact?.notes?.let { normalized(it).contains(normalizedQuery) } == true)
         }
         val visible = when (sortBy) {
             "Name Z-A" -> matching.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it })
