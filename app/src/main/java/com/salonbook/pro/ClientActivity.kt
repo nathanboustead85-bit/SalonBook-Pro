@@ -589,6 +589,26 @@ class ClientActivity : Activity() {
                 Toast.makeText(this@ClientActivity, "Client summary copied", Toast.LENGTH_SHORT).show()
             }
         })
+        profile.addView(Button(this).apply {
+            text = "Share client contact"
+            isAllCaps = false
+            setOnClickListener {
+                val summary = listOfNotNull(
+                    c.name.trim().takeIf { it.isNotBlank() },
+                    c.phone.trim().takeIf { it.isNotBlank() }?.let { "Phone: $it" },
+                    c.email.trim().takeIf { it.isNotBlank() }?.let { "Email: $it" }
+                ).joinToString("\n")
+                val share = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, summary)
+                }
+                try {
+                    startActivity(Intent.createChooser(share, "Share client contact"))
+                } catch (_: android.content.ActivityNotFoundException) {
+                    Toast.makeText(this@ClientActivity, "No app available to share contact", Toast.LENGTH_SHORT).show()
+                }
+            }
+        })
         profile.addView(label("CLIENT NOTES", 12f, true).apply { setTextColor(teal) })
         profile.addView(label(c.notes.ifBlank { "No notes saved" }, 15f).apply { contentDescription = "Client notes: ${c.notes.ifBlank { "No notes saved" }}" })
         profile.addView(label("${appointmentLabel(bookingCount(c.name))} • View history below", 13f).apply {
