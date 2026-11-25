@@ -3,7 +3,6 @@ package com.salonbook.pro
 import android.util.AtomicFile
 import java.io.File
 import java.security.MessageDigest
-import java.io.IOException
 
 /** Dedicated offline preview history. Never accesses bookings or sends messages. */
 internal class PersistentReminderPreviewLedger(directory: File) {
@@ -18,13 +17,16 @@ internal class PersistentReminderPreviewLedger(directory: File) {
         if (!ReminderPreviewLedger().claimPreview(candidate, current, owner, event, eligible) || current == null) return@synchronized false
         try {
             val entries = if (file.baseFile.exists() || File(file.baseFile.path + ".bak").exists()) {
-                if (file.baseFile.length() > 700000L) return@synchronized false
+                val backup = File(file.baseFile.path + ".bak")
+                val committed = if (backup.exists()) backup else file.baseFile
+                if (!committed.isFile || committed.length() > 700000L) return@synchronized false
                 val lines = file.readFully().toString(Charsets.UTF_8).split("\n")
                 if (lines.size < 2 || lines.first() != "BOUSTIO-PREVIEW-1") return@synchronized false
                 val payload = lines.dropLast(1).joinToString("\n")
                 if (digest(payload) != lines.last()) return@synchronized false
                 val keys = lines.drop(1).dropLast(1)
                 if (keys.size > LIMIT || keys.any { !it.matches(Regex("[0-9a-f]{64}")) } || keys.distinct().size != keys.size) return@synchronized false
+                // AtomicFile restores the committed copy and discards interrupted replacement writes.
                 keys.toMutableSet()
             } else {
                 if (File(file.baseFile.path + ".new").exists()) return@synchronized false
