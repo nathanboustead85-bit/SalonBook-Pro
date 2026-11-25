@@ -51,4 +51,44 @@ class CancellationIntegrationPreviewTest {
         assertTrue(coordinator.communicate(canceled,"owner","owner",business,contact,state,state,100){_,_->error("disabled")}.isEmpty())
         assertTrue(canceled.snapshot.booking.canceled)
     }
+    @Test fun concurrentCommunicationAndPartialHistoryFailure() {
+        val dir = folder.root
+        val coordinator = CancellationIntegrationPreview(dir)
+        val canceled = coordinator.cancel(appointment,appointment,"owner","owner",100)!!
+        val controls = BusinessCommunicationControlsPreview(dir)
+        assertTrue(controls.change("owner","owner",controls.read("owner","owner")!!,true,false,false,false,50))
+        val historyFile = java.io.File(dir,"communication-history-v1.state")
+        historyFile.writeText("corrupt")
+        val calls = java.util.concurrent.atomic.AtomicInteger()
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(8)
+        try {
+            val results = pool.invokeAll(List(64) { java.util.concurrent.Callable {
+                coordinator.communicate(canceled,"owner","owner",business,contact,state,state,100) { _,_ ->
+                    calls.incrementAndGet()
+                    CommunicationRecoveryPreview.Response.ACCEPTED
+                }
+            } }).map { it.get() }
+            assertEquals(1,calls.get())
+            assertTrue(results.all { it[email]?.trackingSaved == false })
+        } finally { pool.shutdownNow() }
+        assertTrue(historyFile.delete())
+        val repaired = coordinator.communicate(canceled,"owner","owner",business,contact,state,state,200){_,_->error("duplicate")}
+        assertTrue(repaired[email]!!.trackingSaved)
+        assertEquals(1,calls.get())
+    }
+    @Test fun emergencyWithdrawalAndScheduleCorruption() {
+        val dir = folder.root
+        val coordinator = CancellationIntegrationPreview(dir)
+        val canceled = coordinator.cancel(appointment,appointment,"owner","owner",100)!!
+        val controls = BusinessCommunicationControlsPreview(dir)
+        assertTrue(controls.change("owner","owner",controls.read("owner","owner")!!,true,true,false,true,50))
+        assertTrue(coordinator.communicate(canceled,"owner","owner",business,contact,state,state,100){_,_->error("emergency")}.isEmpty())
+        assertTrue(ReminderSchedulePreview(dir).cancellationRecorded(canceled.snapshot,"owner","owner"))
+        assertFalse(ReminderSchedulePreview(dir).cancellationRecorded(canceled.snapshot,"other","other"))
+        assertTrue(controls.change("owner","owner",controls.read("owner","owner")!!,true,true,false,false,60))
+        val withdrawn = state.copy(revision=3,email=CommunicationPreferencesPreview.Choice(false,70),whatsapp=CommunicationPreferencesPreview.Choice(false,70))
+        assertTrue(coordinator.communicate(canceled,"owner","owner",business,contact,state,withdrawn,100){_,_->error("withdrawn")}.isEmpty())
+        java.io.File(dir,"reminder-schedule-v1.state").writeText("corrupt")
+        assertTrue(coordinator.communicate(canceled,"owner","owner",business,contact,state,state,100){_,_->error("corrupt schedule")}.isEmpty())
+    }
 }
