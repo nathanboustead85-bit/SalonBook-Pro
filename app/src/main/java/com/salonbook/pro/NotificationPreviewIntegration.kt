@@ -5,6 +5,7 @@ import java.io.File
 /** Offline only. Caller supplies current snapshots; no delivery or scheduling. */
 internal class NotificationPreviewIntegration(directory: File, private val health: NotificationHealthMonitor = NotificationHealthMonitor(directory)) {
     private val ledger = PersistentReminderPreviewLedger(directory)
+    private val retry = NotificationRetryGate(directory)
     fun healthState() = health.snapshot()
     @Synchronized fun preview(
         candidate: NotificationSafetyPolicy.BookingSnapshot?,
@@ -30,7 +31,8 @@ internal class NotificationPreviewIntegration(directory: File, private val healt
             else -> return rejected
         }
         // Duplicate and storage failures intentionally share a generic rejection.
-        val result = ledger.claimResult(candidate, current, owner, event, true)
+        val result = retry.attempt(nowMillis) { ledger.claimResult(candidate, current, owner, event, true) }
+            ?: return rejected
         health.record(result)
         if (result != PersistentReminderPreviewLedger.Result.CLAIMED) return rejected
         return NotificationPrivacyPolicy.diagnostic(NotificationPrivacyPolicy.Outcome.PREVIEW_ALLOWED)
