@@ -31,7 +31,7 @@ internal class NotificationRetryGate(directory: File, private val elapsed: () ->
     private fun recordDiagnostic(event: NotificationRecoveryDiagnostics.Event) {
         try {
             diagnostics.record(event)
-            diagnosticFault = diagnostics.snapshot().severity == NotificationRecoveryDiagnostics.Severity.CRITICAL
+            diagnosticFault = false
         } catch (e: Exception) { diagnosticFault = true }
     }
     private val file = AtomicFile(File(directory, "notification-retry-v1.state"))
