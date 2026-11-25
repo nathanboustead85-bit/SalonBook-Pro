@@ -3,7 +3,7 @@ const prefs=fs.readFileSync('app/src/main/java/com/salonbook/pro/NotificationPre
 const policy=fs.readFileSync('app/src/main/java/com/salonbook/pro/NotificationSafetyPolicy.kt','utf8');
 const gradle=fs.readFileSync('app/build.gradle.kts','utf8');
 test('preview requires a recorded and nonwithdrawn consent',()=>{
- for(const s of ['if (!hasRecordedConsent(consent)) return false','consent.consentRecordedAtMillis > 0L','consent.consentWithdrawnAtMillis == null','consent.customerId.isNotBlank()'])assert.ok(prefs.includes(s),s);
+ for(const s of ['if (consent == null || !hasRecordedConsent(consent)) return false','consent.consentRecordedAtMillis > 0L','consent.consentWithdrawnAtMillis == null','consent.customerId.isNotBlank()'])assert.ok(prefs.includes(s),s);
 });
 test('revocation disables both contact channels',()=>{
  for(const s of ['fun withdrawConsent','require(withdrawnAtMillis > 0L)','emailNotificationsAllowed = false','whatsappContactAllowed = false','consentWithdrawnAtMillis = withdrawnAtMillis'])assert.ok(prefs.includes(s),s);
