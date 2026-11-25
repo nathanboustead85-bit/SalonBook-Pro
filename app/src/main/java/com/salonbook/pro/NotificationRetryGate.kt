@@ -7,7 +7,7 @@ import java.io.File
 import java.security.MessageDigest
 
 /** Offline, process-wide serialization. No timers, delivery, or customer identifiers. */
-internal class NotificationRetryGate(directory: File) {
+internal class NotificationRetryGate(directory: File, private val elapsed: () -> Long = { SystemClock.elapsedRealtime() }) {
     companion object {
         private val lock = Any()
         private val processEpoch = UUID.randomUUID().toString()
@@ -55,7 +55,7 @@ internal class NotificationRetryGate(directory: File) {
         attemptInEpoch(now, "legacy", operation)
 
     fun attemptMonotonic(operation: () -> PersistentReminderPreviewLedger.Result) =
-        attemptInEpoch(SystemClock.elapsedRealtime(), processEpoch, operation)
+        attemptInEpoch(elapsed(), processEpoch, operation)
 
     internal fun attemptInEpoch(now: Long, epoch: String, operation: () -> PersistentReminderPreviewLedger.Result): PersistentReminderPreviewLedger.Result? = synchronized(lock) {
         if (now < 0 || now > Long.MAX_VALUE - COOLDOWN) return@synchronized null
