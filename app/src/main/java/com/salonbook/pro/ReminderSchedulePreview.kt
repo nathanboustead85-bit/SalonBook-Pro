@@ -80,5 +80,17 @@ internal class ReminderSchedulePreview(directory: File? = null) {
         next[key] = Entry(booking.revision,fingerprint,events)
         if (save(next)) events.toList() else emptyList()
     }
+    /** Hold the schedule lock through the offline claim to prevent concurrent reconciliation. */
+    fun claimScheduled(event: Event, candidate: SecureReminderPlan.Snapshot?, current: SecureReminderPlan.Snapshot?, owner: String?, requested: String?, consent: NotificationPreferences.CustomerConsent?, settings: NotificationPreferences.BusinessSettings, now: Long): PersistentReminderPreviewLedger.Result = synchronized(lock) {
+        val rejected = PersistentReminderPreviewLedger.Result.REJECTED
+        val directory = file?.baseFile?.parentFile ?: return@synchronized rejected
+        if (current == null || candidate != current || !NotificationPrivacyPolicy.authorized(current.booking,owner,requested)) return@synchronized rejected
+        val booking = current.booking
+        val stored = load() ?: return@synchronized PersistentReminderPreviewLedger.Result.STORAGE_FAILURE
+        val entry = stored[hash(listOf(booking.businessId,booking.bookingId))] ?: return@synchronized rejected
+        val fingerprint = hash(listOf(booking.businessId,booking.bookingId,booking.revision.toString(),booking.confirmed.toString(),booking.canceled.toString(),booking.email?.let { "present:$it" } ?: "absent",booking.emailConsent.toString(),booking.businessEmailEnabled.toString(),current.customerId,current.appointmentAtMillis.toString()))
+        if (entry.revision != booking.revision || entry.fingerprint != fingerprint || event !in entry.events) return@synchronized rejected
+        ReminderExecutionPreview(directory).claimResult(event,candidate,current,owner,requested,consent,settings,now)
+    }
     fun count(): Int = synchronized(lock) { load()?.values?.sumOf { it.events.size } ?: 0 }
 }
