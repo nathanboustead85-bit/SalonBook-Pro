@@ -1,0 +1,6 @@
+# Phase 63.10 offline audit
+Run the full isolated Android JVM suite and dashboard spacing/alignment tests. Verify isolated package, version 65, no INTERNET permission and signature before installing.
+## Samsung verification
+Install as an update, never uninstall or clear data. Record existing appointment and client counts first. Verify app opens, dashboard cards align, calendar and existing appointments remain unchanged, client records remain intact, and Client Data Integrity Check opens. No real notifications should be sent. Do not delete real appointments for this test.
+## Outstanding launch gates
+Guarded claimScheduled checks durable schedule membership under a process-local lock. Legacy preview claim remains separate and must not be used for live execution. Caller snapshots are not authoritative backend reads. Persistent retry and cancellation outbox are offline components; no background scheduler or delivery provider. Cancellation, reminder tombstone and outbox must be committed atomically in the actual backend; current audit exercises separate operations only. Provider idempotency, recipient revalidation, consent, cross-device transactions, storage retention and recovery after total file loss remain outstanding. No live features or deployment approved.
