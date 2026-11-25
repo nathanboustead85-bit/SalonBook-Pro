@@ -14,8 +14,9 @@ internal class CancellationIntegrationPreview(private val directory: File) {
                     now: Long, simulate: (AppointmentCancellationPreview.Channel,CancellationMessageTemplate.Message) -> CommunicationRecoveryPreview.Response):
                     Map<AppointmentCancellationPreview.Channel,Outcome> = synchronized(lock) {
         val snapshot = committed.snapshot
-        if (!snapshot.booking.canceled || !NotificationPrivacyPolicy.authorized(snapshot.booking,owner,requested)) return@synchronized emptyMap()
+        if (now <= 0 || now >= Long.MAX_VALUE-120000L || !snapshot.booking.canceled || !NotificationPrivacyPolicy.authorized(snapshot.booking,owner,requested)) return@synchronized emptyMap()
         ReminderSchedulePreview(directory).reconcile(snapshot,snapshot,owner,requested,null,NotificationPreferences.BusinessSettings(),now)
+        if (!ReminderSchedulePreview(directory).cancellationRecorded(snapshot,owner,requested)) return@synchronized emptyMap()
         val controls = BusinessCommunicationControlsPreview(directory).effective(owner,requested)
         val eligible = CommunicationPreferencesPreview.eligible(snapshot,owner,requested,contact,preferences,current,controls,now)
         val results = mutableMapOf<AppointmentCancellationPreview.Channel,Outcome>()
@@ -30,7 +31,9 @@ internal class CancellationIntegrationPreview(private val directory: File) {
             val previous = tracking.lookup(snapshot,owner,requested,channel)
             if (previous != null && previous.status != DeliveryStatusPreview.Status.PENDING) continue
             if (previous == null && tracking.update(snapshot,owner,requested,channel,now,DeliveryStatusPreview.Status.PENDING) != DeliveryStatusPreview.Result.UPDATED) continue
-            val recovery = CommunicationRecoveryPreview(directory).attempt(snapshot,owner,requested,contact,preferences,current,controls,channel,now) { simulate(channel,message) }
+            val freshControls = BusinessCommunicationControlsPreview(directory).effective(owner,requested)
+            if (channel !in CommunicationPreferencesPreview.eligible(snapshot,owner,requested,contact,preferences,current,freshControls,now)) continue
+            val recovery = CommunicationRecoveryPreview(directory).attempt(snapshot,owner,requested,contact,preferences,current,freshControls,channel,now) { simulate(channel,message) }
             val status = when(recovery) {
                 CommunicationRecoveryPreview.Status.PROCESSED -> DeliveryStatusPreview.Status.ACCEPTED
                 CommunicationRecoveryPreview.Status.EXHAUSTED, CommunicationRecoveryPreview.Status.REJECTED -> DeliveryStatusPreview.Status.FAILED
@@ -46,7 +49,7 @@ internal class CancellationIntegrationPreview(private val directory: File) {
                     else -> CommunicationHistoryPreview.Status.UNKNOWN
                 }
                 val hr = history.record(snapshot,owner,requested,channel,time,h)
-                val tr = tracking.update(snapshot,owner,requested,channel,time,status)
+                val tr = if (hr in setOf(CommunicationHistoryPreview.Result.RECORDED,CommunicationHistoryPreview.Result.DUPLICATE)) tracking.update(snapshot,owner,requested,channel,time,status) else DeliveryStatusPreview.Result.STORAGE_FAILURE
                 saved = hr in setOf(CommunicationHistoryPreview.Result.RECORDED,CommunicationHistoryPreview.Result.DUPLICATE) &&
                     tr in setOf(DeliveryStatusPreview.Result.UPDATED,DeliveryStatusPreview.Result.DUPLICATE)
             }
