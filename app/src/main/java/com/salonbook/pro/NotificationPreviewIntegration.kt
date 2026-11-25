@@ -6,6 +6,7 @@ import java.io.File
 internal class NotificationPreviewIntegration(directory: File, private val health: NotificationHealthMonitor = NotificationHealthMonitor(directory)) {
     private val ledger = PersistentReminderPreviewLedger(directory)
     private val retry = NotificationRetryGate(directory)
+    fun recoveryState() = retry.recoveryState()
     fun healthState() = health.snapshot()
     @Synchronized fun preview(
         candidate: NotificationSafetyPolicy.BookingSnapshot?,
