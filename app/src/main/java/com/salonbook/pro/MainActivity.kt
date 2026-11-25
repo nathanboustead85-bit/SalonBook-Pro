@@ -436,7 +436,9 @@ class MainActivity : Activity() {
                 textSize = 14f
                 setTextColor(muted)
             })
-            container.addView(empty)
+            container.addView(empty, LinearLayout.LayoutParams(-1, -2).apply {
+                bottomMargin = dp(14)
+            })
         } else {
             upcoming.forEach { bookingCard(it) }
         }
