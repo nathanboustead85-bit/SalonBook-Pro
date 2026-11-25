@@ -63,10 +63,16 @@ class NotificationRetryGateTest {
         assertEquals(success, NotificationRetryGate(folder.root).attemptInEpoch(13599999, "second") { success })
     }
     @Test fun monotonicTimingIgnoresWallClock() {
-        val gate = NotificationRetryGate(folder.root)
+        var elapsed = 1000L
+        val gate = NotificationRetryGate(folder.root) { elapsed }
         assertEquals(fault, gate.attemptMonotonic() { fault })
         android.os.SystemClock.setCurrentTimeMillis(9000000000000L)
         assertNull(gate.attemptMonotonic() { error("blocked") })
+        android.os.SystemClock.setCurrentTimeMillis(1000L)
+        elapsed = 30999L
+        assertNull(gate.attemptMonotonic() { error("blocked") })
+        elapsed = 31000L
+        assertEquals(success, gate.attemptMonotonic() { success })
     }
     @Test fun interruptedReservationSurvivesRestart() {
         val gate = NotificationRetryGate(folder.root)
