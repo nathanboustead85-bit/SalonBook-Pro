@@ -38,7 +38,7 @@ internal object NotificationPreferences {
         consent: CustomerConsent?,
         type: ReminderType
     ): Boolean {
-        if (!hasRecordedConsent(consent)) return false
+        if (consent == null || !hasRecordedConsent(consent)) return false
         return when (type) {
             ReminderType.CONFIRMATION ->
                 settings.emailConfirmationsEnabled && consent.emailNotificationsAllowed
