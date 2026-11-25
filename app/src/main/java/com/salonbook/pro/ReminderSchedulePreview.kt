@@ -92,5 +92,12 @@ internal class ReminderSchedulePreview(directory: File? = null) {
         if (entry.revision != booking.revision || entry.fingerprint != fingerprint || event !in entry.events) return@synchronized rejected
         ReminderExecutionPreview(directory).claimResult(event,candidate,current,owner,requested,consent,settings,now)
     }
+    fun cancellationRecorded(snapshot: SecureReminderPlan.Snapshot, owner: String?, requested: String?): Boolean = synchronized(lock) {
+        val b = snapshot.booking
+        if (!b.canceled || !NotificationPrivacyPolicy.authorized(b,owner,requested)) return@synchronized false
+        val entry = load()?.get(hash(listOf(b.businessId,b.bookingId))) ?: return@synchronized false
+        val fingerprint = hash(listOf(b.businessId,b.bookingId,b.revision.toString(),b.confirmed.toString(),b.canceled.toString(),b.email?.let { "present:$it" } ?: "absent",b.emailConsent.toString(),b.businessEmailEnabled.toString(),snapshot.customerId,snapshot.appointmentAtMillis.toString()))
+        entry.revision == b.revision && entry.fingerprint == fingerprint && entry.events.isEmpty()
+    }
     fun count(): Int = synchronized(lock) { load()?.values?.sumOf { it.events.size } ?: 0 }
 }
