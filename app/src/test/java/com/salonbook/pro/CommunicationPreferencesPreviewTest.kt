@@ -13,7 +13,7 @@ class CommunicationPreferencesPreviewTest {
     private fun change(s: CommunicationPreferencesPreview.State, channel: AppointmentCancellationPreview.Channel, allowed: Boolean, now: Long) =
         CommunicationPreferencesPreview.change(s,s,"customer","owner",channel,allowed,now)!!
     private fun eligible(s: CommunicationPreferencesPreview.State, controls: CommunicationPreferencesPreview.Controls = enabled) =
-        CommunicationPreferencesPreview.eligible(snapshot,"owner","owner",contact,s,s,100)
+        CommunicationPreferencesPreview.eligible(snapshot,"owner","owner",contact,s,s,controls,100)
     @Test fun defaultsAndIndependentWithdrawal() {
         assertTrue(eligible(initial).isEmpty())
         val first = change(initial,email,true,10)
