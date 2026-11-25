@@ -70,7 +70,8 @@ internal class NotificationRetryGate(directory: File, private val elapsed: () ->
             return@synchronized null
         }
         if (saved.attempts > 0 && now < saved.until) return@synchronized null
-        val count = if (saved.attempts == LIMIT) 1 else saved.attempts + 1
+        val critical = diagnostics.snapshot().severity == NotificationRecoveryDiagnostics.Severity.CRITICAL
+        val count = if (critical) LIMIT else if (saved.attempts == LIMIT) 1 else saved.attempts + 1
         val delay = if (count == LIMIT) COOLDOWN else delays[count - 1]
         // Reserve before execution so interruption cannot create an unbounded retry loop.
         if (saved.attempts == LIMIT) diagnostics.record(NotificationRecoveryDiagnostics.Event.STALLED)
