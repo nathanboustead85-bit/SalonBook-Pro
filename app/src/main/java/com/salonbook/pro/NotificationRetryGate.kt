@@ -18,7 +18,22 @@ internal class NotificationRetryGate(directory: File, private val elapsed: () ->
             .digest(s.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it.toInt() and 255) }
     }
     private val diagnostics = NotificationRecoveryDiagnostics(directory)
-    fun recoveryState() = diagnostics.snapshot()
+    private var diagnosticFault = false
+    fun recoveryState(): NotificationRecoveryDiagnostics.Snapshot = synchronized(lock) {
+        try {
+            if (diagnosticFault) NotificationRecoveryDiagnostics.Snapshot(3, 3, NotificationRecoveryDiagnostics.Severity.CRITICAL)
+            else diagnostics.snapshot()
+        } catch (e: Exception) {
+            diagnosticFault = true
+            NotificationRecoveryDiagnostics.Snapshot(3, 3, NotificationRecoveryDiagnostics.Severity.CRITICAL)
+        }
+    }
+    private fun recordDiagnostic(event: NotificationRecoveryDiagnostics.Event) {
+        try {
+            diagnostics.record(event)
+            diagnosticFault = diagnostics.snapshot().severity == NotificationRecoveryDiagnostics.Severity.CRITICAL
+        } catch (e: Exception) { diagnosticFault = true }
+    }
     private val file = AtomicFile(File(directory, "notification-retry-v1.state"))
     private data class State(val attempts: Int, val until: Long, val epoch: String = "legacy")
     private fun read(): State? {
@@ -57,7 +72,7 @@ internal class NotificationRetryGate(directory: File, private val elapsed: () ->
         attemptInEpoch(now, "legacy", operation)
 
     fun attemptMonotonic(operation: () -> PersistentReminderPreviewLedger.Result) =
-        attemptInEpoch(elapsed(), processEpoch, operation)
+        try { attemptInEpoch(elapsed(), processEpoch, operation) } catch (e: Exception) { null }
 
     internal fun attemptInEpoch(now: Long, epoch: String, operation: () -> PersistentReminderPreviewLedger.Result): PersistentReminderPreviewLedger.Result? = synchronized(lock) {
         if (now < 0 || now > Long.MAX_VALUE - COOLDOWN) return@synchronized null
@@ -65,27 +80,28 @@ internal class NotificationRetryGate(directory: File, private val elapsed: () ->
         // Unknown history or a deadline beyond the maximum permitted interval:
         // persist a conservative cooldown before allowing any further operation.
         if (saved == null || (saved.attempts > 0 && saved.epoch != epoch) || saved.until > now + COOLDOWN) {
-            diagnostics.record(NotificationRecoveryDiagnostics.Event.STALLED)
-            if (!write(State(LIMIT, now + COOLDOWN, epoch))) diagnostics.record(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
+            recordDiagnostic(NotificationRecoveryDiagnostics.Event.STALLED)
+            if (!write(State(LIMIT, now + COOLDOWN, epoch))) recordDiagnostic(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
             return@synchronized null
         }
         if (saved.attempts > 0 && now < saved.until) return@synchronized null
-        val critical = diagnostics.snapshot().severity == NotificationRecoveryDiagnostics.Severity.CRITICAL
+        val critical = recoveryState().severity == NotificationRecoveryDiagnostics.Severity.CRITICAL
         val count = if (critical) LIMIT else if (saved.attempts == LIMIT) 1 else saved.attempts + 1
         val delay = if (count == LIMIT) COOLDOWN else delays[count - 1]
         // Reserve before execution so interruption cannot create an unbounded retry loop.
-        if (saved.attempts == LIMIT) diagnostics.record(NotificationRecoveryDiagnostics.Event.STALLED)
+        if (saved.attempts == LIMIT) recordDiagnostic(NotificationRecoveryDiagnostics.Event.STALLED)
         if (!write(State(count, now + delay, epoch))) {
-            diagnostics.record(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
+            recordDiagnostic(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
             return@synchronized null
         }
         val result = try { operation() } catch (e: Exception) { PersistentReminderPreviewLedger.Result.STORAGE_FAILURE }
         if (result == PersistentReminderPreviewLedger.Result.STORAGE_FAILURE) {
-            diagnostics.record(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
+            recordDiagnostic(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
         } else if (!write(State(0, 0))) {
-            diagnostics.record(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
+            recordDiagnostic(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
+            return@synchronized null
         } else {
-            diagnostics.record(NotificationRecoveryDiagnostics.Event.RECOVERED)
+            recordDiagnostic(NotificationRecoveryDiagnostics.Event.RECOVERED)
         }
         result
     }
