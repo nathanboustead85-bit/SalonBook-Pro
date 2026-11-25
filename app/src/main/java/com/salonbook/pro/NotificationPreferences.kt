@@ -17,8 +17,19 @@ internal object NotificationPreferences {
         val customerId: String,
         val emailNotificationsAllowed: Boolean = false,
         val whatsappContactAllowed: Boolean = false,
-        val consentRecordedAtMillis: Long? = null
+        val consentRecordedAtMillis: Long? = null,
+        val consentWithdrawnAtMillis: Long? = null
     )
+
+    /** Revocation is fail-closed for all channels; no persistence or delivery is performed. */
+    fun withdrawConsent(consent: CustomerConsent, withdrawnAtMillis: Long): CustomerConsent {
+        require(withdrawnAtMillis > 0L) { "Withdrawal timestamp required" }
+        return consent.copy(
+            emailNotificationsAllowed = false,
+            whatsappContactAllowed = false,
+            consentWithdrawnAtMillis = withdrawnAtMillis
+        )
+    }
 
     enum class ReminderType { CONFIRMATION, HOURS_24, HOURS_2, MANUAL_WHATSAPP }
 
@@ -27,7 +38,7 @@ internal object NotificationPreferences {
         consent: CustomerConsent?,
         type: ReminderType
     ): Boolean {
-        if (consent == null || consent.customerId.isBlank()) return false
+        if (!hasRecordedConsent(consent)) return false
         return when (type) {
             ReminderType.CONFIRMATION ->
                 settings.emailConfirmationsEnabled && consent.emailNotificationsAllowed
@@ -45,5 +56,6 @@ internal object NotificationPreferences {
     /** Consent must never be inferred from an existing phone/email or an empty timestamp. */
     fun hasRecordedConsent(consent: CustomerConsent?): Boolean =
         consent != null && consent.customerId.isNotBlank() &&
-            consent.consentRecordedAtMillis != null && consent.consentRecordedAtMillis > 0L
+            consent.consentRecordedAtMillis != null && consent.consentRecordedAtMillis > 0L &&
+            consent.consentWithdrawnAtMillis == null
 }
