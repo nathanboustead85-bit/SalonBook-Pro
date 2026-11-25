@@ -56,6 +56,18 @@ class NotificationRetryGateTest {
         assertNull(NotificationRetryGate(folder.root).attempt(1000) { success })
         assertEquals(success, NotificationRetryGate(folder.root).attempt(3601000) { success })
     }
+    @Test fun newProcessEpochRequiresFreshCooldown() {
+        assertEquals(fault, NotificationRetryGate(folder.root).attemptInEpoch(1000, "first") { fault })
+        assertNull(NotificationRetryGate(folder.root).attemptInEpoch(9999999, "second") { error("blocked") })
+        assertNull(NotificationRetryGate(folder.root).attemptInEpoch(13599998, "second") { error("blocked") })
+        assertEquals(success, NotificationRetryGate(folder.root).attemptInEpoch(13599999, "second") { success })
+    }
+    @Test fun monotonicTimingIgnoresWallClock() {
+        val gate = NotificationRetryGate(folder.root)
+        assertEquals(fault, gate.attemptMonotonic() { fault })
+        android.os.SystemClock.setCurrentTimeMillis(9000000000000L)
+        assertNull(gate.attemptMonotonic() { error("blocked") })
+    }
     @Test fun interruptedReservationSurvivesRestart() {
         val gate = NotificationRetryGate(folder.root)
         assertEquals(fault, gate.attempt(1000) { throw IllegalStateException() })
