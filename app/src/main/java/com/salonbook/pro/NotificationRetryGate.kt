@@ -17,6 +17,8 @@ internal class NotificationRetryGate(directory: File, private val elapsed: () ->
         private fun hash(s: String) = MessageDigest.getInstance("SHA-256")
             .digest(s.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it.toInt() and 255) }
     }
+    private val diagnostics = NotificationRecoveryDiagnostics(directory)
+    fun recoveryState() = diagnostics.snapshot()
     private val file = AtomicFile(File(directory, "notification-retry-v1.state"))
     private data class State(val attempts: Int, val until: Long, val epoch: String = "legacy")
     private fun read(): State? {
@@ -63,16 +65,27 @@ internal class NotificationRetryGate(directory: File, private val elapsed: () ->
         // Unknown history or a deadline beyond the maximum permitted interval:
         // persist a conservative cooldown before allowing any further operation.
         if (saved == null || (saved.attempts > 0 && saved.epoch != epoch) || saved.until > now + COOLDOWN) {
-            write(State(LIMIT, now + COOLDOWN, epoch))
+            diagnostics.record(NotificationRecoveryDiagnostics.Event.STALLED)
+            if (!write(State(LIMIT, now + COOLDOWN, epoch))) diagnostics.record(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
             return@synchronized null
         }
         if (saved.attempts > 0 && now < saved.until) return@synchronized null
         val count = if (saved.attempts == LIMIT) 1 else saved.attempts + 1
         val delay = if (count == LIMIT) COOLDOWN else delays[count - 1]
         // Reserve before execution so interruption cannot create an unbounded retry loop.
-        if (!write(State(count, now + delay, epoch))) return@synchronized null
+        if (saved.attempts == LIMIT) diagnostics.record(NotificationRecoveryDiagnostics.Event.STALLED)
+        if (!write(State(count, now + delay, epoch))) {
+            diagnostics.record(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
+            return@synchronized null
+        }
         val result = try { operation() } catch (e: Exception) { PersistentReminderPreviewLedger.Result.STORAGE_FAILURE }
-        if (result != PersistentReminderPreviewLedger.Result.STORAGE_FAILURE) write(State(0, 0))
+        if (result == PersistentReminderPreviewLedger.Result.STORAGE_FAILURE) {
+            diagnostics.record(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
+        } else if (!write(State(0, 0))) {
+            diagnostics.record(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
+        } else {
+            diagnostics.record(NotificationRecoveryDiagnostics.Event.RECOVERED)
+        }
         result
     }
 }
