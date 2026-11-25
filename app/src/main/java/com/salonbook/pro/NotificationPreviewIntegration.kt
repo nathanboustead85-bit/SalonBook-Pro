@@ -3,9 +3,10 @@ package com.salonbook.pro
 import java.io.File
 
 /** Offline only. Caller supplies current snapshots; no delivery or scheduling. */
-internal class NotificationPreviewIntegration(directory: File) {
+internal class NotificationPreviewIntegration(directory: File, private val health: NotificationHealthMonitor = NotificationHealthMonitor()) {
     private val ledger = PersistentReminderPreviewLedger(directory)
-    fun preview(
+    fun healthState() = health.snapshot()
+    @Synchronized fun preview(
         candidate: NotificationSafetyPolicy.BookingSnapshot?,
         current: NotificationSafetyPolicy.BookingSnapshot?,
         authenticatedBusinessId: String?,
@@ -29,7 +30,9 @@ internal class NotificationPreviewIntegration(directory: File) {
             else -> return rejected
         }
         // Duplicate and storage failures intentionally share a generic rejection.
-        if (!ledger.claim(candidate, current, owner, event, true)) return rejected
+        val result = ledger.claimResult(candidate, current, owner, event, true)
+        health.record(result)
+        if (result != PersistentReminderPreviewLedger.Result.CLAIMED) return rejected
         return NotificationPrivacyPolicy.diagnostic(NotificationPrivacyPolicy.Outcome.PREVIEW_ALLOWED)
     }
 }
