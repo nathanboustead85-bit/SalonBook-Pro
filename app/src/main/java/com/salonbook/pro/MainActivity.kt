@@ -407,7 +407,7 @@ class MainActivity : Activity() {
             dashboardStat("Upcoming", bookings.count { it.date >= today() }),
             dashboardStat("Total bookings", bookings.size)
         ).forEach { stat ->
-            stats.addView(stat, LinearLayout.LayoutParams(0, -2, 1f).apply {
+            stats.addView(stat, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
                 marginEnd = dp(4)
             })
         }
