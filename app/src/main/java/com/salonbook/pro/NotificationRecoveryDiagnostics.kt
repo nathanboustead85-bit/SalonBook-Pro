@@ -6,6 +6,7 @@ import java.security.MessageDigest
 
 internal class NotificationRecoveryDiagnostics(directory: File) {
     enum class Event { STORAGE_FAILURE, STALLED, RECOVERED }
+    enum class Signal { NONE, WARNING, CRITICAL, RECOVERED }
     enum class Severity { HEALTHY, WARNING, CRITICAL }
     data class Snapshot(val failures: Int, val stalls: Int, val severity: Severity)
     companion object {
@@ -37,7 +38,7 @@ internal class NotificationRecoveryDiagnostics(directory: File) {
         }
     } catch (e: Exception) { state(3,3) }
     fun snapshot(): Snapshot = synchronized(lock) { if (unsaved) state(3,3) else read() }
-    fun record(event: Event) = synchronized(lock) {
+    fun record(event: Event): Signal = synchronized(lock) {
         val old = snapshot()
         val next = when(event) {
             Event.STORAGE_FAILURE -> state((old.failures + 1).coerceAtMost(LIMIT), old.stalls)
@@ -57,6 +58,12 @@ internal class NotificationRecoveryDiagnostics(directory: File) {
                 throw e
             }
             !file.readFully().contentEquals(bytes)
-        } catch (e: Exception) { true }
+         } catch (e: Exception) { true }
+        val current = if (unsaved) Severity.CRITICAL else next.severity
+        if (old.severity == current) Signal.NONE else when (current) {
+            Severity.HEALTHY -> Signal.RECOVERED
+            Severity.WARNING -> Signal.WARNING
+            Severity.CRITICAL -> Signal.CRITICAL
+        }
     }
 }
