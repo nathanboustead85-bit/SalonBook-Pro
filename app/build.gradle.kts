@@ -44,8 +44,8 @@ android {
         applicationId = "com.salonbook.pro"
         minSdk = 26
         targetSdk = 35
-        versionCode = 77
-        versionName = "0.2.75"
+        versionCode = 78
+        versionName = "0.2.76"
     }
 
     buildTypes {
