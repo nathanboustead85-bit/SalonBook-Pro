@@ -42,6 +42,19 @@ class NotificationRetryGateTest {
     @Test fun corruptStateBlocksExecution() {
         File(folder.root, "notification-retry-v1.state").writeText("invalid")
         assertNull(NotificationRetryGate(folder.root).attempt(1000) { error("must not execute") })
+        assertNull(NotificationRetryGate(folder.root).attempt(3600999) { success })
+        assertEquals(success, NotificationRetryGate(folder.root).attempt(3601000) { success })
+    }
+    @Test fun backwardClockJumpRebasesToBoundedCooldown() {
+        assertEquals(fault, NotificationRetryGate(folder.root).attempt(10_000_000) { fault })
+        assertNull(NotificationRetryGate(folder.root).attempt(1000) { success })
+        assertNull(NotificationRetryGate(folder.root).attempt(3600999) { success })
+        assertEquals(success, NotificationRetryGate(folder.root).attempt(3601000) { success })
+    }
+    @Test fun orphanedPendingWriteRecoversConservatively() {
+        File(folder.root, "notification-retry-v1.state.new").writeText("partial")
+        assertNull(NotificationRetryGate(folder.root).attempt(1000) { success })
+        assertEquals(success, NotificationRetryGate(folder.root).attempt(3601000) { success })
     }
     @Test fun interruptedReservationSurvivesRestart() {
         val gate = NotificationRetryGate(folder.root)
