@@ -55,7 +55,7 @@ internal class CommunicationHistoryPreview(directory: File) {
         val k = key(snapshot,owner,requested,channel) ?: return@synchronized Result.INVALID
         if (timestamp <= 0) return@synchronized Result.INVALID
         val map = load() ?: return@synchronized Result.STORAGE_FAILURE
-        if (map.containsKey(k)) return@synchronized Result.DUPLICATE
+        if (map.containsKey(k)) return@synchronized if (map[k]?.status == status) Result.DUPLICATE else Result.INVALID
         if (map.size >= LIMIT) return@synchronized Result.STORAGE_FAILURE
         map[k] = Entry(channel,timestamp,status)
         if (save(map)) Result.RECORDED else Result.STORAGE_FAILURE
