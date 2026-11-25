@@ -50,7 +50,13 @@ internal class NotificationRetryGate(directory: File) {
     }
     fun attempt(now: Long, operation: () -> PersistentReminderPreviewLedger.Result): PersistentReminderPreviewLedger.Result? = synchronized(lock) {
         if (now < 0 || now > Long.MAX_VALUE - COOLDOWN) return@synchronized null
-        val saved = read() ?: return@synchronized null
+        val saved = read()
+        // Unknown history or a deadline beyond the maximum permitted interval:
+        // persist a conservative cooldown before allowing any further operation.
+        if (saved == null || saved.until > now + COOLDOWN) {
+            write(State(LIMIT, now + COOLDOWN))
+            return@synchronized null
+        }
         if (now < saved.until) return@synchronized null
         val count = if (saved.attempts == LIMIT) 1 else saved.attempts + 1
         val delay = if (count == LIMIT) COOLDOWN else delays[count - 1]
