@@ -3,7 +3,7 @@ package com.salonbook.pro
 import java.io.File
 
 /** Offline only. Caller supplies current snapshots; no delivery or scheduling. */
-internal class NotificationPreviewIntegration(directory: File, private val health: NotificationHealthMonitor = NotificationHealthMonitor()) {
+internal class NotificationPreviewIntegration(directory: File, private val health: NotificationHealthMonitor = NotificationHealthMonitor(directory)) {
     private val ledger = PersistentReminderPreviewLedger(directory)
     fun healthState() = health.snapshot()
     @Synchronized fun preview(
