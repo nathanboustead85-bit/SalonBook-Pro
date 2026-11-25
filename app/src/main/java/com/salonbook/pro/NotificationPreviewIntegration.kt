@@ -31,7 +31,7 @@ internal class NotificationPreviewIntegration(directory: File, private val healt
             else -> return rejected
         }
         // Duplicate and storage failures intentionally share a generic rejection.
-        val result = retry.attempt(nowMillis) { ledger.claimResult(candidate, current, owner, event, true) }
+        val result = retry.attemptMonotonic() { ledger.claimResult(candidate, current, owner, event, true) }
             ?: return rejected
         health.record(result)
         if (result != PersistentReminderPreviewLedger.Result.CLAIMED) return rejected
