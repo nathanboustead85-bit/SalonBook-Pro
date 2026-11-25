@@ -41,7 +41,7 @@ internal class NotificationRetryGate(directory: File, private val elapsed: () ->
             val backup = File(file.baseFile.path + ".bak")
             val committed = if (backup.exists()) backup else file.baseFile
             if (!committed.exists()) {
-                if (File(file.baseFile.path + ".new").exists()) null else State(0, 0, "empty")
+                if (File(file.baseFile.path + ".new").exists() || file.baseFile.parentFile?.isDirectory != true) null else State(0, 0, "empty")
             } else if (!committed.isFile || committed.length() > 160) null
             else {
                 val parts = file.readFully().toString(Charsets.UTF_8).split("\n")
@@ -75,7 +75,7 @@ internal class NotificationRetryGate(directory: File, private val elapsed: () ->
         try { attemptInEpoch(elapsed(), processEpoch, operation) } catch (e: Exception) { null }
 
     internal fun attemptInEpoch(now: Long, epoch: String, operation: () -> PersistentReminderPreviewLedger.Result): PersistentReminderPreviewLedger.Result? = synchronized(lock) {
-        if (now < 0 || now > Long.MAX_VALUE - COOLDOWN) return@synchronized null
+        if (now < 0 || now > Long.MAX_VALUE - COOLDOWN || epoch.length !in 1..36 || epoch.contains('\n')) return@synchronized null
         val saved = read()
         // Unknown history or a deadline beyond the maximum permitted interval:
         // persist a conservative cooldown before allowing any further operation.
@@ -94,7 +94,11 @@ internal class NotificationRetryGate(directory: File, private val elapsed: () ->
             recordDiagnostic(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
             return@synchronized null
         }
-        val result = try { operation() } catch (e: Exception) { PersistentReminderPreviewLedger.Result.STORAGE_FAILURE }
+        val result = try { operation() } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            recordDiagnostic(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
+            return@synchronized null
+        } catch (e: Exception) { PersistentReminderPreviewLedger.Result.STORAGE_FAILURE }
         if (result == PersistentReminderPreviewLedger.Result.STORAGE_FAILURE) {
             recordDiagnostic(NotificationRecoveryDiagnostics.Event.STORAGE_FAILURE)
         } else if (!write(State(0, 0))) {
