@@ -19,7 +19,7 @@ import java.util.UUID
 
 class ManagementActivity : Activity() {
 
-    private val teal = Color.rgb(17, 107, 104) // Option C signature teal
+    private val teal = BoustioDesign.teal // Option C signature teal
     private val dark = Color.rgb(23, 51, 50)
     private val muted = Color.rgb(101, 113, 111)
     private val backgroundColor = Color.rgb(247, 248, 246)
