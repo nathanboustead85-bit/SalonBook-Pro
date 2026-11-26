@@ -183,6 +183,7 @@ class ClientActivity : Activity() {
         content.addView(brand)
         content.addView(label("Client management", 25f, true))
         content.addView(label("Private client records saved on this test device.", 14f))
+        content.addView(label("YOUR CLIENT DIRECTORY", 12f, true).apply { setTextColor(teal); setPadding(0, dp(16), 0, dp(8)) })
         if (!clientDataReadable) {
             content.addView(label("Client records unavailable. Editing disabled to protect saved data.", 14f, true))
         }
@@ -190,6 +191,7 @@ class ClientActivity : Activity() {
 
         val search = EditText(this).apply {
             hint = "Search name, phone, email or notes"
+            contentDescription = "Search client directory"
             setSingleLine(true)
             inputType = InputType.TYPE_CLASS_TEXT
             setText(query)
@@ -525,7 +527,7 @@ class ClientActivity : Activity() {
                     setPadding(dp(14), dp(10), dp(14), dp(10))
                     background = surface(mint)
                 }
-                val dateTime = listOf(booking.optString("date"), booking.optString("time"))
+                val dateTime = listOf(FriendlyDate.format(booking.optString("date")), booking.optString("time"))
                     .filter { it.isNotBlank() }.joinToString(" • ")
                 val service = booking.optString("service").ifBlank { "Service not provided" }
                 panel.isFocusable = true
@@ -592,7 +594,8 @@ class ClientActivity : Activity() {
         val c = records.firstOrNull { it.id == id } ?: return
         val profile = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(10), dp(20), dp(10))
+            setPadding(dp(20), dp(16), dp(20), dp(16))
+            background = surface()
         }
         profile.addView(label("CONTACT DETAILS", 12f, true).apply { setTextColor(teal) })
         profile.addView(label("Phone", 12f).apply { setTextColor(muted) })
