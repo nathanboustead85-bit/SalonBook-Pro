@@ -620,12 +620,20 @@ class ClientActivity : Activity() {
         profile.addView(label(c.phone.ifBlank { "Not provided" }, 16f).apply { contentDescription = "Phone: ${c.phone.ifBlank { "Not provided" }}" })
         profile.addView(label("Email", 12f).apply { setTextColor(muted) })
         profile.addView(label(c.email.ifBlank { "Not provided" }, 16f).apply { contentDescription = "Email: ${c.email.ifBlank { "Not provided" }}" })
+        val contactRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        profile.addView(contactRow)
+        val extraActions = mutableListOf<Button>()
+        fun contactAction(button: Button) {
+            contactRow.addView(button, LinearLayout.LayoutParams(0, dp(52), 1f).apply { marginEnd = dp(5) })
+        }
         if (c.phone.isNotBlank()) {
-            profile.addView(Button(this).apply {
+            contactAction(Button(this).apply {
             background = surface(mint)
             setTextColor(Color.rgb(0, 105, 100))
             minHeight = dp(48)
-                text = "Call client"
+                text = "Call"
+                contentDescription = "Call client"
+                textSize = 12f
                 isAllCaps = false
                 setOnClickListener {
                     try {
@@ -637,11 +645,13 @@ class ClientActivity : Activity() {
             })
         }
         if (c.email.isNotBlank()) {
-            profile.addView(Button(this).apply {
+            contactAction(Button(this).apply {
             background = surface(mint)
             setTextColor(Color.rgb(0, 105, 100))
             minHeight = dp(48)
-                text = "Email client"
+                text = "Email"
+                contentDescription = "Email client"
+                textSize = 12f
                 isAllCaps = false
                 setOnClickListener {
                     try {
@@ -653,7 +663,7 @@ class ClientActivity : Activity() {
             })
         }
         if (c.phone.isNotBlank()) {
-            profile.addView(Button(this).apply {
+            extraActions.add(Button(this).apply {
             background = surface(mint)
             setTextColor(Color.rgb(0, 105, 100))
             minHeight = dp(48)
@@ -667,7 +677,7 @@ class ClientActivity : Activity() {
             })
         }
         if (c.email.isNotBlank()) {
-            profile.addView(Button(this).apply {
+            extraActions.add(Button(this).apply {
             background = surface(mint)
             setTextColor(Color.rgb(0, 105, 100))
             minHeight = dp(48)
@@ -681,11 +691,13 @@ class ClientActivity : Activity() {
             })
         }
         whatsappNumber(c.phone)?.let { number ->
-            profile.addView(Button(this).apply {
+            contactAction(Button(this).apply {
             background = surface(mint)
             setTextColor(Color.rgb(0, 105, 100))
             minHeight = dp(48)
-                text = "WhatsApp client"
+                text = "WhatsApp"
+                contentDescription = "WhatsApp client"
+                textSize = 12f
                 isAllCaps = false
                 setOnClickListener {
                     try {
@@ -696,7 +708,7 @@ class ClientActivity : Activity() {
                 }
             })
         }
-        profile.addView(Button(this).apply {
+        extraActions.add(Button(this).apply {
             background = surface(mint)
             setTextColor(Color.rgb(0, 105, 100))
             minHeight = dp(48)
@@ -713,7 +725,7 @@ class ClientActivity : Activity() {
                 Toast.makeText(this@ClientActivity, "Client summary copied", Toast.LENGTH_SHORT).show()
             }
         })
-        profile.addView(Button(this).apply {
+        extraActions.add(Button(this).apply {
             background = surface(mint)
             setTextColor(Color.rgb(0, 105, 100))
             minHeight = dp(48)
@@ -753,8 +765,9 @@ class ClientActivity : Activity() {
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
                 AlertDialog.Builder(this)
                     .setTitle("Client actions")
-                    .setItems(arrayOf("Delete client", "Cancel")) { _, choice ->
-                        if (choice == 0) { dialog.dismiss(); delete(c.id) }
+                    .setItems((extraActions.map { it.text.toString() } + listOf("Delete client", "Cancel")).toTypedArray()) { _, choice ->
+                        if (choice < extraActions.size) extraActions[choice].performClick()
+                        else if (choice == extraActions.size) { dialog.dismiss(); delete(c.id) }
                     }.show()
             }
         }
