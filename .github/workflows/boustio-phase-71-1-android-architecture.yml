@@ -1,0 +1,27 @@
+name: Boustio Phase 71.1 Android architecture
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  architecture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: boustio-phase-71-1-android-architecture
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/phase71-1-android-architecture.test.cjs tests/phase62-7-home-spacing.test.cjs tests/phase62-10-dashboard-alignment.test.cjs tests/phase66-8-employee-backend.test.cjs tests/phase66-10-employee-audit.test.cjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - run: gradle --no-daemon :app:testIsolatedDebugUnitTest
