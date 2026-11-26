@@ -623,23 +623,25 @@ class MainActivity : Activity() {
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(purple)
         })
-        datePanel.addView(dashboardLabel(selectedDate, 24f, true))
-        val dateButton = TextView(this).apply {
-            text = "▦  Choose another date   ›"
-            textSize = 15f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(purple)
-            setPadding(dp(8), dp(12), dp(8), dp(12))
-            isClickable = true
-            isFocusable = true
-            setOnClickListener {
-                pickDate(selectedDate) {
-                    selectedDate = it
-                    showCalendar()
-                }
-            }
+        datePanel.addView(dashboardLabel(FriendlyDate.format(selectedDate, "EEEE").uppercase(Locale.UK), 15f, true).apply { setTextColor(purple) })
+        datePanel.addView(dashboardLabel(FriendlyDate.format(selectedDate, "dd MMM yyyy"), 30f, true))
+        val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        fun dateAction(label: String, description: String, action: () -> Unit) {
+            controls.addView(Button(this).apply {
+                text = label
+                contentDescription = description
+                isAllCaps = false
+                setTextColor(purple)
+                background = rounded(mint, dp(12).toFloat())
+                minHeight = dp(48)
+                setOnClickListener { action() }
+            }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(4) })
         }
-        datePanel.addView(dateButton)
+        dateAction("‹", "Previous day") { selectedDate = FriendlyDate.shift(selectedDate, -1); showCalendar() }
+        dateAction("Today", "Go to today") { selectedDate = today(); showCalendar() }
+        dateAction("▦", "Choose another date") { pickDate(selectedDate) { selectedDate = it; showCalendar() } }
+        dateAction("›", "Next day") { selectedDate = FriendlyDate.shift(selectedDate, 1); showCalendar() }
+        datePanel.addView(controls)
         container.addView(datePanel)
 
         sectionLabel("Your diary")
@@ -654,7 +656,7 @@ class MainActivity : Activity() {
             18f, true
         ))
         diary.addView(TextView(this).apply {
-            text = "For ${selectedDate}"
+            text = "For ${FriendlyDate.format(selectedDate)}"
             textSize = 13f
             setTextColor(muted)
         })
@@ -745,7 +747,7 @@ class MainActivity : Activity() {
                 "${booking.time}$end  •  " +
                     "${booking.client}\n" +
                     "${booking.service}\n" +
-                    booking.date
+                    FriendlyDate.format(booking.date)
             )
 
             if (staff != null) {
@@ -822,7 +824,7 @@ class MainActivity : Activity() {
             .setTitle("Cancel appointment?")
             .setMessage(
                 "Remove ${booking.client}'s " +
-                    "appointment on ${booking.date} " +
+                    "appointment on ${FriendlyDate.format(booking.date)} " +
                     "at ${booking.time}?"
             )
             .setPositiveButton(
