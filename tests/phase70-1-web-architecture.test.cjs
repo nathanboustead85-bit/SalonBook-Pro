@@ -1,0 +1,5 @@
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');
+const m=JSON.parse(fs.readFileSync('planning/web-integration-inventory.json','utf8'));
+test('inventory is offline and unique',()=>{assert.equal(m.mode,'offline-planning');assert.equal(m.deployment,false);assert.ok(Object.values(m.live).every(v=>v===false));assert.equal(new Set(m.features.map(f=>f.id)).size,m.features.length);assert.ok(m.features.every(f=>f.live===false&&f.status==='integration-required'));});
+test('premium features and platform boundaries represented',()=>{for(const id of ['waiting-list','slot-recovery','recurring','rebooking','gap-optimisation','service-addons','no-show','business-insights','shared-protection','employee-access','customer-booking'])assert.ok(m.features.some(f=>f.id===id));assert.ok(m.platforms.includes('ios-safari'));assert.ok(m.platforms.includes('ipados-safari'));assert.ok(m.features.filter(f=>f.audience==='public').every(f=>['customer-booking','portfolio-gallery'].includes(f.id)));});
+test('no Firebase hosting added',()=>{const f=JSON.parse(fs.readFileSync('firebase.json','utf8'));assert.equal(f.hosting,undefined);});
