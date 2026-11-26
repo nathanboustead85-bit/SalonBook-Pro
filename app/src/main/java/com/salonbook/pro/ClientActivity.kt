@@ -632,6 +632,7 @@ class ClientActivity : Activity() {
             setTextColor(Color.rgb(0, 105, 100))
             minHeight = dp(48)
                 text = "Call"
+                background = surface(Color.rgb(221, 244, 232))
                 contentDescription = "Call client"
                 textSize = 12f
                 isAllCaps = false
@@ -650,6 +651,7 @@ class ClientActivity : Activity() {
             setTextColor(Color.rgb(0, 105, 100))
             minHeight = dp(48)
                 text = "Email"
+                background = surface(Color.rgb(225, 237, 252))
                 contentDescription = "Email client"
                 textSize = 12f
                 isAllCaps = false
@@ -696,6 +698,7 @@ class ClientActivity : Activity() {
             setTextColor(Color.rgb(0, 105, 100))
             minHeight = dp(48)
                 text = "WhatsApp"
+                background = surface(Color.rgb(218, 245, 225))
                 contentDescription = "WhatsApp client"
                 textSize = 12f
                 isAllCaps = false
@@ -772,6 +775,10 @@ class ClientActivity : Activity() {
             }
         }
         dialog.show()
+        dialog.window?.apply {
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.WHITE))
+            setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
+        }
     }
 
     private fun edit(id: String? = null, prefillName: String = "") {
