@@ -1,0 +1,37 @@
+name: Boustio Phase 70.3 isolated website consolidation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: boustio-phase-70-3-web-consolidation
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: bbf0b52f7cb03890989bfe049329dc49ab944094
+          path: historical-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Extract source directories without historical deployment configuration
+        run: |
+          mkdir recovered-source
+          git -C historical-source archive HEAD web website tests docs functions | tar -x -C recovered-source
+      - name: Verify provenance and local dependencies
+        run: node --test tests/phase70-1-web-architecture.test.cjs tests/phase70-2-web-recovery.test.cjs tests/phase70-3-consolidation.test.cjs
+      - name: Historical static and offline regression
+        working-directory: recovered-source
+        run: node --test tests/phase28_20_final_website_qa.test.cjs tests/phase29_10_accessible_onboarding.test.cjs
+      - name: Package source reference only
+        run: tar -czf Boustio-Phase70-3-SOURCE-ONLY.tar.gz recovered-source planning/web-recovery-inventory.json planning/phase70-3-consolidation.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase70-3-SOURCE-ONLY
+          path: Boustio-Phase70-3-SOURCE-ONLY.tar.gz
+          retention-days: 14
