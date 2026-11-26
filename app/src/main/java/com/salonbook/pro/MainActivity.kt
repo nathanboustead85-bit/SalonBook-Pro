@@ -498,11 +498,22 @@ class MainActivity : Activity() {
         activeScreen = "Hub"
         activePreview = ""
         screen("Business hub")
-        text("Explore Boustio's business tools. Advanced features are isolated previews.")
+        text("Manage your local business tools. Online services remain isolated previews.")
+        sectionLabel("Available on this device")
+        premiumCard("▤", "Services & Prices", "Manage your local service catalogue") {
+            openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
+        }
+        premiumCard("♟", "Staff & Working Hours", "Manage local staff and availability") {
+            openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
+        }
+        premiumCard("▣", "All Appointments", "Manage your local diary") { showAppointments() }
+        premiumCard("›", "Appointment calendar", "View local appointment availability") { showCalendar() }
         BusinessHubPreview.categories.forEach { category ->
             sectionLabel(category.title)
             category.features.forEach { feature ->
-                premiumCard("›", feature.title, feature.description) { showFeaturePreview(feature.id) }
+                premiumCard("›", feature.title, if (feature.id == "customers") "Open local customer records" else feature.description) {
+                    if (feature.id == "customers") showClients() else showFeaturePreview(feature.id)
+                }
             }
         }
         homeAction("Back to settings", "Return to business settings") { showBusinessSettings() }
