@@ -91,3 +91,5 @@ jobs:
         if: always()
         shell: bash
         run: rm -f "$RUNNER_TEMP/boustio-test-signing.jks"
+
+# Explicit recovery push for Phase 71.5 build registration.
