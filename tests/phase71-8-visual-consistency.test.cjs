@@ -1,0 +1,3 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const read=n=>fs.readFileSync('app/src/main/java/com/salonbook/pro/'+n+'.kt','utf8');
+test('client controls and tools placement',()=>{const s=read('ClientActivity');assert.ok(s.includes('hint = "Search clients"'));assert.ok(s.indexOf('content.addView(directory)')<s.indexOf('CLIENT MANAGEMENT TOOLS'));assert.ok(s.includes('background = surface(mint)'));});
+test('calendar controls and current day',()=>{const s=read('MainActivity');assert.ok(s.includes('getDrawable(R.drawable.nav_calendar)'));assert.ok(s.includes('selectedDate == today()'));assert.ok(s.includes('FriendlyDate.shift(selectedDate, -1)'));});
