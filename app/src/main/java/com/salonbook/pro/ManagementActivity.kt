@@ -308,6 +308,23 @@ class ManagementActivity : Activity() {
             }
         }
 
+        dialog.setCancelable(false)
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+                if (event.action == android.view.KeyEvent.ACTION_UP) {
+                    AlertDialog.Builder(this).setTitle("Discard unsaved changes?")
+                        .setPositiveButton("Discard") { _, _ -> dialog.dismiss() }
+                        .setNegativeButton("Keep editing", null).show()
+                }
+                true
+            } else false
+        }
         dialog.show()
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
+            AlertDialog.Builder(this).setTitle("Discard unsaved changes?")
+                .setPositiveButton("Discard") { _, _ -> dialog.dismiss() }
+                .setNegativeButton("Keep editing", null).show()
+        }
     }
 }
