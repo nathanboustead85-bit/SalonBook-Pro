@@ -1,0 +1,17 @@
+name: Boustio Phase 71.9.8 parity audit
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  parity:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: boustio-phase-71-9-8-parity-audit
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/phase71-9-8-parity.test.cjs
