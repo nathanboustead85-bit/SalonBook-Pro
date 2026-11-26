@@ -19,7 +19,7 @@ import java.util.UUID
 
 class ManagementActivity : Activity() {
 
-    private val orange = Color.rgb(17, 107, 104) // Option C signature teal
+    private val teal = Color.rgb(17, 107, 104) // Option C signature teal
     private val dark = Color.rgb(23, 51, 50)
     private val muted = Color.rgb(101, 113, 111)
     private val backgroundColor = Color.rgb(247, 248, 246)
@@ -96,23 +96,24 @@ class ManagementActivity : Activity() {
         input.setTextColor(dark)
         input.setHintTextColor(muted)
         input.backgroundTintList =
-            ColorStateList.valueOf(orange)
+            ColorStateList.valueOf(teal)
     }
 
     private fun styleCheck(check: CheckBox) {
         check.setTextColor(dark)
         check.buttonTintList =
-            ColorStateList.valueOf(orange)
+            ColorStateList.valueOf(teal)
     }
 
     private fun styleButton(button: Button) {
         button.isAllCaps = false
         button.textSize = 15f
         button.minHeight = dp(48)
+        button.background = rounded(teal, 14)
         button.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
         button.setTextColor(white)
         button.backgroundTintList =
-            ColorStateList.valueOf(orange)
+            ColorStateList.valueOf(teal)
     }
 
     private fun makeText(
@@ -289,10 +290,9 @@ class ManagementActivity : Activity() {
     private fun save() {
         val array = JSONArray()
         records.forEach { array.put(it) }
-        val json = array.toString()
-
+        
         prefs.edit()
-            .putString(storageKey, json)
+            .putString(storageKey, array.toString())
             .apply()
 
     }
@@ -323,7 +323,7 @@ class ManagementActivity : Activity() {
             makeText(
                 "BOUSTIO",
                 14f,
-                orange,
+                teal,
                 true
             )
         )
@@ -367,7 +367,7 @@ class ManagementActivity : Activity() {
             setPadding(
                 dp(20), dp(18), dp(20), dp(18)
             )
-            background = rounded(orange)
+            background = rounded(teal)
         }
 
         summary.addView(
@@ -427,13 +427,13 @@ class ManagementActivity : Activity() {
                 setPadding(
                     dp(20), dp(30), dp(20), dp(30)
                 )
-                background = rounded(white)
+                background = rounded(Color.WHITE, 18)
             }
 
             empty.addView(
                 makeText(
-                    if (staffMode) "No team members yet"
-                    else "No services yet",
+                    if (staffMode) "Your team starts here"
+                    else "Your catalogue starts here",
                     19f,
                     dark,
                     true
@@ -442,7 +442,7 @@ class ManagementActivity : Activity() {
 
             empty.addView(
                 makeText(
-                    "Tap the orange button above to get started.",
+                    "Tap the button above to get started.",
                     14f,
                     muted
                 )
@@ -463,7 +463,7 @@ class ManagementActivity : Activity() {
             recordCard(item, serviceNames)
         }
 
-        addButton("Back to Dashboard") {
+        addButton("Back") {
             finish()
         }
 
@@ -509,7 +509,7 @@ class ManagementActivity : Activity() {
             setPadding(
                 dp(18), dp(18), dp(18), dp(18)
             )
-            background = rounded(white)
+            background = rounded(Color.WHITE, 18)
             elevation = dp(2).toFloat()
         }
 
@@ -541,7 +541,7 @@ class ManagementActivity : Activity() {
         val status = makeText(
             if (visible) "PUBLIC" else "PRIVATE",
             11f,
-            if (visible) orange else muted,
+            if (visible) teal else muted,
             true
         ).apply {
             setPadding(
@@ -624,7 +624,7 @@ class ManagementActivity : Activity() {
                 makeText(
                     "£$price",
                     26f,
-                    orange,
+                    teal,
                     true
                 ),
                 LinearLayout.LayoutParams(
@@ -749,7 +749,7 @@ class ManagementActivity : Activity() {
                 makeText(
                     value,
                     19f,
-                    orange,
+                    teal,
                     true
                 ),
                 LinearLayout.LayoutParams(
