@@ -1,0 +1,4 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const s=fs.readFileSync('app/src/main/java/com/salonbook/pro/MainActivity.kt','utf8');
+test('bounded navigation history survives recreation',()=>{for(const x of ['navigation_history','navigation_history_previews','navigation_history_scrolls','routes.take(32)','backRoutes.addLast(Route'])assert.ok(s.includes(x),x);});
+test('navigation bundle excludes customer and booking fields',()=>{const b=s.slice(s.indexOf('override fun onSaveInstanceState'),s.indexOf('private fun restoreScreen'));assert.ok(!/putString\([^\n]*(booking\.client|booking\.notes|clientName)/.test(b));assert.ok(b.includes('if (it.screen == "ClientDetails") "Clients"'));});
+test('calendar tiles expose button semantics',()=>{assert.ok(s.includes('info.className = "android.widget.Button"'));assert.ok(s.includes('info.isSelected = selected'));});
