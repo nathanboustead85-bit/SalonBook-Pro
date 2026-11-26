@@ -1062,13 +1062,21 @@ class ManagementActivity : Activity() {
             }
             parent.addView(timeRow)
             parent.addView(note)
+            val actionRow = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            }
+            parent.addView(actionRow)
             if (isWeekly) {
-                parent.addView(Button(this).apply {
+                actionRow.addView(Button(this).apply {
                     text = "Lunch"
                     isAllCaps = false
+                    background = rounded(Color.rgb(218, 242, 235), 12)
+                    setTextColor(teal)
                     setOnClickListener { note.setText("Lunch") }
                 }, LinearLayout.LayoutParams(dp(96), dp(48)))
             }
+            actionRow.addView(android.view.View(this), LinearLayout.LayoutParams(0, 1, 1f))
 
             val entry = PeriodFields(
                 parent,
@@ -1087,8 +1095,21 @@ class ManagementActivity : Activity() {
 
             target.add(entry)
 
-            parent.addView(Button(this).apply {
-                text = "🗑︎"
+            actionRow.addView(Button(this).apply {
+                text = ""
+                val bin = object : android.graphics.drawable.Drawable() {
+                    private val pen = android.graphics.Paint(3).apply { color = Color.rgb(180,35,35); style = android.graphics.Paint.Style.STROKE; strokeWidth = 1.8f; strokeCap = android.graphics.Paint.Cap.ROUND }
+                    override fun draw(canvas: android.graphics.Canvas) {
+                        canvas.save(); canvas.translate(bounds.left.toFloat(), bounds.top.toFloat()); canvas.scale(bounds.width()/24f,bounds.height()/24f)
+                        canvas.drawLine(4f,6f,20f,6f,pen); canvas.drawLine(9f,3f,15f,3f,pen); canvas.drawRect(6f,6f,18f,21f,pen); canvas.drawLine(10f,10f,10f,17f,pen); canvas.drawLine(14f,10f,14f,17f,pen); canvas.restore()
+                    }
+                    override fun setAlpha(alpha: Int) { pen.alpha = alpha }
+                    override fun setColorFilter(filter: android.graphics.ColorFilter?) { pen.colorFilter = filter }
+                    override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+                }
+                bin.setBounds(0,0,dp(22),dp(22))
+                setCompoundDrawables(bin,null,null,null)
+                setPadding(dp(13),0,0,0)
                 contentDescription = "Remove break or time off"
                 isAllCaps = false
                 setTextColor(Color.rgb(180, 35, 35))
@@ -1142,6 +1163,7 @@ class ManagementActivity : Activity() {
             form.addView(Button(this).apply {
                 text = "Copy a break to working days"
                 styleButton(this)
+                layoutParams = LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) }
                 setOnClickListener {
                     val source = breakFields.lastOrNull()
                     if (source == null) {
