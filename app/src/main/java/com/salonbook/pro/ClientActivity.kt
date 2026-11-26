@@ -190,7 +190,7 @@ class ClientActivity : Activity() {
         card("+ Add client", "Save a name, phone, email and notes") { edit() }
 
         val search = EditText(this).apply {
-            hint = "Search name, phone, email or notes"
+            hint = "Search clients"
             contentDescription = "Search client directory"
             setSingleLine(true)
             inputType = InputType.TYPE_CLASS_TEXT
@@ -212,6 +212,9 @@ class ClientActivity : Activity() {
         }
         searchRow.addView(search, LinearLayout.LayoutParams(0, dp(52), 1f))
         val clearSearch = Button(this).apply {
+            background = surface(mint)
+            setTextColor(Color.rgb(0, 105, 100))
+            minHeight = dp(48)
             text = "Clear"
             contentDescription = "Clear client search"
             isAllCaps = false
@@ -226,6 +229,8 @@ class ClientActivity : Activity() {
             bottomMargin = dp(12)
         })
         val contactFilterControl = Spinner(this).apply {
+            background = surface()
+            setPadding(dp(12), 0, dp(12), 0)
             val options = listOf("All clients", "Missing phone", "Missing email", "Missing phone or email")
             adapter = ArrayAdapter(this@ClientActivity, android.R.layout.simple_spinner_dropdown_item, options)
             setSelection(0)
@@ -240,6 +245,8 @@ class ClientActivity : Activity() {
         content.addView(label("CONTACT DETAILS", 12f, true).apply { setTextColor(teal) })
         content.addView(contactFilterControl, LinearLayout.LayoutParams(-1, dp(48)).apply { bottomMargin = dp(8) })
         val sortControl = Spinner(this).apply {
+            background = surface()
+            setPadding(dp(12), 0, dp(12), 0)
             val options = listOf("Name A-Z", "Name Z-A", "Most appointments")
             adapter = ArrayAdapter(this@ClientActivity,
                 android.R.layout.simple_spinner_dropdown_item, options)
@@ -261,6 +268,9 @@ class ClientActivity : Activity() {
         })
         // One-tap recovery to the full A-Z directory without changing client data.
         content.addView(Button(this).apply {
+            background = surface(mint)
+            setTextColor(Color.rgb(0, 105, 100))
+            minHeight = dp(48)
             text = "Reset search and sorting"
             isAllCaps = false
             contentDescription = "Show all clients sorted by name"
@@ -278,20 +288,28 @@ class ClientActivity : Activity() {
         }, LinearLayout.LayoutParams(-1, dp(48)).apply {
             bottomMargin = dp(12)
         })
+        val directory = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        content.addView(directory)
+        directoryContainer = directory
+        refreshDirectory()
+        content.addView(label("CLIENT MANAGEMENT TOOLS", 12f, true).apply { setTextColor(teal) })
         content.addView(Button(this).apply {
+            background = surface(mint)
+            setTextColor(Color.rgb(0, 105, 100))
+            minHeight = dp(48)
             text = "Check possible duplicate clients"
             isAllCaps = false
             setOnClickListener { showPossibleDuplicates() }
         }, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(12) })
         content.addView(Button(this).apply {
+            background = surface(mint)
+            setTextColor(Color.rgb(0, 105, 100))
+            minHeight = dp(48)
             text = "Client data integrity check"
             isAllCaps = false
             setOnClickListener { showClientIntegrityCheck() }
         }, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(12) })
-        val directory = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        content.addView(directory)
-        directoryContainer = directory
-        refreshDirectory()
+
     }
 
     /** Review-only comparison. Matching contact details can belong to different people. */
@@ -604,6 +622,9 @@ class ClientActivity : Activity() {
         profile.addView(label(c.email.ifBlank { "Not provided" }, 16f).apply { contentDescription = "Email: ${c.email.ifBlank { "Not provided" }}" })
         if (c.phone.isNotBlank()) {
             profile.addView(Button(this).apply {
+            background = surface(mint)
+            setTextColor(Color.rgb(0, 105, 100))
+            minHeight = dp(48)
                 text = "Call client"
                 isAllCaps = false
                 setOnClickListener {
@@ -617,6 +638,9 @@ class ClientActivity : Activity() {
         }
         if (c.email.isNotBlank()) {
             profile.addView(Button(this).apply {
+            background = surface(mint)
+            setTextColor(Color.rgb(0, 105, 100))
+            minHeight = dp(48)
                 text = "Email client"
                 isAllCaps = false
                 setOnClickListener {
@@ -630,6 +654,9 @@ class ClientActivity : Activity() {
         }
         if (c.phone.isNotBlank()) {
             profile.addView(Button(this).apply {
+            background = surface(mint)
+            setTextColor(Color.rgb(0, 105, 100))
+            minHeight = dp(48)
                 text = "Copy phone number"
                 isAllCaps = false
                 setOnClickListener {
@@ -641,6 +668,9 @@ class ClientActivity : Activity() {
         }
         if (c.email.isNotBlank()) {
             profile.addView(Button(this).apply {
+            background = surface(mint)
+            setTextColor(Color.rgb(0, 105, 100))
+            minHeight = dp(48)
                 text = "Copy email address"
                 isAllCaps = false
                 setOnClickListener {
@@ -652,6 +682,9 @@ class ClientActivity : Activity() {
         }
         whatsappNumber(c.phone)?.let { number ->
             profile.addView(Button(this).apply {
+            background = surface(mint)
+            setTextColor(Color.rgb(0, 105, 100))
+            minHeight = dp(48)
                 text = "WhatsApp client"
                 isAllCaps = false
                 setOnClickListener {
@@ -664,6 +697,9 @@ class ClientActivity : Activity() {
             })
         }
         profile.addView(Button(this).apply {
+            background = surface(mint)
+            setTextColor(Color.rgb(0, 105, 100))
+            minHeight = dp(48)
             text = "Copy client summary"
             isAllCaps = false
             setOnClickListener {
@@ -678,6 +714,9 @@ class ClientActivity : Activity() {
             }
         })
         profile.addView(Button(this).apply {
+            background = surface(mint)
+            setTextColor(Color.rgb(0, 105, 100))
+            minHeight = dp(48)
             text = "Share client contact"
             isAllCaps = false
             setOnClickListener {
