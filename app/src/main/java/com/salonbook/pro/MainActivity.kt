@@ -265,7 +265,7 @@ class MainActivity : Activity() {
             listOf(
                 Triple(R.drawable.nav_home, "Home", { showDashboard() }),
                 Triple(R.drawable.nav_calendar, "Calendar", { showCalendar() }),
-                Triple(R.drawable.nav_clients, "Clients", { showClients() }),
+                Triple(R.drawable.nav_clients, "Clients", { openChild(Intent(this, ClientActivity::class.java)) }),
                 Triple(R.drawable.nav_settings, "Settings", { showBusinessSettings() })
             ).forEach { (symbol, label, action) ->
                 val selected = activeTab == label
