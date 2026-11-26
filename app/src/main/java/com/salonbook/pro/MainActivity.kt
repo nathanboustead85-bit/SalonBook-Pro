@@ -615,7 +615,7 @@ class MainActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             background = rounded(Color.WHITE, dp(22).toFloat())
             elevation = dp(2).toFloat()
-            setPadding(dp(20), dp(18), dp(20), dp(18))
+            setPadding(dp(16), dp(12), dp(16), dp(12))
         }
         datePanel.addView(TextView(this).apply {
             text = "SELECTED DATE"
@@ -629,10 +629,20 @@ class MainActivity : Activity() {
         fun dateAction(label: String, description: String, action: () -> Unit) {
             controls.addView(Button(this).apply {
                 text = label
+                textSize = if (label == "‹" || label == "›") 26f else 14f
                 contentDescription = description
                 isAllCaps = false
                 setTextColor(purple)
-                background = rounded(mint, dp(12).toFloat())
+                background = rounded(if (label == "Today" && selectedDate == today()) Color.rgb(0, 105, 100) else mint, dp(12).toFloat())
+                if (label == "Today" && selectedDate == today()) setTextColor(Color.WHITE)
+                if (description == "Choose another date") {
+                    text = ""
+                    val calendarIcon = getDrawable(R.drawable.nav_calendar)?.mutate()
+                    calendarIcon?.setTint(purple)
+                    calendarIcon?.setBounds(0, 0, dp(24), dp(24))
+                    setCompoundDrawables(null, calendarIcon, null, null)
+                    gravity = Gravity.CENTER
+                }
                 minHeight = dp(48)
                 setOnClickListener { action() }
             }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(4) })
