@@ -33,7 +33,7 @@ class CloudActivity : Activity() {
 
     private lateinit var layout: LinearLayout
 
-    private val purple = Color.rgb(111, 66, 193)
+    private val purple = Color.rgb(0, 105, 100)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,7 +42,7 @@ class CloudActivity : Activity() {
 
     private fun render() {
         val scroll = ScrollView(this).apply {
-            setBackgroundColor(Color.rgb(248, 246, 252))
+            setBackgroundColor(Color.rgb(244, 250, 249))
         }
 
         layout = LinearLayout(this).apply {
@@ -53,8 +53,8 @@ class CloudActivity : Activity() {
         scroll.addView(layout)
         setContentView(scroll)
 
-        addText("SalonBook Pro Cloud", 26f)
-        addText("Milestone 5 — Account & Cloud Backup")
+        addText("Boustio Cloud", 26f)
+        addText("Account & Cloud Backup")
 
         val user = auth.currentUser
 
@@ -377,7 +377,7 @@ class CloudActivity : Activity() {
         layout.addView(TextView(this).apply {
             text = value
             textSize = size
-            setTextColor(Color.rgb(40, 35, 55))
+            setTextColor(Color.rgb(20, 49, 52))
             setPadding(8, 12, 8, 12)
         })
     }
