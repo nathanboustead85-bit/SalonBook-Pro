@@ -1115,6 +1115,39 @@ class ManagementActivity : Activity() {
                 }
             })
 
+            heading("Holiday date ranges")
+            form.addView(Button(this).apply {
+                text = "Add full-day holiday range"
+                styleButton(this)
+                setOnClickListener {
+                    val today = java.util.Calendar.getInstance()
+                    android.app.DatePickerDialog(this@ManagementActivity, { _, y, m, d ->
+                        val first = java.util.Calendar.getInstance().apply { clear(); set(y,m,d) }
+                        android.app.DatePickerDialog(this@ManagementActivity, { _, ey, em, ed ->
+                            val last = java.util.Calendar.getInstance().apply { clear(); set(ey,em,ed) }
+                            val cursor = first.clone() as java.util.Calendar
+                            val dates = mutableListOf<String>()
+                            val format = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.UK)
+                            while (!cursor.after(last) && dates.size <= 366) {
+                                dates.add(format.format(cursor.time))
+                                cursor.add(java.util.Calendar.DATE, 1)
+                            }
+                            if (dates.isEmpty() || dates.size > 366) {
+                                Toast.makeText(this@ManagementActivity, "Choose a valid range of up to 366 days", Toast.LENGTH_LONG).show()
+                            } else {
+                                dates.forEach { date ->
+                                    addPeriod(false, JSONObject().apply {
+                                        put("date", date)
+                                        put("start", "00:00")
+                                        put("end", "23:59")
+                                        put("reason", "Holiday")
+                                    })
+                                }
+                            }
+                        }, y,m,d).apply { datePicker.minDate = first.timeInMillis }.show()
+                    }, today.get(java.util.Calendar.YEAR), today.get(java.util.Calendar.MONTH), today.get(java.util.Calendar.DAY_OF_MONTH)).show()
+                }
+            })
             heading("Date-Specific Time Off")
 
             val savedTimeOff =
