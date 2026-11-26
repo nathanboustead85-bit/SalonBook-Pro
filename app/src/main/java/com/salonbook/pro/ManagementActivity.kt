@@ -1088,7 +1088,7 @@ class ManagementActivity : Activity() {
             target.add(entry)
 
             parent.addView(Button(this).apply {
-                text = "🗑"
+                text = "🗑︎"
                 contentDescription = "Remove break or time off"
                 isAllCaps = false
                 setTextColor(Color.rgb(180, 35, 35))
@@ -1148,7 +1148,7 @@ class ManagementActivity : Activity() {
                         Toast.makeText(this@ManagementActivity, "Add a weekly break first", Toast.LENGTH_SHORT).show()
                     } else {
                         val working = days.filter { dayFields[it]?.enabled?.isChecked == true }
-                        val sourceDay = days.getOrNull(source.daySpinner?.selectedItemPosition ?: -1)
+                        val sourceDay = days.getOrNull(source.day?.selectedItemPosition ?: -1)
                         val choices = working.filter { it != sourceDay }
                         if (choices.isEmpty()) {
                             Toast.makeText(this@ManagementActivity, "No other working days selected", Toast.LENGTH_SHORT).show()
