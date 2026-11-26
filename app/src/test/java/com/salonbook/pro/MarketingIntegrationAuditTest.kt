@@ -24,6 +24,8 @@ class MarketingIntegrationAuditTest {
             assertEquals(expected,MarketingConsentPreview.eligible(member,"o","b","c",channel,consent.recipient,consent,fresh,now,true,suppressed))
             val comeback=ReengagementPreview.propose(member,"o","b",campaign,campaign,ledger,ledger,records,"c",now,channel,consent.recipient,consent,fresh,true,suppressed)
             val reward=BirthdayRewardPreview.issue(member,"o","b",birthday,"c",offer,offer,claims,claims,now,"cut",2000,channel,consent.recipient,consent,fresh,true,suppressed)
+            val audience=CustomerSegmentationPreview.audience(member,"o","b",records,listOf(CustomerSegmentationPreview.Contact("c",consent.recipient,consent,fresh,suppressed)),now,channel,null,true)
+            assertEquals(expected,audience?.contains("c")==true)
             assertEquals(expected,comeback!=null)
             assertEquals(expected,reward!=null)
             if(reward!=null && comeback!=null) {
@@ -45,16 +47,19 @@ class MarketingIntegrationAuditTest {
         val redeemed=LoyaltyRewardPreview.redeem(owner,"o","b",reward,reward,account,account,"c","redemption","cut",2000,now,true)!!
         assertEquals(0L,redeemed.account.units)
         assertEquals(500L,redeemed.discountPence)
+        assertNull(LoyaltyRewardPreview.redeem(owner,"o","b",reward,reward,redeemed.account,redeemed.account,"c","redemption","cut",2000,now,true))
         val promotion=PromotionPreview.Offer("b","SAVE",1,true,PromotionPreview.Kind.PERCENT,10,now-day,now+day,10)
         val uses=PromotionPreview.Ledger("b","SAVE",1,emptyList())
         val discounted=PromotionPreview.apply(owner,"o","b",promotion,promotion,uses,uses,"SAVE","next","c",2000,now,now,records,true)!!
         assertEquals(200L,discounted.discountPence)
+        assertNull(PromotionPreview.apply(owner,"o","b",promotion,promotion,discounted.ledger,discounted.ledger,"SAVE","next","c",2000,now,now,records,true))
         val referral=ReferralPreview.Code("b","ABCD1234EFGH","c",now-2*day,now+day)
         val referralProgramme=ReferralPreview.Programme("b",1,true,500,500)
         val referralLedger=ReferralPreview.Ledger("b",1,emptyList())
         val history=records+records.single().copy(customerId="new",bookingId="first",startsAt=now-day)
         val qualified=ReferralPreview.qualify(owner,"o","b",referralProgramme,referralProgramme,listOf(referral),referral.code,"new","first",referralLedger,referralLedger,history,now)!!
         assertEquals(1000L,qualified.referrerPence+qualified.newcomerPence)
+        assertNull(ReferralPreview.qualify(owner,"o","b",referralProgramme,referralProgramme,listOf(referral),referral.code,"new","first",qualified.ledger,qualified.ledger,history,now))
         val segments=CustomerSegmentationPreview.classify(owner,"o","b",records,now,CustomerSegmentationPreview.Criteria())!!
         assertEquals("c",segments.single().customerId)
         val events=listOf(redeemed.discountPence,discounted.discountPence,qualified.referrerPence+qualified.newcomerPence).mapIndexed{i,v->
