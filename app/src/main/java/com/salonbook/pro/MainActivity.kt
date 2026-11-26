@@ -24,7 +24,7 @@ import java.util.UUID
 
 class MainActivity : Activity() {
 
-    private val purple = Color.rgb(0, 139, 131)
+    private val purple = BoustioDesign.teal
     private val dark = Color.rgb(20, 49, 52)
     private val background = Color.rgb(244, 250, 249)
 
@@ -321,11 +321,9 @@ class MainActivity : Activity() {
             contentDescription = title
             setOnClickListener { action() }
         }
-        card.addView(TextView(this).apply {
-            text = symbol
-            textSize = 25f
-            gravity = Gravity.CENTER
-            background = rounded(mint, dp(14).toFloat())
+        val tile = BoustioDesign.tileFor(title)
+        card.addView(FeatureIcon(this, tile).apply {
+            background = rounded(tile.background, dp(14).toFloat())
         }, LinearLayout.LayoutParams(dp(54), dp(54)))
         val labels = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
