@@ -614,7 +614,19 @@ class MainActivity : Activity() {
                 sectionLabel("Local diary overview")
                 text("${bookings.size} saved appointments")
                 text("${bookings.map { it.client }.distinct().size} distinct client names")
-                text("Diary counts only — not verified revenue or employee takings.")
+                text("Scheduled appointment values only — not verified revenue or employee takings.")
+                val period = Spinner(this)
+                period.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("Today", "This week", "This month", "This year"))
+                container.addView(period)
+                val report = TextView(this).apply { textSize = 16f; setTextColor(dark); setPadding(0, dp(12), 0, dp(12)) }
+                container.addView(report)
+                period.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                        val result = DiaryReporting.summarise(bookings.map { DiaryReporting.Entry(it.date, it.price, it.staffId) }, today(), position)
+                        report.text = "Appointments: ${result.count}\nScheduled value: £${result.total.setScale(2).toPlainString()}\nMissing or invalid prices: ${result.unknown}\nAppointments without staff assignment: ${result.unassigned}"
+                    }
+                }
                 homeAction("View appointments", "Inspect the existing local diary") { showAppointments() }
             }
         }
