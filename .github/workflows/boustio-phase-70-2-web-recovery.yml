@@ -1,0 +1,22 @@
+name: Boustio Phase 70.2 historical website recovery
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recovery-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: boustio-phase-70-2-web-recovery
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: milestone-customer-booking-experience
+          path: historical-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/phase70-1-web-architecture.test.cjs tests/phase70-2-web-recovery.test.cjs
