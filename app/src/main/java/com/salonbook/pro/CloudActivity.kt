@@ -35,24 +35,62 @@ class CloudActivity : Activity() {
 
     private val purple = Color.rgb(0, 105, 100)
 
+    private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
+    private fun rounded(color: Int) = android.graphics.drawable.GradientDrawable().apply { setColor(color); cornerRadius = dp(16).toFloat() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         render()
     }
 
     private fun render() {
+        window.statusBarColor = Color.rgb(244, 250, 249)
+        window.navigationBarColor = Color.WHITE
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
         val scroll = ScrollView(this).apply {
+            fitsSystemWindows = true
+            if (android.os.Build.VERSION.SDK_INT >= 30) setOnApplyWindowInsetsListener { view, insets ->
+                val bars = insets.getInsets(android.view.WindowInsets.Type.systemBars())
+                view.setPadding(0, bars.top, 0, bars.bottom)
+                insets
+            }
             setBackgroundColor(Color.rgb(244, 250, 249))
         }
 
         layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(32, 36, 32, 40)
+            setPadding(dp(20), dp(20), dp(20), dp(24))
         }
 
         scroll.addView(layout)
         setContentView(scroll)
 
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+        }
+        header.addView(android.widget.ImageView(this).apply {
+            setImageResource(R.drawable.boustio_mark)
+            contentDescription = "Boustio brand mark"
+        }, LinearLayout.LayoutParams(dp(48), dp(48)))
+        val brand = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), 0, 0, 0)
+        }
+        brand.addView(TextView(this).apply {
+            text = "Boustio"
+            textSize = 24f
+            setTextColor(Color.rgb(20, 49, 52))
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+        })
+        brand.addView(TextView(this).apply {
+            text = "A booking platform with a difference"
+            textSize = 11f
+            setTextColor(purple)
+        })
+        header.addView(brand, LinearLayout.LayoutParams(0, -2, 1f))
+        layout.addView(header)
         addText("Boustio Cloud", 26f)
         addText("Account & Cloud Backup")
 
@@ -98,7 +136,7 @@ class CloudActivity : Activity() {
             }
         }
 
-        addButton("Back to Dashboard") {
+        addButton("Back") {
             finish()
         }
     }
@@ -356,6 +394,9 @@ class CloudActivity : Activity() {
         val field = EditText(this).apply {
             hint = hintText
             setSingleLine(true)
+            background = rounded(Color.WHITE)
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            minHeight = dp(52)
 
             inputType = if (password) {
                 InputType.TYPE_CLASS_TEXT or
@@ -366,7 +407,7 @@ class CloudActivity : Activity() {
             }
         }
 
-        layout.addView(field)
+        layout.addView(field, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
         return field
     }
 
@@ -391,8 +432,9 @@ class CloudActivity : Activity() {
             isAllCaps = false
             setTextColor(Color.WHITE)
 
-            backgroundTintList =
-                android.content.res.ColorStateList.valueOf(purple)
+            background = rounded(purple)
+            minHeight = dp(48)
+            setPadding(dp(12), dp(8), dp(12), dp(8))
 
             setOnClickListener {
                 action()
@@ -405,7 +447,7 @@ class CloudActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                bottomMargin = 12
+                bottomMargin = dp(12)
             }
         )
     }
