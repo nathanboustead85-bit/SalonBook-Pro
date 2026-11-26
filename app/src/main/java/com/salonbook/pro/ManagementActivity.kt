@@ -1051,11 +1051,24 @@ class ManagementActivity : Activity() {
 
             timePicker(start)
             timePicker(end)
-            parent.addView(TextView(this).apply { text = "Start time" })
-            parent.addView(start)
-            parent.addView(TextView(this).apply { text = "Finish time" })
-            parent.addView(end)
+            val timeRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            listOf("Start time" to start, "Finish time" to end).forEach { (caption, field) ->
+                val column = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(TextView(this@ManagementActivity).apply { text = caption })
+                    addView(field)
+                }
+                timeRow.addView(column, LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = dp(6) })
+            }
+            parent.addView(timeRow)
             parent.addView(note)
+            if (isWeekly) {
+                parent.addView(Button(this).apply {
+                    text = "Lunch"
+                    isAllCaps = false
+                    setOnClickListener { note.setText("Lunch") }
+                }, LinearLayout.LayoutParams(dp(96), dp(48)))
+            }
 
             val entry = PeriodFields(
                 parent,
@@ -1075,10 +1088,14 @@ class ManagementActivity : Activity() {
             target.add(entry)
 
             parent.addView(Button(this).apply {
-                text = "Remove"
-                styleButton(this)
+                text = "🗑"
+                contentDescription = "Remove break or time off"
+                isAllCaps = false
+                setTextColor(Color.rgb(180, 35, 35))
+                background = rounded(Color.rgb(255, 235, 235), 12)
                 minHeight = dp(48)
-                layoutParams = LinearLayout.LayoutParams(dp(112), dp(48)).apply { gravity = android.view.Gravity.END }
+                minimumWidth = 0
+                layoutParams = LinearLayout.LayoutParams(dp(48), dp(48)).apply { gravity = android.view.Gravity.END }
 
                 setOnClickListener {
                     target.remove(entry)
@@ -1120,6 +1137,39 @@ class ManagementActivity : Activity() {
 
                 setOnClickListener {
                     addPeriod(true)
+                }
+            })
+            form.addView(Button(this).apply {
+                text = "Copy a break to working days"
+                styleButton(this)
+                setOnClickListener {
+                    val source = breakFields.lastOrNull()
+                    if (source == null) {
+                        Toast.makeText(this@ManagementActivity, "Add a weekly break first", Toast.LENGTH_SHORT).show()
+                    } else {
+                        val working = days.filter { dayFields[it]?.enabled?.isChecked == true }
+                        val sourceDay = days.getOrNull(source.daySpinner?.selectedItemPosition ?: -1)
+                        val choices = working.filter { it != sourceDay }
+                        if (choices.isEmpty()) {
+                            Toast.makeText(this@ManagementActivity, "No other working days selected", Toast.LENGTH_SHORT).show()
+                        } else {
+                            val selected = BooleanArray(choices.size)
+                            AlertDialog.Builder(this@ManagementActivity)
+                                .setTitle("Copy last break to days")
+                                .setMultiChoiceItems(choices.map { it.replaceFirstChar { c -> c.uppercase() } }.toTypedArray(), selected) { _, index, checked -> selected[index] = checked }
+                                .setNegativeButton("Cancel", null)
+                                .setPositiveButton("Copy") { _, _ ->
+                                    choices.filterIndexed { index, _ -> selected[index] }.forEach { day ->
+                                        addPeriod(true, JSONObject().apply {
+                                            put("day", day)
+                                            put("start", source.start.text.toString())
+                                            put("end", source.end.text.toString())
+                                            put("reason", source.note.text.toString())
+                                        })
+                                    }
+                                }.show()
+                        }
+                    }
                 }
             })
 
