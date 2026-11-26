@@ -38,6 +38,36 @@ class MainActivity : Activity() {
     private var activeTab = "Home"
     private var activeScreen = "Home"
     private var activePreview = ""
+    private data class Route(val screen: String, val preview: String, val scroll: Int)
+    private val backRoutes = java.util.ArrayDeque<Route>()
+    private var renderedRoute: Route? = null
+    private var restoringRoute = false
+
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        if (activeScreen == "Home") {
+            AlertDialog.Builder(this).setTitle("Exit Boustio?")
+                .setMessage("Your saved records will remain on this device.")
+                .setPositiveButton("Exit") { _, _ -> finish() }
+                .setNegativeButton("Stay", null).show()
+            return
+        }
+        val previous = backRoutes.pollLast()
+        restoringRoute = true
+        try {
+            if (previous != null) {
+                restoreScreen(previous.screen, previous.preview)
+                val scroll = screenScroll
+                scroll.post { scroll.scrollTo(0, previous.scroll) }
+            } else {
+                restoreScreen(when (activeScreen) {
+                    "Preview" -> "Hub"
+                    "ClientDetails" -> "Clients"
+                    else -> "Home"
+                }, null)
+            }
+        } finally { restoringRoute = false }
+    }
     private lateinit var screenScroll: ScrollView
     private var firstResume = true
     private var refreshAfterChild = false
@@ -140,6 +170,17 @@ class MainActivity : Activity() {
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun screen(title: String) {
+        val next = Route(activeScreen, activePreview, 0)
+        val previous = renderedRoute
+        if (!restoringRoute && previous != null &&
+            (previous.screen != next.screen || previous.preview != next.preview)) {
+            if (next.screen == "Home") backRoutes.clear()
+            else {
+                if (backRoutes.size >= 32) backRoutes.removeFirst()
+                backRoutes.addLast(previous.copy(scroll = if (::screenScroll.isInitialized) screenScroll.scrollY else 0))
+            }
+        }
+        renderedRoute = next
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.rgb(249, 250, 248))
@@ -649,6 +690,8 @@ class MainActivity : Activity() {
         activeScreen = "Appointments"
         activePreview = ""
         screen("All Appointments")
+        text("Your complete diary, organised by date and time.")
+        sectionLabel("${bookings.size} saved appointments")
 
         val sorted = bookings.sortedWith(
             compareBy<Booking> {
@@ -670,8 +713,8 @@ class MainActivity : Activity() {
             bookingDialog()
         }
 
-        button("Back to Dashboard") {
-            showDashboard()
+        button("Back") {
+            onBackPressed()
         }
     }
 
@@ -722,6 +765,7 @@ class MainActivity : Activity() {
             }
         }
 
+        card.addView(dashboardLabel("SAVED APPOINTMENT", 12f, true).apply { setTextColor(purple) })
         card.addView(TextView(this).apply {
             text = details
             textSize = 16f
@@ -788,7 +832,7 @@ class MainActivity : Activity() {
                 }
 
                 saveBookings()
-                showDashboard()
+                restoreScreen(if (activeScreen == "ClientDetails") "Clients" else activeScreen, activePreview)
 
                 message(
                     "Appointment cancelled"
