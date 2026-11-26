@@ -846,6 +846,16 @@ class ManagementActivity : Activity() {
             }
         }
 
+        fun timePicker(input: EditText) {
+            input.isFocusable = false
+            input.setOnClickListener {
+                val minutes = parseMinutes(input.text.toString()) ?: 540
+                android.app.TimePickerDialog(this, { _, hour, minute ->
+                    input.setText(String.format(Locale.UK, "%02d:%02d", hour, minute))
+                }, minutes / 60, minutes % 60, true).show()
+            }
+        }
+
         val dayFields = linkedMapOf<String, DayFields>()
 
         if (staffMode) {
@@ -890,6 +900,8 @@ class ManagementActivity : Activity() {
                     styleInput(this)
                 }
 
+                timePicker(opening)
+                timePicker(closing)
                 opening.isEnabled = enabled.isChecked
                 closing.isEnabled = enabled.isChecked
 
@@ -928,6 +940,24 @@ class ManagementActivity : Activity() {
                     enabled, opening, closing
                 )
             }
+        }
+
+        if (staffMode) {
+            form.addView(Button(this).apply {
+                text = "Copy first working day's hours to selected days"
+                styleButton(this)
+                setOnClickListener {
+                    val source = dayFields.values.firstOrNull { it.enabled.isChecked }
+                    if (source != null) {
+                        val open = source.opening.text.toString()
+                        val close = source.closing.text.toString()
+                        dayFields.values.filter { it.enabled.isChecked }.forEach {
+                            it.opening.setText(open)
+                            it.closing.setText(close)
+                        }
+                    }
+                }
+            })
         }
 
         val breakFields = mutableListOf<PeriodFields>()
@@ -1017,6 +1047,8 @@ class ManagementActivity : Activity() {
                 parent.addView(dateInput)
             }
 
+            timePicker(start)
+            timePicker(end)
             parent.addView(start)
             parent.addView(end)
             parent.addView(note)
@@ -1353,6 +1385,9 @@ class ManagementActivity : Activity() {
             } else false
         }
         dialog.show()
+        if (staffMode) {
+            dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        }
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener { discard() }
     }
 }
