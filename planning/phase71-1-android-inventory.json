@@ -1,0 +1,208 @@
+{
+  "schema": 1,
+  "mode": "read-only-architecture",
+  "deployment": false,
+  "live": false,
+  "baseline": "boustio-phase-70-12-final-audit",
+  "protectedFiles": {
+    "app/src/main/java/com/salonbook/pro/MainActivity.kt": "703a721fdd13dd4dceb51dfa1fa039d202745c37",
+    "app/src/main/java/com/salonbook/pro/ClientActivity.kt": "e910a8b88b7ab6b0618ecc10a1a3f8a6593ed4d2",
+    "app/src/main/java/com/salonbook/pro/ManagementActivity.kt": "7996e9e0e094723a51de217c974ebcc6a695345b",
+    "app/src/main/java/com/salonbook/pro/CloudActivity.kt": "894a668994c2b5858653149a294034dc664c697a",
+    "app/build.gradle.kts": "6f2f330ec0344691463c73a8e2efff75f1cc4084",
+    "app/src/main/AndroidManifest.xml": "5e81b026bc745f489112c335f28ae3b924fefdb0",
+    "app/src/isolated/AndroidManifest.xml": "71da180a2ab8afa8c96cf19f30829dde75c47f04",
+    "firebase.json": "6662468c7821940487606cdae639bb7e48b5f9bd"
+  },
+  "storage": {
+    "preferences": "salonbook_data",
+    "keys": [
+      "bookings",
+      "services",
+      "staff",
+      "client_records_v1"
+    ],
+    "policy": "No migration, restore, deletion or writes in this phase"
+  },
+  "navigation": [
+    [
+      "Home",
+      "MainActivity.showDashboard"
+    ],
+    [
+      "Calendar",
+      "MainActivity.showCalendar"
+    ],
+    [
+      "Clients",
+      "MainActivity.showClients"
+    ],
+    [
+      "Settings",
+      "MainActivity.showBusinessSettings"
+    ]
+  ],
+  "features": [
+    {
+      "id": "registration",
+      "webRoute": "register",
+      "native": "CloudActivity",
+      "status": "existing account/backup, not business registration",
+      "live": false
+    },
+    {
+      "id": "business-profile",
+      "webRoute": "onboarding",
+      "native": "MainActivity.showBusinessSettings",
+      "status": "settings only",
+      "live": false
+    },
+    {
+      "id": "services-staff-hours",
+      "webRoute": "dashboard",
+      "native": "ManagementActivity",
+      "status": "local services and staff",
+      "live": false
+    },
+    {
+      "id": "booking-calendar",
+      "webRoute": null,
+      "native": "MainActivity.showCalendar",
+      "status": "local diary",
+      "live": false
+    },
+    {
+      "id": "customer-booking",
+      "webRoute": "booking",
+      "native": "MainActivity.showBusinessSettings",
+      "status": "booking link disabled",
+      "live": false
+    },
+    {
+      "id": "portfolio-gallery",
+      "webRoute": "portfolio",
+      "native": null,
+      "status": "native gallery integration outstanding",
+      "live": false
+    },
+    {
+      "id": "customer-management",
+      "webRoute": "customers",
+      "native": "ClientActivity",
+      "status": "local directory and integrity check",
+      "live": false
+    },
+    {
+      "id": "employee-access",
+      "webRoute": "employees",
+      "native": "EmployeePermissionPreview",
+      "status": "engine only",
+      "live": false
+    },
+    {
+      "id": "messaging",
+      "webRoute": "messages",
+      "native": "MainActivity.showBusinessSettings",
+      "status": "messaging placeholder",
+      "live": false
+    },
+    {
+      "id": "reporting",
+      "webRoute": "insights",
+      "native": null,
+      "status": "reporting UI outstanding",
+      "live": false
+    },
+    {
+      "id": "marketing-loyalty",
+      "webRoute": "insights",
+      "native": null,
+      "status": "marketing UI outstanding",
+      "live": false
+    },
+    {
+      "id": "waiting-list",
+      "webRoute": "insights",
+      "native": "WaitingListPreview",
+      "status": "engine only",
+      "live": false
+    },
+    {
+      "id": "slot-recovery",
+      "webRoute": "insights",
+      "native": "SlotRecoveryPreview",
+      "status": "engine only",
+      "live": false
+    },
+    {
+      "id": "recurring",
+      "webRoute": "insights",
+      "native": "RecurringAppointmentPreview",
+      "status": "engine only",
+      "live": false
+    },
+    {
+      "id": "rebooking",
+      "webRoute": "insights",
+      "native": "RebookingRecommendationPreview",
+      "status": "engine only",
+      "live": false
+    },
+    {
+      "id": "gap-optimisation",
+      "webRoute": "insights",
+      "native": "AppointmentGapPreview",
+      "status": "engine only",
+      "live": false
+    },
+    {
+      "id": "service-addons",
+      "webRoute": "insights",
+      "native": "ServiceAddonPreview",
+      "status": "engine only",
+      "live": false
+    },
+    {
+      "id": "no-show",
+      "webRoute": "insights",
+      "native": "NoShowPreventionPreview",
+      "status": "engine only",
+      "live": false
+    },
+    {
+      "id": "business-insights",
+      "webRoute": "insights",
+      "native": "BusinessInsightsPreview",
+      "status": "engine only",
+      "live": false
+    },
+    {
+      "id": "shared-protection",
+      "webRoute": null,
+      "native": null,
+      "status": "server integration outstanding",
+      "live": false
+    },
+    {
+      "id": "payments-tipping",
+      "webRoute": null,
+      "native": null,
+      "status": "future phase",
+      "live": false
+    },
+    {
+      "id": "subscriptions",
+      "webRoute": null,
+      "native": null,
+      "status": "future phase",
+      "live": false
+    }
+  ],
+  "next": [
+    "Preserve four existing navigation tabs",
+    "Integrate advanced features via synthetic previews first",
+    "Do not treat preview engines as authenticated or live",
+    "Require authoritative transactional server integration before sync"
+  ],
+  "launchReady": false
+}
