@@ -1,0 +1,224 @@
+{
+  "schema": 1,
+  "mode": "isolated-preview",
+  "deployment": false,
+  "features": [
+    {
+      "id": "registration",
+      "phase": "18–21",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "register",
+      "evidence": "validation only; no account"
+    },
+    {
+      "id": "business-profile",
+      "phase": "7,22,29",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "onboarding",
+      "evidence": "fictional setup; no publishing"
+    },
+    {
+      "id": "services-staff-hours",
+      "phase": "4,22",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "dashboard",
+      "evidence": "historical fixture; no authoritative catalogue editing"
+    },
+    {
+      "id": "booking-calendar",
+      "phase": "8,14–17,63",
+      "audience": "staff",
+      "status": "integration-required",
+      "live": false,
+      "route": null,
+      "evidence": "calendar integration outstanding"
+    },
+    {
+      "id": "customer-booking",
+      "phase": "12,14–17",
+      "audience": "public",
+      "status": "integration-required",
+      "live": false,
+      "route": "booking",
+      "evidence": "fictional slot selection; no confirmation"
+    },
+    {
+      "id": "portfolio-gallery",
+      "phase": "28",
+      "audience": "public",
+      "status": "integration-required",
+      "live": false,
+      "route": "portfolio",
+      "evidence": "fictional gallery; no uploads"
+    },
+    {
+      "id": "customer-management",
+      "phase": "65",
+      "audience": "staff",
+      "status": "integration-required",
+      "live": false,
+      "route": "customers",
+      "evidence": "in-memory directory and notes"
+    },
+    {
+      "id": "employee-access",
+      "phase": "66",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "employees",
+      "evidence": "role simulator; no server enforcement"
+    },
+    {
+      "id": "messaging",
+      "phase": "26,62–64",
+      "audience": "staff",
+      "status": "integration-required",
+      "live": false,
+      "route": "messages",
+      "evidence": "local simulation; no provider"
+    },
+    {
+      "id": "reporting",
+      "phase": "67",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "insights",
+      "evidence": "sample takings"
+    },
+    {
+      "id": "marketing-loyalty",
+      "phase": "68",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "insights",
+      "evidence": "sample campaign and points"
+    },
+    {
+      "id": "waiting-list",
+      "phase": "69.1",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "insights",
+      "evidence": "sample queue only"
+    },
+    {
+      "id": "slot-recovery",
+      "phase": "69.2",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "insights",
+      "evidence": "sample slot match"
+    },
+    {
+      "id": "recurring",
+      "phase": "69.3",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "insights",
+      "evidence": "sample dates"
+    },
+    {
+      "id": "rebooking",
+      "phase": "69.4",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "insights",
+      "evidence": "sample recommendation"
+    },
+    {
+      "id": "gap-optimisation",
+      "phase": "69.5",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "insights",
+      "evidence": "sample recommendation"
+    },
+    {
+      "id": "service-addons",
+      "phase": "69.6",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "insights",
+      "evidence": "sample recommendation"
+    },
+    {
+      "id": "no-show",
+      "phase": "69.7",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "insights",
+      "evidence": "sample recommendation"
+    },
+    {
+      "id": "business-insights",
+      "phase": "69.8",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": "insights",
+      "evidence": "sample recommendation"
+    },
+    {
+      "id": "shared-protection",
+      "phase": "69.9",
+      "audience": "server",
+      "status": "integration-required",
+      "live": false,
+      "route": null,
+      "evidence": "atomic server protection outstanding"
+    },
+    {
+      "id": "payments-tipping",
+      "phase": "74 planned",
+      "audience": "server",
+      "status": "integration-required",
+      "live": false,
+      "route": null,
+      "evidence": "phase 74 planned"
+    },
+    {
+      "id": "subscriptions",
+      "phase": "75 planned",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false,
+      "route": null,
+      "evidence": "phase 75 planned"
+    }
+  ],
+  "phase71": {
+    "requirements": [
+      "Inventory native screens and existing persistence before changes",
+      "Keep DEV and isolated test package separate",
+      "Use synthetic fixtures for parity tests",
+      "Preserve original records without migration or restore",
+      "Map Android screens to website routes and authoritative contracts",
+      "Keep live flags false; defer cross-device writes until transactional server verification"
+    ],
+    "launchReady": false
+  },
+  "outstanding": [
+    "Real authentication and tenant authorization",
+    "Permanent website source integration and production headers",
+    "Atomic bookings and cross-device synchronization",
+    "Provider integration and payments",
+    "Physical iPhone/iPad tests",
+    "Independent security verification and launch blocker closure"
+  ]
+}
