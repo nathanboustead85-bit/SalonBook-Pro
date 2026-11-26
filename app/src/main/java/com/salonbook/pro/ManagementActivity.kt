@@ -944,7 +944,7 @@ class ManagementActivity : Activity() {
 
         if (staffMode) {
             form.addView(Button(this).apply {
-                text = "Copy first working day's hours to selected days"
+                text = "Copy hours to selected days"
                 styleButton(this)
                 setOnClickListener {
                     val source = dayFields.values.firstOrNull { it.enabled.isChecked }
@@ -963,6 +963,8 @@ class ManagementActivity : Activity() {
         val breakFields = mutableListOf<PeriodFields>()
         val timeOffFields = mutableListOf<PeriodFields>()
 
+        val weeklyBreakContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val timeOffContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         fun addPeriod(
             isWeekly: Boolean,
             saved: JSONObject? = null
@@ -1049,7 +1051,9 @@ class ManagementActivity : Activity() {
 
             timePicker(start)
             timePicker(end)
+            parent.addView(TextView(this).apply { text = "Start time" })
             parent.addView(start)
+            parent.addView(TextView(this).apply { text = "Finish time" })
             parent.addView(end)
             parent.addView(note)
 
@@ -1081,7 +1085,8 @@ class ManagementActivity : Activity() {
                 }
             })
 
-            form.addView(
+            val periodContainer = if (isWeekly) weeklyBreakContainer else timeOffContainer
+            periodContainer.addView(
                 parent,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1094,6 +1099,7 @@ class ManagementActivity : Activity() {
 
         if (staffMode) {
             heading("Recurring Weekly Breaks")
+            form.addView(weeklyBreakContainer)
 
             val savedBreaks =
                 existing?.optJSONArray("weeklyBreaks")
@@ -1149,6 +1155,7 @@ class ManagementActivity : Activity() {
                 }
             })
             heading("Date-Specific Time Off")
+            form.addView(timeOffContainer)
 
             val savedTimeOff =
                 existing?.optJSONArray("timeOff")
