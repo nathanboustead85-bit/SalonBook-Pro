@@ -1107,7 +1107,7 @@ class MainActivity : Activity() {
                         text = candidate
                         isAllCaps = false
                         setTextColor(if (candidate == time) Color.WHITE else purple)
-                        background = rounded(if (candidate == time) purple else mint, 12)
+                        background = rounded(if (candidate == time) purple else mint, 12f)
                         setOnClickListener { time = candidate; timeButton.text = "Time: $time"; refreshChoices() }
                     }, LinearLayout.LayoutParams(0, dp(48), 1f))
                 }
