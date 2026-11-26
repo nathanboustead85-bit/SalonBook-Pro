@@ -1,0 +1,139 @@
+{
+  "source": "boustio-phase-70-12-final-audit:planning/phase70-12-audit.json",
+  "deployment": false,
+  "launchReady": false,
+  "features": [
+    {
+      "id": "registration",
+      "website": "validation only; no account",
+      "android": "integration-required",
+      "live": false
+    },
+    {
+      "id": "business-profile",
+      "website": "fictional setup; no publishing",
+      "android": "integration-required",
+      "live": false
+    },
+    {
+      "id": "services-staff-hours",
+      "website": "historical fixture; no authoritative catalogue editing",
+      "android": "local-functional",
+      "live": false
+    },
+    {
+      "id": "booking-calendar",
+      "website": "calendar integration outstanding",
+      "android": "local-functional",
+      "live": false
+    },
+    {
+      "id": "customer-booking",
+      "website": "fictional slot selection; no confirmation",
+      "android": "preview-only",
+      "live": false
+    },
+    {
+      "id": "portfolio-gallery",
+      "website": "fictional gallery; no uploads",
+      "android": "preview-only",
+      "live": false
+    },
+    {
+      "id": "customer-management",
+      "website": "in-memory directory and notes",
+      "android": "local-functional",
+      "live": false
+    },
+    {
+      "id": "employee-access",
+      "website": "role simulator; no server enforcement",
+      "android": "partial-preview",
+      "live": false
+    },
+    {
+      "id": "messaging",
+      "website": "local simulation; no provider",
+      "android": "partial-preview",
+      "live": false
+    },
+    {
+      "id": "reporting",
+      "website": "sample takings",
+      "android": "partial-preview",
+      "live": false
+    },
+    {
+      "id": "marketing-loyalty",
+      "website": "sample campaign and points",
+      "android": "preview-only",
+      "live": false
+    },
+    {
+      "id": "waiting-list",
+      "website": "sample queue only",
+      "android": "preview-only",
+      "live": false
+    },
+    {
+      "id": "slot-recovery",
+      "website": "sample slot match",
+      "android": "preview-only",
+      "live": false
+    },
+    {
+      "id": "recurring",
+      "website": "sample dates",
+      "android": "preview-only",
+      "live": false
+    },
+    {
+      "id": "rebooking",
+      "website": "sample recommendation",
+      "android": "preview-only",
+      "live": false
+    },
+    {
+      "id": "gap-optimisation",
+      "website": "sample recommendation",
+      "android": "preview-only",
+      "live": false
+    },
+    {
+      "id": "service-addons",
+      "website": "sample recommendation",
+      "android": "preview-only",
+      "live": false
+    },
+    {
+      "id": "no-show",
+      "website": "sample recommendation",
+      "android": "preview-only",
+      "live": false
+    },
+    {
+      "id": "business-insights",
+      "website": "sample recommendation",
+      "android": "preview-only",
+      "live": false
+    },
+    {
+      "id": "shared-protection",
+      "website": "atomic server protection outstanding",
+      "android": "integration-required",
+      "live": false
+    },
+    {
+      "id": "payments-tipping",
+      "website": "phase 74 planned",
+      "android": "planned",
+      "live": false
+    },
+    {
+      "id": "subscriptions",
+      "website": "phase 75 planned",
+      "android": "planned",
+      "live": false
+    }
+  ]
+}
