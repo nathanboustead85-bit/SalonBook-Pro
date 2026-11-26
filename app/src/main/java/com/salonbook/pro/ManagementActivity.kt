@@ -4,6 +4,9 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.os.Bundle
 import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.content.res.ColorStateList
 import android.view.ViewGroup
 import android.widget.*
 import org.json.JSONArray
@@ -57,13 +60,21 @@ class ManagementActivity : Activity() {
             .apply()
     }
 
+    private val teal = Color.rgb(0, 105, 100)
+    private val ink = Color.rgb(22, 45, 48)
+    private fun dp(value: Int) = (value * resources.displayMetrics.density + 0.5f).toInt()
+    private fun rounded(color: Int, radius: Int) = GradientDrawable().apply {
+        setColor(color)
+        cornerRadius = dp(radius).toFloat()
+    }
+
     private fun render() {
         val scroll = ScrollView(this)
-        scroll.setBackgroundColor(Color.rgb(248, 246, 252))
+        scroll.setBackgroundColor(Color.rgb(244, 250, 249))
 
         layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(32, 45, 32, 40)
+            setPadding(dp(20), dp(24), dp(20), dp(24))
         }
 
         scroll.addView(layout)
@@ -75,6 +86,9 @@ class ManagementActivity : Activity() {
             27f
         )
 
+        addText(if (staffMode) "Manage your team, roles and working hours." else "Manage your service catalogue, prices and durations.", 15f)
+        addText("${records.size} saved ${if (staffMode) "staff records" else "services"}", 15f)
+
         addButton(
             if (staffMode) "Add Staff Member"
             else "Add Service"
@@ -83,7 +97,7 @@ class ManagementActivity : Activity() {
         }
 
         if (records.isEmpty()) {
-            addText("Nothing added yet.")
+            addText(if (staffMode) "Your team starts here. Add your first staff member." else "Your catalogue starts here. Add your first service.")
         }
 
         records.forEach { item ->
@@ -104,7 +118,7 @@ class ManagementActivity : Activity() {
             }
         }
 
-        addButton("Back to Dashboard") {
+        addButton("Back") {
             finish()
         }
     }
@@ -116,8 +130,10 @@ class ManagementActivity : Activity() {
         layout.addView(TextView(this).apply {
             text = value
             textSize = size
-            setTextColor(Color.rgb(40, 35, 55))
-            setPadding(10, 16, 10, 12)
+            setTextColor(ink)
+            if (size >= 27f) typeface = Typeface.DEFAULT_BOLD
+            background = rounded(Color.WHITE, 18)
+            setPadding(dp(16), dp(14), dp(16), dp(14))
         })
     }
 
@@ -128,6 +144,12 @@ class ManagementActivity : Activity() {
         val button = Button(this).apply {
             text = label
             isAllCaps = false
+            textSize = 16f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+            backgroundTintList = ColorStateList.valueOf(teal)
+            background = rounded(teal, 14)
+            minHeight = dp(48)
             setOnClickListener { action() }
         }
 
@@ -137,7 +159,8 @@ class ManagementActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                bottomMargin = 10
+                topMargin = dp(8)
+                bottomMargin = dp(12)
             }
         )
     }
@@ -168,7 +191,7 @@ class ManagementActivity : Activity() {
     private fun edit(existing: JSONObject?) {
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(28, 12, 28, 0)
+            setPadding(dp(20), dp(12), dp(20), dp(8))
         }
 
         fun field(
@@ -179,6 +202,8 @@ class ManagementActivity : Activity() {
                 hint = label
                 setText(initial)
                 setSingleLine(true)
+                setTextColor(ink)
+                backgroundTintList = ColorStateList.valueOf(teal)
             }
             form.addView(input)
             return input
