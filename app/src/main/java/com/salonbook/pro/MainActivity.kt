@@ -69,7 +69,11 @@ class MainActivity : Activity() {
         } finally { restoringRoute = false }
     }
     private lateinit var screenScroll: ScrollView
+    // Keep draft fields in memory only across configuration recreation; never persist personal data.
+    private var activeDraftSnapshot: (() -> Bundle)? = null
     private var firstResume = true
+    override fun onRetainNonConfigurationInstance(): Any? = activeDraftSnapshot?.invoke()
+
     private var refreshAfterChild = false
     private fun openChild(intent: Intent) {
         refreshAfterChild = true
@@ -130,6 +134,15 @@ class MainActivity : Activity() {
             val offset = savedInstanceState.getInt("navigation_scroll")
             screenScroll.post { screenScroll.scrollTo(0, offset) }
         } else openRequestedTab()
+        (lastNonConfigurationInstance as? Bundle)?.let { draft ->
+            val id = draft.getString("existingId")
+            val existing = id?.let { key -> bookings.firstOrNull { it.id == key } }
+            if (id == null || existing != null) {
+                window.decorView.post {
+                    if (!isFinishing && !isDestroyed) bookingDialog(existing, selectedDate, draft)
+                }
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -888,7 +901,8 @@ class MainActivity : Activity() {
 
     private fun bookingDialog(
         existing: Booking? = null,
-        defaultDate: String = selectedDate
+        defaultDate: String = selectedDate,
+        recovered: Bundle? = null
     ) {
         val services = readRecords("services")
         val staff = readRecords("staff")
@@ -930,12 +944,12 @@ class MainActivity : Activity() {
 
         val client = field(
             "Client name",
-            existing?.client ?: ""
+            recovered?.getString("client") ?: existing?.client ?: ""
         )
 
         val notes = field(
             "Notes (optional)",
-            existing?.notes ?: ""
+            recovered?.getString("notes") ?: existing?.notes ?: ""
         )
 
         val serviceNames = services.map {
@@ -954,7 +968,7 @@ class MainActivity : Activity() {
 
             val index = services.indexOfFirst {
                 it.optString("id") ==
-                    existing?.serviceId
+                    (recovered?.getString("serviceId") ?: existing?.serviceId)
             }
 
             if (index >= 0) {
@@ -991,7 +1005,7 @@ class MainActivity : Activity() {
 
             val index = staff.indexOfFirst {
                 it.optString("id") ==
-                    existing?.staffId
+                    (recovered?.getString("staffId") ?: existing?.staffId)
             }
 
             if (index >= 0) {
@@ -1007,10 +1021,10 @@ class MainActivity : Activity() {
         form.addView(staffSpinner)
 
         var date =
-            existing?.date ?: defaultDate
+            recovered?.getString("date") ?: existing?.date ?: defaultDate
 
         var time =
-            existing?.time ?: "09:00"
+            recovered?.getString("time") ?: existing?.time ?: "09:00"
 
         val dateButton = Button(this).apply {
             text = "Date: $date"
@@ -1079,7 +1093,19 @@ class MainActivity : Activity() {
             )
             .create()
 
+        dialog.setOnDismissListener { activeDraftSnapshot = null }
         dialog.setOnShowListener {
+            activeDraftSnapshot = {
+                Bundle().apply {
+                    putString("existingId", existing?.id)
+                    putString("client", client.text.toString())
+                    putString("notes", notes.text.toString())
+                    putString("serviceId", services.getOrNull(serviceSpinner.selectedItemPosition)?.optString("id"))
+                    putString("staffId", staff.getOrNull(staffSpinner.selectedItemPosition)?.optString("id"))
+                    putString("date", date)
+                    putString("time", time)
+                }
+            }
             dialog.getButton(
                 AlertDialog.BUTTON_POSITIVE
             ).setOnClickListener {
