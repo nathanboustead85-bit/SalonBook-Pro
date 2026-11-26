@@ -1,0 +1,91 @@
+name: Boustio Phase 66.9 security integration
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  signing-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: boustio-phase-66-9-security-integration
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/phase62-7-home-spacing.test.cjs tests/phase62-10-dashboard-alignment.test.cjs tests/phase66-8-employee-backend.test.cjs
+      - name: Confirm required signing secrets are configured
+        env:
+          SIGNING_STORE_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in SIGNING_STORE_B64 SIGNING_STORE_PASSWORD SIGNING_KEY_ALIAS SIGNING_KEY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing required GitHub Actions signing secret. See security/phase60-13-stable-signing.md. No APK will be uploaded."
+              exit 1
+            fi
+          done
+          echo "All four signing secrets configured (values not printed)."
+  signed-isolated-apk:
+    needs: signing-preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SIGNING_STORE_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+      BOUSTIO_SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+      BOUSTIO_SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+      BOUSTIO_SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: boustio-phase-66-9-security-integration
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Decode signing key privately
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          KEYFILE="$RUNNER_TEMP/boustio-test-signing.jks"
+          printf '%s' "$SIGNING_STORE_B64" | base64 --decode > "$KEYFILE"
+          test -s "$KEYFILE"
+          echo "BOUSTIO_SIGNING_STORE_FILE=$KEYFILE" >> "$GITHUB_ENV"
+      - name: Run full isolated Android JVM regression suite
+        run: gradle --no-daemon :app:testIsolatedDebugUnitTest
+      - name: Build test APK using stable signing key
+        run: gradle --no-daemon :app:assembleIsolatedDebug
+      - name: Verify APK package version, isolation and signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/isolated/debug/app-isolated-debug.apk"
+          test -s "$APK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
+          "$AAPT" dump badging "$APK" > "$RUNNER_TEMP/boustio-badging.txt"
+          grep -q "name='com.salonbook.pro.isolated'" "$RUNNER_TEMP/boustio-badging.txt"
+          grep -q "versionCode='94'" "$RUNNER_TEMP/boustio-badging.txt"
+          ! grep -q "uses-permission: name='android.permission.INTERNET'" "$RUNNER_TEMP/boustio-badging.txt"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
+          "$APKSIGNER" verify --print-certs "$APK" > "$RUNNER_TEMP/boustio-certificate.txt"
+          grep -Eiq 'SHA.?256' "$RUNNER_TEMP/boustio-certificate.txt"
+          echo "Signed test APK verified. Certificate fingerprint:"
+          grep -Ei 'SHA.?256' "$RUNNER_TEMP/boustio-certificate.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boustio-Phase66-9-STABLE-SIGNED-TEST-APK
+          path: app/build/outputs/apk/isolated/debug/app-isolated-debug.apk
+          if-no-files-found: error
+      - name: Remove temporary signing material
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/boustio-test-signing.jks"
