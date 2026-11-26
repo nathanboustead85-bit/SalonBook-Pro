@@ -80,3 +80,8 @@ dependencies {
     testImplementation("org.json:json:20240303")
     testImplementation("org.robolectric:robolectric:4.13")
 }
+
+// Use Maven Central's canonical HTTPS endpoint for Robolectric runtime SDKs.
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
+}
