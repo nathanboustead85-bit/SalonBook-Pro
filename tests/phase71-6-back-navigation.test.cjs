@@ -1,0 +1,3 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const read=n=>fs.readFileSync('app/src/main/java/com/salonbook/pro/'+n+'.kt','utf8');
+test('main back history and explicit exit',()=>{const s=read('MainActivity');for(const t of ['override fun onBackPressed()','backRoutes.pollLast()','Exit Boustio?','previous.scroll','restoringRoute','SAVED APPOINTMENT'])assert.ok(s.includes(t),t);});
+test('booking and management forms protect unsaved input',()=>{for(const n of ['MainActivity','ManagementActivity']){const s=read(n);for(const t of ['KEYCODE_BACK','Discard unsaved changes?','Keep editing','setCanceledOnTouchOutside(false)'])assert.ok(s.includes(t),t);}});
