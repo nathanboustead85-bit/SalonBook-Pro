@@ -36,6 +36,34 @@ class MainActivity : Activity() {
     private var selectedDate = today()
     private lateinit var container: LinearLayout
     private var activeTab = "Home"
+    private var activeScreen = "Home"
+    private var activePreview = ""
+    private lateinit var screenScroll: ScrollView
+    private var firstResume = true
+    private var refreshAfterChild = false
+    private fun openChild(intent: Intent) {
+        refreshAfterChild = true
+        startActivity(intent)
+    }
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // Never place client names or unfinished appointment fields in this navigation bundle.
+        outState.putString("navigation_screen", if (activeScreen == "ClientDetails") "Clients" else activeScreen)
+        outState.putString("navigation_preview", activePreview)
+        outState.putString("navigation_date", selectedDate)
+        outState.putInt("navigation_scroll", if (::screenScroll.isInitialized) screenScroll.scrollY else 0)
+    }
+    private fun restoreScreen(route: String?, preview: String?) {
+        when (route) {
+            "Calendar" -> showCalendar()
+            "Clients" -> showClients()
+            "Settings" -> showBusinessSettings()
+            "Appointments" -> showAppointments()
+            "Hub" -> showBusinessHub()
+            "Preview" -> showFeaturePreview(preview.orEmpty())
+            else -> showDashboard()
+        }
+    }
     private val muted = Color.rgb(108, 120, 117)
     private val mint = Color.rgb(231, 244, 239)
 
@@ -55,7 +83,12 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         loadBookings()
-        openRequestedTab()
+        if (savedInstanceState != null && intent?.getStringExtra("boustio_tab") == null) {
+            selectedDate = savedInstanceState.getString("navigation_date") ?: today()
+            restoreScreen(savedInstanceState.getString("navigation_screen"), savedInstanceState.getString("navigation_preview"))
+            val offset = savedInstanceState.getInt("navigation_scroll")
+            screenScroll.post { screenScroll.scrollTo(0, offset) }
+        } else openRequestedTab()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -76,14 +109,13 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (::container.isInitialized) {
+        if (firstResume) { firstResume = false; return }
+        if (refreshAfterChild && ::container.isInitialized) {
+            refreshAfterChild = false
+            val offset = screenScroll.scrollY
             loadBookings()
-            when (activeTab) {
-                "Calendar" -> showCalendar()
-                "Clients" -> showClients()
-                "Settings" -> showBusinessSettings()
-                else -> showDashboard()
-            }
+            restoreScreen(if (activeScreen == "ClientDetails") "Clients" else activeScreen, activePreview)
+            screenScroll.post { screenScroll.scrollTo(0, offset) }
         }
     }
 
@@ -119,6 +151,7 @@ class MainActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(24), dp(20), dp(30))
         }
+        screenScroll = scroll
         scroll.addView(container)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         root.addView(bottomNavigation())
@@ -262,6 +295,8 @@ class MainActivity : Activity() {
     }
 
     private fun showBusinessSettings() {
+        activeScreen = "Settings"
+        activePreview = ""
         activeTab = "Settings"
         screen("Business settings")
         container.addView(TextView(this).apply {
@@ -290,11 +325,12 @@ class MainActivity : Activity() {
         })
         container.addView(introduction)
         sectionLabel("Business management")
+        premiumCard("▦", "Business hub", "Organised business tools and previews") { showBusinessHub() }
         premiumCard("▤", "Services & Prices", "Manage your service catalogue") {
-            startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
+            openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
         }
         premiumCard("♟", "Staff & Working Hours", "Manage your team and availability") {
-            startActivity(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
+            openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
         }
         premiumCard("🔗", "My Boustio Booking Link", "Public booking profile • not connected") {
             message("Booking link is not connected in this test build.")
@@ -304,7 +340,7 @@ class MainActivity : Activity() {
         }
         sectionLabel("Account and tools")
         premiumCard("☁", "Cloud Account & Backup", "Cloud account, backup and restore") {
-            startActivity(Intent(this, CloudActivity::class.java))
+            openChild(Intent(this, CloudActivity::class.java))
         }
         premiumCard("▦", "Test Appointment Availability", "Check booking slots") {
             showCalendar()
@@ -376,6 +412,8 @@ class MainActivity : Activity() {
     }
 
     private fun showDashboard() {
+        activeScreen = "Home"
+        activePreview = ""
         activeTab = "Home"
         screen("Good to see you")
         container.addView(TextView(this).apply {
@@ -447,6 +485,7 @@ class MainActivity : Activity() {
         }
 
         sectionLabel("Manage your business")
+        homeAction("Business hub", "Explore all business tools and feature previews") { showBusinessHub() }
         homeAction("Business settings", "Services, staff, booking link and account") {
             showBusinessSettings()
         }
@@ -454,7 +493,37 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
     }
 
+    private fun showBusinessHub() {
+        activeTab = "Settings"
+        activeScreen = "Hub"
+        activePreview = ""
+        screen("Business hub")
+        text("Explore Boustio's business tools. Advanced features are isolated previews.")
+        BusinessHubPreview.categories.forEach { category ->
+            sectionLabel(category.title)
+            category.features.forEach { feature ->
+                premiumCard("›", feature.title, feature.description) { showFeaturePreview(feature.id) }
+            }
+        }
+        homeAction("Back to settings", "Return to business settings") { showBusinessSettings() }
+    }
+
+    private fun showFeaturePreview(id: String) {
+        val feature = BusinessHubPreview.find(id)
+        if (feature == null) { showBusinessHub(); return }
+        activeTab = "Settings"
+        activeScreen = "Preview"
+        activePreview = feature.id
+        screen(feature.title)
+        text("ISOLATED PREVIEW — no live actions")
+        text(feature.description)
+        text("Example only. No customer records, payments, messages or bookings are changed.")
+        homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
+    }
+
     private fun showCalendar() {
+        activeScreen = "Calendar"
+        activePreview = ""
         activeTab = "Calendar"
         screen("Appointment calendar")
         container.addView(TextView(this).apply {
@@ -542,6 +611,8 @@ class MainActivity : Activity() {
     }
 
     private fun showAppointments() {
+        activeScreen = "Appointments"
+        activePreview = ""
         screen("All Appointments")
 
         val sorted = bookings.sortedWith(
@@ -1209,6 +1280,8 @@ class MainActivity : Activity() {
     }
 
     private fun showClients() {
+        activeScreen = "Clients"
+        activePreview = ""
         activeTab = "Clients"
         screen("Your clients")
         container.addView(TextView(this).apply {
@@ -1218,7 +1291,7 @@ class MainActivity : Activity() {
         })
         sectionLabel("Client management")
         premiumCard("+", "Open client directory", "Add, edit and search saved client profiles") {
-            startActivity(Intent(this, ClientActivity::class.java))
+            openChild(Intent(this, ClientActivity::class.java))
         }
         sectionLabel("Appointment clients")
         val names = bookings.map { it.client.trim() }.filter { it.isNotEmpty() }
@@ -1226,7 +1299,7 @@ class MainActivity : Activity() {
         if (names.isEmpty()) {
             premiumCard("♙", "No appointment clients yet",
                 "Create a booking or add a client profile") {
-                startActivity(Intent(this, ClientActivity::class.java))
+                openChild(Intent(this, ClientActivity::class.java))
             }
         } else {
             names.forEach { name ->
@@ -1239,6 +1312,8 @@ class MainActivity : Activity() {
     }
 
     private fun showClientDetails(clientName: String) {
+        activeScreen = "ClientDetails"
+        activePreview = ""
         activeTab = "Clients"
         screen(clientName)
         sectionLabel("Appointment history")
