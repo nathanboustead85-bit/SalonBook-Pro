@@ -1077,6 +1077,8 @@ class ManagementActivity : Activity() {
             parent.addView(Button(this).apply {
                 text = "Remove"
                 styleButton(this)
+                minHeight = dp(48)
+                layoutParams = LinearLayout.LayoutParams(dp(112), dp(48)).apply { gravity = android.view.Gravity.END }
 
                 setOnClickListener {
                     target.remove(entry)
@@ -1426,7 +1428,10 @@ class ManagementActivity : Activity() {
         }
         dialog.show()
         if (staffMode) {
-            dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            dialog.window?.apply {
+                setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.WHITE))
+                setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            }
         }
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener { discard() }
     }
