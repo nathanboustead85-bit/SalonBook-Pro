@@ -947,6 +947,17 @@ class MainActivity : Activity() {
             recovered?.getString("client") ?: existing?.client ?: ""
         )
 
+        val knownClients = (bookings.map { it.client } + readRecords("client_records_v1").map { it.optString("name") })
+            .map { it.trim() }.filter { it.isNotEmpty() }.distinct().sortedWith(String.CASE_INSENSITIVE_ORDER)
+        form.addView(Button(this).apply {
+            text = "Choose existing client"
+            isAllCaps = false
+            isEnabled = knownClients.isNotEmpty()
+            setOnClickListener {
+                AlertDialog.Builder(this@MainActivity).setTitle("Existing clients")
+                    .setItems(knownClients.toTypedArray()) { _, index -> client.setText(knownClients[index]) }.show()
+            }
+        })
         val notes = field(
             "Notes (optional)",
             recovered?.getString("notes") ?: existing?.notes ?: ""
@@ -1026,6 +1037,7 @@ class MainActivity : Activity() {
         var time =
             recovered?.getString("time") ?: existing?.time ?: "09:00"
 
+        var refreshChoices: () -> Unit = {}
         val dateButton = Button(this).apply {
             text = "Date: $date"
             isAllCaps = false
@@ -1035,6 +1047,7 @@ class MainActivity : Activity() {
             pickDate(date) {
                 date = it
                 dateButton.text = "Date: $date"
+                refreshChoices()
             }
         }
 
@@ -1061,6 +1074,7 @@ class MainActivity : Activity() {
 
                     timeButton.text =
                         "Time: $time"
+                    refreshChoices()
                 },
                 parts[0].toInt(),
                 parts[1].toInt(),
@@ -1070,6 +1084,43 @@ class MainActivity : Activity() {
 
         form.addView(timeButton)
 
+        val summary = TextView(this).apply { textSize = 16f; setTextColor(muted) }
+        form.addView(summary)
+        form.addView(TextView(this).apply { text = "Available start times"; textSize = 16f })
+        val slots = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        form.addView(slots)
+        refreshChoices = refresh@{
+            val service = services.getOrNull(serviceSpinner.selectedItemPosition) ?: return@refresh
+            val member = staff.getOrNull(staffSpinner.selectedItemPosition) ?: return@refresh
+            summary.text = "${service.optString("name")} · £${service.optString("price")} · ${service.optInt("duration")} min\n${member.optString("name")} · ${date} · $time"
+            slots.removeAllViews()
+            val options = (0 until 1440 step 15).map { formatTime(it) }.filter { candidate ->
+                AvailabilityEngine.checkAvailability(date, candidate, member.optString("id"), service.optString("id"),
+                    prefs.getString("services", "[]") ?: "[]", prefs.getString("staff", "[]") ?: "[]",
+                    prefs.getString("bookings", "[]") ?: "[]", existing?.id.orEmpty()).available
+            }
+            if (options.isEmpty()) slots.addView(TextView(this).apply { text = "No available times" })
+            options.chunked(3).forEach { group ->
+                val row = LinearLayout(this)
+                group.forEach { candidate ->
+                    row.addView(Button(this).apply {
+                        text = candidate
+                        isAllCaps = false
+                        setTextColor(if (candidate == time) Color.WHITE else purple)
+                        background = rounded(if (candidate == time) purple else mint, 12)
+                        setOnClickListener { time = candidate; timeButton.text = "Time: $time"; refreshChoices() }
+                    }, LinearLayout.LayoutParams(0, dp(48), 1f))
+                }
+                slots.addView(row)
+            }
+        }
+        val listener = object : AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) { refreshChoices() }
+        }
+        serviceSpinner.onItemSelectedListener = listener
+        staffSpinner.onItemSelectedListener = listener
+        refreshChoices()
         val scroll = ScrollView(this).apply {
             addView(form)
         }
