@@ -1129,43 +1129,16 @@ class MainActivity : Activity() {
                 val staffId =
                     member.optString("id")
 
-                val conflict = bookings.any {
-                    other ->
-
-                    other.id != existing?.id &&
-                        other.date == date &&
-                        other.staffId == staffId &&
-                        other.duration > 0 &&
-                        start <
-                            toMinutes(other.time) +
-                            other.duration &&
-                        toMinutes(other.time) <
-                            start + duration
-                }
-
-                if (conflict) {
-                    message(
-                        "This staff member already " +
-                            "has an overlapping booking"
-                    )
-                    return@setOnClickListener
-                }
-
-                val hours =
-                    member.optString("hours")
-
-                if (
-                    !withinWorkingHours(
-                        hours,
-                        date,
-                        start,
-                        start + duration
-                    )
-                ) {
-                    message(
-                        "Outside staff working hours. " +
-                            "Use e.g. Mon-Fri 09:00-17:00"
-                    )
+                val availability = AvailabilityEngine.checkAvailability(
+                    date = date, time = time, staffId = staffId,
+                    serviceId = service.optString("id"),
+                    servicesJson = prefs.getString("services", "[]") ?: "[]",
+                    staffJson = prefs.getString("staff", "[]") ?: "[]",
+                    bookingsJson = prefs.getString("bookings", "[]") ?: "[]",
+                    excludeBookingId = existing?.id.orEmpty()
+                )
+                if (!availability.available) {
+                    message(availability.reason)
                     return@setOnClickListener
                 }
 
