@@ -529,6 +529,30 @@ class MainActivity : Activity() {
         text("ISOLATED PREVIEW — no live actions")
         text(feature.description)
         text("Example only. No customer records, payments, messages or bookings are changed.")
+        when (id) {
+            "team" -> {
+                sectionLabel("Local team overview")
+                text("${readRecords("staff").size} staff records on this device")
+                text("Owner, manager and employee permissions are preview only. No invitations or access changes.")
+                homeAction("Manage local staff", "Open existing staff and working hours") {
+                    openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
+                }
+            }
+            "messages" -> {
+                sectionLabel("Communication previews")
+                text("Chat, appointment reminders and cancellation notices")
+                text("Example reminder: Your appointment is tomorrow.")
+                text("Example cancellation: Your appointment has been cancelled. Please contact the business to rearrange.")
+                text("Delivery disabled — no email, WhatsApp or push messages are sent.")
+            }
+            "reports" -> {
+                sectionLabel("Local diary overview")
+                text("${bookings.size} saved appointments")
+                text("${bookings.map { it.client }.distinct().size} distinct client names")
+                text("Diary counts only — not verified revenue or employee takings.")
+                homeAction("View appointments", "Inspect the existing local diary") { showAppointments() }
+            }
+        }
         homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
     }
 
