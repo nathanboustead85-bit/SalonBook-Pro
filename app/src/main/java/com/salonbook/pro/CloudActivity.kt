@@ -97,6 +97,7 @@ class CloudActivity : Activity() {
         addText("Recovery & diagnostics", 21f)
         addButton("Local data integrity check") { localIntegrity() }
         addButton("Offline recovery rehearsal") { offlineRehearsal() }
+        addButton("Booking recovery readiness") { bookingReadiness() }
         val user = auth.currentUser
 
         if (user == null) {
@@ -163,6 +164,26 @@ class CloudActivity : Activity() {
         }
         AlertDialog.Builder(this).setTitle("Read-only local integrity")
             .setMessage(report.joinToString("\n") + "\nNo records changed.")
+            .setPositiveButton("Close", null).show()
+    }
+
+    private fun bookingReadiness() {
+        val result = runCatching {
+            val bookings = JSONArray(prefs.getString("bookings", "[]") ?: "[]")
+            val ids = mutableSetOf<String>()
+            var missing = 0
+            var duplicate = 0
+            var legacy = 0
+            for (i in 0 until bookings.length()) {
+                val item = bookings.getJSONObject(i)
+                val id = item.optString("id")
+                if (id.isBlank()) missing++ else if (!ids.add(id)) duplicate++
+                if (item.optString("staffId").isBlank()) legacy++
+            }
+            "Local bookings: ${bookings.length()}\nMissing IDs: $missing\nDuplicate IDs: $duplicate\nLegacy staff assignments: $legacy"
+        }.getOrDefault("Unable to validate local bookings")
+        AlertDialog.Builder(this).setTitle("Booking recovery readiness")
+            .setMessage(result + "\nRead-only local inspection. Cloud comparison and synchronisation remain disabled.")
             .setPositiveButton("Close", null).show()
     }
 
