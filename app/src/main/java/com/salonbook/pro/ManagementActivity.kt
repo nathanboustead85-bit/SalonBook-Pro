@@ -1321,10 +1321,7 @@ class ManagementActivity : Activity() {
                             s.toDouble()
                         )
                     )
-                    item.put(
-                        "duration",
-                        t.toInt()
-                    )
+                    item.put("duration", t.toInt())
                 }
 
                 item.put(
