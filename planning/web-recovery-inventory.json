@@ -1,0 +1,74 @@
+{
+  "source": "milestone-customer-booking-experience",
+  "mode": "read-only-audit",
+  "deployment": false,
+  "live": false,
+  "files": [
+    {
+      "path": "website/index.html",
+      "blob": "4f51eeaad3cd22221b67e498132b2599f1bc482a"
+    },
+    {
+      "path": "website/book/index.html",
+      "blob": "e7ec3beba3baa329b3aedfc2dd08b69e960a2f75"
+    },
+    {
+      "path": "website/book/customer-chat.js",
+      "blob": "1038d224e716c6fa67630d4013f103543de29cbd"
+    },
+    {
+      "path": "web/phase28/index.html",
+      "blob": "dfce521f396e09bd78db4dc3ee96839cd3b18c32"
+    },
+    {
+      "path": "web/phase28/photo-preview.html",
+      "blob": "0f02beb49b5a1d965e8cc096dd23e26c4cf808ef"
+    },
+    {
+      "path": "web/phase28/photo-manager.html",
+      "blob": "c7bf72ca14cbf4a3447a879a7cdcd729793f448f"
+    },
+    {
+      "path": "web/phase28/portfolio-preview.html",
+      "blob": "de181f63d3b820061bc263484f25a2dd63a0efcc"
+    },
+    {
+      "path": "web/phase29/onboarding-29-10.html",
+      "blob": "8facfdceba041165486c8fbb06d8ba439eb55f94"
+    },
+    {
+      "path": "tests/fixtures/phase22_premium_dashboard.html",
+      "blob": "7f079433b0ab5f2467033137d82a98eaea474a0b"
+    },
+    {
+      "path": "website/business/dashboard/firebase-integration-foundation.mjs",
+      "blob": "498d879010a6ca1a5fcfb695951d07529b3ca73a"
+    },
+    {
+      "path": "website/business/register/firebase-auth-foundation.mjs",
+      "blob": "bfe639b66691140ad42383a1e77e6b2a4c20059e"
+    },
+    {
+      "path": "website/business/setup/wizard.mjs",
+      "blob": "270ed6af6f0b79ed9b56beb3749df242fcc17f18"
+    },
+    {
+      "path": "website/business/dashboard/dashboard.mjs",
+      "blob": "60ce56fe28b8153ee9878d320e4704682afb5029"
+    },
+    {
+      "path": "web/phase37/dashboard-37-2-entry.js",
+      "blob": "9378abc7b0c27b4a1db23e4a8e527c76114bad29"
+    },
+    {
+      "path": "web/phase41/README-41-3.md",
+      "blob": "afc6e24cd48729768bc2f2ccd872515f11036ce4"
+    }
+  ],
+  "limitations": [
+    "No exhaustive tree listing available",
+    "Commit search incomplete across unmerged branches",
+    "No dependency closure or browser verification yet",
+    "Phase 41 README is documentation, not verified implementation"
+  ]
+}
