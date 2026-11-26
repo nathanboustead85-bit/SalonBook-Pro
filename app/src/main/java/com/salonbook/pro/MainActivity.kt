@@ -56,7 +56,7 @@ class MainActivity : Activity() {
         restoringRoute = true
         try {
             if (previous != null) {
-                restoreScreen(previous.screen, previous.preview)
+                restoreScreen(if (previous.screen == "ClientDetails") "Clients" else previous.screen, previous.preview)
                 val scroll = screenScroll
                 scroll.post { scroll.scrollTo(0, previous.scroll) }
             } else {
@@ -124,6 +124,8 @@ class MainActivity : Activity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        backRoutes.clear()
+        renderedRoute = null
         openRequestedTab()
     }
 
@@ -1172,7 +1174,24 @@ class MainActivity : Activity() {
             }
         }
 
+        dialog.setCancelable(false)
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+                if (event.action == android.view.KeyEvent.ACTION_UP) {
+                    AlertDialog.Builder(this).setTitle("Discard unsaved changes?")
+                        .setPositiveButton("Discard") { _, _ -> dialog.dismiss() }
+                        .setNegativeButton("Keep editing", null).show()
+                }
+                true
+            } else false
+        }
         dialog.show()
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
+            AlertDialog.Builder(this).setTitle("Discard unsaved changes?")
+                .setPositiveButton("Discard") { _, _ -> dialog.dismiss() }
+                .setNegativeButton("Keep editing", null).show()
+        }
     }
 
     private fun toMinutes(time: String): Int {
