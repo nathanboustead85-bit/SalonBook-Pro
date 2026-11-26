@@ -14,6 +14,9 @@ internal object BoustioDesign {
     fun tileFor(title: String): Tile {
         val t = title.lowercase(java.util.Locale.ROOT)
         return when {
+            t.contains("settings") && !t.startsWith("back") -> tile("gear","#E0F3ED","#168579")
+            t.contains("appointment clients") -> tile("history","#F0E9F8","#79559F")
+            t.contains("client directory") -> tile("contact","#F0E9F8","#79559F")
             t.startsWith("back") -> tile("back","#E0F3ED","#168579")
             t.contains("new appointment") -> tile("add","#E0F3ED","#168579")
             t.contains("calendar") || t.contains("availability") && !t.contains("staff") -> tile("calendar","#E7EFFB","#426DA5")
@@ -44,6 +47,9 @@ internal class FeatureIcon(context: Context, private val tile: BoustioDesign.Til
         fun circle(a:Float,b:Float,r:Float)=c.drawCircle(a,b,r,p)
         when(tile.kind) {
             "calendar","add" -> { rect(3f,5f,21f,21f); line(3f,10f,21f,10f); line(7f,3f,7f,7f); line(17f,3f,17f,7f); if(tile.kind=="add"){line(8f,15f,16f,15f);line(12f,11f,12f,19f)} else {circle(8f,14f,0.7f);circle(12f,14f,0.7f);circle(16f,14f,0.7f)} }
+            "gear" -> {circle(12f,12f,7f);circle(12f,12f,3f);for(i in 0..7){c.save();c.rotate(i*45f,12f,12f);line(12f,2f,12f,5f);c.restore()}}
+            "history" -> {rect(3f,4f,21f,21f);line(3f,9f,21f,9f);circle(13f,15f,4f);line(13f,12f,13f,15f);line(13f,15f,16f,15f)}
+            "contact" -> {rect(4f,3f,21f,22f);circle(13f,9f,3f);c.drawArc(RectF(7f,13f,19f,23f),180f,180f,false,p);line(2f,7f,5f,7f);line(2f,17f,5f,17f)}
             "people" -> {circle(9f,7f,3f);circle(18f,9f,2.5f);c.drawArc(RectF(2f,12f,16f,25f),180f,180f,false,p);c.drawArc(RectF(14f,14f,23f,24f),210f,150f,false,p)}
             "list" -> {rect(5f,4f,20f,22f);rect(9f,2f,16f,6f);for(y in listOf(10f,14f,18f))line(9f,y,16f,y)}
             "scissors" -> {circle(6f,6f,3f);circle(6f,18f,3f);line(8f,8f,21f,20f);line(8f,16f,21f,4f)}
