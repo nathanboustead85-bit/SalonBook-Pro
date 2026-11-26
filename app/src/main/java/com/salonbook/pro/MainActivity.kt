@@ -625,33 +625,44 @@ class MainActivity : Activity() {
         })
         datePanel.addView(dashboardLabel(FriendlyDate.format(selectedDate, "EEEE").uppercase(Locale.UK), 15f, true).apply { setTextColor(purple) })
         datePanel.addView(dashboardLabel(FriendlyDate.format(selectedDate, "dd MMM yyyy"), 30f, true))
-        val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        val controls = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            isBaselineAligned = false
+        }
         fun dateAction(label: String, description: String, action: () -> Unit) {
-            controls.addView(Button(this).apply {
-                text = label
-                textSize = if (label == "‹" || label == "›") 26f else 14f
+            val selected = label == "Today" && selectedDate == today()
+            val tile = android.widget.FrameLayout(this).apply {
+                background = rounded(if (selected) Color.rgb(0, 105, 100) else mint, dp(12).toFloat())
                 contentDescription = description
-                isAllCaps = false
-                setTextColor(purple)
-                background = rounded(if (label == "Today" && selectedDate == today()) Color.rgb(0, 105, 100) else mint, dp(12).toFloat())
-                if (label == "Today" && selectedDate == today()) setTextColor(Color.WHITE)
-                if (description == "Choose another date") {
-                    text = ""
-                    val calendarIcon = getDrawable(R.drawable.nav_calendar)?.mutate()
-                    calendarIcon?.setTint(purple)
-                    calendarIcon?.setBounds(0, 0, dp(24), dp(24))
-                    setCompoundDrawables(null, calendarIcon, null, null)
-                    gravity = Gravity.CENTER
-                }
-                minHeight = dp(48)
+                isClickable = true
+                isFocusable = true
                 setOnClickListener { action() }
-            }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(4) })
+            }
+            if (description == "Choose another date") {
+                tile.addView(ImageView(this).apply {
+                    setImageResource(R.drawable.nav_calendar)
+                    setColorFilter(purple)
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                }, android.widget.FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER))
+            } else {
+                tile.addView(TextView(this).apply {
+                    text = label
+                    textSize = if (label == "‹" || label == "›") 26f else 14f
+                    setTextColor(if (selected) Color.WHITE else purple)
+                    gravity = Gravity.CENTER
+                    includeFontPadding = false
+                    typeface = Typeface.DEFAULT_BOLD
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                }, android.widget.FrameLayout.LayoutParams(-1, -1))
+            }
+            controls.addView(tile, LinearLayout.LayoutParams(0, dp(52), 1f).apply { marginEnd = dp(4) })
         }
         dateAction("‹", "Previous day") { selectedDate = FriendlyDate.shift(selectedDate, -1); showCalendar() }
         dateAction("Today", "Go to today") { selectedDate = today(); showCalendar() }
         dateAction("▦", "Choose another date") { pickDate(selectedDate) { selectedDate = it; showCalendar() } }
         dateAction("›", "Next day") { selectedDate = FriendlyDate.shift(selectedDate, 1); showCalendar() }
-        datePanel.addView(controls)
+        datePanel.addView(controls, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         container.addView(datePanel)
 
         sectionLabel("Your diary")
