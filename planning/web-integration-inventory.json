@@ -1,0 +1,174 @@
+{
+  "schema": 1,
+  "mode": "offline-planning",
+  "deployment": false,
+  "live": {
+    "bookings": false,
+    "payments": false,
+    "messaging": false,
+    "marketing": false
+  },
+  "features": [
+    {
+      "id": "registration",
+      "phase": "18–21",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "business-profile",
+      "phase": "7,22,29",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "services-staff-hours",
+      "phase": "4,22",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "booking-calendar",
+      "phase": "8,14–17,63",
+      "audience": "staff",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "customer-booking",
+      "phase": "12,14–17",
+      "audience": "public",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "portfolio-gallery",
+      "phase": "28",
+      "audience": "public",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "customer-management",
+      "phase": "65",
+      "audience": "staff",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "employee-access",
+      "phase": "66",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "messaging",
+      "phase": "26,62–64",
+      "audience": "staff",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "reporting",
+      "phase": "67",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "marketing-loyalty",
+      "phase": "68",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "waiting-list",
+      "phase": "69.1",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "slot-recovery",
+      "phase": "69.2",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "recurring",
+      "phase": "69.3",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "rebooking",
+      "phase": "69.4",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "gap-optimisation",
+      "phase": "69.5",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "service-addons",
+      "phase": "69.6",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "no-show",
+      "phase": "69.7",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "business-insights",
+      "phase": "69.8",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "shared-protection",
+      "phase": "69.9",
+      "audience": "server",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "payments-tipping",
+      "phase": "74 planned",
+      "audience": "server",
+      "status": "integration-required",
+      "live": false
+    },
+    {
+      "id": "subscriptions",
+      "phase": "75 planned",
+      "audience": "owner",
+      "status": "integration-required",
+      "live": false
+    }
+  ],
+  "platforms": [
+    "android-native",
+    "android-browser",
+    "ios-safari",
+    "ipados-safari",
+    "desktop-browser"
+  ]
+}
