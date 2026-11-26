@@ -78,6 +78,9 @@ class MainActivity : Activity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         // Never place client names or unfinished appointment fields in this navigation bundle.
+        outState.putStringArrayList("navigation_history", ArrayList(backRoutes.map { if (it.screen == "ClientDetails") "Clients" else it.screen }))
+        outState.putStringArrayList("navigation_history_previews", ArrayList(backRoutes.map { it.preview }))
+        outState.putIntArray("navigation_history_scrolls", backRoutes.map { it.scroll }.toIntArray())
         outState.putString("navigation_screen", if (activeScreen == "ClientDetails") "Clients" else activeScreen)
         outState.putString("navigation_preview", activePreview)
         outState.putString("navigation_date", selectedDate)
@@ -116,6 +119,14 @@ class MainActivity : Activity() {
         if (savedInstanceState != null && intent?.getStringExtra("boustio_tab") == null) {
             selectedDate = savedInstanceState.getString("navigation_date") ?: today()
             restoreScreen(savedInstanceState.getString("navigation_screen"), savedInstanceState.getString("navigation_preview"))
+            val routes = savedInstanceState.getStringArrayList("navigation_history").orEmpty()
+            val previews = savedInstanceState.getStringArrayList("navigation_history_previews").orEmpty()
+            val scrolls = savedInstanceState.getIntArray("navigation_history_scrolls") ?: intArrayOf()
+            routes.take(32).forEachIndexed { i, route ->
+                if (route in setOf("Home", "Calendar", "Clients", "Settings", "Appointments", "Hub", "Preview")) {
+                    backRoutes.addLast(Route(route, previews.getOrNull(i).orEmpty(), scrolls.getOrNull(i)?.coerceAtLeast(0) ?: 0))
+                }
+            }
             val offset = savedInstanceState.getInt("navigation_scroll")
             screenScroll.post { screenScroll.scrollTo(0, offset) }
         } else openRequestedTab()
@@ -637,6 +648,13 @@ class MainActivity : Activity() {
                 contentDescription = description
                 isClickable = true
                 isFocusable = true
+                accessibilityDelegate = object : View.AccessibilityDelegate() {
+                    override fun onInitializeAccessibilityNodeInfo(host: View, info: android.view.accessibility.AccessibilityNodeInfo) {
+                        super.onInitializeAccessibilityNodeInfo(host, info)
+                        info.className = "android.widget.Button"
+                        info.isSelected = selected
+                    }
+                }
                 setOnClickListener { action() }
             }
             if (description == "Choose another date") {
