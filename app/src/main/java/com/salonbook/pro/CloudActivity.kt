@@ -94,6 +94,9 @@ class CloudActivity : Activity() {
         addText("Boustio Cloud", 26f)
         addText("Account & Cloud Backup")
 
+        addText("Recovery & diagnostics", 21f)
+        addButton("Local data integrity check") { localIntegrity() }
+        addButton("Offline recovery rehearsal") { offlineRehearsal() }
         val user = auth.currentUser
 
         if (user == null) {
@@ -139,6 +142,38 @@ class CloudActivity : Activity() {
         addButton("Back") {
             finish()
         }
+    }
+
+    private fun localIntegrity() {
+        val report = listOf("bookings", "services", "staff", "client_records_v1").map { key ->
+            val raw = prefs.getString(key, "[]") ?: "[]"
+            val result = runCatching {
+                require(raw.length <= 1_000_000)
+                val records = JSONArray(raw)
+                val ids = mutableSetOf<String>()
+                var issues = 0
+                for (i in 0 until records.length()) {
+                    val item = records.optJSONObject(i)
+                    val id = item?.optString("id").orEmpty()
+                    if (id.isBlank() || !ids.add(id)) issues++
+                }
+                "${records.length()} records; $issues missing or duplicate IDs"
+            }.getOrDefault("Unable to validate")
+            "$key: $result"
+        }
+        AlertDialog.Builder(this).setTitle("Read-only local integrity")
+            .setMessage(report.joinToString("\n") + "\nNo records changed.")
+            .setPositiveButton("Close", null).show()
+    }
+
+    private fun offlineRehearsal() {
+        val local = setOf("sample-a", "sample-b")
+        val simulatedRemote = setOf("sample-a", "sample-c")
+        val localOnly = local - simulatedRemote
+        val remoteOnly = simulatedRemote - local
+        AlertDialog.Builder(this).setTitle("Offline recovery simulation")
+            .setMessage("Synthetic records only.\nShared: ${local.intersect(simulatedRemote).size}\nLocal only: ${localOnly.size}\nRemote only: ${remoteOnly.size}\nNo automatic merge or upload. Real reconnection is not tested by this simulation.")
+            .setPositiveButton("Close", null).show()
     }
 
     private fun showLogin() {
