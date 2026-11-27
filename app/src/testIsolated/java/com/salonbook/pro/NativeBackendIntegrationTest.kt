@@ -18,7 +18,18 @@ class NativeBackendIntegrationTest {
             .put("appointmentId","native-booking").put("requestId","native-create")
             .put("action","create").put("expectedRevision",0)
             .put("serviceId","cut").put("staffId","staff").put("date",date).put("startTime","09:00")
-        val first = connector.submit(request)
+        var lost = false
+        val interrupted = IsolatedBookingConnector({ Pair(uid,token) }) { t, body ->
+            val receipt = transport.submit(t,body)
+            if (!lost) {
+                lost = true
+                throw java.io.IOException("Simulated lost acknowledgement after server commit")
+            }
+            receipt
+        }
+        assertTrue(runCatching { interrupted.submit(request) }.exceptionOrNull() is java.io.IOException)
+        assertTrue(lost)
+        val first = interrupted.submit(request)
         assertEquals(1L,first.getLong("revision"))
         assertEquals(first.toString(),connector.submit(request).toString())
         val invalid = IsolatedBookingConnector({ Pair(uid,"invalid") },transport::submit)
