@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const source = fs.readFileSync('app/src/main/java/com/salonbook/pro/MainActivity.kt','utf8');
-const portfolio = source.slice(source.indexOf('private fun showLocalPortfolio()'),source.indexOf('private fun showFeaturePreview(id: String)'));
+const portfolio = source.slice(source.indexOf('private fun showLocalPortfolio()'),source.indexOf('private fun showBusinessHub()'));
 test('portfolio drafts use dedicated local storage and stale edit guard',()=>{
  assert.match(portfolio,/local_portfolio_drafts_v1/);
  assert.match(portfolio,/prefs.getString\(key, null\) != raw/);
