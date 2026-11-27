@@ -1,0 +1,27 @@
+{
+  "phase": "72.5.10",
+  "scope": "isolated JavaScript Android synchronisation prototype",
+  "evidenceRun": 46000779775,
+  "live": false,
+  "deploy": false,
+  "verified": [
+    "request validation",
+    "pending queue",
+    "snapshot recovery",
+    "session isolation",
+    "single-flight transport",
+    "emulator transaction replay",
+    "competing device conflict",
+    "restart after lost acknowledgement"
+  ],
+  "open": [
+    "Native Android Kotlin integration",
+    "Secure durable storage and crash-safe persistence",
+    "Real token verification and server authorization",
+    "Authoritative receipt schema and server-derived fingerprint",
+    "Trusted rescheduling",
+    "Physical Samsung verification",
+    "Legacy appointment reconciliation"
+  ],
+  "productionReady": false
+}
