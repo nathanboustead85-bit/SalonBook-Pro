@@ -594,6 +594,44 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
     }
 
+    private fun showMessagingRehearsal() {
+        text("Private messaging rehearsal — fictional conversation. Nothing is sent or saved.")
+        val history = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        container.addView(history)
+        val draft = EditText(this).apply {
+            hint = "Write a fictional test message"
+            filters = arrayOf(android.text.InputFilter.LengthFilter(1000))
+        }
+        container.addView(draft)
+        val pause = android.widget.CheckBox(this).apply { text = "Pause messaging"; isChecked = true }
+        container.addView(pause)
+        var count = 0
+        fun appendPreview(value: String) {
+            if (pause.isChecked) { message("Messaging rehearsal is paused."); return }
+            if (count >= 30) { message("Rehearsal limit reached. Clear the conversation."); return }
+            history.addView(TextView(this).apply {
+                text = value; textSize = 16f; setTextColor(dark)
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+                background = rounded(mint, dp(12).toFloat())
+            })
+            count++
+        }
+        homeAction("Preview text message", "Add a fictional message to the rehearsal") {
+            val value = draft.text.toString().trim()
+            if (value.isBlank()) message("Enter a test message.")
+            else if (!pause.isChecked && count < 30) { appendPreview("Business: " + value); draft.text.clear() }
+            else appendPreview(value)
+        }
+        homeAction("Preview photograph", "Simulated attachment — no photo accessed") { appendPreview("Business: [Example photograph — not uploaded]") }
+        homeAction("Preview voice note", "Simulated audio — no microphone accessed") { appendPreview("Business: [Example voice note — not recorded]") }
+        homeAction("Clear rehearsal", "Remove all fictional messages") {
+            AlertDialog.Builder(this).setTitle("Clear conversation rehearsal?").setNegativeButton("Cancel", null)
+                .setPositiveButton("Clear") { _, _ -> history.removeAllViews(); draft.text.clear(); count = 0; pause.isChecked = true }.show()
+        }
+        text("Actual customer conversations, photo attachments, voice recording and delivery require further integration.")
+        homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
+    }
+
     private fun showEmployeeDrafts() {
         text("Local employee access plans only. No accounts, invitations or actual permissions are activated.")
         val key = "local_employee_access_v1"
@@ -790,6 +828,7 @@ class MainActivity : Activity() {
         screen(feature.title)
         if (id == "portfolio") { showLocalPortfolio(); return }
         if (id == "team") { showEmployeeDrafts(); return }
+        if (id == "messages") { showMessagingRehearsal(); return }
         text("ISOLATED PREVIEW — no live actions")
         text(feature.description)
         text("Example only. No customer records, payments, messages or bookings are changed.")
