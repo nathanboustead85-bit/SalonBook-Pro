@@ -1,0 +1,58 @@
+{
+  "phase": "72.10.1",
+  "scope": "partial integration readiness inventory",
+  "evidenceRun": 46028995861,
+  "productionReady": false,
+  "live": false,
+  "deploy": false,
+  "migrationAllowed": false,
+  "sources": [
+    "phase72-4-10-booking-audit",
+    "phase72-8-7-audit",
+    "phase72-9-6-audit"
+  ],
+  "open": [
+    {
+      "source": "phase72-4-10-booking-audit",
+      "requirements": [
+        "trusted rescheduling preparation",
+        "server-derived request fingerprint",
+        "real token verification",
+        "employee and customer authorization",
+        "legacy migration and reconciliation",
+        "production time zone and DST validation",
+        "cross-device integration",
+        "staging security verification"
+      ]
+    },
+    {
+      "source": "phase72-8-7-audit",
+      "requirements": [
+        "actual legacy Android schema mapping",
+        "secure immutable backup storage",
+        "trusted identity and source revision retrieval",
+        "full field and customer relationship reconciliation",
+        "destination occupancy reconciliation",
+        "atomic cutover and actual rollback rehearsal",
+        "physical device and staging verification"
+      ]
+    },
+    {
+      "source": "phase72-9-6-audit",
+      "requirements": [
+        "native Android and browser integration",
+        "verified server authentication and authoritative receipts",
+        "trusted rescheduling",
+        "durable client queues and physical network recovery",
+        "legacy migration and rollback",
+        "production timezone and DST verification",
+        "staging security and end-to-end verification"
+      ]
+    }
+  ],
+  "additionalReviewRequired": [
+    "Android adapter audit",
+    "business web adapter audit",
+    "customer adapter audit"
+  ]
+}
