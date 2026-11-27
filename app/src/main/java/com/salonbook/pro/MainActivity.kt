@@ -594,6 +594,45 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
     }
 
+    private fun showEmployeeDrafts() {
+        text("Local employee access plans only. No accounts, invitations or actual permissions are activated.")
+        val key = "local_employee_access_v1"
+        val raw = prefs.getString(key, null)
+        val plans = try { JSONObject(raw ?: "{}") } catch (_: Exception) {
+            text("Access plans could not be read. Existing data is protected."); return
+        }
+        val staff = readRecords("staff").filter { it.optString("id").isNotBlank() }
+        if (staff.isEmpty()) text("Add staff in Staff & Working Hours first.")
+        for (person in staff) {
+            val id = person.optString("id")
+            val role = EmployeeAccessPlan.normalise(plans.optString(id))
+            sectionLabel(person.optString("name"))
+            text("Planned access: " + role)
+            text(EmployeeAccessPlan.description(role))
+            homeAction("Edit access plan", "Choose a proposed role") {
+                val roles = EmployeeAccessPlan.roles
+                var selected = roles.indexOf(role)
+                AlertDialog.Builder(this).setTitle("Planned employee access")
+                    .setSingleChoiceItems(roles.toTypedArray(), selected) { _, which -> selected = which }
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Save plan") { _, _ ->
+                        if (prefs.getString(key, null) != raw) { message("Access plans changed. Reopen and try again.") }
+                        else {
+                            val updated = JSONObject(plans.toString())
+                            updated.put(id, roles[selected])
+                            if (prefs.edit().putString(key, updated.toString()).commit()) showFeaturePreview("team")
+                            else message("Unable to save access plan.")
+                        }
+                    }.show()
+            }
+        }
+        text("Owner-only: finances, subscriptions, security settings and permission administration. Employee plans do not restrict the current owner app.")
+        homeAction("Manage local staff", "Open staff and working hours") {
+            openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
+        }
+        homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
+    }
+
     private var pendingPortfolioPhotoId: String? = null
     private fun portfolioImageFile(id: String): java.io.File? {
         if (!Regex("[a-fA-F0-9-]{36}").matches(id)) return null
@@ -750,6 +789,7 @@ class MainActivity : Activity() {
         activePreview = feature.id
         screen(feature.title)
         if (id == "portfolio") { showLocalPortfolio(); return }
+        if (id == "team") { showEmployeeDrafts(); return }
         text("ISOLATED PREVIEW — no live actions")
         text(feature.description)
         text("Example only. No customer records, payments, messages or bookings are changed.")
