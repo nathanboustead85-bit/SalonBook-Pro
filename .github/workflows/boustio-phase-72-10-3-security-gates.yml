@@ -1,0 +1,25 @@
+name: Boustio Phase 72.10.3 production security gates
+on:
+  workflow_dispatch:
+  push:
+    branches: [boustio-phase-72-10-3-security-gates]
+jobs:
+  emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: boustio-phase-72-10-3-security-gates
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm install --no-save --package-lock=false firebase-admin@13 firebase-tools@14
+      - run: node --test tests/phase66-8-employee-backend.test.cjs tests/phase72-1-sync-architecture.test.cjs tests/phase72-3-access.test.cjs tests/phase72-4-booking-locks.test.cjs tests/phase72-4-2-transaction.test.cjs tests/phase72-4-3-firestore-adapter.test.cjs tests/phase72-4-6-trusted-validation.test.cjs tests/phase72-4-10-audit.test.cjs tests/phase72-5-1-android-contract.test.cjs tests/phase72-5-2-android-request.test.cjs tests/phase72-5-3-android-queue.test.cjs tests/phase72-5-4-android-recovery.test.cjs tests/phase72-5-5-session.test.cjs tests/phase72-5-6-transport.test.cjs tests/phase72-5-10-audit.test.cjs tests/phase72-6-1-web-contract.test.cjs tests/phase72-6-2-web-session.test.cjs tests/phase72-6-7-conflict-resolution.test.cjs tests/phase72-6-9-reliability.test.cjs tests/phase72-6-10-audit.test.cjs tests/phase72-7-1-customer-contract.test.cjs tests/phase72-7-2-customer-security.test.cjs tests/phase72-7-3-trusted-customer.test.cjs tests/phase72-7-8-confirmation-state.test.cjs tests/phase72-7-9-customer-recovery.test.cjs tests/phase72-7-10-audit.test.cjs tests/phase72-8-1-migration-safety.test.cjs tests/phase72-8-2-backup-integrity.test.cjs tests/phase72-8-3-record-validation.test.cjs tests/phase72-8-4-conflict-detection.test.cjs tests/phase72-8-5-migration-dry-run.test.cjs tests/phase72-8-6-recovery.test.cjs tests/phase72-8-7-audit.test.cjs tests/phase72-9-6-audit.test.cjs tests/phase72-10-1-readiness.test.cjs tests/phase72-10-2-adapter-review.test.cjs tests/phase72-10-3-security-gates.test.cjs
+      - run: npx firebase emulators:exec --only firestore --project demo-boustio "node --test tests/phase72-9-5-isolation.test.cjs"
+        env:
+          GCLOUD_PROJECT: demo-boustio
