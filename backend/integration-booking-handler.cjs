@@ -5,6 +5,7 @@ const {executeBooking}=require("./booking-transaction.cjs");
 const {prepareCreation}=require("./trusted-owner-create.cjs");
 const {prepareCancellation}=require("./trusted-owner-command.cjs");
 const {prepareCustomerCreation}=require("./trusted-customer-create.cjs");
+const {prepareReschedule}=require("./trusted-owner-reschedule.cjs");
 const {createHash}=require("node:crypto");
 // Isolated handler only; no production listener or deployment.
 function createHandler({db,auth,serverTimestamp}){
@@ -18,6 +19,7 @@ function createHandler({db,auth,serverTimestamp}){
  let prepare;
  if(d.action==="create")prepare=identity.uid===d.businessId?prepareCreation(identity,d):prepareCustomerCreation(identity,d);
  else if(d.action==="cancel"&&identity.uid===d.businessId)prepare=prepareCancellation(identity,d);
+ else if(d.action==="reschedule"&&identity.uid===d.businessId)prepare=prepareReschedule(identity,d);
  else throw Error("Denied");
  return executeBooking({store,businessId:d.businessId,actorId:identity.uid,key:d.requestId,receiptVersion:1,fingerprint:createHash("sha256").update(JSON.stringify(d)).digest("hex"),prepare});
  };
