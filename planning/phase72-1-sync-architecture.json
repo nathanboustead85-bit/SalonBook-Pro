@@ -1,0 +1,66 @@
+{
+  "phase": "72.1",
+  "status": "architecture-only",
+  "deployment": false,
+  "live": false,
+  "clients": [
+    "android",
+    "business-web",
+    "customer-web"
+  ],
+  "authority": "server",
+  "tenantBoundary": "businessId verified against authenticated membership on server",
+  "entities": [
+    {
+      "id": "business-profile",
+      "visibility": "public projection only"
+    },
+    {
+      "id": "services",
+      "visibility": "published projection only"
+    },
+    {
+      "id": "staff",
+      "visibility": "published projection only"
+    },
+    {
+      "id": "availability",
+      "visibility": "derived slots only"
+    },
+    {
+      "id": "appointments",
+      "visibility": "authorized business or verified customer scope"
+    },
+    {
+      "id": "customers",
+      "visibility": "authorized business only"
+    },
+    {
+      "id": "employee-roles",
+      "visibility": "owner-managed server authorization"
+    }
+  ],
+  "mutation": {
+    "serverOnly": true,
+    "idempotencyKey": true,
+    "expectedRevision": true,
+    "atomicAvailabilityCheck": true,
+    "serverTimestamp": true
+  },
+  "offline": {
+    "readCache": "tenant-scoped",
+    "pendingWrites": "not confirmed until server acknowledgement",
+    "conflicts": "reject stale edits; refresh and review",
+    "migration": "explicit approval, dry run, backup and reconciliation; never overwrite DEV automatically"
+  },
+  "gates": [
+    "emulator isolation",
+    "tenant authorization",
+    "atomic overlap protection",
+    "idempotency",
+    "stale revision rejection",
+    "offline reconnect",
+    "migration reconciliation",
+    "independent staging verification"
+  ]
+}
