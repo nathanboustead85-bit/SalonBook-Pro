@@ -1,0 +1,25 @@
+{
+  "phase": "72.8.1",
+  "mode": "dry-run-only",
+  "live": false,
+  "deploy": false,
+  "allowWrites": false,
+  "requiredGates": [
+    "verified tenant identity",
+    "immutable source backup",
+    "source schema validation",
+    "stable record identifiers",
+    "appointment and customer reconciliation",
+    "occupancy conflict detection",
+    "source revision recheck",
+    "explicit migration approval",
+    "atomic cutover",
+    "rollback rehearsal"
+  ],
+  "preserve": [
+    "original appointments",
+    "customer records",
+    "legacy source"
+  ],
+  "evidenceRun": 46019470812
+}
