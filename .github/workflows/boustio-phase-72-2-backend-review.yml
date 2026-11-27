@@ -1,0 +1,16 @@
+name: Boustio Phase 72.2 backend review
+on:
+  workflow_dispatch:
+  push:
+    branches: [boustio-phase-72-2-backend-review]
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: boustio-phase-72-2-backend-review
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/phase66-8-employee-backend.test.cjs tests/phase72-1-sync-architecture.test.cjs
