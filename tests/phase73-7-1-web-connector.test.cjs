@@ -24,5 +24,17 @@ try{
  session={...session,uid:customer.uid};await a.rejects(connector(draft,"other"));
  a.equal((await send(customer.header,{...draft,action:"cancel",expectedRevision:1,requestId:"cancel"})).status,400);
  a.equal((await root.collection("appointments").get()).size,1);a.equal((await root.collection("bookingRequests").get()).size,1);
+ session={uid:b,businessId:b,verified:true,token:owner.header.slice(7),epoch:3};
+ const move={...draft,action:"reschedule",expectedRevision:1,startTime:"11:00"};
+ const moved=await connector(move,"web-move");a.equal(moved.revision,2);
+ a.deepEqual(await connector(move,"web-move"),moved);
+ await a.rejects(connector({...move,startTime:"12:00"},"web-stale"));
+ const cancel={...draft,action:"cancel",expectedRevision:2};
+ const cancelled=await connector(cancel,"web-cancel");a.equal(cancelled.revision,3);
+ a.deepEqual(await connector(cancel,"web-cancel"),cancelled);
+ const saved=await root.collection("appointments").doc(draft.appointmentId).get();
+ a.equal(saved.data().status,"cancelled");a.equal(saved.data().revision,3);
+ a.equal((await root.collection("bookingLocks").get()).size,0);
+ a.equal((await root.collection("bookingRequests").get()).size,3);
 }finally{await new Promise(resolve=>server.close(resolve));}
 });
