@@ -9,6 +9,7 @@ function createStore(db,serverTimestamp){
  readRequest:(b,k)=>read(b,"bookingRequests",k),
  readLock:async(b,k)=>{const v=await read(b,"bookingLocks",k);if(!v)return null;if(typeof v.appointmentId!=="string"||v.businessId!==b)throw Error("Invalid lock record");return v.appointmentId;},
  readAppointment:(b,k)=>read(b,"appointments",k),
+ readCatalogue:b=>read(b,"catalogue","current"),
  releaseLock:(b,k)=>t.delete(ref(b,"bookingLocks",k)),
  acquireLock:(b,k,v)=>t.create(ref(b,"bookingLocks",k),{appointmentId:v,businessId:b,createdAt:serverTimestamp()}),
  writeAppointment:(b,k,v)=>t.set(ref(b,"appointments",k),{...v,businessId:b,updatedAt:serverTimestamp()}),
