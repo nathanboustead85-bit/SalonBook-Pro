@@ -1,0 +1,16 @@
+name: Boustio Phase 72.1 sync architecture
+on:
+  workflow_dispatch:
+  push:
+    branches: [boustio-phase-72-1-sync-architecture]
+jobs:
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: boustio-phase-72-1-sync-architecture
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/phase71-9-9-audit.test.cjs tests/phase71-10-verification.test.cjs tests/phase72-1-sync-architecture.test.cjs
