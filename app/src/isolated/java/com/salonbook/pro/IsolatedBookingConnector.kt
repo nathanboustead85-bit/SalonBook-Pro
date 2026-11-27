@@ -31,13 +31,14 @@ internal class IsolatedBookingConnector(
         }
         val result = JSONObject(transport(before.second, request.toString()))
         check(session() == before) { "Session changed" }
-        check(result.getInt("receiptVersion") == 1 &&
-            result.getBoolean("accepted") &&
+        check(result.get("receiptVersion") == 1 &&
+            result.get("accepted") == true &&
             result.getString("status") == "accepted" &&
             result.getString("businessId") == uid &&
             result.getString("actorId") == uid &&
             result.getString("requestId") == requestId &&
             result.getString("appointmentId") == appointmentId &&
+            (result.get("revision") is Int || result.get("revision") is Long) &&
             result.getLong("revision") == revision + 1) { "Invalid receipt" }
         return result
     }
