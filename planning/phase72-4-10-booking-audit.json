@@ -1,0 +1,24 @@
+{
+  "scope": "isolated booking prototype",
+  "evidenceRun": 45997946989,
+  "status": "prototype verified; production blocked",
+  "live": false,
+  "deploy": false,
+  "verified": [
+    "atomic lock contention",
+    "synthetic rescheduling and cancellation",
+    "owner creation and cancellation",
+    "receipt replay",
+    "catalogue price and availability checks"
+  ],
+  "open": [
+    "trusted rescheduling preparation",
+    "server-derived request fingerprint",
+    "real token verification",
+    "employee and customer authorization",
+    "legacy migration and reconciliation",
+    "production time zone and DST validation",
+    "cross-device integration",
+    "staging security verification"
+  ]
+}
