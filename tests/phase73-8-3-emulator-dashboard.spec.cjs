@@ -1,0 +1,33 @@
+const {test,expect}=require("@playwright/test");
+const http=require("node:http"),fs=require("node:fs");
+const {initializeApp,deleteApp}=require("firebase-admin/app");
+const {getAuth}=require("firebase-admin/auth");
+const {getFirestore,FieldValue}=require("firebase-admin/firestore");
+const {listenBridge}=require("../backend/isolated-http-bridge.cjs");
+const host=process.env.FIREBASE_AUTH_EMULATOR_HOST;
+if(!/^127\.0\.0\.1:\d+$/.test(host||"")||!/^127\.0\.0\.1:\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST||"")||process.env.GCLOUD_PROJECT!=="demo-boustio")throw Error("Emulators required");
+test("browser reschedules and cancels with real emulator receipts",async({page,browserName})=>{
+ const app=initializeApp({projectId:"demo-boustio"},browserName),auth=getAuth(app),db=getFirestore(app);
+ const login=async label=>{const email=label+"-"+browserName+"-"+Date.now()+"@example.test",password="TestOnly123!";const u=await auth.createUser({email,password,emailVerified:true});const r=await fetch("http://"+host+"/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password,returnSecureToken:true})});expect(r.ok).toBeTruthy();return {uid:u.uid,token:(await r.json()).idToken}};
+ const owner=await login("owner"),other=await login("other"),b=owner.uid,date=new Date(Date.now()+3*86400000).toISOString().slice(0,10),day=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"][new Date(date+"T12:00:00Z").getUTCDay()],root=db.collection("businesses").doc(b);
+ await root.collection("catalogue").doc("current").set({schemaVersion:1,business:{ownerUid:b,published:true,acceptingBookings:true},services:[{id:"cut",name:"Cut",active:true,durationMinutes:30,price:20}],staff:[{id:"staff",name:"Staff",active:true,serviceIds:["cut"],weeklySchedule:{[day]:{open:"09:00",close:"17:00"}}}]});
+ const bridge=await listenBridge({db,auth,serverTimestamp:FieldValue.serverTimestamp});
+ const send=(token,body)=>fetch("http://127.0.0.1:"+bridge.address().port+"/booking",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify(body)});
+ const draft={action:"create",businessId:b,actorId:b,appointmentId:"browser-booking",requestId:"seed",expectedRevision:0,serviceId:"cut",staffId:"staff",date,startTime:"09:00"};
+ let receipts=new Map(),server;
+ try{
+ expect((await send(owner.token,draft)).ok).toBeTruthy();
+ server=http.createServer(async(req,res)=>{try{
+ if(req.method==="GET"&&["/tests/fixtures/phase22_premium_dashboard.html","/bundle.js"].includes(req.url)){res.setHeader("Content-Type",req.url.endsWith(".js")?"text/javascript":"text/html");res.setHeader("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'");return res.end(fs.readFileSync(req.url.slice(1)))}
+ if(req.method!=="POST"||!["/booking","/receipt"].includes(req.url)){res.writeHead(404);return res.end()}
+ const chunks=[];for await(const c of req)chunks.push(c);const body=JSON.parse(Buffer.concat(chunks));const token=req.headers.authorization?.slice(7);const claims=await auth.verifyIdToken(token);if(claims.email_verified!==true||claims.uid!==body.businessId)throw Error("Denied");
+ let receipt;if(req.url==="/booking"){const r=await send(token,body);if(!r.ok)throw Error("Rejected");receipt=await r.json();receipts.set(claims.uid+":"+body.requestId,receipt)}else receipt=receipts.get(claims.uid+":"+body.requestId);
+ if(!receipt)throw Error("Missing");res.setHeader("Content-Type","application/json");res.end(JSON.stringify(receipt));
+ }catch{res.writeHead(400);res.end()}});
+ await new Promise(r=>server.listen(0,"127.0.0.1",r));await page.goto("http://127.0.0.1:"+server.address().port+"/tests/fixtures/phase22_premium_dashboard.html");
+ await page.evaluate(s=>window.startIsolatedBookingTest(s),{...owner,date});
+ await page.locator("#move").click();await expect(page.locator("#recovery-status")).toContainText("unresolved");await expect(page.locator("#cancel")).toBeDisabled();await page.locator("#recover").click();await expect(page.locator("#recovery-status")).toHaveText("Ready");await page.locator("#cancel").click();await expect(page.locator("#recovery-status")).toHaveText("Ready");await expect.poll(async()=>(await root.collection("appointments").doc("browser-booking").get()).data().revision).toBe(3);
+ expect((await root.collection("appointments").doc("browser-booking").get()).data().status).toBe("cancelled");expect((await root.collection("bookingRequests").get()).size).toBe(3);expect((await root.collection("bookingLocks").get()).size).toBe(0);
+ expect((await send(other.token,{...draft,requestId:"foreign"})).ok).toBeFalsy();await page.evaluate(()=>window.stopIsolatedBookingTest());await expect(page.locator("#move")).toBeDisabled();
+ }finally{if(server)await new Promise(r=>server.close(r));await new Promise(r=>bridge.close(r));await deleteApp(app)}
+});
