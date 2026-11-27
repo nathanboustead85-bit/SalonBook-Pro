@@ -21,9 +21,15 @@ internal class LoopbackBookingTransport(private val port: Int) {
             connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
             check(connection.responseCode == 200) { "Booking response unavailable" }
             return connection.inputStream.use { stream ->
-                val bytes = stream.readNBytes(65537)
-                check(bytes.size <= 65536) { "Response too large" }
-                String(bytes, Charsets.UTF_8)
+                val output = java.io.ByteArrayOutputStream()
+                val buffer = ByteArray(4096)
+                while (true) {
+                    val count = stream.read(buffer)
+                    if (count == -1) break
+                    check(output.size() + count <= 65536) { "Response too large" }
+                    output.write(buffer, 0, count)
+                }
+                String(output.toByteArray(), Charsets.UTF_8)
             }
         } finally { connection.disconnect() }
     }
