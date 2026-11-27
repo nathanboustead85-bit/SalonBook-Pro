@@ -63,7 +63,21 @@ jobs:
           test -s "$KEYFILE"
           echo "BOUSTIO_SIGNING_STORE_FILE=$KEYFILE" >> "$GITHUB_ENV"
       - name: Run full isolated Android JVM regression suite
-        run: gradle --no-daemon :app:testIsolatedDebugUnitTest
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            log="$RUNNER_TEMP/boustio-jvm-attempt-$attempt.log"
+            if gradle --no-daemon :app:testIsolatedDebugUnitTest 2>&1 | tee "$log"; then
+              exit 0
+            fi
+            if ! grep -q 'MavenArtifactFetcher' "$log" || ! grep -q 'HttpURLConnection' "$log"; then
+              exit 1
+            fi
+            if [[ "$attempt" == 3 ]]; then exit 1; fi
+            sleep "$((attempt * 30))"
+          done
+          exit 1
       - name: Build test APK using stable signing key
         run: gradle --no-daemon :app:assembleIsolatedDebug
       - name: Verify APK package version, isolation and signature
