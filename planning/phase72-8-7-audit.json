@@ -1,0 +1,27 @@
+{
+  "phase": "72.8.7",
+  "scope": "read-only normalized migration prototype",
+  "evidenceRun": 46021012940,
+  "productionReady": false,
+  "live": false,
+  "deploy": false,
+  "migrationAllowed": false,
+  "verified": [
+    "backup digest validation",
+    "tenant scope",
+    "record identifier validation",
+    "duplicate detection",
+    "normalized occupancy conflict detection",
+    "read-only rehearsal",
+    "checkpoint revision and count reconciliation"
+  ],
+  "open": [
+    "actual legacy Android schema mapping",
+    "secure immutable backup storage",
+    "trusted identity and source revision retrieval",
+    "full field and customer relationship reconciliation",
+    "destination occupancy reconciliation",
+    "atomic cutover and actual rollback rehearsal",
+    "physical device and staging verification"
+  ]
+}
