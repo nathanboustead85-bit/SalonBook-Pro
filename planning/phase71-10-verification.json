@@ -1,0 +1,33 @@
+{
+  "baseline": "boustio-phase-71-9-9-final-audit",
+  "auditRun": 45985207343,
+  "versionCode": 151,
+  "versionName": "0.2.149",
+  "auditSamsung": {
+    "passed": 10,
+    "total": 10,
+    "evidence": "User confirmation"
+  },
+  "finalSamsung": "pending",
+  "finalBuild": "pending",
+  "launchReady": false,
+  "deployment": false,
+  "liveFeatures": false,
+  "openRequirements": [
+    "service add-ons",
+    "no-show management",
+    "process-death draft recovery",
+    "cloud reconnect",
+    "large catalogue performance",
+    "cross-device atomic booking protection",
+    "registration and publishing",
+    "employee authorization",
+    "messaging delivery",
+    "loyalty consent and redemption",
+    "recurring series writes",
+    "cancellation-triggered recovery",
+    "payment ledger and tipping",
+    "subscriptions",
+    "website integration"
+  ]
+}
