@@ -2,7 +2,7 @@
 const http=require("node:http");
 const {createHandler}=require("./integration-booking-handler.cjs");
 function createBridge(options){
- const handle=createHandler(options);
+ const handle=createHandler({...options,strictActor:true});
  return http.createServer({requestTimeout:10000,headersTimeout:5000},async(req,res)=>{
   const reply=(status,body)=>{res.writeHead(status,{"Content-Type":"application/json","Cache-Control":"no-store"});res.end(JSON.stringify(body));};
   if(req.socket.remoteAddress!=="127.0.0.1"||req.method!=="POST"||req.url!=="/booking")return reply(404,{error:"Unavailable"});
