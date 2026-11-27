@@ -12,7 +12,12 @@ try{
  a.equal((await send("Bearer invalid",draft)).status,401);
  let session={uid:b,businessId:b,verified:true,token:owner.header.slice(7),epoch:1};
  const connector=createWebConnector({session:()=>session,transport:async(token,body)=>{const r=await send("Bearer "+token,body);if(!r.ok)throw Error("Rejected");return r.json();}});
- const receipt=await connector(draft,draft.requestId);a.equal(receipt.actorId,b);a.equal(receipt.revision,1);
+ let lost=false;
+ const interrupted=createWebConnector({session:()=>session,transport:async(token,body)=>{const r=await send("Bearer "+token,body);if(!r.ok)throw Error("Rejected");const receipt=await r.json();if(!lost){lost=true;throw Error("Lost acknowledgement");}return receipt;}});
+ await a.rejects(interrupted(draft,draft.requestId),/Lost acknowledgement/);
+ const receipt=await interrupted(draft,draft.requestId);
+ const switching=createWebConnector({session:()=>session,transport:async(token,body)=>{const r=await send("Bearer "+token,body);a.equal(r.status,200);const receipt=await r.json();session={...session,epoch:2};return receipt;}});
+ await a.rejects(switching(draft,draft.requestId),/Session changed/);a.equal(receipt.actorId,b);a.equal(receipt.revision,1);
  a.deepEqual(await connector(draft,draft.requestId),receipt);
  session={...session,token:customer.header.slice(7)};
  await a.rejects(connector({...draft,appointmentId:"wrong-web",startTime:"10:00"},"wrong-web"));
