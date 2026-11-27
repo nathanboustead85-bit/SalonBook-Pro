@@ -1,0 +1,29 @@
+{
+  "phase": "72.7.10",
+  "scope": "isolated customer booking prototype",
+  "evidenceRun": 46019210721,
+  "productionReady": false,
+  "live": false,
+  "deploy": false,
+  "verified": [
+    "request validation",
+    "trusted identity predicate",
+    "trusted catalogue pricing and availability",
+    "atomic customer creation",
+    "owner/customer slot contention",
+    "exact retry",
+    "receipt scope isolation",
+    "confirmation state",
+    "simulated session recovery"
+  ],
+  "open": [
+    "real token verification and authenticated endpoint",
+    "server-derived canonical fingerprint and authoritative receipt",
+    "actual customer browser integration and secure persistence",
+    "native Android and business web integration",
+    "trusted cancellation and rescheduling",
+    "legacy reconciliation",
+    "production timezone and DST verification",
+    "staging security verification"
+  ]
+}
