@@ -678,6 +678,57 @@ class MainActivity : Activity() {
         homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
     }
 
+    private fun showLoyaltyPlans() {
+        text("Local marketing and loyalty plans only. No customers are enrolled, contacted or awarded rewards.")
+        val key = "local_loyalty_plan_v1"
+        val raw = prefs.getString(key, null)
+        val plan = try { JSONObject(raw ?: "{}") } catch (_: Exception) {
+            text("Plan could not be read. Existing data is protected."); return
+        }
+        sectionLabel("Loyalty programme")
+        text("Reward: " + plan.optString("reward", "Not configured"))
+        text("Visits required: " + plan.optString("visits", "Not configured"))
+        sectionLabel("Promotional campaign draft")
+        text(plan.optString("campaign", "No campaign drafted"))
+        sectionLabel("Marketing consent")
+        text("No recipients selected. Consent is unverified. Delivery is blocked.")
+        homeAction("Edit loyalty and campaign plan", "Configure a reward and draft a promotion") {
+            val form = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(8), dp(16), dp(8)) }
+            fun field(label: String, value: String, limit: Int): EditText {
+                form.addView(TextView(this).apply { text = label })
+                return EditText(this).apply {
+                    setText(value); filters = arrayOf(android.text.InputFilter.LengthFilter(limit)); form.addView(this)
+                }
+            }
+            val reward = field("Reward description", plan.optString("reward"), 120)
+            val visits = field("Visits required (1–100)", plan.optString("visits", "10"), 3)
+            visits.inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            val campaign = field("Campaign draft", plan.optString("campaign"), 500)
+            val dialog = AlertDialog.Builder(this).setTitle("Local loyalty plan").setView(form)
+                .setNegativeButton("Cancel", null).setPositiveButton("Save plan", null).create()
+            dialog.setOnShowListener {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                    val name = reward.text.toString().trim()
+                    val target = visits.text.toString().toIntOrNull()
+                    if (name.isBlank() || target == null || target !in 1..100) {
+                        message("Enter a reward and a visit target between 1 and 100.")
+                    } else if (prefs.getString(key, null) != raw) {
+                        message("Plan changed. Reopen and try again.")
+                    } else {
+                        val updated = JSONObject(plan.toString()).apply {
+                            put("reward", name); put("visits", target); put("campaign", campaign.text.toString().trim())
+                        }
+                        if (prefs.edit().putString(key, updated.toString()).commit()) {
+                            dialog.dismiss(); showFeaturePreview("marketing")
+                        } else message("Unable to save plan.")
+                    }
+                }
+            }
+            dialog.show()
+        }
+        homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
+    }
+
     private fun showEmployeeDrafts() {
         text("Local employee access plans only. No accounts, invitations or actual permissions are activated.")
         val key = "local_employee_access_v1"
@@ -881,6 +932,7 @@ class MainActivity : Activity() {
         if (id == "portfolio") { showLocalPortfolio(); return }
         if (id == "team") { showEmployeeDrafts(); return }
         if (id == "messages") { showMessagingRehearsal(); return }
+        if (id == "marketing") { showLoyaltyPlans(); return }
         text("ISOLATED PREVIEW — no live actions")
         text(feature.description)
         text("Example only. No customer records, payments, messages or bookings are changed.")
