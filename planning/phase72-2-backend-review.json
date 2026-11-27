@@ -1,0 +1,28 @@
+{
+  "phase": "72.2",
+  "status": "partial-source-review",
+  "live": false,
+  "deployment": false,
+  "verifiedPaths": [
+    "firebase.json",
+    "firestore.rules",
+    "security/employee-backend-preview.cjs"
+  ],
+  "missingPaths": [
+    "functions/index.js",
+    "functions/package.json"
+  ],
+  "findings": [
+    "Owner UID is currently tenant identifier",
+    "Legacy JSON documents permit verified owner writes subject to booking migration guard",
+    "Appointments and locks deny direct client writes",
+    "Employee authorization preview exists; production adapter unverified",
+    "Firebase configuration declares Firestore emulator only"
+  ],
+  "open": [
+    "Locate actual callable backend and historical branches",
+    "Verify transaction occupancy and idempotency",
+    "Reconcile owner UID and membership model",
+    "Verify emulator and staging rules separately"
+  ]
+}
