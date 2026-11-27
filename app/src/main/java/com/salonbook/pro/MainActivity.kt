@@ -678,8 +678,39 @@ class MainActivity : Activity() {
         homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
     }
 
+    private fun previewRecurringAppointments() {
+        val eligible = bookings.filter { it.serviceId.isNotBlank() && it.staffId.isNotBlank() }
+        if (eligible.isEmpty()) { message("Create a TEST appointment with an assigned service and staff member first."); return }
+        val form = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(8), dp(16), dp(8)) }
+        val source = Spinner(this).apply { adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, eligible.map { it.client + " · " + it.date + " · " + it.time }) }
+        val frequency = Spinner(this).apply { adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, listOf("Weekly", "Fortnightly", "Monthly")) }
+        val count = EditText(this).apply { hint = "Future appointments (1–12)"; setText("4"); inputType = android.text.InputType.TYPE_CLASS_NUMBER }
+        form.addView(source); form.addView(frequency); form.addView(count)
+        val dialog = AlertDialog.Builder(this).setTitle("Recurring appointment preview").setView(form).setNegativeButton("Cancel", null).setPositiveButton("Check dates", null).create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val total = count.text.toString().toIntOrNull()
+                val booking = eligible[source.selectedItemPosition]
+                val anchor = runCatching { java.time.LocalDate.parse(booking.date) }.getOrNull()
+                if (total == null || total !in 1..12 || anchor == null) { message("Choose 1–12 future appointments and a valid source date.") }
+                else {
+                    val results = RecurringDates.generate(anchor, frequency.selectedItemPosition, total).map { date ->
+                        val future = runCatching { java.time.LocalDateTime.parse(date.toString() + "T" + booking.time).isAfter(java.time.LocalDateTime.now()) }.getOrDefault(false)
+                        val check = AvailabilityEngine.checkAvailability(date.toString(), booking.time, booking.staffId, booking.serviceId,
+                            prefs.getString("services", "[]") ?: "[]", prefs.getString("staff", "[]") ?: "[]", prefs.getString("bookings", "[]") ?: "[]")
+                        date.toString() + " · " + booking.time + " — " + if (!future) "Past or invalid time" else if (check.available) "Available" else check.reason
+                    }
+                    dialog.dismiss()
+                    AlertDialog.Builder(this).setTitle("Rebooking suggestions").setMessage(results.joinToString("\n") + "\n\nPreview only. No appointments are saved or reserved. Recheck before booking.").setPositiveButton("Close", null).show()
+                }
+            }
+        }
+        dialog.show()
+    }
+
     private fun showWaitingList() {
         text("Local waiting list. Suggestions are not reservations. No customer notifications are sent.")
+        homeAction("Recurring appointments and rebooking", "Check future dates using an existing appointment") { previewRecurringAppointments() }
         val key = "local_waiting_list_v1"
         val raw = prefs.getString(key, null)
         val entries = try { JSONArray(raw ?: "[]") } catch (_: Exception) {
