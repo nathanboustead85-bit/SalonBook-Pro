@@ -359,6 +359,41 @@ class MainActivity : Activity() {
         })
     }
 
+    private fun businessProfile() {
+        val key = "local_business_profile_v1"
+        val original = prefs.getString(key, null)
+        val saved = try { JSONObject(original ?: "{}") } catch (_: Exception) {
+            message("Business profile could not be read. Existing data has not been changed.")
+            return
+        }
+        val form = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(12), dp(20), dp(12)) }
+        val fields = linkedMapOf("name" to "Business name", "description" to "About your business", "phone" to "Business phone", "email" to "Business email", "address" to "Business address")
+        val inputs = fields.mapValues { (field, label) ->
+            form.addView(dashboardLabel(label, 14f, true))
+            EditText(this).apply {
+                hint = label
+                setText(saved.optString(field))
+                filters = arrayOf(android.text.InputFilter.LengthFilter(if (field == "description") 1000 else 250))
+                form.addView(this)
+            }
+        }
+        form.addView(dashboardLabel("Saved on this TEST device only. Public publishing and registration are disabled.", 13f))
+        val scroll = ScrollView(this).apply { addView(form) }
+        val dialog = AlertDialog.Builder(this).setTitle("Business profile").setView(scroll)
+            .setPositiveButton("Save", null).setNegativeButton("Cancel", null).create()
+        dialog.show()
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val values = inputs.mapValues { it.value.text.toString().trim() }
+            val error = BusinessProfileValidation.error(values)
+            if (error != null) { message(error); return@setOnClickListener }
+            if (prefs.getString(key, null) != original) { message("Profile changed. Reopen before saving."); return@setOnClickListener }
+            val updated = JSONObject(saved.toString())
+            values.forEach { (field, value) -> updated.put(field, value) }
+            if (prefs.edit().putString(key, updated.toString()).commit()) { dialog.dismiss(); message("Business profile saved locally.") }
+            else message("Profile save failed. Please try again.")
+        }
+    }
+
     private fun showBusinessSettings() {
         activeScreen = "Settings"
         activePreview = ""
@@ -390,6 +425,7 @@ class MainActivity : Activity() {
         })
         container.addView(introduction)
         sectionLabel("Business management")
+        premiumCard("›", "Business profile", "Edit local business details") { businessProfile() }
         premiumCard("▦", "Business hub", "Organised business tools and previews") { showBusinessHub() }
         premiumCard("▤", "Services & Prices", "Manage your service catalogue") {
             openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
@@ -565,6 +601,7 @@ class MainActivity : Activity() {
         screen("Business hub")
         text("Manage your local business tools. Online services remain isolated previews.")
         sectionLabel("Available on this device")
+        premiumCard("›", "Business profile", "Edit local business details") { businessProfile() }
         premiumCard("▤", "Services & Prices", "Manage your local service catalogue") {
             openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
         }
