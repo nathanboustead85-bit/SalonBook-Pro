@@ -1,0 +1,16 @@
+name: Boustio Phase 72.4.2 transaction contract
+on:
+  workflow_dispatch:
+  push:
+    branches: [boustio-phase-72-4-2-transaction]
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: boustio-phase-72-4-2-transaction
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/phase66-8-employee-backend.test.cjs tests/phase72-1-sync-architecture.test.cjs tests/phase72-3-access.test.cjs tests/phase72-4-booking-locks.test.cjs tests/phase72-4-2-transaction.test.cjs
