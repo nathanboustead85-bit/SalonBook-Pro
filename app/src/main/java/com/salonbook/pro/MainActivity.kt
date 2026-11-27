@@ -594,33 +594,6 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
     }
 
-    private fun showBusinessHub() {
-        activeTab = "Settings"
-        activeScreen = "Hub"
-        activePreview = ""
-        screen("Business hub")
-        text("Manage your local business tools. Online services remain isolated previews.")
-        sectionLabel("Available on this device")
-        premiumCard("›", "Business profile", "Edit local business details") { businessProfile() }
-        premiumCard("▤", "Services & Prices", "Manage your local service catalogue") {
-            openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
-        }
-        premiumCard("♟", "Staff & Working Hours", "Manage local staff and availability") {
-            openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
-        }
-        premiumCard("▣", "All Appointments", "Manage your local diary") { showAppointments() }
-        premiumCard("›", "Appointment calendar", "View local appointment availability") { showCalendar() }
-        BusinessHubPreview.categories.forEach { category ->
-            sectionLabel(category.title)
-            category.features.forEach { feature ->
-                premiumCard("›", feature.title, if (feature.id == "customers") "Open local customer records" else feature.description) {
-                    if (feature.id == "customers") showClients() else showFeaturePreview(feature.id)
-                }
-            }
-        }
-        homeAction("Back to settings", "Return to business settings") { showBusinessSettings() }
-    }
-
     private fun showLocalPortfolio() {
         text("Local portfolio drafts — no public publishing or uploads.")
         val key = "local_portfolio_drafts_v1"
@@ -680,6 +653,33 @@ class MainActivity : Activity() {
         }
         text("Photo selection and gallery publishing are not enabled in this version.")
         homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
+    }
+
+    private fun showBusinessHub() {
+        activeTab = "Settings"
+        activeScreen = "Hub"
+        activePreview = ""
+        screen("Business hub")
+        text("Manage your local business tools. Online services remain isolated previews.")
+        sectionLabel("Available on this device")
+        premiumCard("›", "Business profile", "Edit local business details") { businessProfile() }
+        premiumCard("▤", "Services & Prices", "Manage your local service catalogue") {
+            openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
+        }
+        premiumCard("♟", "Staff & Working Hours", "Manage local staff and availability") {
+            openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
+        }
+        premiumCard("▣", "All Appointments", "Manage your local diary") { showAppointments() }
+        premiumCard("›", "Appointment calendar", "View local appointment availability") { showCalendar() }
+        BusinessHubPreview.categories.forEach { category ->
+            sectionLabel(category.title)
+            category.features.forEach { feature ->
+                premiumCard("›", feature.title, if (feature.id == "customers") "Open local customer records" else feature.description) {
+                    if (feature.id == "customers") showClients() else showFeaturePreview(feature.id)
+                }
+            }
+        }
+        homeAction("Back to settings", "Return to business settings") { showBusinessSettings() }
     }
 
     private fun showFeaturePreview(id: String) {
