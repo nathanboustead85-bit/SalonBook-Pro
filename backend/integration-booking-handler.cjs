@@ -8,13 +8,14 @@ const {prepareCustomerCreation}=require("./trusted-customer-create.cjs");
 const {prepareReschedule}=require("./trusted-owner-reschedule.cjs");
 const {createHash}=require("node:crypto");
 // Isolated handler only; no production listener or deployment.
-function createHandler({db,auth,serverTimestamp}){
+function createHandler({db,auth,serverTimestamp,strictActor=false}){
  const {createStore}=require("./firestore-booking-store.cjs");
  if(!/^127\.0\.0\.1:\d+$/.test(process.env.FIREBASE_AUTH_EMULATOR_HOST||"")||auth?.app?.options?.projectId!=="demo-boustio")throw Error("Isolated auth emulator required");
  const store=createStore(db,serverTimestamp);
  return async(authorization,body)=>{
  const identity=await authenticate(authorization,auth.verifyIdToken.bind(auth));
  if(!body||typeof body!=="object"||Array.isArray(body))throw Error("Invalid request");
+ if(strictActor && body.actorId!==identity.uid)throw Error("Denied");
  const d=prepareRequest({verified:true,uid:identity.uid,businessId:body.businessId},body,body.requestId);
  let prepare;
  if(d.action==="create")prepare=identity.uid===d.businessId?prepareCreation(identity,d):prepareCustomerCreation(identity,d);
