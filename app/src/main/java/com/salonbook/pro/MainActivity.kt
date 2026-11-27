@@ -621,6 +621,67 @@ class MainActivity : Activity() {
         homeAction("Back to settings", "Return to business settings") { showBusinessSettings() }
     }
 
+    private fun showLocalPortfolio() {
+        text("Local portfolio drafts — no public publishing or uploads.")
+        val key = "local_portfolio_drafts_v1"
+        val raw = prefs.getString(key, null)
+        val entries = try { JSONArray(raw ?: "[]") } catch (_: Exception) {
+            text("Portfolio data could not be read. Existing data is protected.")
+            return
+        }
+        fun persist(updated: JSONArray) {
+            if (prefs.getString(key, null) != raw) { message("Portfolio changed. Reopen before editing."); return }
+            if (prefs.edit().putString(key, updated.toString()).commit()) showFeaturePreview("portfolio")
+            else message("Unable to save portfolio.")
+        }
+        fun edit(index: Int?) {
+            val previous = index?.let { entries.optJSONObject(it) }
+            val form = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(12), dp(20), dp(12)) }
+            val staff = readRecords("staff").filter { it.optString("id").isNotBlank() }
+            val ids = listOf("") + staff.map { it.optString("id") }
+            val names = listOf("Salon gallery") + staff.map { it.optString("name") }
+            val owner = Spinner(this).apply {
+                adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, names)
+                setSelection(ids.indexOf(previous?.optString("staffId").orEmpty()).coerceAtLeast(0))
+            }
+            form.addView(owner)
+            val title = EditText(this).apply { hint = "Portfolio title"; setText(previous?.optString("title").orEmpty()); filters = arrayOf(android.text.InputFilter.LengthFilter(100)) }
+            val description = EditText(this).apply { hint = "Description"; setText(previous?.optString("description").orEmpty()); filters = arrayOf(android.text.InputFilter.LengthFilter(500)) }
+            form.addView(title); form.addView(description)
+            val dialog = AlertDialog.Builder(this).setTitle("Portfolio draft").setView(form).setPositiveButton("Save", null).setNegativeButton("Cancel", null).create()
+            dialog.show()
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val name = title.text.toString().trim()
+                if (name.isBlank()) { message("Enter a portfolio title."); return@setOnClickListener }
+                val updated = JSONArray(entries.toString())
+                val item = JSONObject(previous?.toString() ?: "{}")
+                item.put("id", previous?.optString("id") ?: UUID.randomUUID().toString())
+                item.put("title", name); item.put("description", description.text.toString().trim())
+                item.put("staffId", ids[owner.selectedItemPosition.coerceAtLeast(0)])
+                if (index == null) updated.put(item) else updated.put(index, item)
+                dialog.dismiss(); persist(updated)
+            }
+        }
+        homeAction("Add portfolio draft", "Create a salon or staff portfolio entry") { edit(null) }
+        if (entries.length() == 0) text("No portfolio drafts yet.")
+        for (i in 0 until entries.length()) {
+            val item = entries.optJSONObject(i) ?: continue
+            val staffId = item.optString("staffId")
+            val owner = if (staffId.isBlank()) "Salon gallery" else readRecords("staff").firstOrNull { it.optString("id") == staffId }?.optString("name") ?: "Staff unavailable"
+            sectionLabel(owner)
+            text(item.optString("title"))
+            text(item.optString("description"))
+            homeAction("Edit draft", "Change portfolio details") { edit(i) }
+            homeAction("Delete draft", "Remove this local entry") {
+                AlertDialog.Builder(this).setTitle("Delete portfolio draft?").setNegativeButton("Cancel", null).setPositiveButton("Delete") { _, _ ->
+                    val updated = JSONArray(entries.toString()); updated.remove(i); persist(updated)
+                }.show()
+            }
+        }
+        text("Photo selection and gallery publishing are not enabled in this version.")
+        homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
+    }
+
     private fun showFeaturePreview(id: String) {
         val feature = BusinessHubPreview.find(id)
         if (feature == null) { showBusinessHub(); return }
@@ -628,6 +689,7 @@ class MainActivity : Activity() {
         activeScreen = "Preview"
         activePreview = feature.id
         screen(feature.title)
+        if (id == "portfolio") { showLocalPortfolio(); return }
         text("ISOLATED PREVIEW — no live actions")
         text(feature.description)
         text("Example only. No customer records, payments, messages or bookings are changed.")
