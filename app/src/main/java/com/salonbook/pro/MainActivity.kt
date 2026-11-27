@@ -678,6 +678,79 @@ class MainActivity : Activity() {
         homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
     }
 
+    private fun showWaitingList() {
+        text("Local waiting list. Suggestions are not reservations. No customer notifications are sent.")
+        val key = "local_waiting_list_v1"
+        val raw = prefs.getString(key, null)
+        val entries = try { JSONArray(raw ?: "[]") } catch (_: Exception) {
+            text("Waiting list could not be read. Existing data is protected."); return
+        }
+        val services = readRecords("services").filter { it.optString("id").isNotBlank() }
+        val staff = readRecords("staff").filter { it.optString("id").isNotBlank() }
+        fun save(updated: JSONArray) {
+            if (prefs.getString(key, null) != raw) { message("List changed. Reopen and try again."); return }
+            if (prefs.edit().putString(key, updated.toString()).commit()) showFeaturePreview("intelligence")
+            else message("Unable to save waiting list.")
+        }
+        homeAction("Add waiting customer", "Choose a service and preferred date and time") {
+            if (services.isEmpty()) { message("Add a service first."); return@homeAction }
+            val form = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(8), dp(16), dp(8)) }
+            val name = EditText(this).apply { hint = "Customer name"; filters = arrayOf(android.text.InputFilter.LengthFilter(100)) }
+            val service = Spinner(this).apply { adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, services.map { it.optString("name") }) }
+            val date = EditText(this).apply { hint = "Preferred date YYYY-MM-DD"; setText(today()) }
+            val time = EditText(this).apply { hint = "Earliest time HH:MM"; setText("09:00") }
+            form.addView(name); form.addView(service); form.addView(date); form.addView(time)
+            val dialog = AlertDialog.Builder(this).setTitle("Waiting customer").setView(form).setNegativeButton("Cancel", null).setPositiveButton("Save", null).create()
+            dialog.setOnShowListener {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                    val day = runCatching { java.time.LocalDate.parse(date.text.toString().trim()) }.getOrNull()
+                    val start = runCatching { java.time.LocalTime.parse(time.text.toString().trim()) }.getOrNull()
+                    if (name.text.toString().isBlank() || day == null || day.isBefore(java.time.LocalDate.now()) || start == null || !time.text.toString().matches(Regex("[0-9]{2}:[0-9]{2}"))) {
+                        message("Enter a name, current or future date and valid HH:MM time.")
+                    } else {
+                        val updated = JSONArray(entries.toString()).put(JSONObject().apply {
+                            put("id", java.util.UUID.randomUUID().toString()); put("name", name.text.toString().trim())
+                            put("serviceId", services[service.selectedItemPosition].optString("id"))
+                            put("date", day.toString()); put("time", time.text.toString())
+                        })
+                        dialog.dismiss(); save(updated)
+                    }
+                }
+            }
+            dialog.show()
+        }
+        sectionLabel("Waiting customers")
+        if (entries.length() == 0) text("No waiting customers yet.")
+        for (i in 0 until entries.length()) {
+            val entry = entries.optJSONObject(i) ?: continue
+            val day = entry.optString("date")
+            val serviceId = entry.optString("serviceId")
+            sectionLabel(entry.optString("name"))
+            text((services.firstOrNull { it.optString("id") == serviceId }?.optString("name") ?: "Service unavailable") + " · " + day + " from " + entry.optString("time"))
+            homeAction("Find available slots", "Check current diary including newly freed slots") {
+                val matches = staff.flatMap { person ->
+                    AvailabilityEngine.availableSlots(day, person.optString("id"), serviceId,
+                        prefs.getString("services", "[]") ?: "[]", prefs.getString("staff", "[]") ?: "[]",
+                        prefs.getString("bookings", "[]") ?: "[]").filter { slot ->
+                        slot.time >= entry.optString("time") && runCatching {
+                            java.time.LocalDateTime.parse(slot.date + "T" + slot.time).isAfter(java.time.LocalDateTime.now())
+                        }.getOrDefault(false)
+                    }.map { slot -> slot.time + " · " + person.optString("name") }
+                }.sorted().take(20)
+                AlertDialog.Builder(this).setTitle("Available slot suggestions")
+                    .setMessage(if (matches.isEmpty()) "No matching slots." else matches.joinToString("\n") + "\n\nRecheck availability before booking. No slot is reserved.")
+                    .setPositiveButton("Close", null).show()
+            }
+            homeAction("Remove waiting entry", "Remove from this list only") {
+                AlertDialog.Builder(this).setTitle("Remove waiting entry?").setNegativeButton("Cancel", null)
+                    .setPositiveButton("Remove") { _, _ ->
+                        val updated = JSONArray(entries.toString()); updated.remove(i); save(updated)
+                    }.show()
+            }
+        }
+        homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
+    }
+
     private fun showLoyaltyPlans() {
         text("Local marketing and loyalty plans only. No customers are enrolled, contacted or awarded rewards.")
         val key = "local_loyalty_plan_v1"
@@ -933,6 +1006,7 @@ class MainActivity : Activity() {
         if (id == "team") { showEmployeeDrafts(); return }
         if (id == "messages") { showMessagingRehearsal(); return }
         if (id == "marketing") { showLoyaltyPlans(); return }
+        if (id == "intelligence") { showWaitingList(); return }
         text("ISOLATED PREVIEW — no live actions")
         text(feature.description)
         text("Example only. No customer records, payments, messages or bookings are changed.")
