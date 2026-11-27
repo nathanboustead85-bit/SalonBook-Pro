@@ -1,0 +1,28 @@
+{
+  "phase": "72.6.10",
+  "scope": "isolated business web synchronisation prototype",
+  "evidenceRun": 46003216231,
+  "verified": [
+    "owner session isolation",
+    "transaction retry",
+    "cross-client contention",
+    "cross-client cancellation",
+    "revision mismatch protection",
+    "simulated terminal conflict",
+    "simulated refresh recovery",
+    "delayed response isolation"
+  ],
+  "open": [
+    "actual browser integration",
+    "secure durable browser storage",
+    "native Android integration",
+    "real token verification and server authorization",
+    "authoritative receipt and fingerprint",
+    "trusted rescheduling",
+    "legacy reconciliation",
+    "staging verification"
+  ],
+  "productionReady": false,
+  "live": false,
+  "deploy": false
+}
