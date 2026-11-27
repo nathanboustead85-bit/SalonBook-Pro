@@ -1,0 +1,25 @@
+{
+  "scope": "Isolated native JVM connector and emulator HTTP bridge",
+  "evidenceRun": "46062698725",
+  "verified": [
+    "authenticated booking and replay",
+    "lost acknowledgement retry",
+    "session sign-out rejection",
+    "bounded response size",
+    "malformed request and receipt rejection",
+    "server-side native actor binding"
+  ],
+  "open": [
+    "physical Android Firebase token acquisition",
+    "session generation and ABA protection",
+    "durable queue and process death recovery",
+    "production network transport",
+    "calendar integration and legacy migration",
+    "physical Android and cross-platform staging verification"
+  ],
+  "productionReady": false,
+  "live": false,
+  "deploy": false,
+  "migrationAllowed": false,
+  "next": "73.7 business website isolated integration"
+}
