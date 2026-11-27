@@ -23,5 +23,17 @@ class NativeBackendIntegrationTest {
         assertEquals(first.toString(),connector.submit(request).toString())
         val invalid = IsolatedBookingConnector({ Pair(uid,"invalid") },transport::submit)
         assertTrue(runCatching { invalid.submit(request) }.isFailure)
+        val other = requireNotNull(System.getenv("BOUSTIO_TEST_OTHER_TOKEN"))
+        val mismatched = IsolatedBookingConnector({ Pair(uid,other) },transport::submit)
+        assertTrue(runCatching { mismatched.submit(request) }.isFailure)
+        var session: Pair<String,String>? = Pair(uid,token)
+        val switching = IsolatedBookingConnector({session}) { t, body ->
+            val receipt = transport.submit(t,body)
+            session = null
+            receipt
+        }
+        assertTrue(runCatching { switching.submit(request) }.isFailure)
+        assertTrue(runCatching { switching.submit(request) }.isFailure)
+        assertEquals(first.toString(),connector.submit(request).toString())
     }
 }
