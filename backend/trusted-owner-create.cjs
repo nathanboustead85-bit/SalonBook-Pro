@@ -3,8 +3,9 @@ const {locks}=require("./booking-lock-contract.cjs");
 const {validateCatalogue}=require("./historical-booking/trustedCatalogue.js");
 const {validateAvailability,validateBookingDate}=require("./historical-booking/bookingEngine.js");
 function prepareCreation(identity,command){
- return async(tx,{businessId,actorId})=>{
+ return async(tx,{businessId,actorId,previous})=>{
  if(identity?.verified!==true||identity.uid!==actorId||actorId!==businessId||command.action!=="create")throw Error("Denied");
+ if(previous)return {authorized:true};
  const id=command.appointmentId;
  if(typeof id!=="string"||!/^[A-Za-z0-9_-]{1,128}$/.test(id)||await tx.readAppointment(businessId,id))throw Error("Invalid or existing appointment");
  const catalogue=validateCatalogue(await tx.readCatalogue(businessId),businessId);
