@@ -678,6 +678,36 @@ class MainActivity : Activity() {
         homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
     }
 
+    private fun showBusinessRecommendations() {
+        val day = today()
+        val services = readRecords("services").filter { it.optString("id").isNotBlank() }
+        val staff = readRecords("staff").filter { it.optString("id").isNotBlank() }
+        val servicesJson = prefs.getString("services", "[]") ?: "[]"
+        val staffJson = prefs.getString("staff", "[]") ?: "[]"
+        val bookingsJson = prefs.getString("bookings", "[]") ?: "[]"
+        val now = java.time.LocalDateTime.now()
+        val slots = staff.take(20).flatMap { person ->
+            services.take(30).flatMap { service ->
+                AvailabilityEngine.availableSlots(day, person.optString("id"), service.optString("id"), servicesJson, staffJson, bookingsJson)
+                    .filter { runCatching { java.time.LocalDateTime.parse(it.date + "T" + it.time).isAfter(now) }.getOrDefault(false) }
+            }
+        }
+        val waiting = runCatching { JSONArray(prefs.getString("local_waiting_list_v1", "[]") ?: "[]") }.getOrNull()
+        val todayBookings = bookings.filter { it.date == day }
+        val lines = mutableListOf<String>()
+        lines.add("Diary gaps: " + slots.map { it.staffId to it.time }.distinct().size + " distinct available start options today (not separate bookable appointments).")
+        lines.add("Staff capacity: " + slots.map { it.staffId }.distinct().size + " staff with available start options today; " + todayBookings.size + " appointments scheduled.")
+        val matches = if (waiting == null) null else (0 until waiting.length()).count { i ->
+            val entry = waiting.optJSONObject(i)
+            entry != null && entry.optString("date") == day && slots.any { it.serviceId == entry.optString("serviceId") && it.time >= entry.optString("time") }
+        }
+        lines.add("Waiting list: " + (matches?.let { "$it entries match today's available starts. Review before booking." } ?: "Unable to read waiting list."))
+        lines.add("Retention: review previous appointment history before suggesting a rebooking. Attendance and marketing consent are not verified.")
+        lines.add("Revenue opportunity: review suitable diary gaps. No revenue forecast or actual takings are inferred.")
+        if (staff.size > 20 || services.size > 30) lines.add("Capacity scan limited to first 20 staff and 30 services.")
+        AlertDialog.Builder(this).setTitle("Business recommendations").setMessage(lines.joinToString("\n\n") + "\n\nRead-only local insights. No bookings or messages are created.").setPositiveButton("Close", null).show()
+    }
+
     private fun previewRecurringAppointments() {
         val eligible = bookings.filter { it.serviceId.isNotBlank() && it.staffId.isNotBlank() }
         if (eligible.isEmpty()) { message("Create a TEST appointment with an assigned service and staff member first."); return }
@@ -710,6 +740,7 @@ class MainActivity : Activity() {
 
     private fun showWaitingList() {
         text("Local waiting list. Suggestions are not reservations. No customer notifications are sent.")
+        homeAction("Business recommendations", "Review today’s diary and waiting list") { showBusinessRecommendations() }
         homeAction("Recurring appointments and rebooking", "Check future dates using an existing appointment") { previewRecurringAppointments() }
         val key = "local_waiting_list_v1"
         val raw = prefs.getString(key, null)
