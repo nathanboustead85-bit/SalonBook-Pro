@@ -915,6 +915,15 @@ class MainActivity : Activity() {
                     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                         val result = DiaryReporting.summarise(bookings.map { DiaryReporting.Entry(it.date, it.price, it.staffId) }, today(), position)
                         report.text = "Appointments: ${result.count}\nScheduled value: £${result.total.setScale(2).toPlainString()}\nMissing or invalid prices: ${result.unknown}\nAppointments without staff assignment: ${result.unassigned}"
+                        val staffNames = readRecords("staff").associate { it.optString("id") to it.optString("name") }
+                        val rows = DiaryReporting.byStaff(bookings.map { DiaryReporting.Entry(it.date, it.price, it.staffId) }, today(), position)
+                        val breakdown = rows.joinToString("\n") { row ->
+                            val name = if (row.staffId.isBlank()) "Unassigned" else staffNames[row.staffId]?.takeIf { it.isNotBlank() } ?: "Unavailable staff"
+                            "$name: ${row.summary.count} appointments · £${row.summary.total.setScale(2).toPlainString()} scheduled · ${row.summary.unknown} unknown prices"
+                        }
+                        report.append("\n\nEmployee scheduled values\n" + breakdown.ifBlank { "No appointments in this period." })
+                        report.append("\n\nActual takings\nCash: not recorded\nCard: not recorded\nRefunds: not recorded\nTips: not recorded\nNo payment ledger is connected. These amounts are unknown, not zero.")
+
                     }
                 }
                 homeAction("View appointments", "Inspect the existing local diary") { showAppointments() }
