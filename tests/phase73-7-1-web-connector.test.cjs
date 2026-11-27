@@ -36,5 +36,16 @@ try{
  a.equal(saved.data().status,"cancelled");a.equal(saved.data().revision,3);
  a.equal((await root.collection("bookingLocks").get()).size,0);
  a.equal((await root.collection("bookingRequests").get()).size,3);
+ const race=await Promise.allSettled(["race-a","race-b"].map(id=>connector({...draft,appointmentId:id,startTime:"11:00"},id)));
+ a.equal(race.filter(r=>r.status==="fulfilled").length,1);
+ a.equal(race.filter(r=>r.status==="rejected").length,1);
+ const winner=race.find(r=>r.status==="fulfilled").value;
+ a.equal(winner.revision,1);
+ a.equal((await root.collection("appointments").get()).size,2);
+ a.equal((await root.collection("bookingLocks").get()).size,2);
+ a.equal((await root.collection("bookingRequests").get()).size,4);
+ const loser=winner.appointmentId==="race-a"?"race-b":"race-a";
+ a.equal((await root.collection("appointments").doc(loser).get()).exists,false);
+ a.deepEqual(await connector({...draft,appointmentId:winner.appointmentId,startTime:"11:00"},winner.requestId),winner);
 }finally{await new Promise(resolve=>server.close(resolve));}
 });
