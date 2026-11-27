@@ -1,0 +1,154 @@
+{
+  "source": "Phase 71.9.8 baseline plus Phase 71.9.8.1–12 Android source review",
+  "deployment": false,
+  "launchReady": false,
+  "features": [
+    {
+      "id": "registration",
+      "website": "validation only; no account",
+      "android": "integration-required",
+      "live": false
+    },
+    {
+      "id": "business-profile",
+      "website": "fictional setup; no publishing",
+      "android": "local-functional",
+      "live": false,
+      "remaining": "Local profile; publishing and registration outstanding"
+    },
+    {
+      "id": "services-staff-hours",
+      "website": "historical fixture; no authoritative catalogue editing",
+      "android": "local-functional",
+      "live": false
+    },
+    {
+      "id": "booking-calendar",
+      "website": "calendar integration outstanding",
+      "android": "local-functional",
+      "live": false
+    },
+    {
+      "id": "customer-booking",
+      "website": "fictional slot selection; no confirmation",
+      "android": "preview-only",
+      "live": false
+    },
+    {
+      "id": "portfolio-gallery",
+      "website": "fictional gallery; no uploads",
+      "android": "local-functional",
+      "live": false,
+      "remaining": "Local entries and private photos; upload and publishing outstanding"
+    },
+    {
+      "id": "customer-management",
+      "website": "in-memory directory and notes",
+      "android": "local-functional",
+      "live": false
+    },
+    {
+      "id": "employee-access",
+      "website": "role simulator; no server enforcement",
+      "android": "partial-preview",
+      "live": false,
+      "remaining": "Saved role plans; no actual authorization"
+    },
+    {
+      "id": "messaging",
+      "website": "local simulation; no provider",
+      "android": "partial-preview",
+      "live": false,
+      "remaining": "Fictional rehearsal and external media selection; no delivery"
+    },
+    {
+      "id": "reporting",
+      "website": "sample takings",
+      "android": "partial-preview",
+      "live": false,
+      "remaining": "Scheduled values, not verified takings"
+    },
+    {
+      "id": "marketing-loyalty",
+      "website": "sample campaign and points",
+      "android": "partial-preview",
+      "live": false,
+      "remaining": "Local plans; no enrolment, redemption or consent management"
+    },
+    {
+      "id": "waiting-list",
+      "website": "sample queue only",
+      "android": "local-functional",
+      "live": false,
+      "remaining": "Local entries and manual matching"
+    },
+    {
+      "id": "slot-recovery",
+      "website": "sample slot match",
+      "android": "partial-preview",
+      "live": false,
+      "remaining": "Manual availability search; no cancellation trigger"
+    },
+    {
+      "id": "recurring",
+      "website": "sample dates",
+      "android": "partial-preview",
+      "live": false,
+      "remaining": "Read-only dates; no series saving"
+    },
+    {
+      "id": "rebooking",
+      "website": "sample recommendation",
+      "android": "partial-preview",
+      "live": false,
+      "remaining": "Read-only suggestions"
+    },
+    {
+      "id": "gap-optimisation",
+      "website": "sample recommendation",
+      "android": "partial-preview",
+      "live": false,
+      "remaining": "Bounded current-day start options"
+    },
+    {
+      "id": "service-addons",
+      "website": "sample recommendation",
+      "android": "preview-only",
+      "live": false,
+      "remaining": "No dedicated implementation verified"
+    },
+    {
+      "id": "no-show",
+      "website": "sample recommendation",
+      "android": "preview-only",
+      "live": false,
+      "remaining": "No dedicated implementation verified"
+    },
+    {
+      "id": "business-insights",
+      "website": "sample recommendation",
+      "android": "partial-preview",
+      "live": false,
+      "remaining": "Rule-based local guidance"
+    },
+    {
+      "id": "shared-protection",
+      "website": "atomic server protection outstanding",
+      "android": "integration-required",
+      "live": false
+    },
+    {
+      "id": "payments-tipping",
+      "website": "phase 74 planned",
+      "android": "planned",
+      "live": false
+    },
+    {
+      "id": "subscriptions",
+      "website": "phase 75 planned",
+      "android": "planned",
+      "live": false
+    }
+  ],
+  "auditComplete": false
+}
