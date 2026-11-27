@@ -8,6 +8,11 @@ import java.time.temporal.TemporalAdjusters
 internal object DiaryReporting {
     data class Entry(val date: String, val price: String, val staffId: String)
     data class Summary(val count: Int, val total: BigDecimal, val unknown: Int, val unassigned: Int)
+    data class StaffSummary(val staffId: String, val summary: Summary)
+    fun byStaff(entries: List<Entry>, today: String, period: Int): List<StaffSummary> =
+        entries.groupBy { it.staffId.trim() }.map { (id, rows) -> StaffSummary(id, summarise(rows, today, period)) }
+            .filter { it.summary.count > 0 }.sortedWith(compareByDescending<StaffSummary> { it.summary.total }.thenBy { it.staffId })
+
     fun summarise(entries: List<Entry>, today: String, period: Int): Summary {
         val date = LocalDate.parse(today)
         val start = when(period) {
