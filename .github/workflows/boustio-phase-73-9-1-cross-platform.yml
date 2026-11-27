@@ -61,7 +61,7 @@ jobs:
         with:
           gradle-version: '8.9'
       - run: npm install --no-save --package-lock=false firebase-admin@13 firebase-tools@14
-      - run: npx firebase emulators:exec --config firebase.phase73.json --only auth,firestore --project demo-boustio "node --test tests/phase73-6-3-native.test.cjs tests/phase73-9-1-cross-platform.test.cjs"
+      - run: npx firebase emulators:exec --config firebase.phase73.json --only auth,firestore --project demo-boustio "node --test --test-concurrency=1 tests/phase73-6-3-native.test.cjs tests/phase73-9-1-cross-platform.test.cjs"
         env:
           GCLOUD_PROJECT: demo-boustio
 
