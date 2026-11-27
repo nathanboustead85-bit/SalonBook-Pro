@@ -19,7 +19,7 @@ function createHandler({db,auth,serverTimestamp}){
  if(d.action==="create")prepare=identity.uid===d.businessId?prepareCreation(identity,d):prepareCustomerCreation(identity,d);
  else if(d.action==="cancel"&&identity.uid===d.businessId)prepare=prepareCancellation(identity,d);
  else throw Error("Denied");
- return executeBooking({store,businessId:d.businessId,actorId:identity.uid,key:d.requestId,fingerprint:createHash("sha256").update(JSON.stringify(d)).digest("hex"),prepare});
+ return executeBooking({store,businessId:d.businessId,actorId:identity.uid,key:d.requestId,receiptVersion:1,fingerprint:createHash("sha256").update(JSON.stringify(d)).digest("hex"),prepare});
  };
 }
 module.exports={createHandler};
