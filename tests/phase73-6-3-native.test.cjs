@@ -6,7 +6,7 @@ await root.collection("catalogue").doc("current").set({schemaVersion:1,business:
 const server=await listenBridge({db,auth,serverTimestamp:FieldValue.serverTimestamp});
 try{
  await new Promise((resolve,reject)=>{
- const child=spawn("gradle",["--no-daemon",":app:testIsolatedDebugUnitTest","--tests","*NativeBackendIntegrationTest"],{stdio:"inherit",env:{...process.env,BOUSTIO_TEST_PORT:String(server.address().port),BOUSTIO_TEST_UID:b,BOUSTIO_TEST_TOKEN:owner.header.slice(7),BOUSTIO_TEST_DATE:date}});
+ const child=spawn("gradle",["--no-daemon",":app:testIsolatedDebugUnitTest","--tests","*NativeBackendIntegrationTest"],{stdio:"inherit",env:{...process.env,BOUSTIO_TEST_PORT:String(server.address().port),BOUSTIO_TEST_UID:b,BOUSTIO_TEST_TOKEN:owner.header.slice(7),BOUSTIO_TEST_DATE:date,BOUSTIO_TEST_OTHER_TOKEN:customer.header.slice(7)}});
  child.on("error",reject);child.on("exit",code=>code===0?resolve():reject(Error("Native integration failed")));
  });
  a.equal((await root.collection("appointments").get()).size,1);
