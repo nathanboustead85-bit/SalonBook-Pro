@@ -2,7 +2,7 @@
 const {reconcileRefresh}=require("./business-web-refresh-recovery.cjs");
 const {createRecoverySession}=require("./business-web-recovery-session.cjs");
 function createRecoveryController({session,transport,lookup,pendingRequestId=null}){
- const recovery=createRecoverySession({session,transport});
+ let recovery=createRecoverySession({session,transport});
  let pending=pendingRequestId,busy=false;
  return {
  state:()=>busy?"busy":pending!==null?"unresolved":"idle",
@@ -17,7 +17,7 @@ function createRecoveryController({session,transport,lookup,pendingRequestId=nul
  if(busy||pending===null)throw Error("No available reconciliation");
  busy=true;
  try{const result=await reconcileRefresh({session,lookup},pending);
- if(result.state==="confirmed")pending=null;
+ if(result.state==="confirmed"){pending=null;recovery=createRecoverySession({session,transport});}
  return result;
  }finally{busy=false;}
  }
