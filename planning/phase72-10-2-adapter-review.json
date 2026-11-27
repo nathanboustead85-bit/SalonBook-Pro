@@ -1,0 +1,49 @@
+{
+  "phase": "72.10.2",
+  "evidenceRun": 46029272517,
+  "scope": "adapter prototype audit consolidation",
+  "productionReady": false,
+  "live": false,
+  "deploy": false,
+  "migrationAllowed": false,
+  "open": [
+    {
+      "source": "phase72-5-10-audit",
+      "requirements": [
+        "Native Android Kotlin integration",
+        "Secure durable storage and crash-safe persistence",
+        "Real token verification and server authorization",
+        "Authoritative receipt schema and server-derived fingerprint",
+        "Trusted rescheduling",
+        "Physical Samsung verification",
+        "Legacy appointment reconciliation"
+      ]
+    },
+    {
+      "source": "phase72-6-10-audit",
+      "requirements": [
+        "actual browser integration",
+        "secure durable browser storage",
+        "native Android integration",
+        "real token verification and server authorization",
+        "authoritative receipt and fingerprint",
+        "trusted rescheduling",
+        "legacy reconciliation",
+        "staging verification"
+      ]
+    },
+    {
+      "source": "phase72-7-10-audit",
+      "requirements": [
+        "real token verification and authenticated endpoint",
+        "server-derived canonical fingerprint and authoritative receipt",
+        "actual customer browser integration and secure persistence",
+        "native Android and business web integration",
+        "trusted cancellation and rescheduling",
+        "legacy reconciliation",
+        "production timezone and DST verification",
+        "staging security verification"
+      ]
+    }
+  ]
+}
