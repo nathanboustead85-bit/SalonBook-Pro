@@ -1,0 +1,25 @@
+{
+  "phase": "72.9.6",
+  "scope": "isolated cross-platform contracts and Firestore emulator",
+  "evidenceRun": 46028760920,
+  "productionReady": false,
+  "live": false,
+  "deploy": false,
+  "migrationAllowed": false,
+  "verified": [
+    "three-client slot contention",
+    "trusted cancellation and slot reuse",
+    "stale cancellation rejection",
+    "lost acknowledgement replay",
+    "cross-business occupancy and cancellation isolation"
+  ],
+  "open": [
+    "native Android and browser integration",
+    "verified server authentication and authoritative receipts",
+    "trusted rescheduling",
+    "durable client queues and physical network recovery",
+    "legacy migration and rollback",
+    "production timezone and DST verification",
+    "staging security and end-to-end verification"
+  ]
+}
