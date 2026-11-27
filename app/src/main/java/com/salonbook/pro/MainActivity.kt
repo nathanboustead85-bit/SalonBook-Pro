@@ -594,6 +594,43 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
     }
 
+    private var pendingPortfolioPhotoId: String? = null
+    private fun portfolioImageFile(id: String): java.io.File? {
+        if (!Regex("[a-fA-F0-9-]{36}").matches(id)) return null
+        return java.io.File(java.io.File(noBackupFilesDir, "portfolio_images"), "$id.jpg")
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != 7184) return
+        val id = pendingPortfolioPhotoId
+        pendingPortfolioPhotoId = null
+        if (resultCode != RESULT_OK || id == null) return
+        val uri = data?.data ?: return
+        val file = portfolioImageFile(id) ?: return
+        if (readRecords("local_portfolio_drafts_v1").none { it.optString("id") == id }) return
+        try {
+            val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, bounds) }
+            require(bounds.outWidth > 0 && bounds.outHeight > 0 && bounds.outWidth <= 30000 && bounds.outHeight <= 30000)
+            var sample = 1
+            while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 1600) sample *= 2
+            val bitmap = contentResolver.openInputStream(uri)?.use {
+                android.graphics.BitmapFactory.decodeStream(it, null, android.graphics.BitmapFactory.Options().apply { inSampleSize = sample })
+            } ?: error("Invalid image")
+            file.parentFile?.mkdirs()
+            val atomic = android.util.AtomicFile(file)
+            val output = atomic.startWrite()
+            try {
+                check(bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, output))
+                atomic.finishWrite(output)
+            } catch (e: Exception) { atomic.failWrite(output); throw e }
+            finally { bitmap.recycle() }
+            showFeaturePreview("portfolio")
+        } catch (_: Exception) { message("Photo could not be saved. Existing photo is unchanged.") }
+    }
+
     private fun showLocalPortfolio() {
         text("Local portfolio drafts — no public publishing or uploads.")
         val key = "local_portfolio_drafts_v1"
@@ -644,14 +681,37 @@ class MainActivity : Activity() {
             sectionLabel(owner)
             text(item.optString("title"))
             text(item.optString("description"))
+            val imageId = item.optString("id")
+            val photo = portfolioImageFile(imageId)
+            if (photo != null && photo.exists()) {
+                val bitmap = android.graphics.BitmapFactory.decodeFile(photo.path)
+                if (bitmap != null) container.addView(ImageView(this).apply {
+                    setImageBitmap(bitmap)
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                    contentDescription = "Portfolio photo: " + item.optString("title")
+                }, LinearLayout.LayoutParams(-1, dp(180)))
+                homeAction("Remove photo", "Remove the local image") {
+                    AlertDialog.Builder(this).setTitle("Remove photo?").setNegativeButton("Cancel", null).setPositiveButton("Remove") { _, _ ->
+                        if (photo.delete()) showFeaturePreview("portfolio") else message("Unable to remove photo.")
+                    }.show()
+                }
+            }
+            homeAction("Choose photo", "Select a photo from your device") {
+                pendingPortfolioPhotoId = imageId
+                try { startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "image/*"
+                }, 7184) } catch (_: Exception) { pendingPortfolioPhotoId = null; message("Photo picker unavailable.") }
+            }
             homeAction("Edit draft", "Change portfolio details") { edit(i) }
             homeAction("Delete draft", "Remove this local entry") {
                 AlertDialog.Builder(this).setTitle("Delete portfolio draft?").setNegativeButton("Cancel", null).setPositiveButton("Delete") { _, _ ->
                     val updated = JSONArray(entries.toString()); updated.remove(i); persist(updated)
+                    if (readRecords(key).none { it.optString("id") == imageId }) photo?.delete()
                 }.show()
             }
         }
-        text("Photo selection and gallery publishing are not enabled in this version.")
+        text("Photos are stored privately on this device. Gallery publishing remains disabled.")
         homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
     }
 
