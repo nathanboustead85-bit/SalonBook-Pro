@@ -1,0 +1,22 @@
+const {test}=require("node:test");
+const a=require("node:assert/strict");
+const {createRecoveryController}=require("../sync/business-web-recovery-controller.cjs");
+test("owner binding blocks cross-account and concurrent recovery",async()=>{
+ let s={uid:"owner",businessId:"owner",verified:true,token:"test",epoch:1},calls=0,release;
+ const gate=new Promise(r=>release=r);
+ const controller=createRecoveryController({session:()=>s,pendingRequestId:"old",transport:async()=>a.fail("unexpected write"),lookup:async()=>{calls++;await gate;return {receiptVersion:1,accepted:true,status:"accepted",actorId:"owner",businessId:"owner",requestId:"old",revision:3};}});
+ s={...s,uid:"other",businessId:"other"};
+ a.deepEqual(await controller.reconcile(),{state:"blocked"});
+ await a.rejects(controller.submit({},"new"),/Session blocked/);
+ s={...s,uid:"owner",businessId:"owner",token:""};
+ a.deepEqual(await controller.reconcile(),{state:"blocked"});
+ s={...s,token:"test"};
+ const first=controller.reconcile();
+ await a.rejects(controller.reconcile(),/No available reconciliation/);
+ await a.rejects(controller.submit({},"new"),/Recovery required/);
+ s={...s,uid:"other",businessId:"other",epoch:2};
+ release();
+ a.deepEqual(await first,{state:"blocked"});
+ a.equal(controller.state(),"unresolved");
+ a.equal(calls,1);
+});
