@@ -35,4 +35,15 @@ class IsolatedBookingConnectorTest {
             assertFalse(failure is AssertionError)
         }
     }
+    @Test fun malformedReceiptsRejected() {
+        val invalid = listOf(receipt().put("receiptVersion","1"), receipt().put("accepted","true"),
+            receipt().put("revision","1"), receipt().put("revision",1.5), receipt().put("revision",2),
+            receipt().put("businessId","other"), receipt().put("requestId","other"),
+            receipt().put("appointmentId","other"), receipt().put("status","pending"),
+            receipt().put("accepted",false))
+        for (response in invalid) {
+            val c = IsolatedBookingConnector({ "owner" to "test-token" }, { _, _ -> response.toString() })
+            assertTrue(runCatching { c.submit(request()) }.isFailure)
+        }
+    }
 }
