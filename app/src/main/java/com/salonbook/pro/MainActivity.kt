@@ -594,8 +594,10 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
     }
 
+    private var mediaPreviewResult: ((android.net.Uri, Int) -> Unit)? = null
+
     private fun showMessagingRehearsal() {
-        text("Private messaging rehearsal — fictional conversation. Nothing is sent or saved.")
+        text("Private messaging rehearsal — fictional conversation. Nothing is sent. Media previews are temporary.")
         val history = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         container.addView(history)
         val draft = EditText(this).apply {
@@ -624,11 +626,55 @@ class MainActivity : Activity() {
         }
         homeAction("Preview photograph", "Simulated attachment — no photo accessed") { appendPreview("Business: [Example photograph — not uploaded]") }
         homeAction("Preview voice note", "Simulated audio — no microphone accessed") { appendPreview("Business: [Example voice note — not recorded]") }
+        fun chooseMedia(code: Int, intent: Intent) {
+            if (pause.isChecked || count >= 30) { message("Unpause messaging or clear the conversation first."); return }
+            mediaPreviewResult = { uri, kind ->
+                if (activePreview == "messages" && history.isAttachedToWindow && !pause.isChecked && count < 30) {
+                    try {
+                        if (kind == 7187) {
+                            val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, bounds) }
+                            require(bounds.outWidth in 1..30000 && bounds.outHeight in 1..30000)
+                            var sample = 1
+                            while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 800) sample *= 2
+                            val bitmap = contentResolver.openInputStream(uri)?.use {
+                                android.graphics.BitmapFactory.decodeStream(it, null, android.graphics.BitmapFactory.Options().apply { inSampleSize = sample })
+                            } ?: error("Invalid photo")
+                            history.addView(ImageView(this).apply {
+                                setImageBitmap(bitmap); scaleType = ImageView.ScaleType.FIT_CENTER
+                                contentDescription = "Local test photo"
+                            }, LinearLayout.LayoutParams(-1, dp(180)))
+                        } else {
+                            history.addView(android.widget.Button(this).apply {
+                                text = "Play local voice note"
+                                setOnClickListener {
+                                    try {
+                                        startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "audio/*").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+                                    } catch (_: Exception) { message("Audio playback app unavailable.") }
+                                }
+                            })
+                        }
+                        count++
+                    } catch (_: Exception) { message("Unable to preview attachment.") }
+                }
+            }
+            try { startActivityForResult(intent, code) }
+            catch (_: Exception) { mediaPreviewResult = null; message("Media app unavailable.") }
+        }
+        homeAction("Attach local photograph", "Choose a test image") {
+            chooseMedia(7187, Intent(Intent.ACTION_OPEN_DOCUMENT).apply { addCategory(Intent.CATEGORY_OPENABLE); type = "image/*" })
+        }
+        homeAction("Record voice note", "Open device audio recorder") {
+            chooseMedia(7188, Intent(android.provider.MediaStore.Audio.Media.RECORD_SOUND_ACTION))
+        }
+        homeAction("Choose audio note", "Select existing test audio") {
+            chooseMedia(7188, Intent(Intent.ACTION_OPEN_DOCUMENT).apply { addCategory(Intent.CATEGORY_OPENABLE); type = "audio/*" })
+        }
         homeAction("Clear rehearsal", "Remove all fictional messages") {
             AlertDialog.Builder(this).setTitle("Clear conversation rehearsal?").setNegativeButton("Cancel", null)
                 .setPositiveButton("Clear") { _, _ -> history.removeAllViews(); draft.text.clear(); count = 0; pause.isChecked = true }.show()
         }
-        text("Actual customer conversations, photo attachments, voice recording and delivery require further integration.")
+        text("Actual customer conversations and delivery remain disabled. Recording and playback use device apps; those apps may retain recordings.")
         homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
     }
 
@@ -680,6 +726,12 @@ class MainActivity : Activity() {
     @Suppress("DEPRECATION")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 7187 || requestCode == 7188) {
+            val callback = mediaPreviewResult
+            mediaPreviewResult = null
+            if (resultCode == RESULT_OK) data?.data?.let { callback?.invoke(it, requestCode) }
+            return
+        }
         if (requestCode != 7184) return
         val id = pendingPortfolioPhotoId
         pendingPortfolioPhotoId = null
