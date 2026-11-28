@@ -602,6 +602,9 @@ class MainActivity : Activity() {
         homeAction("Customer messaging", "Private chat, photo and voice-note rehearsal") {
             showFeaturePreview("messages")
         }
+        homeAction("Notifications & reminders", "Preview booking and cancellation notices; delivery disabled") {
+            showNotificationRehearsal()
+        }
         sectionLabel("Manage your business")
         homeAction("Business hub", "Explore all business tools and feature previews") { showBusinessHub() }
         homeAction("Business settings", "Services, staff, booking link and account") {
@@ -609,6 +612,14 @@ class MainActivity : Activity() {
         }
         container.addView(dashboardLabel("BOUSTIO • ISOLATED TEST PREVIEW", 10f),
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
+    }
+
+    private fun showNotificationRehearsal() {
+        AlertDialog.Builder(this)
+            .setTitle("Notifications & reminders")
+            .setMessage("ISOLATED PREVIEW — delivery disabled\n\nBooking confirmation: Your appointment is confirmed.\n\nReminder: Your appointment is tomorrow.\n\nCancellation: Your appointment has been cancelled. Please contact the business to rearrange.\n\nEmail, WhatsApp and push delivery are disabled. These are fictional examples, not queued notifications. No customer information is used.")
+            .setPositiveButton("Close", null)
+            .show()
     }
 
     private var mediaPreviewResult: ((android.net.Uri, Int) -> Unit)? = null
