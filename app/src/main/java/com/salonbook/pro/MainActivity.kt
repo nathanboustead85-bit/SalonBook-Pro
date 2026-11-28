@@ -585,6 +585,13 @@ class MainActivity : Activity() {
             showAppointments()
         }
 
+        sectionLabel("Team and services")
+        homeAction("Services & Prices", "Manage your local service catalogue") {
+            openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", false))
+        }
+        homeAction("Staff & Working Hours", "Manage local staff and availability") {
+            openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
+        }
         sectionLabel("Manage your business")
         homeAction("Business hub", "Explore all business tools and feature previews") { showBusinessHub() }
         homeAction("Business settings", "Services, staff, booking link and account") {
