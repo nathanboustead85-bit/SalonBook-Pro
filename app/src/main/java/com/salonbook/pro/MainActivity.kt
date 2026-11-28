@@ -2019,6 +2019,9 @@ class MainActivity : Activity() {
             .sortedWith(compareByDescending<Booking> { it.date }.thenByDescending { it.time })
         if (history.isEmpty()) text("No appointments yet")
         history.forEach { bookingCard(it) }
+        homeAction("Search saved client profiles", "Find contact details and notes in the client directory") {
+            openChild(Intent(this, ClientActivity::class.java).putExtra("boustio_client_query", clientName))
+        }
         homeAction("Back to clients", "Return to client directory") { showClients() }
     }
 
