@@ -1218,6 +1218,10 @@ class MainActivity : Activity() {
         })
         container.addView(diary)
 
+        homeAction("New appointment", "Book a client for the selected date") {
+            bookingDialog(defaultDate = selectedDate)
+        }
+
         sectionLabel("Appointments")
         if (daily.isEmpty()) {
             val empty = LinearLayout(this).apply {
@@ -1238,9 +1242,6 @@ class MainActivity : Activity() {
         }
 
         sectionLabel("Quick actions")
-        homeAction("New appointment", "Book a client for the selected date") {
-            bookingDialog(defaultDate = selectedDate)
-        }
         homeAction("All appointments", "Browse and manage your full diary") {
             showAppointments()
         }
@@ -1271,6 +1272,10 @@ class MainActivity : Activity() {
 
         button("Create New Booking") {
             bookingDialog()
+        }
+
+        homeAction("Appointment calendar", "Return to your selected diary date") {
+            showCalendar()
         }
 
         button("Back") {
