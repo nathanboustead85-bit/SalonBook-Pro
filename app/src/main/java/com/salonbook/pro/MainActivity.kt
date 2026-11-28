@@ -598,6 +598,10 @@ class MainActivity : Activity() {
         homeAction("Staff portfolios & salon gallery", "Manage private photo drafts") {
             showFeaturePreview("portfolio")
         }
+        sectionLabel("Customer communication")
+        homeAction("Customer messaging", "Private chat, photo and voice-note rehearsal") {
+            showFeaturePreview("messages")
+        }
         sectionLabel("Manage your business")
         homeAction("Business hub", "Explore all business tools and feature previews") { showBusinessHub() }
         homeAction("Business settings", "Services, staff, booking link and account") {
@@ -611,6 +615,7 @@ class MainActivity : Activity() {
 
     private fun showMessagingRehearsal() {
         text("Private messaging rehearsal — fictional conversation. Nothing is sent. Media previews are temporary.")
+        sectionLabel("Fictional conversation")
         val history = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         container.addView(history)
         val draft = EditText(this).apply {
@@ -685,7 +690,7 @@ class MainActivity : Activity() {
         }
         homeAction("Clear rehearsal", "Remove all fictional messages") {
             AlertDialog.Builder(this).setTitle("Clear conversation rehearsal?").setNegativeButton("Cancel", null)
-                .setPositiveButton("Clear") { _, _ -> history.removeAllViews(); draft.text.clear(); count = 0; pause.isChecked = true }.show()
+                .setPositiveButton("Clear") { _, _ -> mediaPreviewResult = null; history.removeAllViews(); draft.text.clear(); count = 0; pause.isChecked = true }.show()
         }
         text("Actual customer conversations and delivery remain disabled. Recording and playback use device apps; those apps may retain recordings.")
         homeAction("Back to business hub", "Explore other business tools") { showBusinessHub() }
