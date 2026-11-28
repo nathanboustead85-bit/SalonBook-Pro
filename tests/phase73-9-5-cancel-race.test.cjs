@@ -9,7 +9,7 @@ const http=require("node:http");
 const handle=createHandler({db,auth,serverTimestamp:FieldValue.serverTimestamp,strictActor:true});
 const seed=await handle(owner.header,{action:"create",businessId:b,actorId:b,appointmentId:"shared-race",requestId:"seed-race",expectedRevision:0,serviceId:"cut",staffId:"staff",date,startTime:"09:00"});a.equal(seed.revision,1);
 let arrivals=[],accepted=[];let release;const gate=new Promise(r=>release=r);
-const server=http.createServer(async(req,res)=>{try{let raw="";for await(const c of req)raw+=c;const body=JSON.parse(raw);arrivals.push(body.requestId);if(arrivals.length===2)release();await gate;const receipt=await handle(req.headers.authorization,body);accepted.push(body.requestId);res.writeHead(200,{"Content-Type":"application/json"});res.end(JSON.stringify(receipt));}catch(e){res.writeHead(400,{"Content-Type":"application/json"});res.end(JSON.stringify({error:"Rejected"}));}});
+const server=http.createServer(async(req,res)=>{try{let raw="";for await(const c of req)raw+=c;const body=JSON.parse(raw);arrivals.push(body.requestId);if(arrivals.length===2)release();await gate;if(arrivals.length!==2)throw Error('Both competitors must arrive');const receipt=await handle(req.headers.authorization,body);accepted.push(body.requestId);res.writeHead(200,{"Content-Type":"application/json"});res.end(JSON.stringify(receipt));}catch(e){res.writeHead(400,{"Content-Type":"application/json"});res.end(JSON.stringify({error:"Rejected"}));}});
 await new Promise(r=>server.listen(0,"127.0.0.1",r));
 const timer=setTimeout(()=>release(),180000);
 try{
