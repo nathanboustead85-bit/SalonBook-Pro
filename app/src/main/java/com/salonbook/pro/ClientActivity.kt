@@ -66,7 +66,8 @@ class ClientActivity : Activity() {
         sortBy = prefs.getString("client_directory_sort_v1", "Name A-Z")
             ?.takeIf { it in listOf("Name A-Z", "Name Z-A", "Most appointments") }
             ?: "Name A-Z"
-        query = savedInstanceState?.getString("client_directory_query") ?: ""
+        query = savedInstanceState?.getString("client_directory_query")
+            ?: intent.getStringExtra("boustio_client_query").orEmpty()
         load()
         render()
     }
