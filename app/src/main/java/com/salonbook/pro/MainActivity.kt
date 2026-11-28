@@ -437,7 +437,14 @@ class MainActivity : Activity() {
             message("Booking link is not connected in this test build.")
         }
         premiumCard("☏", "Customer Messages", "Private chat inbox • preview only") {
-            message("Customer messaging is not enabled in this test build.")
+            showFeaturePreview("messages")
+        }
+        sectionLabel("Booking preferences")
+        premiumCard("›", "Booking page & cancellation policy", "Edit private local drafts; not published") {
+            showBookingPreferenceDraft()
+        }
+        premiumCard("›", "Notifications & reminders", "Fictional examples; delivery disabled") {
+            showNotificationRehearsal()
         }
         sectionLabel("Account and tools")
         premiumCard("☁", "Cloud Account & Backup", "Cloud account, backup and restore") {
@@ -451,6 +458,48 @@ class MainActivity : Activity() {
             showAppointments()
         }
         container.addView(dashboardLabel("BOUSTIO • A BOOKING PLATFORM WITH A DIFFERENCE", 10f))
+    }
+
+    private fun showBookingPreferenceDraft() {
+        val form = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), dp(8))
+        }
+        val welcome = EditText(this).apply {
+            hint = "Booking page welcome message"
+            filters = arrayOf(android.text.InputFilter.LengthFilter(300))
+            setText(prefs.getString("local_booking_welcome_draft_v1", ""))
+        }
+        val policy = EditText(this).apply {
+            hint = "Cancellation policy draft"
+            filters = arrayOf(android.text.InputFilter.LengthFilter(1000))
+            setText(prefs.getString("local_booking_policy_draft_v1", ""))
+        }
+        form.addView(welcome)
+        form.addView(policy)
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Private booking page drafts")
+            .setMessage("Saved on this device only. These drafts do not change booking availability, enforce policies or publish to customers.")
+            .setView(form)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Save draft", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val welcomeText = welcome.text.toString().trim()
+                val policyText = policy.text.toString().trim()
+                if (welcomeText.length > 300 || policyText.length > 1000) {
+                    message("Draft exceeds the allowed length.")
+                } else if (prefs.edit().putString("local_booking_welcome_draft_v1", welcomeText)
+                        .putString("local_booking_policy_draft_v1", policyText).commit()) {
+                    dialog.dismiss()
+                    message("Private drafts saved.")
+                } else {
+                    message("Unable to save drafts. Please retry.")
+                }
+            }
+        }
+        dialog.show()
     }
 
     private fun text(
