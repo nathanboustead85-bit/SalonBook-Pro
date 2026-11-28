@@ -592,6 +592,9 @@ class MainActivity : Activity() {
         homeAction("Staff & Working Hours", "Manage local staff and availability") {
             openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
         }
+        homeAction("Employee access plans", "Preview proposed staff roles; no live permissions") {
+            showFeaturePreview("team")
+        }
         sectionLabel("Manage your business")
         homeAction("Business hub", "Explore all business tools and feature previews") { showBusinessHub() }
         homeAction("Business settings", "Services, staff, booking link and account") {
@@ -904,6 +907,7 @@ class MainActivity : Activity() {
             }
         }
         text("Owner-only: finances, subscriptions, security settings and permission administration. Employee plans do not restrict the current owner app.")
+        homeAction("Appointment calendar", "View the owner diary; not an employee session") { showCalendar() }
         homeAction("Manage local staff", "Open staff and working hours") {
             openChild(Intent(this, ManagementActivity::class.java).putExtra("staff", true))
         }
