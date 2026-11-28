@@ -595,6 +595,9 @@ class MainActivity : Activity() {
         homeAction("Employee access plans", "Preview proposed staff roles; no live permissions") {
             showFeaturePreview("team")
         }
+        homeAction("Staff portfolios & salon gallery", "Manage private photo drafts") {
+            showFeaturePreview("portfolio")
+        }
         sectionLabel("Manage your business")
         homeAction("Business hub", "Explore all business tools and feature previews") { showBusinessHub() }
         homeAction("Business settings", "Services, staff, booking link and account") {
@@ -999,6 +1002,8 @@ class MainActivity : Activity() {
             }
         }
         homeAction("Add portfolio draft", "Create a salon or staff portfolio entry") { edit(null) }
+        sectionLabel("Saved portfolio drafts")
+        text("${entries.length()} local draft(s) — not published")
         if (entries.length() == 0) text("No portfolio drafts yet.")
         for (i in 0 until entries.length()) {
             val item = entries.optJSONObject(i) ?: continue
